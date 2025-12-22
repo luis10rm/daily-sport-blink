@@ -7,7 +7,20 @@ export interface Post {
   category: SportCategory;
   publishedAt: string;
   sourceUrl: string;
+  imageUrl?: string;
+  isSponsored?: boolean;
 }
+
+export const sponsoredPost: Post = {
+  id: "sponsored",
+  title: "Nowa kolekcja butów Nike Air Zoom",
+  excerpt: "Odkryj najnowszą kolekcję butów sportowych zaprojektowanych z myślą o maksymalnej wydajności. Technologia Air Zoom zapewnia doskonałą amortyzację.",
+  category: "other",
+  publishedAt: new Date().toISOString(),
+  sourceUrl: "https://example.com/sponsor",
+  imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=60",
+  isSponsored: true,
+};
 
 export const samplePosts: Post[] = [
   {
@@ -17,6 +30,7 @@ export const samplePosts: Post[] = [
     category: "football",
     publishedAt: "2024-12-21",
     sourceUrl: "https://example.com/real-barca",
+    imageUrl: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=60",
   },
   {
     id: "2",
@@ -25,6 +39,7 @@ export const samplePosts: Post[] = [
     category: "f1",
     publishedAt: "2024-12-21",
     sourceUrl: "https://example.com/verstappen",
+    imageUrl: "https://images.unsplash.com/photo-1541773125685-f3c7dc5fba08?w=800&auto=format&fit=crop&q=60",
   },
   {
     id: "3",
@@ -33,6 +48,7 @@ export const samplePosts: Post[] = [
     category: "tennis",
     publishedAt: "2024-12-20",
     sourceUrl: "https://example.com/swiatek",
+    imageUrl: "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=60",
   },
   {
     id: "4",
@@ -41,6 +57,7 @@ export const samplePosts: Post[] = [
     category: "basketball",
     publishedAt: "2024-12-20",
     sourceUrl: "https://example.com/lakers",
+    imageUrl: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&auto=format&fit=crop&q=60",
   },
   {
     id: "5",
@@ -49,13 +66,12 @@ export const samplePosts: Post[] = [
     category: "mma",
     publishedAt: "2024-12-19",
     sourceUrl: "https://example.com/chalidow",
-  },
-  {
-    id: "6",
-    title: "Lewandowski z hat-trickiem w meczu z Sevillą",
-    excerpt: "Polski napastnik strzelił trzy gole, prowadząc Barcelonę do zwycięstwa 4:0. To jego 15. hat-trick w karierze.",
-    category: "football",
-    publishedAt: "2024-12-19",
-    sourceUrl: "https://example.com/lewandowski",
+    imageUrl: "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&auto=format&fit=crop&q=60",
   },
 ];
+
+// Function to get posts with sponsored post always in second position
+export const getPostsWithSponsored = (): Post[] => {
+  const [first, ...rest] = samplePosts;
+  return [first, sponsoredPost, ...rest];
+};
