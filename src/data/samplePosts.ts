@@ -10,6 +10,7 @@ export interface Post {
   imageUrl?: string;
   isSponsored?: boolean;
   isNewsOfTheDay?: boolean;
+  tags?: string[];
 }
 
 export const sponsoredPost: Post = {
@@ -21,6 +22,7 @@ export const sponsoredPost: Post = {
   sourceUrl: "https://example.com/sponsor",
   imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=60",
   isSponsored: true,
+  tags: ["Nike", "Air Zoom", "Buty sportowe"],
 };
 
 export const samplePosts: Post[] = [
@@ -33,6 +35,7 @@ export const samplePosts: Post[] = [
     sourceUrl: "https://example.com/real-barca",
     imageUrl: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=60",
     isNewsOfTheDay: true,
+    tags: ["Real Madryt", "Barcelona", "La Liga", "El Clásico"],
   },
   {
     id: "2",
@@ -42,6 +45,7 @@ export const samplePosts: Post[] = [
     publishedAt: "2024-12-21",
     sourceUrl: "https://example.com/verstappen",
     imageUrl: "https://images.unsplash.com/photo-1541773125685-f3c7dc5fba08?w=800&auto=format&fit=crop&q=60",
+    tags: ["Max Verstappen", "Red Bull", "F1", "Las Vegas GP"],
   },
   {
     id: "3",
@@ -51,6 +55,7 @@ export const samplePosts: Post[] = [
     publishedAt: "2024-12-20",
     sourceUrl: "https://example.com/swiatek",
     imageUrl: "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=60",
+    tags: ["Iga Świątek", "WTA", "WTA Finals", "Tenis"],
   },
   {
     id: "4",
@@ -60,6 +65,7 @@ export const samplePosts: Post[] = [
     publishedAt: "2024-12-20",
     sourceUrl: "https://example.com/lakers",
     imageUrl: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&auto=format&fit=crop&q=60",
+    tags: ["Lakers", "LeBron James", "NBA", "Celtics"],
   },
   {
     id: "5",
@@ -69,6 +75,7 @@ export const samplePosts: Post[] = [
     publishedAt: "2024-12-19",
     sourceUrl: "https://example.com/chalidow",
     imageUrl: "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800&auto=format&fit=crop&q=60",
+    tags: ["Mamed Chalidow", "KSW", "MMA"],
   },
 ];
 

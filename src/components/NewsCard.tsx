@@ -10,6 +10,7 @@ interface NewsCardProps {
   sourceUrl: string;
   imageUrl?: string;
   isSponsored?: boolean;
+  tags?: string[];
   className?: string;
   delay?: number;
 }
@@ -22,6 +23,7 @@ export const NewsCard = ({
   sourceUrl,
   imageUrl,
   isSponsored = false,
+  tags,
   className,
   delay = 0,
 }: NewsCardProps) => {
@@ -64,14 +66,28 @@ export const NewsCard = ({
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <SportIcon category={category} className="h-8 w-8" />
-            <span className="text-xs font-medium uppercase tracking-wider text-primary">
-              {getSportLabel(category)}
-            </span>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <SportIcon category={category} className="h-8 w-8" />
+              <span className="text-xs font-medium uppercase tracking-wider text-primary">
+                {getSportLabel(category)}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground">{formattedDate}</span>
           </div>
-          <span className="text-xs text-muted-foreground">{formattedDate}</span>
+          {tags && tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col gap-2">

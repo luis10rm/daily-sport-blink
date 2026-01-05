@@ -47,6 +47,7 @@ const Index = () => {
               sourceUrl={post.sourceUrl}
               imageUrl={post.imageUrl}
               isSponsored={post.isSponsored}
+              tags={post.tags}
               delay={index * 100}
             />
           ))}
