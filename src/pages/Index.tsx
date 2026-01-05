@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { NewsCard } from "@/components/NewsCard";
 import { NewsOfTheDay } from "@/components/NewsOfTheDay";
 import { SponsorBanner } from "@/components/SponsorBanner";
+import { ScrollProgress } from "@/components/ScrollProgress";
 import { getPostsWithSponsored, getNewsOfTheDay } from "@/data/samplePosts";
 
 const Index = () => {
@@ -53,6 +54,9 @@ const Index = () => {
           ))}
         </div>
       </main>
+
+      {/* Scroll Progress Indicator */}
+      <ScrollProgress totalItems={posts.length + (newsOfTheDay ? 1 : 0)} />
 
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground">
