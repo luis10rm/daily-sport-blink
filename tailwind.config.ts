@@ -59,6 +59,10 @@ export default {
           mma: "hsl(var(--sport-mma))",
           other: "hsl(var(--sport-other))",
         },
+        "news-of-day": {
+          DEFAULT: "hsl(var(--news-of-day))",
+          foreground: "hsl(var(--news-of-day-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
