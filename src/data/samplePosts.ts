@@ -44,7 +44,7 @@ export const samplePosts: Post[] = [
     category: "f1",
     publishedAt: "2024-12-21",
     sourceUrl: "https://example.com/verstappen",
-    imageUrl: "https://images.unsplash.com/photo-1541773125685-f3c7dc5fba08?w=800&auto=format&fit=crop&q=60",
+    imageUrl: "https://images.unsplash.com/photo-1504707748692-419802cf939d?w=800&auto=format&fit=crop&q=60",
     tags: ["Max Verstappen", "Red Bull", "F1", "Las Vegas GP"],
   },
   {
