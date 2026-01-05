@@ -9,6 +9,7 @@ export interface Post {
   sourceUrl: string;
   imageUrl?: string;
   isSponsored?: boolean;
+  isNewsOfTheDay?: boolean;
 }
 
 export const sponsoredPost: Post = {
@@ -31,6 +32,7 @@ export const samplePosts: Post[] = [
     publishedAt: "2024-12-21",
     sourceUrl: "https://example.com/real-barca",
     imageUrl: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800&auto=format&fit=crop&q=60",
+    isNewsOfTheDay: true,
   },
   {
     id: "2",
@@ -70,8 +72,14 @@ export const samplePosts: Post[] = [
   },
 ];
 
-// Function to get posts with sponsored post always in second position
+// Get news of the day
+export const getNewsOfTheDay = (): Post | undefined => {
+  return samplePosts.find((post) => post.isNewsOfTheDay);
+};
+
+// Function to get posts with sponsored post always in second position (excludes news of the day)
 export const getPostsWithSponsored = (): Post[] => {
-  const [first, ...rest] = samplePosts;
+  const postsWithoutNewsOfDay = samplePosts.filter((post) => !post.isNewsOfTheDay);
+  const [first, ...rest] = postsWithoutNewsOfDay;
   return [first, sponsoredPost, ...rest];
 };

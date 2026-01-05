@@ -1,10 +1,12 @@
 import { Header } from "@/components/Header";
 import { NewsCard } from "@/components/NewsCard";
+import { NewsOfTheDay } from "@/components/NewsOfTheDay";
 import { SponsorBanner } from "@/components/SponsorBanner";
-import { getPostsWithSponsored } from "@/data/samplePosts";
+import { getPostsWithSponsored, getNewsOfTheDay } from "@/data/samplePosts";
 
 const Index = () => {
   const posts = getPostsWithSponsored();
+  const newsOfTheDay = getNewsOfTheDay();
 
   return (
     <div className="min-h-screen bg-background">
@@ -19,6 +21,11 @@ const Index = () => {
             Najważniejsze wydarzenia sportowe z ostatnich 24 godzin
           </p>
         </section>
+
+        {/* News of the Day */}
+        {newsOfTheDay && (
+          <NewsOfTheDay post={newsOfTheDay} className="mb-10" />
+        )}
 
         {/* Sponsor Banner */}
         <SponsorBanner

@@ -47,6 +47,10 @@
     --sport-f1: 0 84% 60%;
     --sport-mma: 280 87% 65%;
     --sport-other: 210 20% 50%;
+    
+    /* News of the day */
+    --news-of-day: 45 93% 47%;
+    --news-of-day-foreground: 0 0% 10%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
