@@ -10,6 +10,8 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/admin/Dashboard";
 import PostsList from "./pages/admin/PostsList";
 import PostEditor from "./pages/admin/PostEditor";
+import BannersList from "./pages/admin/BannersList";
+import BannerEditor from "./pages/admin/BannerEditor";
 import UsersList from "./pages/admin/UsersList";
 import Settings from "./pages/admin/Settings";
 import NotFound from "./pages/NotFound";
@@ -55,6 +57,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PostEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/banners"
+              element={
+                <ProtectedRoute>
+                  <BannersList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/banners/new"
+              element={
+                <ProtectedRoute>
+                  <BannerEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/banners/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <BannerEditor />
                 </ProtectedRoute>
               }
             />

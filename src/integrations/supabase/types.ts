@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      banners: {
+        Row: {
+          click_tag: string
+          created_at: string
+          created_by: string | null
+          cta_text: string
+          description: string | null
+          end_date: string | null
+          id: string
+          image_desktop_url: string
+          image_mobile_url: string
+          impression_tag: string | null
+          is_active: boolean
+          position: Database["public"]["Enums"]["banner_position"]
+          start_date: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          click_tag: string
+          created_at?: string
+          created_by?: string | null
+          cta_text: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          image_desktop_url: string
+          image_mobile_url: string
+          impression_tag?: string | null
+          is_active?: boolean
+          position?: Database["public"]["Enums"]["banner_position"]
+          start_date?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          click_tag?: string
+          created_at?: string
+          created_by?: string | null
+          cta_text?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          image_desktop_url?: string
+          image_mobile_url?: string
+          impression_tag?: string | null
+          is_active?: boolean
+          position?: Database["public"]["Enums"]["banner_position"]
+          start_date?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           category: Database["public"]["Enums"]["sport_category"]
@@ -129,6 +183,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "editor" | "viewer"
+      banner_position: "home_top" | "home_middle" | "home_bottom"
       sport_category:
         | "football"
         | "basketball"
@@ -264,6 +319,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "editor", "viewer"],
+      banner_position: ["home_top", "home_middle", "home_bottom"],
       sport_category: [
         "football",
         "basketball",

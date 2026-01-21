@@ -11,6 +11,7 @@ import {
   LogOut,
   Newspaper,
   ChevronLeft,
+  Megaphone,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -20,6 +21,7 @@ interface AdminLayoutProps {
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/posts", label: "Posty", icon: FileText },
+  { href: "/admin/banners", label: "Banery", icon: Megaphone },
   { href: "/admin/users", label: "Użytkownicy", icon: Users, adminOnly: true },
   { href: "/admin/settings", label: "Ustawienia", icon: Settings },
 ];
