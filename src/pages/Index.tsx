@@ -5,10 +5,12 @@ import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
 import { getPostsWithSponsored, getNewsOfTheDay } from "@/data/samplePosts";
+import { useActiveBanner } from "@/hooks/useBanners";
 
 const Index = () => {
   const posts = getPostsWithSponsored();
   const newsOfTheDay = getNewsOfTheDay();
+  const { data: middleBanner } = useActiveBanner("home_middle");
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,14 +36,27 @@ const Index = () => {
           <NewsOfTheDay post={newsOfTheDay} className="mb-10" />
         )}
 
-        {/* Sponsor Banner */}
-        <SponsorBanner
-          title="Twoja reklama może być tutaj"
-          description="Dotrzyj do tysięcy fanów sportu każdego dnia. Skontaktuj się z nami!"
-          ctaText="Zostań partnerem"
-          ctaUrl="mailto:reklama@szortsy.pl"
-          className="mb-10"
-        />
+        {/* Sponsor Banner - from database or fallback */}
+        {middleBanner ? (
+          <SponsorBanner
+            title={middleBanner.title}
+            description={middleBanner.description}
+            ctaText={middleBanner.cta_text}
+            ctaUrl={middleBanner.click_tag}
+            imageDesktopUrl={middleBanner.image_desktop_url}
+            imageMobileUrl={middleBanner.image_mobile_url}
+            impressionTag={middleBanner.impression_tag || undefined}
+            className="mb-10"
+          />
+        ) : (
+          <SponsorBanner
+            title="Twoja reklama może być tutaj"
+            description="Dotrzyj do tysięcy fanów sportu każdego dnia. Skontaktuj się z nami!"
+            ctaText="Zostań partnerem"
+            ctaUrl="mailto:reklama@szortsy.pl"
+            className="mb-10"
+          />
+        )}
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((post, index) => (
