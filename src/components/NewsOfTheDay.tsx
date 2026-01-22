@@ -1,5 +1,6 @@
 import { ExternalLink, Trophy } from "lucide-react";
 import { SportIcon, getSportLabel } from "./SportIcon";
+import { getCategoryImage } from "@/config/categoryImages";
 import { Post } from "@/data/samplePosts";
 import { cn } from "@/lib/utils";
 
@@ -32,17 +33,11 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
       <div className="flex flex-col md:flex-row">
         {/* Image area */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted md:aspect-auto md:w-1/2">
-          {post.imageUrl ? (
-            <img
-              src={post.imageUrl}
-              alt={post.title}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <SportIcon category={post.category} className="h-24 w-24 opacity-30" />
-            </div>
-          )}
+          <img
+            src={getCategoryImage(post.category, post.imageUrl)}
+            alt={post.title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
         </div>
 
         {/* Content area */}

@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Post } from "@/data/samplePosts";
 import { getSportLabel, SportCategory } from "@/components/SportIcon";
+import { getCategoryImage } from "@/config/categoryImages";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -165,14 +166,12 @@ export const StoriesViewer = ({
         </div>
 
         {/* Background image */}
-        {currentPost.imageUrl && (
-          <div
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${currentPost.imageUrl})` }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
-          </div>
-        )}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${getCategoryImage(category, currentPost.imageUrl)})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
+        </div>
 
         {/* Content */}
         <div className="absolute bottom-0 left-0 right-0 z-20 p-6 pb-10">
