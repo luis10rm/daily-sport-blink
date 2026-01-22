@@ -39,7 +39,6 @@ type AppRole = "admin" | "editor" | "viewer";
 
 interface UserWithRole {
   id: string;
-  email: string | null;
   full_name: string | null;
   created_at: string;
   roles: AppRole[];
@@ -85,7 +84,6 @@ const UsersList = () => {
       // Combine the data
       const usersWithRoles: UserWithRole[] = (profiles || []).map((profile) => ({
         id: profile.id,
-        email: profile.email,
         full_name: profile.full_name,
         created_at: profile.created_at,
         roles: (roles || [])
@@ -149,7 +147,6 @@ const UsersList = () => {
 
   const filteredUsers = users?.filter(
     (user) =>
-      user.email?.toLowerCase().includes(search.toLowerCase()) ||
       user.full_name?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -220,7 +217,7 @@ const UsersList = () => {
                       <div>
                         <p className="font-medium">{user.full_name || "—"}</p>
                         <p className="text-sm text-muted-foreground">
-                          {user.email}
+                          ID: {user.id.slice(0, 8)}...
                         </p>
                       </div>
                     </TableCell>
@@ -262,7 +259,7 @@ const UsersList = () => {
                             <DialogTitle>Dodaj rolę</DialogTitle>
                             <DialogDescription>
                               Wybierz rolę do przypisania użytkownikowi{" "}
-                              {user.email}
+                              {user.full_name || user.id.slice(0, 8)}
                             </DialogDescription>
                           </DialogHeader>
                           <Select

@@ -4,12 +4,13 @@ import { NewsOfTheDay } from "@/components/NewsOfTheDay";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
-import { getPostsWithSponsored, getNewsOfTheDay } from "@/data/samplePosts";
+import { usePostsFeed, useNewsOfTheDay } from "@/hooks/usePosts";
 import { useActiveBanner } from "@/hooks/useBanners";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
-  const posts = getPostsWithSponsored();
-  const newsOfTheDay = getNewsOfTheDay();
+  const { data: posts = [], isLoading: postsLoading } = usePostsFeed();
+  const { data: newsOfTheDay, isLoading: newsLoading } = useNewsOfTheDay();
   const { data: middleBanner } = useActiveBanner("home_middle");
 
   return (
@@ -32,8 +33,25 @@ const Index = () => {
         </section>
 
         {/* News of the Day */}
-        {newsOfTheDay && (
-          <NewsOfTheDay post={newsOfTheDay} className="mb-10" />
+        {newsLoading ? (
+          <div className="mb-10">
+            <Skeleton className="h-[400px] w-full rounded-xl" />
+          </div>
+        ) : newsOfTheDay && (
+          <NewsOfTheDay 
+            post={{
+              id: newsOfTheDay.id,
+              title: newsOfTheDay.title,
+              excerpt: newsOfTheDay.excerpt,
+              category: newsOfTheDay.category,
+              publishedAt: newsOfTheDay.published_at,
+              sourceUrl: newsOfTheDay.source_url,
+              imageUrl: newsOfTheDay.image_url || undefined,
+              isNewsOfTheDay: newsOfTheDay.is_news_of_day,
+              tags: newsOfTheDay.tags || [],
+            }} 
+            className="mb-10" 
+          />
         )}
 
         {/* Sponsor Banner - from database or fallback */}
@@ -58,26 +76,38 @@ const Index = () => {
           />
         )}
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post, index) => (
-            <NewsCard
-              key={post.id}
-              title={post.title}
-              excerpt={post.excerpt}
-              category={post.category}
-              publishedAt={post.publishedAt}
-              sourceUrl={post.sourceUrl}
-              imageUrl={post.imageUrl}
-              isSponsored={post.isSponsored}
-              tags={post.tags}
-              delay={index * 100}
-            />
-          ))}
-        </div>
+        {postsLoading ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-[350px] rounded-xl" />
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            Brak artykułów do wyświetlenia
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {posts.map((post, index) => (
+              <NewsCard
+                key={post.id}
+                title={post.title}
+                excerpt={post.excerpt}
+                category={post.category}
+                publishedAt={post.published_at}
+                sourceUrl={post.source_url}
+                imageUrl={post.image_url || undefined}
+                isSponsored={post.is_sponsored}
+                tags={post.tags || []}
+                delay={index * 100}
+              />
+            ))}
+          </div>
+        )}
       </main>
 
       {/* Scroll Progress Indicator */}
-      <ScrollProgress totalItems={posts.length + (newsOfTheDay ? 1 : 0)} />
+      <ScrollProgress totalItems={(posts?.length || 0) + (newsOfTheDay ? 1 : 0)} />
 
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground">
