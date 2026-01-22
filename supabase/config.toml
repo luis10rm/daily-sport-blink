@@ -1,1 +1,4 @@
 project_id = "izyknazjzdkfdxnekvos"
+
+[functions.extract-article]
+verify_jwt = false

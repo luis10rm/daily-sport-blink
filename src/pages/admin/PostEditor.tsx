@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +6,7 @@ import { z } from "zod";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageSourceSection } from "@/components/admin/ImageSourceSection";
 import { usePost, useCreatePost, useUpdatePost, SportCategory } from "@/hooks/usePosts";
+import { useExtractArticle } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,8 +28,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Save } from "lucide-react";
+import { Loader2, ArrowLeft, Save, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 const categories: { value: SportCategory; label: string }[] = [
   { value: "football", label: "Piłka nożna" },
@@ -62,6 +64,7 @@ const PostEditor = () => {
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
   const createPost = useCreatePost();
   const updatePost = useUpdatePost();
+  const extractArticle = useExtractArticle();
 
   const form = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
@@ -119,6 +122,39 @@ const PostEditor = () => {
   };
 
   const isSubmitting = createPost.isPending || updatePost.isPending;
+
+  const handleAIExtract = async () => {
+    const sourceUrl = form.getValues("source_url");
+    
+    if (!sourceUrl) {
+      toast.error("Wprowadź URL źródła przed użyciem AI");
+      return;
+    }
+
+    try {
+      new URL(sourceUrl);
+    } catch {
+      toast.error("Nieprawidłowy format URL");
+      return;
+    }
+
+    toast.info("Analizuję artykuł...");
+
+    const data = await extractArticle.mutateAsync(sourceUrl);
+    
+    // Fill form with extracted data
+    form.setValue("title", data.title);
+    form.setValue("excerpt", data.excerpt);
+    form.setValue("category", data.category);
+    form.setValue("tags", data.tags.join(", "));
+    
+    // If OG image found and no image set yet, offer to use it
+    if (data.og_image && !form.getValues("image_url")) {
+      form.setValue("image_url", data.og_image);
+    }
+    
+    toast.success("Formularz wypełniony przez AI!");
+  };
 
   if (isEditing && isLoadingPost) {
     return (
@@ -228,26 +264,49 @@ const PostEditor = () => {
                   <CardHeader>
                     <CardTitle>Linki</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
                     <FormField
                       control={form.control}
                       name="source_url"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>URL źródła</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="https://..."
-                              {...field}
-                            />
-                          </FormControl>
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <Input
+                                placeholder="https://..."
+                                {...field}
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={handleAIExtract}
+                              disabled={extractArticle.isPending}
+                              className="shrink-0"
+                            >
+                              {extractArticle.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Sparkles className="h-4 w-4" />
+                              )}
+                              <span className="ml-2 hidden sm:inline">Generuj AI</span>
+                            </Button>
+                          </div>
                           <FormDescription>
-                            Link do oryginalnego artykułu
+                            Wklej link i kliknij "Generuj AI" aby automatycznie wypełnić formularz
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    
+                    {extractArticle.isPending && (
+                      <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Analizuję artykuł i wypełniam formularz...</span>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
