@@ -2,23 +2,36 @@ import { useState, useMemo } from "react";
 import { StoriesCircle } from "@/components/StoriesCircle";
 import { StoriesViewer } from "@/components/StoriesViewer";
 import { SportCategory } from "@/components/SportIcon";
-import { Post, samplePosts } from "@/data/samplePosts";
-import { subDays, isAfter, parseISO } from "date-fns";
+import { useRecentPosts, Post } from "@/hooks/usePosts";
 
 const CATEGORIES: SportCategory[] = ["football", "basketball", "tennis", "f1", "mma", "other"];
 
-// Get posts from last 7 days
-const getRecentPosts = (): Post[] => {
-  const sevenDaysAgo = subDays(new Date(), 7);
-  return samplePosts.filter((post) => {
-    const postDate = parseISO(post.publishedAt);
-    return isAfter(postDate, sevenDaysAgo);
-  });
-};
+// Map database post to component format
+interface StoryPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  category: SportCategory;
+  publishedAt: string;
+  sourceUrl: string;
+  imageUrl?: string;
+  tags?: string[];
+}
+
+const mapPostToStory = (post: Post): StoryPost => ({
+  id: post.id,
+  title: post.title,
+  excerpt: post.excerpt,
+  category: post.category,
+  publishedAt: post.published_at,
+  sourceUrl: post.source_url,
+  imageUrl: post.image_url || undefined,
+  tags: post.tags || [],
+});
 
 // Group posts by category
-const groupPostsByCategory = (posts: Post[]): Record<SportCategory, Post[]> => {
-  const grouped: Record<SportCategory, Post[]> = {
+const groupPostsByCategory = (posts: StoryPost[]): Record<SportCategory, StoryPost[]> => {
+  const grouped: Record<SportCategory, StoryPost[]> = {
     football: [],
     basketball: [],
     tennis: [],
@@ -38,8 +51,9 @@ const groupPostsByCategory = (posts: Post[]): Record<SportCategory, Post[]> => {
 
 export const StoriesRow = () => {
   const [activeCategory, setActiveCategory] = useState<SportCategory | null>(null);
+  const { data: recentDbPosts = [] } = useRecentPosts();
 
-  const recentPosts = useMemo(() => getRecentPosts(), []);
+  const recentPosts = useMemo(() => recentDbPosts.map(mapPostToStory), [recentDbPosts]);
   const postsByCategory = useMemo(() => groupPostsByCategory(recentPosts), [recentPosts]);
 
   // Only show categories that have posts
