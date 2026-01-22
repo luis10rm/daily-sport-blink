@@ -1,5 +1,6 @@
 import { ExternalLink, Sparkles } from "lucide-react";
 import { SportIcon, SportCategory, getSportLabel } from "./SportIcon";
+import { getCategoryImage } from "@/config/categoryImages";
 import { cn } from "@/lib/utils";
 
 interface NewsCardProps {
@@ -52,17 +53,11 @@ export const NewsCard = ({
 
       {/* Image area */}
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <SportIcon category={category} className="h-16 w-16 opacity-30" />
-          </div>
-        )}
+        <img
+          src={getCategoryImage(category, imageUrl)}
+          alt={title}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-5">

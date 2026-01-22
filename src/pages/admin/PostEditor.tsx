@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ImageSourceSection } from "@/components/admin/ImageSourceSection";
 import { usePost, useCreatePost, useUpdatePost, SportCategory } from "@/hooks/usePosts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,7 @@ const postSchema = z.object({
   excerpt: z.string().min(10, "Opis musi mieć minimum 10 znaków"),
   content: z.string().optional(),
   category: z.enum(["football", "basketball", "tennis", "f1", "mma", "other"]),
-  image_url: z.string().url("Nieprawidłowy URL").or(z.literal("")),
+  image_url: z.string().url("Nieprawidłowy URL").or(z.literal("")).optional(),
   source_url: z.string().url("Nieprawidłowy URL"),
   tags: z.string(),
   is_sponsored: z.boolean(),
@@ -217,31 +218,17 @@ const PostEditor = () => {
                   </CardContent>
                 </Card>
 
+                {/* Image source section */}
+                <ImageSourceSection 
+                  form={form} 
+                  category={form.watch("category")} 
+                />
+
                 <Card>
                   <CardHeader>
-                    <CardTitle>Media i linki</CardTitle>
+                    <CardTitle>Linki</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="image_url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>URL obrazka</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="https://..."
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Link do obrazka głównego
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
+                  <CardContent>
                     <FormField
                       control={form.control}
                       name="source_url"
