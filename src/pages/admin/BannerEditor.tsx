@@ -72,8 +72,19 @@ const bannerSchema = z.object({
   title: z.string().min(1, "Nazwa jest wymagana"),
   description: z.string().optional(),
   cta_text: z.string().min(1, "Tekst CTA jest wymagany"),
-  click_tag: z.string().url("Podaj poprawny URL"),
-  impression_tag: z.string().url("Podaj poprawny URL").optional().or(z.literal("")),
+  click_tag: z.string()
+    .min(1, "URL przekierowania jest wymagany")
+    .refine(
+      (val) => val.startsWith("http://") || val.startsWith("https://"),
+      "URL musi zaczynać się od http:// lub https://"
+    ),
+  impression_tag: z.string()
+    .refine(
+      (val) => !val || val.startsWith("http://") || val.startsWith("https://"),
+      "URL musi zaczynać się od http:// lub https://"
+    )
+    .optional()
+    .or(z.literal("")),
   image_desktop_url: z.string().optional().or(z.literal("")),
   image_mobile_url: z.string().optional().or(z.literal("")),
   position: z.enum(["home_top", "home_middle", "home_bottom"]),
