@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
 interface ScrollProgressProps {
-  totalItems: number;
+  todaysCount: number;
   className?: string;
 }
 
-export const ScrollProgress = ({ totalItems, className }: ScrollProgressProps) => {
+export const ScrollProgress = ({ todaysCount, className }: ScrollProgressProps) => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const [readCount, setReadCount] = useState(0);
@@ -22,8 +22,8 @@ export const ScrollProgress = ({ totalItems, className }: ScrollProgressProps) =
       setScrollProgress(Math.min(progress, 100));
       
       // Estimate read items based on scroll position
-      const estimatedRead = Math.floor((progress / 100) * totalItems);
-      setReadCount(Math.min(estimatedRead, totalItems));
+      const estimatedRead = Math.floor((progress / 100) * todaysCount);
+      setReadCount(Math.min(estimatedRead, todaysCount));
       
       // Hide when near bottom (95%+)
       setIsVisible(progress < 95);
@@ -33,9 +33,9 @@ export const ScrollProgress = ({ totalItems, className }: ScrollProgressProps) =
     handleScroll();
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [totalItems]);
+  }, [todaysCount]);
 
-  const remainingCount = totalItems - readCount;
+  const remainingCount = todaysCount - readCount;
 
   if (!isVisible || remainingCount <= 0) return null;
 
@@ -54,7 +54,7 @@ export const ScrollProgress = ({ totalItems, className }: ScrollProgressProps) =
       <div className="flex items-center gap-2">
         <Newspaper className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium text-foreground">
-          {remainingCount} {remainingCount === 1 ? "news" : "newsów"} więcej
+          {remainingCount} {remainingCount === 1 ? "news" : "newsów"} więcej z dzisiaj
         </span>
       </div>
 

@@ -4,7 +4,7 @@ import { NewsOfTheDay } from "@/components/NewsOfTheDay";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
-import { usePostsFeed, useNewsOfTheDay } from "@/hooks/usePosts";
+import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts";
 import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -15,6 +15,7 @@ const Index = () => {
   
   const { data: posts = [], isLoading: postsLoading } = usePostsFeed();
   const { data: newsOfTheDay, isLoading: newsLoading } = useNewsOfTheDay();
+  const { data: todaysPosts = [] } = useTodaysPosts();
   const { data: topBanner } = useActiveBannerForDevice("home_top", device);
   const { data: middleBanner } = useActiveBannerForDevice("home_middle", device);
   const { data: bottomBanner } = useActiveBannerForDevice("home_bottom", device);
@@ -141,7 +142,7 @@ const Index = () => {
       </main>
 
       {/* Scroll Progress Indicator */}
-      <ScrollProgress totalItems={(posts?.length || 0) + (newsOfTheDay ? 1 : 0)} />
+      <ScrollProgress todaysCount={todaysPosts.length} />
 
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground">

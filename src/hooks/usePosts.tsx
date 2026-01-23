@@ -55,6 +55,28 @@ export const usePosts = () => {
   });
 };
 
+// Fetch posts from today only
+export const useTodaysPosts = () => {
+  return useQuery({
+    queryKey: ["posts", "today"],
+    queryFn: async () => {
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0).toISOString();
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999).toISOString();
+      
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .gte("published_at", startOfDay)
+        .lte("published_at", endOfDay)
+        .order("published_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Post[];
+    },
+  });
+};
+
 // Fetch posts from last 7 days (for stories)
 export const useRecentPosts = () => {
   return useQuery({
