@@ -1,74 +1,117 @@
 
-## Zmiana logiki wskaźnika ScrollProgress
+## Uproszczony Floating Indicator (Wariant C)
 
 ### Cel
-Wskaźnik ma pokazywać ile pozostało newsów **z bieżącego dnia** do przeczytania, zamiast wszystkich newsów na stronie.
+Stworzyć precyzyjny wskaźnik, który:
+- Pokazuje stałą liczbę newsów z dzisiaj (bez dynamicznego odliczania)
+- Znika gdy użytkownik przewinie poniżej ostatniego newsa z dzisiaj
+- Używa Intersection Observer do precyzyjnego wykrycia momentu ukrycia
 
-### Zmiany
+### Jak to będzie wyglądać
 
-#### 1. Nowy hook do pobierania newsów z dzisiaj
-Dodamy hook `useTodaysPosts` w `src/hooks/usePosts.tsx`:
-- Filtruje posty po `published_at` z zakresu dzisiejszego dnia (od 00:00 do 23:59)
-- Zwraca liczbę postów z dzisiaj
-
-#### 2. Modyfikacja komponentu ScrollProgress
-Plik: `src/components/ScrollProgress.tsx`
-
-Zmiany w props:
-```typescript
-interface ScrollProgressProps {
-  todaysCount: number;  // liczba newsów z dzisiaj
-  className?: string;
-}
+```text
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│   📰  5 newsów z dzisiaj        ▼ Scrolluj         │
+│                                                     │
+└─────────────────────────────────────────────────────┘
 ```
 
-Zmiany w treści komunikatu:
-```typescript
-// Było:
-"{remainingCount} newsów więcej"
+**Zmiany względem obecnego wskaźnika:**
+- Usunięty pasek postępu (Progress bar)
+- Usunięte dynamiczne odliczanie "X więcej"
+- Statyczny komunikat "X newsów z dzisiaj"
+- Wskaźnik znika precyzyjnie gdy ostatni dzisiejszy news zniknie z ekranu
 
-// Będzie:
-"{remainingCount} newsów więcej z dzisiaj"
-```
+### Zasada działania
 
-#### 3. Aktualizacja strony głównej Index.tsx
-- Użycie nowego hooka `useTodaysPosts` 
-- Przekazanie liczby dzisiejszych newsów do `ScrollProgress`
+1. Na stronie Index.tsx identyfikujemy ostatnią kartę newsa z dzisiaj
+2. Dodajemy do niej `ref` (marker)
+3. ScrollProgress używa Intersection Observer na tym markerze
+4. Gdy marker zniknie z viewport (użytkownik przewinął dalej) - wskaźnik się chowa
+
+### Pliki do modyfikacji
+
+#### 1. `src/components/ScrollProgress.tsx`
+- Nowy interface props z `lastTodayRef`
+- Usunięcie logiki estymacji scroll progress
+- Intersection Observer do obserwacji ostatniego elementu
+- Uproszczony UI bez paska postępu
+
+#### 2. `src/pages/Index.tsx`  
+- Identyfikacja ostatniego newsa z dzisiaj w liście `posts`
+- Utworzenie `ref` dla tego elementu
+- Przekazanie ref do ScrollProgress
+
+#### 3. `src/components/NewsCard.tsx`
+- Dodanie opcjonalnego `ref` (forwardRef) do komponenetu
+
+---
 
 ### Szczegóły techniczne
 
-**Hook useTodaysPosts:**
+**Modyfikacja NewsCard z forwardRef:**
 ```typescript
-export const useTodaysPosts = () => {
-  return useQuery({
-    queryKey: ["posts", "today"],
-    queryFn: async () => {
-      const today = new Date();
-      const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-      const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
-      
-      const { data, error } = await supabase
-        .from("posts")
-        .select("*")
-        .gte("published_at", startOfDay)
-        .lte("published_at", endOfDay)
-        .order("published_at", { ascending: false });
-
-      if (error) throw error;
-      return data as Post[];
-    },
-  });
-};
+export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
+  ({ title, excerpt, ... }, ref) => {
+    return (
+      <article ref={ref} ...>
+        ...
+      </article>
+    );
+  }
+);
 ```
 
-**Zmiana komunikatu w ScrollProgress:**
-- Z: `{remainingCount} {remainingCount === 1 ? "news" : "newsów"} więcej`
-- Na: `{remainingCount} {remainingCount === 1 ? "news" : "newsów"} więcej z dzisiaj`
+**Nowa logika ScrollProgress:**
+```typescript
+interface ScrollProgressProps {
+  todaysCount: number;
+  lastTodayRef: React.RefObject<HTMLElement>;
+  className?: string;
+}
 
-### Pliki do modyfikacji
-1. `src/hooks/usePosts.tsx` - dodanie hooka `useTodaysPosts`
-2. `src/components/ScrollProgress.tsx` - zmiana props i komunikatu
-3. `src/pages/Index.tsx` - użycie nowego hooka
+// Intersection Observer
+useEffect(() => {
+  if (!lastTodayRef.current) return;
+  
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      // Ukryj gdy ostatni element z dzisiaj zniknie z viewport
+      setIsVisible(entry.isIntersecting || entry.boundingClientRect.top > 0);
+    },
+    { threshold: 0 }
+  );
+  
+  observer.observe(lastTodayRef.current);
+  return () => observer.disconnect();
+}, [lastTodayRef]);
+```
+
+**Identyfikacja ostatniego dzisiejszego newsa w Index.tsx:**
+```typescript
+const lastTodayRef = useRef<HTMLElement>(null);
+
+// Sprawdź czy post jest z dzisiaj
+const isToday = (dateString: string) => {
+  const postDate = new Date(dateString);
+  const today = new Date();
+  return postDate.toDateString() === today.toDateString();
+};
+
+// Znajdź indeks ostatniego posta z dzisiaj
+const lastTodayIndex = posts.reduce((lastIdx, post, idx) => 
+  isToday(post.published_at) ? idx : lastIdx, -1);
+
+// W JSX:
+<NewsCard
+  ref={index === lastTodayIndex ? lastTodayRef : undefined}
+  ...
+/>
+```
 
 ### Efekt końcowy
-Użytkownik zobaczy: "3 newsy więcej z dzisiaj" - informując go dokładnie ile świeżych wiadomości z bieżącego dnia pozostało do przejrzenia.
+Użytkownik zobaczy elegancki wskaźnik "5 newsów z dzisiaj" który:
+- Nie myli się w liczeniu (stała wartość)
+- Znika precyzyjnie gdy przejdzie poniżej sekcji dzisiejszych newsów
+- Jest czytelny i nieinwazyjny
