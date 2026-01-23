@@ -201,6 +201,15 @@ const BannerEditor = () => {
   };
 
   const watchedValues = form.watch();
+  
+  // Debug: log watched values to diagnose preview issue
+  console.log("BannerEditor watchedValues:", {
+    click_tag: watchedValues.click_tag,
+    image_desktop_url: watchedValues.image_desktop_url,
+    image_mobile_url: watchedValues.image_mobile_url,
+    hasDesktop: !!watchedValues.image_desktop_url,
+    hasMobile: !!watchedValues.image_mobile_url,
+  });
 
   if (isEditing && isLoading) {
     return (
