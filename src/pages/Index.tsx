@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Header } from "@/components/Header";
 import { NewsCard } from "@/components/NewsCard";
 import { NewsOfTheDay } from "@/components/NewsOfTheDay";
@@ -10,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
+  const lastTodayRef = useRef<HTMLElement>(null);
   const isMobile = useIsMobile();
   const device = isMobile ? "mobile" : "desktop";
   
@@ -19,6 +21,19 @@ const Index = () => {
   const { data: topBanner } = useActiveBannerForDevice("home_top", device);
   const { data: middleBanner } = useActiveBannerForDevice("home_middle", device);
   const { data: bottomBanner } = useActiveBannerForDevice("home_bottom", device);
+
+  // Check if post is from today
+  const isToday = (dateString: string) => {
+    const postDate = new Date(dateString);
+    const today = new Date();
+    return postDate.toDateString() === today.toDateString();
+  };
+
+  // Find index of last today's post
+  const lastTodayIndex = posts.reduce(
+    (lastIdx, post, idx) => (isToday(post.published_at) ? idx : lastIdx),
+    -1
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,6 +127,7 @@ const Index = () => {
             {posts.map((post, index) => (
               <NewsCard
                 key={post.id}
+                ref={index === lastTodayIndex ? lastTodayRef : undefined}
                 title={post.title}
                 excerpt={post.excerpt}
                 category={post.category}
@@ -142,7 +158,7 @@ const Index = () => {
       </main>
 
       {/* Scroll Progress Indicator */}
-      <ScrollProgress todaysCount={todaysPosts.length} />
+      <ScrollProgress todaysCount={todaysPosts.length} lastTodayRef={lastTodayRef} />
 
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground">
