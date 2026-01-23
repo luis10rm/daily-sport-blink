@@ -1,43 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, RefObject } from "react";
 import { ChevronDown, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Progress } from "@/components/ui/progress";
 
 interface ScrollProgressProps {
   todaysCount: number;
+  lastTodayRef: RefObject<HTMLElement>;
   className?: string;
 }
 
-export const ScrollProgress = ({ todaysCount, className }: ScrollProgressProps) => {
-  const [scrollProgress, setScrollProgress] = useState(0);
+export const ScrollProgress = ({ todaysCount, lastTodayRef, className }: ScrollProgressProps) => {
   const [isVisible, setIsVisible] = useState(true);
-  const [readCount, setReadCount] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      
-      setScrollProgress(Math.min(progress, 100));
-      
-      // Estimate read items based on scroll position
-      const estimatedRead = Math.floor((progress / 100) * todaysCount);
-      setReadCount(Math.min(estimatedRead, todaysCount));
-      
-      // Hide when near bottom (95%+)
-      setIsVisible(progress < 95);
-    };
+    if (!lastTodayRef.current) {
+      setIsVisible(false);
+      return;
+    }
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Show indicator when last today's element is still visible or above viewport
+        // Hide when it has scrolled past (below viewport top)
+        setIsVisible(entry.isIntersecting || entry.boundingClientRect.top > 0);
+      },
+      { threshold: 0 }
+    );
 
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [todaysCount]);
+    observer.observe(lastTodayRef.current);
+    return () => observer.disconnect();
+  }, [lastTodayRef]);
 
-  const remainingCount = todaysCount - readCount;
+  if (!isVisible || todaysCount <= 0) return null;
 
-  if (!isVisible || remainingCount <= 0) return null;
+  // Polish plural forms
+  const getNewsLabel = (count: number) => {
+    if (count === 1) return "news";
+    if (count >= 2 && count <= 4) return "newsy";
+    return "newsów";
+  };
 
   return (
     <div
@@ -50,17 +50,12 @@ export const ScrollProgress = ({ todaysCount, className }: ScrollProgressProps) 
         className
       )}
     >
-      {/* Progress indicator */}
+      {/* Static count indicator */}
       <div className="flex items-center gap-2">
         <Newspaper className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium text-foreground">
-          {remainingCount} {remainingCount === 1 ? "news" : "newsów"} więcej z dzisiaj
+          {todaysCount} {getNewsLabel(todaysCount)} z dzisiaj
         </span>
-      </div>
-
-      {/* Mini progress bar */}
-      <div className="w-20">
-        <Progress value={scrollProgress} className="h-1.5" />
       </div>
 
       {/* Scroll hint with animation */}
