@@ -27,6 +27,10 @@ export const SponsorBanner = ({
   previewMode,
 }: SponsorBannerProps) => {
   const impressionFiredRef = useRef(false);
+  
+  // Ensure ctaUrl is treated as plain string, not template literal
+  // This prevents React from misinterpreting DoubleClick macros like ${GDPR}
+  const safeCtaUrl = ctaUrl ? String(ctaUrl) : "#";
 
   // Fire impression tag pixel on first render
   useEffect(() => {
@@ -66,7 +70,7 @@ export const SponsorBanner = ({
 
           {/* Banner image slot - fixed dimensions */}
           <a
-            href={ctaUrl}
+            href={safeCtaUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="block group"
@@ -147,12 +151,12 @@ export const SponsorBanner = ({
           {/* CTA section - below the banner */}
           {ctaText && (
             <div className="bg-muted/50 px-4 py-3 border-t border-border">
-              <a
-                href={ctaUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
-              >
+            <a
+              href={safeCtaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
+            >
                 {ctaText}
                 <ExternalLink className="h-4 w-4" />
               </a>
@@ -176,7 +180,7 @@ export const SponsorBanner = ({
 
         {/* Desktop slot: 970x250 */}
         <a
-          href={ctaUrl}
+          href={safeCtaUrl}
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
@@ -204,7 +208,7 @@ export const SponsorBanner = ({
 
         {/* Mobile slot: 300x250 */}
         <a
-          href={ctaUrl}
+          href={safeCtaUrl}
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
@@ -233,12 +237,12 @@ export const SponsorBanner = ({
         {/* CTA section - below the banner */}
         {ctaText && (
           <div className="bg-muted/50 px-4 py-3 border-t border-border">
-            <a
-              href={ctaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
-            >
+          <a
+            href={safeCtaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
+          >
               {ctaText}
               <ExternalLink className="h-4 w-4" />
             </a>
