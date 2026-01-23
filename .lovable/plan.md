@@ -1,63 +1,74 @@
 
+## Zmiana logiki wskaźnika ScrollProgress
 
-## Naprawa problemu z Click Tagami DoubleClick
+### Cel
+Wskaźnik ma pokazywać ile pozostało newsów **z bieżącego dnia** do przeczytania, zamiast wszystkich newsów na stronie.
 
-### Problem
-URL-e DoubleClick zawierające makra GDPR (np. `${GDPR}`, `${GDPR_CONSENT_755}`) powodują, że:
-- Podgląd banera w panelu admina przestaje działać
-- Baner nie wyświetla się na stronie głównej
+### Zmiany
 
-### Przyczyna
-1. Walidacja Zod (`z.string().url()`) może odrzucać URL z makrami jako niepoprawny
-2. Znaki `${...}` mogą powodować problemy z parsowaniem w React/JSX
+#### 1. Nowy hook do pobierania newsów z dzisiaj
+Dodamy hook `useTodaysPosts` w `src/hooks/usePosts.tsx`:
+- Filtruje posty po `published_at` z zakresu dzisiejszego dnia (od 00:00 do 23:59)
+- Zwraca liczbę postów z dzisiaj
 
-### Rozwiązanie
+#### 2. Modyfikacja komponentu ScrollProgress
+Plik: `src/components/ScrollProgress.tsx`
 
-#### 1. Zmiana walidacji Click Tag w formularzu
-Zamiast `.url()` użyjemy bardziej elastycznej walidacji:
-- Sprawdzamy czy zaczyna się od `http://` lub `https://`
-- Akceptujemy makra reklamowe jak `${GDPR}`
-
-**Plik:** `src/pages/admin/BannerEditor.tsx`
+Zmiany w props:
 ```typescript
-// Zamiast:
-click_tag: z.string().url("Podaj poprawny URL"),
-
-// Użyjemy:
-click_tag: z.string()
-  .min(1, "URL przekierowania jest wymagany")
-  .refine(
-    (val) => val.startsWith("http://") || val.startsWith("https://"),
-    "URL musi zaczynać się od http:// lub https://"
-  ),
+interface ScrollProgressProps {
+  todaysCount: number;  // liczba newsów z dzisiaj
+  className?: string;
+}
 ```
 
-#### 2. Analogiczna zmiana dla Impression Tag
+Zmiany w treści komunikatu:
 ```typescript
-// Zamiast:
-impression_tag: z.string().url("Podaj poprawny URL").optional().or(z.literal("")),
+// Było:
+"{remainingCount} newsów więcej"
 
-// Użyjemy:
-impression_tag: z.string()
-  .refine(
-    (val) => !val || val.startsWith("http://") || val.startsWith("https://"),
-    "URL musi zaczynać się od http:// lub https://"
-  )
-  .optional()
-  .or(z.literal("")),
+// Będzie:
+"{remainingCount} newsów więcej z dzisiaj"
 ```
+
+#### 3. Aktualizacja strony głównej Index.tsx
+- Użycie nowego hooka `useTodaysPosts` 
+- Przekazanie liczby dzisiejszych newsów do `ScrollProgress`
+
+### Szczegóły techniczne
+
+**Hook useTodaysPosts:**
+```typescript
+export const useTodaysPosts = () => {
+  return useQuery({
+    queryKey: ["posts", "today"],
+    queryFn: async () => {
+      const today = new Date();
+      const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
+      const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+      
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .gte("published_at", startOfDay)
+        .lte("published_at", endOfDay)
+        .order("published_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Post[];
+    },
+  });
+};
+```
+
+**Zmiana komunikatu w ScrollProgress:**
+- Z: `{remainingCount} {remainingCount === 1 ? "news" : "newsów"} więcej`
+- Na: `{remainingCount} {remainingCount === 1 ? "news" : "newsów"} więcej z dzisiaj`
 
 ### Pliki do modyfikacji
-- `src/pages/admin/BannerEditor.tsx` - schemat walidacji (linie 75-76)
+1. `src/hooks/usePosts.tsx` - dodanie hooka `useTodaysPosts`
+2. `src/components/ScrollProgress.tsx` - zmiana props i komunikatu
+3. `src/pages/Index.tsx` - użycie nowego hooka
 
-### Dlaczego to zadziała
-- Makra DoubleClick (`${GDPR}`) są poprawną częścią URL w kontekście reklam
-- Przeglądarka prawidłowo obsługuje takie URL-e w atrybucie `href`
-- Walidacja nadal sprawdza czy to jest URL (zaczyna się od http/https)
-
-### Weryfikacja po wdrożeniu
-1. Wklej pełny Click Tag DoubleClick w edytorze banera
-2. Formularz powinien się zapisać bez błędów
-3. Baner powinien wyświetlić się na stronie głównej
-4. Kliknięcie w baner powinno przekierować do URL DoubleClick
-
+### Efekt końcowy
+Użytkownik zobaczy: "3 newsy więcej z dzisiaj" - informując go dokładnie ile świeżych wiadomości z bieżącego dnia pozostało do przejrzenia.
