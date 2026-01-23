@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 export type BannerPosition = "home_top" | "home_middle" | "home_bottom";
+export type BannerTargetDevice = "all" | "desktop" | "mobile";
 
 export interface Banner {
   id: string;
@@ -11,9 +12,10 @@ export interface Banner {
   cta_text: string;
   click_tag: string;
   impression_tag: string | null;
-  image_desktop_url: string;
-  image_mobile_url: string;
+  image_desktop_url: string | null;
+  image_mobile_url: string | null;
   position: BannerPosition;
+  target_device: BannerTargetDevice;
   is_active: boolean;
   start_date: string | null;
   end_date: string | null;
@@ -60,34 +62,71 @@ export const useBanner = (id: string | undefined) => {
   });
 };
 
-// Fetch active banner for a specific position (for frontend)
+// Fetch active banner for a specific position (legacy - returns first active banner)
 export const useActiveBanner = (position: BannerPosition) => {
   return useQuery({
     queryKey: ["banners", "active", position],
     queryFn: async () => {
       const now = new Date().toISOString();
       
-      // Build query with proper date filtering
       let query = supabase
         .from("banners")
         .select("*")
         .eq("position", position)
         .eq("is_active", true);
       
-      // Filter by start_date: must be null or in the past
       query = query.or(`start_date.is.null,start_date.lte.${now}`);
       
-      // For end_date, we need a separate check after fetching
-      // because Supabase doesn't support AND between two OR conditions well
-      const { data, error } = await query
-        .limit(10); // Fetch more to filter manually
+      const { data, error } = await query.limit(10);
 
       if (error) throw error;
       
-      // Filter by end_date manually: must be null or in the future
       const validBanner = data?.find(banner => {
         if (!banner.end_date) return true;
         return new Date(banner.end_date) >= new Date(now);
+      });
+      
+      return (validBanner as Banner) || null;
+    },
+  });
+};
+
+// Fetch active banner for a specific position AND device (desktop/mobile)
+export const useActiveBannerForDevice = (position: BannerPosition, device: "desktop" | "mobile") => {
+  return useQuery({
+    queryKey: ["banners", "active", position, device],
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      
+      // Fetch banners for this position that target this device or all devices
+      let query = supabase
+        .from("banners")
+        .select("*")
+        .eq("position", position)
+        .eq("is_active", true)
+        .or(`target_device.eq.all,target_device.eq.${device}`);
+      
+      query = query.or(`start_date.is.null,start_date.lte.${now}`);
+      
+      const { data, error } = await query
+        .order("updated_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      
+      // Filter by end_date and find banner with valid image for this device
+      const validBanner = data?.find(banner => {
+        // Check date validity
+        if (banner.end_date && new Date(banner.end_date) < new Date(now)) {
+          return false;
+        }
+        
+        // Check if banner has the right image for this device
+        if (device === "desktop") {
+          return banner.image_desktop_url && banner.image_desktop_url !== "";
+        } else {
+          return banner.image_mobile_url && banner.image_mobile_url !== "";
+        }
       });
       
       return (validBanner as Banner) || null;
@@ -113,6 +152,7 @@ export const useCreateBanner = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["banners"] });
+      queryClient.invalidateQueries({ queryKey: ["banners", "active"] });
       toast({
         title: "Baner utworzony",
         description: "Nowy baner został pomyślnie dodany.",
@@ -147,6 +187,7 @@ export const useUpdateBanner = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["banners"] });
+      queryClient.invalidateQueries({ queryKey: ["banners", "active"] });
       toast({
         title: "Baner zaktualizowany",
         description: "Zmiany zostały zapisane.",
@@ -174,6 +215,7 @@ export const useDeleteBanner = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["banners"] });
+      queryClient.invalidateQueries({ queryKey: ["banners", "active"] });
       toast({
         title: "Baner usunięty",
         description: "Baner został pomyślnie usunięty.",
@@ -208,6 +250,7 @@ export const useToggleBannerActive = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["banners"] });
+      queryClient.invalidateQueries({ queryKey: ["banners", "active"] });
       toast({
         title: data.is_active ? "Baner aktywowany" : "Baner dezaktywowany",
         description: data.is_active

@@ -5,15 +5,19 @@ import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
 import { usePostsFeed, useNewsOfTheDay } from "@/hooks/usePosts";
-import { useActiveBanner } from "@/hooks/useBanners";
+import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
+  const isMobile = useIsMobile();
+  const device = isMobile ? "mobile" : "desktop";
+  
   const { data: posts = [], isLoading: postsLoading } = usePostsFeed();
   const { data: newsOfTheDay, isLoading: newsLoading } = useNewsOfTheDay();
-  const { data: topBanner } = useActiveBanner("home_top");
-  const { data: middleBanner } = useActiveBanner("home_middle");
-  const { data: bottomBanner } = useActiveBanner("home_bottom");
+  const { data: topBanner } = useActiveBannerForDevice("home_top", device);
+  const { data: middleBanner } = useActiveBannerForDevice("home_middle", device);
+  const { data: bottomBanner } = useActiveBannerForDevice("home_bottom", device);
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,8 +36,8 @@ const Index = () => {
             description={topBanner.description}
             ctaText={topBanner.cta_text}
             ctaUrl={topBanner.click_tag}
-            imageDesktopUrl={topBanner.image_desktop_url}
-            imageMobileUrl={topBanner.image_mobile_url}
+            imageDesktopUrl={topBanner.image_desktop_url || undefined}
+            imageMobileUrl={topBanner.image_mobile_url || undefined}
             impressionTag={topBanner.impression_tag || undefined}
             className="mb-8"
           />
@@ -70,22 +74,22 @@ const Index = () => {
           />
         )}
 
-        {/* Sponsor Banner - from database or fallback */}
+        {/* Sponsor Banner - from database or placeholder */}
         {middleBanner ? (
           <SponsorBanner
             title={middleBanner.title}
             description={middleBanner.description}
             ctaText={middleBanner.cta_text}
             ctaUrl={middleBanner.click_tag}
-            imageDesktopUrl={middleBanner.image_desktop_url}
-            imageMobileUrl={middleBanner.image_mobile_url}
+            imageDesktopUrl={middleBanner.image_desktop_url || undefined}
+            imageMobileUrl={middleBanner.image_mobile_url || undefined}
             impressionTag={middleBanner.impression_tag || undefined}
             className="mb-10"
           />
         ) : (
           <SponsorBanner
-            title="Twoja reklama może być tutaj"
-            description="Dotrzyj do tysięcy fanów sportu każdego dnia. Skontaktuj się z nami!"
+            title="Partner Szortsy"
+            description="To miejsce może być Twoje"
             ctaText="Zostań partnerem"
             ctaUrl="mailto:reklama@szortsy.pl"
             className="mb-10"
@@ -128,8 +132,8 @@ const Index = () => {
             description={bottomBanner.description}
             ctaText={bottomBanner.cta_text}
             ctaUrl={bottomBanner.click_tag}
-            imageDesktopUrl={bottomBanner.image_desktop_url}
-            imageMobileUrl={bottomBanner.image_mobile_url}
+            imageDesktopUrl={bottomBanner.image_desktop_url || undefined}
+            imageMobileUrl={bottomBanner.image_mobile_url || undefined}
             impressionTag={bottomBanner.impression_tag || undefined}
             className="mt-10"
           />

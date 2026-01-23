@@ -52,6 +52,7 @@ import {
   useUpdateBanner,
   useUploadBannerImage,
   BannerPosition,
+  BannerTargetDevice,
 } from "@/hooks/useBanners";
 import { SponsorBanner } from "@/components/SponsorBanner";
 
@@ -61,18 +62,41 @@ const positions: { value: BannerPosition; label: string }[] = [
   { value: "home_bottom", label: "Dół strony głównej" },
 ];
 
+const targetDevices: { value: BannerTargetDevice; label: string; description: string }[] = [
+  { value: "all", label: "Wszystkie urządzenia", description: "Wymaga obu grafik (desktop + mobile)" },
+  { value: "desktop", label: "Tylko Desktop", description: "Wymaga tylko grafiki 970×250" },
+  { value: "mobile", label: "Tylko Mobile", description: "Wymaga tylko grafiki 300×250" },
+];
+
 const bannerSchema = z.object({
   title: z.string().min(1, "Nazwa jest wymagana"),
   description: z.string().optional(),
   cta_text: z.string().min(1, "Tekst CTA jest wymagany"),
   click_tag: z.string().url("Podaj poprawny URL"),
   impression_tag: z.string().url("Podaj poprawny URL").optional().or(z.literal("")),
-  image_desktop_url: z.string().min(1, "Grafika desktop jest wymagana"),
-  image_mobile_url: z.string().min(1, "Grafika mobile jest wymagana"),
+  image_desktop_url: z.string().optional().or(z.literal("")),
+  image_mobile_url: z.string().optional().or(z.literal("")),
   position: z.enum(["home_top", "home_middle", "home_bottom"]),
+  target_device: z.enum(["all", "desktop", "mobile"]),
   is_active: z.boolean(),
   start_date: z.date().optional().nullable(),
   end_date: z.date().optional().nullable(),
+}).refine((data) => {
+  // Validation based on target_device
+  if (data.target_device === "desktop") {
+    return data.image_desktop_url && data.image_desktop_url.length > 0;
+  }
+  if (data.target_device === "mobile") {
+    return data.image_mobile_url && data.image_mobile_url.length > 0;
+  }
+  // target_device === "all" - require both
+  return (
+    data.image_desktop_url && data.image_desktop_url.length > 0 &&
+    data.image_mobile_url && data.image_mobile_url.length > 0
+  );
+}, {
+  message: "Wymagane grafiki zależą od wybranego urządzenia docelowego",
+  path: ["image_desktop_url"],
 });
 
 type BannerFormData = z.infer<typeof bannerSchema>;
@@ -102,6 +126,7 @@ const BannerEditor = () => {
       image_desktop_url: "",
       image_mobile_url: "",
       position: "home_middle",
+      target_device: "all",
       is_active: false,
       start_date: null,
       end_date: null,
@@ -116,9 +141,10 @@ const BannerEditor = () => {
         cta_text: banner.cta_text,
         click_tag: banner.click_tag,
         impression_tag: banner.impression_tag || "",
-        image_desktop_url: banner.image_desktop_url,
-        image_mobile_url: banner.image_mobile_url,
+        image_desktop_url: banner.image_desktop_url || "",
+        image_mobile_url: banner.image_mobile_url || "",
         position: banner.position,
+        target_device: banner.target_device || "all",
         is_active: banner.is_active,
         start_date: banner.start_date ? new Date(banner.start_date) : null,
         end_date: banner.end_date ? new Date(banner.end_date) : null,
@@ -133,9 +159,10 @@ const BannerEditor = () => {
       cta_text: data.cta_text,
       click_tag: data.click_tag,
       impression_tag: data.impression_tag || null,
-      image_desktop_url: data.image_desktop_url,
-      image_mobile_url: data.image_mobile_url,
+      image_desktop_url: data.image_desktop_url || null,
+      image_mobile_url: data.image_mobile_url || null,
       position: data.position,
+      target_device: data.target_device,
       is_active: data.is_active,
       start_date: data.start_date?.toISOString() || null,
       end_date: data.end_date?.toISOString() || null,
@@ -480,6 +507,39 @@ const BannerEditor = () => {
                               ))}
                             </SelectContent>
                           </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="target_device"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Docelowe urządzenie</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Wybierz urządzenie" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {targetDevices.map((device) => (
+                                <SelectItem key={device.value} value={device.value}>
+                                  <div className="flex flex-col">
+                                    <span>{device.label}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            {targetDevices.find(d => d.value === field.value)?.description}
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
