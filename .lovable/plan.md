@@ -1,117 +1,47 @@
 
-## Uproszczony Floating Indicator (Wariant C)
+## Naprawa problemu z click_tag zawierającym makra DoubleClick
 
-### Cel
-Stworzyć precyzyjny wskaźnik, który:
-- Pokazuje stałą liczbę newsów z dzisiaj (bez dynamicznego odliczania)
-- Znika gdy użytkownik przewinie poniżej ostatniego newsa z dzisiaj
-- Używa Intersection Observer do precyzyjnego wykrycia momentu ukrycia
+### Problem
+URL w polu `click_tag` zawierający makra reklamowe `${GDPR}` powoduje zniknięcie banera z podglądu. React interpretuje znaki `${}` jako template literals w JSX, co powoduje błąd renderowania.
 
-### Jak to będzie wyglądać
+### Rozwiązanie
+Zastosować escape'owanie URL przed przekazaniem do atrybutu `href` w komponencie `SponsorBanner`. Makra DoubleClick muszą pozostać niezmienione (bez enkodowania), ale muszą być bezpiecznie traktowane jako plain string.
 
-```text
-┌─────────────────────────────────────────────────────┐
-│                                                     │
-│   📰  5 newsów z dzisiaj        ▼ Scrolluj         │
-│                                                     │
-└─────────────────────────────────────────────────────┘
-```
+### Zmiany w pliku
 
-**Zmiany względem obecnego wskaźnika:**
-- Usunięty pasek postępu (Progress bar)
-- Usunięte dynamiczne odliczanie "X więcej"
-- Statyczny komunikat "X newsów z dzisiaj"
-- Wskaźnik znika precyzyjnie gdy ostatni dzisiejszy news zniknie z ekranu
+**`src/components/SponsorBanner.tsx`**
 
-### Zasada działania
+1. Dodać sanityzację URL na początku komponentu:
+   ```typescript
+   // Ensure ctaUrl is treated as plain string, not template literal
+   const safeCtaUrl = ctaUrl ? String(ctaUrl) : "#";
+   ```
 
-1. Na stronie Index.tsx identyfikujemy ostatnią kartę newsa z dzisiaj
-2. Dodajemy do niej `ref` (marker)
-3. ScrollProgress używa Intersection Observer na tym markerze
-4. Gdy marker zniknie z viewport (użytkownik przewinął dalej) - wskaźnik się chowa
+2. Użyć `safeCtaUrl` zamiast `ctaUrl` we wszystkich miejscach w komponencie (linie 68, 150, 178, 206, 236)
 
-### Pliki do modyfikacji
+### Alternatywnie - głębsza przyczyna
 
-#### 1. `src/components/ScrollProgress.tsx`
-- Nowy interface props z `lastTodayRef`
-- Usunięcie logiki estymacji scroll progress
-- Intersection Observer do obserwacji ostatniego elementu
-- Uproszczony UI bez paska postępu
+Jeśli problem leży w `react-hook-form` i `form.watch()`:
 
-#### 2. `src/pages/Index.tsx`  
-- Identyfikacja ostatniego newsa z dzisiaj w liście `posts`
-- Utworzenie `ref` dla tego elementu
-- Przekazanie ref do ScrollProgress
+**`src/pages/admin/BannerEditor.tsx`**
 
-#### 3. `src/components/NewsCard.tsx`
-- Dodanie opcjonalnego `ref` (forwardRef) do komponenetu
+1. Dodać bezpieczne pobieranie wartości:
+   ```typescript
+   const watchedValues = form.watch();
+   
+   // Ensure URLs are safe strings
+   const safeClickTag = watchedValues.click_tag 
+     ? String(watchedValues.click_tag) 
+     : "#";
+   ```
 
----
-
-### Szczegóły techniczne
-
-**Modyfikacja NewsCard z forwardRef:**
-```typescript
-export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
-  ({ title, excerpt, ... }, ref) => {
-    return (
-      <article ref={ref} ...>
-        ...
-      </article>
-    );
-  }
-);
-```
-
-**Nowa logika ScrollProgress:**
-```typescript
-interface ScrollProgressProps {
-  todaysCount: number;
-  lastTodayRef: React.RefObject<HTMLElement>;
-  className?: string;
-}
-
-// Intersection Observer
-useEffect(() => {
-  if (!lastTodayRef.current) return;
-  
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      // Ukryj gdy ostatni element z dzisiaj zniknie z viewport
-      setIsVisible(entry.isIntersecting || entry.boundingClientRect.top > 0);
-    },
-    { threshold: 0 }
-  );
-  
-  observer.observe(lastTodayRef.current);
-  return () => observer.disconnect();
-}, [lastTodayRef]);
-```
-
-**Identyfikacja ostatniego dzisiejszego newsa w Index.tsx:**
-```typescript
-const lastTodayRef = useRef<HTMLElement>(null);
-
-// Sprawdź czy post jest z dzisiaj
-const isToday = (dateString: string) => {
-  const postDate = new Date(dateString);
-  const today = new Date();
-  return postDate.toDateString() === today.toDateString();
-};
-
-// Znajdź indeks ostatniego posta z dzisiaj
-const lastTodayIndex = posts.reduce((lastIdx, post, idx) => 
-  isToday(post.published_at) ? idx : lastIdx, -1);
-
-// W JSX:
-<NewsCard
-  ref={index === lastTodayIndex ? lastTodayRef : undefined}
-  ...
-/>
-```
+2. Przekazać do SponsorBanner:
+   ```tsx
+   <SponsorBanner
+     ctaUrl={safeClickTag}
+     ...
+   />
+   ```
 
 ### Efekt końcowy
-Użytkownik zobaczy elegancki wskaźnik "5 newsów z dzisiaj" który:
-- Nie myli się w liczeniu (stała wartość)
-- Znika precyzyjnie gdy przejdzie poniżej sekcji dzisiejszych newsów
-- Jest czytelny i nieinwazyjny
+Banery z makrami DoubleClick (np. `${GDPR}`, `${GDPR_CONSENT_755}`) będą poprawnie wyświetlane zarówno w podglądzie edytora jak i na stronie głównej.
