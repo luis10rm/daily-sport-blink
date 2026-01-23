@@ -141,43 +141,87 @@ export const SponsorBanner = ({
     );
   }
 
-  // Legacy text-based banner (fallback for old usage)
+  // Fallback text-based banner - również ze stałymi wymiarami IAB
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-primary/10",
-        className
-      )}
-    >
-      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
-      <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
-
-      <div className="relative flex flex-col items-center gap-6 p-8 text-center md:flex-row md:text-left">
-        <div className="flex-1">
-          <p className="mb-1 text-xs font-medium uppercase tracking-wider text-primary">
+    <div className={cn("flex justify-center", className)}>
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        {/* Header - Partner label */}
+        <div className="bg-muted/50 px-4 py-2 border-b border-border">
+          <span className="text-xs font-medium text-muted-foreground">
             Partner Szortsy
-          </p>
-          {title && (
-            <h3 className="font-heading text-xl font-bold text-foreground md:text-2xl">
-              {title}
-            </h3>
-          )}
-          {description && (
-            <p className="mt-2 text-sm text-muted-foreground md:text-base">
-              {description}
-            </p>
-          )}
+          </span>
         </div>
 
+        {/* Desktop slot: 970x250 */}
         <a
           href={ctaUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all hover:bg-primary/90 hover:shadow-xl hover:-translate-y-0.5"
+          className={cn(
+            "relative overflow-hidden bg-gradient-to-br from-primary/5 via-card to-primary/10 items-center justify-center group",
+            previewMode === "mobile" ? "hidden" : "hidden md:flex",
+            previewMode === "desktop" && "!flex"
+          )}
+          style={{ width: "970px", height: "250px" }}
         >
-          {ctaText}
-          <ExternalLink className="h-4 w-4" />
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
+          <div className="relative text-center p-8">
+            {title && (
+              <h3 className="font-heading text-2xl font-bold text-foreground mb-2">
+                {title}
+              </h3>
+            )}
+            {description && (
+              <p className="text-muted-foreground text-base">
+                {description}
+              </p>
+            )}
+          </div>
         </a>
+
+        {/* Mobile slot: 300x250 */}
+        <a
+          href={ctaUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "relative overflow-hidden bg-gradient-to-br from-primary/5 via-card to-primary/10 items-center justify-center mx-auto group",
+            previewMode === "desktop" ? "hidden" : "flex md:hidden",
+            previewMode === "mobile" && "!flex"
+          )}
+          style={{ width: "300px", height: "250px" }}
+        >
+          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/5 blur-2xl" />
+          <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-primary/5 blur-2xl" />
+          <div className="relative text-center p-6">
+            {title && (
+              <h3 className="font-heading text-lg font-bold text-foreground mb-2">
+                {title}
+              </h3>
+            )}
+            {description && (
+              <p className="text-muted-foreground text-sm">
+                {description}
+              </p>
+            )}
+          </div>
+        </a>
+
+        {/* CTA section - below the banner */}
+        {ctaText && (
+          <div className="bg-muted/50 px-4 py-3 border-t border-border">
+            <a
+              href={ctaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
+            >
+              {ctaText}
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
