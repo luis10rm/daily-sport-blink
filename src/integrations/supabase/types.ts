@@ -74,6 +74,7 @@ export type Database = {
       posts: {
         Row: {
           category: Database["public"]["Enums"]["sport_category"]
+          category_id: string | null
           content: string | null
           created_at: string
           created_by: string | null
@@ -90,6 +91,7 @@ export type Database = {
         }
         Insert: {
           category?: Database["public"]["Enums"]["sport_category"]
+          category_id?: string | null
           content?: string | null
           created_at?: string
           created_by?: string | null
@@ -106,6 +108,7 @@ export type Database = {
         }
         Update: {
           category?: Database["public"]["Enums"]["sport_category"]
+          category_id?: string | null
           content?: string | null
           created_at?: string
           created_by?: string | null
@@ -120,7 +123,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "posts_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "sport_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -164,6 +175,45 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
           value?: string
+        }
+        Relationships: []
+      }
+      sport_categories: {
+        Row: {
+          bg_color: string
+          created_at: string
+          icon_name: string | null
+          icon_url: string | null
+          id: string
+          is_default: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bg_color?: string
+          created_at?: string
+          icon_name?: string | null
+          icon_url?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bg_color?: string
+          created_at?: string
+          icon_name?: string | null
+          icon_url?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
