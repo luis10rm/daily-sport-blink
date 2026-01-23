@@ -99,24 +99,26 @@ export const useActiveBannerForDevice = (position: BannerPosition, device: "desk
       const now = new Date().toISOString();
       
       // Fetch banners for this position that target this device or all devices
-      let query = supabase
+      // Note: We only use one .or() to avoid PostgREST query conflicts
+      const { data, error } = await supabase
         .from("banners")
         .select("*")
         .eq("position", position)
         .eq("is_active", true)
-        .or(`target_device.eq.all,target_device.eq.${device}`);
-      
-      query = query.or(`start_date.is.null,start_date.lte.${now}`);
-      
-      const { data, error } = await query
+        .or(`target_device.eq.all,target_device.eq.${device}`)
         .order("updated_at", { ascending: false })
         .limit(10);
 
       if (error) throw error;
       
-      // Filter by end_date and find banner with valid image for this device
+      // Filter by dates and find banner with valid image for this device
       const validBanner = data?.find(banner => {
-        // Check date validity
+        // Check start_date validity
+        if (banner.start_date && new Date(banner.start_date) > new Date(now)) {
+          return false;
+        }
+        
+        // Check end_date validity
         if (banner.end_date && new Date(banner.end_date) < new Date(now)) {
           return false;
         }
