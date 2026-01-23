@@ -322,7 +322,7 @@ const BannerEditor = () => {
                             </div>
                           </FormControl>
                           <FormDescription>
-                            Zalecany rozmiar: 1200x300px
+                            <strong>Wymagany rozmiar: 970×250px</strong> (standard IAB Billboard)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -390,7 +390,7 @@ const BannerEditor = () => {
                             </div>
                           </FormControl>
                           <FormDescription>
-                            Zalecany rozmiar: 600x400px
+                            <strong>Wymagany rozmiar: 300×250px</strong> (standard IAB Medium Rectangle)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

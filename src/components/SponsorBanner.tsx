@@ -80,20 +80,31 @@ export const SponsorBanner = ({
               )}
               style={{ width: "970px", height: "250px" }}
             >
-              {imageDesktopUrl && (
+              {imageDesktopUrl ? (
                 <img
                   src={imageDesktopUrl}
                   alt={title || "Reklama"}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              )}
-              {!imageDesktopUrl && imageMobileUrl && (
+              ) : imageMobileUrl ? (
                 <img
                   src={imageMobileUrl}
                   alt={title || "Reklama"}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              )}
+              ) : null}
+              {/* Fallback when image fails to load */}
+              <div className="hidden absolute inset-0 flex items-center justify-center bg-muted/50 text-muted-foreground text-sm">
+                Nie udało się wczytać grafiki
+              </div>
             </div>
 
             {/* Mobile slot: 300x250 */}
@@ -105,20 +116,31 @@ export const SponsorBanner = ({
               )}
               style={{ width: "300px", height: "250px" }}
             >
-              {imageMobileUrl && (
+              {imageMobileUrl ? (
                 <img
                   src={imageMobileUrl}
                   alt={title || "Reklama"}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              )}
-              {!imageMobileUrl && imageDesktopUrl && (
+              ) : imageDesktopUrl ? (
                 <img
                   src={imageDesktopUrl}
                   alt={title || "Reklama"}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                  }}
                 />
-              )}
+              ) : null}
+              {/* Fallback when image fails to load */}
+              <div className="hidden absolute inset-0 flex items-center justify-center bg-muted/50 text-muted-foreground text-sm">
+                Nie udało się wczytać grafiki
+              </div>
             </div>
           </a>
 

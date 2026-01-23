@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ActiveSlotsOverview } from "@/components/admin/ActiveSlotsOverview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -91,6 +92,9 @@ const BannersList = () => {
             Nowy baner
           </Button>
         </div>
+
+        {/* Active Slots Overview */}
+        <ActiveSlotsOverview />
 
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-sm">
