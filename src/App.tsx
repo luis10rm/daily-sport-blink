@@ -13,6 +13,8 @@ import PostsList from "./pages/admin/PostsList";
 import PostEditor from "./pages/admin/PostEditor";
 import BannersList from "./pages/admin/BannersList";
 import BannerEditor from "./pages/admin/BannerEditor";
+import CategoriesList from "./pages/admin/CategoriesList";
+import CategoryEditor from "./pages/admin/CategoryEditor";
 import UsersList from "./pages/admin/UsersList";
 import Settings from "./pages/admin/Settings";
 import NotFound from "./pages/NotFound";
@@ -83,6 +85,30 @@ function App() {
               element={
                 <ProtectedRoute>
                   <BannerEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/categories"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <CategoriesList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/categories/new"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <CategoryEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/categories/:id/edit"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <CategoryEditor />
                 </ProtectedRoute>
               }
             />
