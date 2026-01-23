@@ -39,10 +39,10 @@ export const SponsorBanner = ({
 
   const hasImages = imageDesktopUrl || imageMobileUrl;
 
-  // Image-based banner (new style with separate desktop/mobile images)
+  // Image-based banner with fixed IAB dimensions
   if (hasImages) {
     return (
-      <div className={cn("relative overflow-hidden rounded-2xl", className)}>
+      <div className={cn("flex justify-center", className)}>
         {/* Impression pixel */}
         {impressionTag && !previewMode && (
           <img
@@ -55,76 +55,87 @@ export const SponsorBanner = ({
           />
         )}
 
-        <a
-          href={ctaUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block group"
-        >
-          {/* Desktop image */}
-          {imageDesktopUrl && (
-            <img
-              src={imageDesktopUrl}
-              alt={title || "Reklama"}
+        {/* Framed banner container */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          {/* Header - Partner label */}
+          <div className="bg-muted/50 px-4 py-2 border-b border-border">
+            <span className="text-xs font-medium text-muted-foreground">
+              Partner Szortsy
+            </span>
+          </div>
+
+          {/* Banner image slot - fixed dimensions */}
+          <a
+            href={ctaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block group"
+          >
+            {/* Desktop slot: 970x250 */}
+            <div
               className={cn(
-                "w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]",
+                "relative overflow-hidden bg-muted/30",
                 previewMode === "mobile" ? "hidden" : "hidden md:block",
                 previewMode === "desktop" && "!block"
               )}
-            />
-          )}
+              style={{ width: "970px", height: "250px" }}
+            >
+              {imageDesktopUrl && (
+                <img
+                  src={imageDesktopUrl}
+                  alt={title || "Reklama"}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                />
+              )}
+              {!imageDesktopUrl && imageMobileUrl && (
+                <img
+                  src={imageMobileUrl}
+                  alt={title || "Reklama"}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                />
+              )}
+            </div>
 
-          {/* Mobile image */}
-          {imageMobileUrl && (
-            <img
-              src={imageMobileUrl}
-              alt={title || "Reklama"}
+            {/* Mobile slot: 300x250 */}
+            <div
               className={cn(
-                "w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02]",
+                "relative overflow-hidden bg-muted/30 mx-auto",
                 previewMode === "desktop" ? "hidden" : "block md:hidden",
                 previewMode === "mobile" && "!block"
               )}
-            />
-          )}
-
-          {/* Fallback if only one image provided */}
-          {imageDesktopUrl && !imageMobileUrl && (
-            <img
-              src={imageDesktopUrl}
-              alt={title || "Reklama"}
-              className={cn(
-                "w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02] md:hidden",
-                previewMode && "hidden"
+              style={{ width: "300px", height: "250px" }}
+            >
+              {imageMobileUrl && (
+                <img
+                  src={imageMobileUrl}
+                  alt={title || "Reklama"}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                />
               )}
-            />
-          )}
-          {imageMobileUrl && !imageDesktopUrl && (
-            <img
-              src={imageMobileUrl}
-              alt={title || "Reklama"}
-              className={cn(
-                "w-full h-auto object-cover transition-transform duration-300 group-hover:scale-[1.02] hidden md:block",
-                previewMode && "hidden"
+              {!imageMobileUrl && imageDesktopUrl && (
+                <img
+                  src={imageDesktopUrl}
+                  alt={title || "Reklama"}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                />
               )}
-            />
-          )}
+            </div>
+          </a>
 
-          {/* Optional overlay with CTA for image banners */}
+          {/* CTA section - below the banner */}
           {ctaText && (
-            <div className="absolute inset-0 flex items-end justify-end p-4 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg">
+            <div className="bg-muted/50 px-4 py-3 border-t border-border">
+              <a
+                href={ctaUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
+              >
                 {ctaText}
                 <ExternalLink className="h-4 w-4" />
-              </span>
+              </a>
             </div>
           )}
-        </a>
-
-        {/* Partner label */}
-        <div className="absolute top-3 left-3">
-          <span className="rounded-md bg-background/80 backdrop-blur-sm px-2 py-1 text-xs font-medium text-muted-foreground">
-            Partner Szortsy
-          </span>
         </div>
       </div>
     );
