@@ -23,12 +23,13 @@ export type Database = {
           description: string | null
           end_date: string | null
           id: string
-          image_desktop_url: string
-          image_mobile_url: string
+          image_desktop_url: string | null
+          image_mobile_url: string | null
           impression_tag: string | null
           is_active: boolean
           position: Database["public"]["Enums"]["banner_position"]
           start_date: string | null
+          target_device: string
           title: string
           updated_at: string
         }
@@ -40,12 +41,13 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
-          image_desktop_url: string
-          image_mobile_url: string
+          image_desktop_url?: string | null
+          image_mobile_url?: string | null
           impression_tag?: string | null
           is_active?: boolean
           position?: Database["public"]["Enums"]["banner_position"]
           start_date?: string | null
+          target_device?: string
           title: string
           updated_at?: string
         }
@@ -57,12 +59,13 @@ export type Database = {
           description?: string | null
           end_date?: string | null
           id?: string
-          image_desktop_url?: string
-          image_mobile_url?: string
+          image_desktop_url?: string | null
+          image_mobile_url?: string | null
           impression_tag?: string | null
           is_active?: boolean
           position?: Database["public"]["Enums"]["banner_position"]
           start_date?: string | null
+          target_device?: string
           title?: string
           updated_at?: string
         }
