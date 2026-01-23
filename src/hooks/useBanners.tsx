@@ -66,18 +66,31 @@ export const useActiveBanner = (position: BannerPosition) => {
     queryKey: ["banners", "active", position],
     queryFn: async () => {
       const now = new Date().toISOString();
-      const { data, error } = await supabase
+      
+      // Build query with proper date filtering
+      let query = supabase
         .from("banners")
         .select("*")
         .eq("position", position)
-        .eq("is_active", true)
-        .or(`start_date.is.null,start_date.lte.${now}`)
-        .or(`end_date.is.null,end_date.gte.${now}`)
-        .limit(1)
-        .maybeSingle();
+        .eq("is_active", true);
+      
+      // Filter by start_date: must be null or in the past
+      query = query.or(`start_date.is.null,start_date.lte.${now}`);
+      
+      // For end_date, we need a separate check after fetching
+      // because Supabase doesn't support AND between two OR conditions well
+      const { data, error } = await query
+        .limit(10); // Fetch more to filter manually
 
       if (error) throw error;
-      return data as Banner | null;
+      
+      // Filter by end_date manually: must be null or in the future
+      const validBanner = data?.find(banner => {
+        if (!banner.end_date) return true;
+        return new Date(banner.end_date) >= new Date(now);
+      });
+      
+      return (validBanner as Banner) || null;
     },
   });
 };
