@@ -11,7 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 const Index = () => {
   const { data: posts = [], isLoading: postsLoading } = usePostsFeed();
   const { data: newsOfTheDay, isLoading: newsLoading } = useNewsOfTheDay();
+  const { data: topBanner } = useActiveBanner("home_top");
   const { data: middleBanner } = useActiveBanner("home_middle");
+  const { data: bottomBanner } = useActiveBanner("home_bottom");
 
   return (
     <div className="min-h-screen bg-background">
@@ -22,6 +24,20 @@ const Index = () => {
         <section className="mb-8">
           <StoriesRow />
         </section>
+
+        {/* Top Banner */}
+        {topBanner && (
+          <SponsorBanner
+            title={topBanner.title}
+            description={topBanner.description}
+            ctaText={topBanner.cta_text}
+            ctaUrl={topBanner.click_tag}
+            imageDesktopUrl={topBanner.image_desktop_url}
+            imageMobileUrl={topBanner.image_mobile_url}
+            impressionTag={topBanner.impression_tag || undefined}
+            className="mb-8"
+          />
+        )}
 
         <section className="mb-10">
           <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">
@@ -103,6 +119,20 @@ const Index = () => {
               />
             ))}
           </div>
+        )}
+
+        {/* Bottom Banner */}
+        {bottomBanner && (
+          <SponsorBanner
+            title={bottomBanner.title}
+            description={bottomBanner.description}
+            ctaText={bottomBanner.cta_text}
+            ctaUrl={bottomBanner.click_tag}
+            imageDesktopUrl={bottomBanner.image_desktop_url}
+            imageMobileUrl={bottomBanner.image_mobile_url}
+            impressionTag={bottomBanner.impression_tag || undefined}
+            className="mt-10"
+          />
         )}
       </main>
 
