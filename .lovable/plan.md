@@ -1,107 +1,116 @@
 
-## Naprawa widoczności Wallpapera
+
+## Wyłączenie Wallpapera w panelu admina
 
 ### Problem
-Wallpaper jest niewidoczny na stronie głównej, mimo że jest poprawnie aktywowany. Pojawia się tylko podczas "overscrollu", co oznacza, że jest ukryty pod głównym contentem.
-
-### Przyczyna techniczna
-
-| Element | Klasy CSS | Problem |
-|---------|-----------|---------|
-| Tło wallpapera | `fixed inset-0 -z-10` | z-index: -10 (najniżej) |
-| Skrzydła wallpapera | `fixed z-0` | z-index: 0 |
-| Główny kontener (Index.tsx) | `bg-background z-10` | **Nieprzezroczyste białe tło zasłania wszystko!** |
-
-```text
-OBECNY STAN:
-┌────────────────────────────────────┐
-│ ████████ BIAŁY KONTENER ████████  │  ← z-10, bg-background
-│ ██████ (zasłania wszystko) ██████ │
-└────────────────────────────────────┘
-          ↓ (ukryty pod spodem)
-┌────────────────────────────────────┐
-│      WALLPAPER (niewidoczny)       │  ← z-0 / -z-10
-└────────────────────────────────────┘
-```
+Komponent `WallpaperBackground` jest renderowany globalnie w `App.tsx`, **poza routerem**. Przez to:
+1. Wallpaper wyświetla się na wszystkich stronach, włącznie z `/admin/*`
+2. Klikalne skrzydła (`z-[1]`) przechwytują kliknięcia w panelu admina
+3. Każde kliknięcie w obszar skrzydeł otwiera link kampanii
 
 ### Rozwiązanie
 
-Gdy wallpaper jest aktywny, główny kontener strony musi być **przezroczysty**, aby tło wallpapera było widoczne. Dodatkowo trzeba poprawić z-index elementów.
+Przenieść komponent `WallpaperBackground` **do środka routera** i renderować go warunkowo - tylko na stronach publicznych (strona główna `/`).
 
-### Zmiany w plikach
+### Zmiany w `src/App.tsx`
 
-**1. `src/pages/Index.tsx`**
-
-Zmiana warunkowego tła kontenera - gdy wallpaper aktywny, brak tła:
+**1. Usunięcie globalnego renderowania:**
 
 ```tsx
-// Przed (linia 42):
-<div className="min-h-screen bg-background relative z-10">
+// Usunąć (linia 36):
+<WallpaperBackground />
+```
+
+**2. Przeniesienie do konkretnych tras:**
+
+Dodać `WallpaperBackground` tylko tam, gdzie ma być widoczny - w komponencie `Index`:
+
+```tsx
+// W src/pages/Index.tsx dodać:
+import { WallpaperBackground } from "@/components/WallpaperBackground";
+
+// I renderować przed <Header />:
+return (
+  <div className={cn(...)}>
+    <WallpaperBackground />
+    <Header />
+    ...
+  </div>
+);
+```
+
+### Alternatywne rozwiązanie (bez przenoszenia)
+
+Jeśli chcemy zachować `WallpaperBackground` w `App.tsx`, można dodać warunek sprawdzający ścieżkę URL:
+
+**W `src/components/WallpaperBackground.tsx`:**
+
+```tsx
+import { useLocation } from "react-router-dom";
+
+export function WallpaperBackground() {
+  const location = useLocation();
+  const { wallpaper, isTakeoverActive } = useWallpaperContext();
+
+  // Wyłącz na stronach admina
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  
+  if (!isTakeoverActive || !wallpaper || isAdminRoute) {
+    return null;
+  }
+  // ... reszta kodu
+}
+```
+
+**Problem:** `useLocation` wymaga, aby komponent był wewnątrz `BrowserRouter`. Obecnie `WallpaperBackground` jest **poza** routerem.
+
+### Rekomendowane rozwiązanie
+
+Przenieść `WallpaperBackground` **do środka routera** i dodać warunek na ścieżkę:
+
+**`src/App.tsx`:**
+
+```tsx
+// Przed (linia 36-37):
+<WallpaperBackground />
+<BrowserRouter>
 
 // Po:
-<div className={cn(
-  "min-h-screen relative z-10",
-  !isTakeoverActive && "bg-background"
-)}>
+<BrowserRouter>
+  <ConditionalWallpaper />
 ```
 
-Dodanie importu `cn`:
-```tsx
-import { cn } from "@/lib/utils";
-```
+Gdzie `ConditionalWallpaper` to nowy wrapper:
 
-**2. `src/components/WallpaperBackground.tsx`**
-
-Poprawienie z-index dla lepszej czytelności i pewności działania:
+**`src/components/ConditionalWallpaper.tsx`:**
 
 ```tsx
-// Główne tło (linia 30):
-// Przed: className="fixed inset-0 -z-10 pointer-events-none"
-// Po:    className="fixed inset-0 z-0 pointer-events-none"
+import { useLocation } from "react-router-dom";
+import { WallpaperBackground } from "./WallpaperBackground";
 
-// Skrzydła (linie 53, 78):
-// Przed: className="fixed top-0 left-0 bottom-0 cursor-pointer z-0"
-// Po:    className="fixed top-0 left-0 bottom-0 cursor-pointer z-[1]"
+export function ConditionalWallpaper() {
+  const location = useLocation();
+  
+  // Nie renderuj wallpapera na stronach admina i auth
+  if (location.pathname.startsWith("/admin") || location.pathname === "/auth") {
+    return null;
+  }
+  
+  return <WallpaperBackground />;
+}
 ```
 
-**3. Opcjonalnie: `src/components/NewsCard.tsx`, `src/components/SponsorBanner.tsx`**
+### Podsumowanie zmian
 
-Upewnienie się, że karty postów i banery mają własne tło (zwykle mają `bg-card`), żeby były czytelne na tle wallpapera.
+| Plik | Zmiana |
+|------|--------|
+| `src/App.tsx` | Przenieść `WallpaperBackground` do środka `BrowserRouter` |
+| `src/components/ConditionalWallpaper.tsx` | **Nowy plik** - wrapper sprawdzający ścieżkę |
+| `src/components/WallpaperBackground.tsx` | Bez zmian |
 
-### Wizualizacja po naprawie
+### Efekt
 
-```text
-PO NAPRAWIE (wallpaper aktywny):
-┌─────────────────────────────────────────────────────────────────┐
-│ ██████                                              ██████      │
-│ ██ L ██   ┌──────────────────────────────┐         ██ R  ██     │
-│ ██ E ██   │     CONTENT (przezroczysty   │         ██ I  ██     │
-│ ██ F ██   │     kontener, karty z        │         ██ G  ██     │
-│ ██ T ██   │     bg-card)                 │         ██ H  ██     │
-│ ██████    └──────────────────────────────┘         ██ T  ██     │
-│ ██████                                              ██████      │
-│                  WALLPAPER BACKGROUND                           │
-└─────────────────────────────────────────────────────────────────┘
-  └──┬──┘                                              └──┬──┘
-   z-[1]                                                z-[1]
-   Klikalne                                             Klikalne
-```
+- Strona główna (`/`): Wallpaper aktywny, skrzydła klikalne
+- Panel admina (`/admin/*`): Brak wallpapera, normalna obsługa kliknięć
+- Strona logowania (`/auth`): Brak wallpapera
 
-### Szczegóły techniczne
-
-**Dlaczego to rozwiązanie działa:**
-
-1. Kontener strony bez `bg-background` jest **przezroczysty** - widać przez niego wallpaper
-2. Karty postów (`NewsCard`) i banery (`SponsorBanner`) zachowują własne tła (`bg-card`), więc treść jest czytelna
-3. Header i footer mogą wymagać własnego tła, jeśli go nie mają
-4. Z-index uporządkowany: wallpaper tło (z-0) → skrzydła (z-1) → content (z-10)
-
-### Dodatkowa weryfikacja
-
-Po wdrożeniu zmian sprawdzić:
-- [ ] Wallpaper widoczny na ekranach >1280px
-- [ ] Skrzydła klikalne (otwierają URL w nowej karcie)
-- [ ] Karty postów czytelne (mają własne tło)
-- [ ] Header widoczny i funkcjonalny
-- [ ] Footer czytelny
-- [ ] Na mobilnych/węższych ekranach standardowe białe tło (fallback)
