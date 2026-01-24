@@ -1,4 +1,5 @@
 import { Header } from "@/components/Header";
+import { PatronBar } from "@/components/PatronBar";
 import { usePublicAuthors } from "@/hooks/useAuthors";
 import { AuthorProfileCard } from "@/components/AuthorProfileCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,6 +42,7 @@ const AuthorsPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <PatronBar />
       
       <main className="container py-8 md:py-12">
         {/* Page Header */}

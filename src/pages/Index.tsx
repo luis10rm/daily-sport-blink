@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { Header } from "@/components/Header";
+import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
 import { NewsOfTheDay } from "@/components/NewsOfTheDay";
 import { SponsorBanner } from "@/components/SponsorBanner";
@@ -46,6 +47,7 @@ const Index = () => {
       !isTakeoverActive && "bg-background"
     )}>
       <Header />
+      <PatronBar />
       
       <main className="container py-6 md:py-10">
         {/* Stories Row */}
