@@ -5,6 +5,7 @@ import { Newspaper } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWallpaperContext } from "@/contexts/WallpaperContext";
 
 interface TodaysNewsBannerProps {
   count: number;
@@ -28,6 +29,7 @@ const getNewsLabel = (count: number) => {
 
 export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBannerProps) => {
   const isMobile = useIsMobile();
+  const { isTakeoverActive } = useWallpaperContext();
   const [displayCount, setDisplayCount] = useState(0);
   const [variant] = useState(() => variants[Math.floor(Math.random() * variants.length)]);
 
@@ -91,7 +93,10 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
     return (
       <section
         className={cn(
-          "mb-8 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 p-4 animate-fade-in",
+          "mb-8 rounded-xl p-4 animate-fade-in",
+          isTakeoverActive
+            ? "bg-card border border-border shadow-lg"
+            : "border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10",
           className
         )}
       >
@@ -114,7 +119,10 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
   return (
     <section
       className={cn(
-        "mb-6 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 py-4 px-6 animate-fade-in",
+        "mb-6 rounded-xl py-4 px-6 animate-fade-in",
+        isTakeoverActive
+          ? "bg-card border border-border shadow-lg"
+          : "border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10",
         className
       )}
     >
