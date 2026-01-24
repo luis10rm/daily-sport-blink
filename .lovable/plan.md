@@ -1,64 +1,107 @@
 
+## Naprawa widoczności Wallpapera
 
-## Naprawa białej strony na `/admin/wallpapers` i `/admin/wallpapers/new`
+### Problem
+Wallpaper jest niewidoczny na stronie głównej, mimo że jest poprawnie aktywowany. Pojawia się tylko podczas "overscrollu", co oznacza, że jest ukryty pod głównym contentem.
 
-### Zidentyfikowany problem
+### Przyczyna techniczna
 
-W pliku `src/pages/admin/WallpaperEditor.tsx` (linie 239-255) znajduje się komponent `Select` z elementem:
+| Element | Klasy CSS | Problem |
+|---------|-----------|---------|
+| Tło wallpapera | `fixed inset-0 -z-10` | z-index: -10 (najniżej) |
+| Skrzydła wallpapera | `fixed z-0` | z-index: 0 |
+| Główny kontener (Index.tsx) | `bg-background z-10` | **Nieprzezroczyste białe tło zasłania wszystko!** |
 
-```tsx
-<SelectItem value="">Brak</SelectItem>
+```text
+OBECNY STAN:
+┌────────────────────────────────────┐
+│ ████████ BIAŁY KONTENER ████████  │  ← z-10, bg-background
+│ ██████ (zasłania wszystko) ██████ │
+└────────────────────────────────────┘
+          ↓ (ukryty pod spodem)
+┌────────────────────────────────────┐
+│      WALLPAPER (niewidoczny)       │  ← z-0 / -z-10
+└────────────────────────────────────┘
 ```
-
-**Problem:** Radix UI Select nie pozwala na puste wartości (`value=""`). To powoduje cichy błąd renderowania, przez co cały komponent nie renderuje się poprawnie - stąd biała strona.
 
 ### Rozwiązanie
 
-Zmienić pustą wartość na specjalny identyfikator, np. `"none"` lub `"__none__"`, a następnie odpowiednio obsłużyć tę wartość przy zapisie formularza.
+Gdy wallpaper jest aktywny, główny kontener strony musi być **przezroczysty**, aby tło wallpapera było widoczne. Dodatkowo trzeba poprawić z-index elementów.
 
-### Zmiany w pliku `src/pages/admin/WallpaperEditor.tsx`
+### Zmiany w plikach
 
-**1. Zmiana wartości SelectItem (linia 247):**
+**1. `src/pages/Index.tsx`**
 
-```tsx
-// Przed:
-<SelectItem value="">Brak</SelectItem>
-
-// Po:
-<SelectItem value="__none__">Brak</SelectItem>
-```
-
-**2. Zmiana obsługi zmiany wartości (linia 241):**
+Zmiana warunkowego tła kontenera - gdy wallpaper aktywny, brak tła:
 
 ```tsx
-// Przed:
-onValueChange={(val) => setFormData({ ...formData, linked_banner_id: val })}
+// Przed (linia 42):
+<div className="min-h-screen bg-background relative z-10">
 
 // Po:
-onValueChange={(val) => setFormData({ 
-  ...formData, 
-  linked_banner_id: val === "__none__" ? "" : val 
-})}
+<div className={cn(
+  "min-h-screen relative z-10",
+  !isTakeoverActive && "bg-background"
+)}>
 ```
 
-**3. Zmiana wartości w Select (linia 240):**
+Dodanie importu `cn`:
+```tsx
+import { cn } from "@/lib/utils";
+```
+
+**2. `src/components/WallpaperBackground.tsx`**
+
+Poprawienie z-index dla lepszej czytelności i pewności działania:
 
 ```tsx
-// Przed:
-value={formData.linked_banner_id}
+// Główne tło (linia 30):
+// Przed: className="fixed inset-0 -z-10 pointer-events-none"
+// Po:    className="fixed inset-0 z-0 pointer-events-none"
 
-// Po:
-value={formData.linked_banner_id || "__none__"}
+// Skrzydła (linie 53, 78):
+// Przed: className="fixed top-0 left-0 bottom-0 cursor-pointer z-0"
+// Po:    className="fixed top-0 left-0 bottom-0 cursor-pointer z-[1]"
 ```
 
-### Weryfikacja
+**3. Opcjonalnie: `src/components/NewsCard.tsx`, `src/components/SponsorBanner.tsx`**
 
-Po naprawie:
-1. Strona `/admin/wallpapers` powinna wyświetlać listę kampanii (lub pustą tabelę)
-2. Strona `/admin/wallpapers/new` powinna wyświetlać formularz tworzenia nowego wallpapera
-3. Dropdown "Powiązany baner" powinien działać poprawnie z opcją "Brak"
+Upewnienie się, że karty postów i banery mają własne tło (zwykle mają `bg-card`), żeby były czytelne na tle wallpapera.
 
-### Dodatkowe sprawdzenie
+### Wizualizacja po naprawie
 
-Warto również upewnić się, że użytkownik posiada rolę `admin` (nie tylko `editor`), ponieważ routing wymaga `requireAdmin={true}`. Jeśli nie jesteś adminem, zostaniesz przekierowany do `/admin`.
+```text
+PO NAPRAWIE (wallpaper aktywny):
+┌─────────────────────────────────────────────────────────────────┐
+│ ██████                                              ██████      │
+│ ██ L ██   ┌──────────────────────────────┐         ██ R  ██     │
+│ ██ E ██   │     CONTENT (przezroczysty   │         ██ I  ██     │
+│ ██ F ██   │     kontener, karty z        │         ██ G  ██     │
+│ ██ T ██   │     bg-card)                 │         ██ H  ██     │
+│ ██████    └──────────────────────────────┘         ██ T  ██     │
+│ ██████                                              ██████      │
+│                  WALLPAPER BACKGROUND                           │
+└─────────────────────────────────────────────────────────────────┘
+  └──┬──┘                                              └──┬──┘
+   z-[1]                                                z-[1]
+   Klikalne                                             Klikalne
+```
 
+### Szczegóły techniczne
+
+**Dlaczego to rozwiązanie działa:**
+
+1. Kontener strony bez `bg-background` jest **przezroczysty** - widać przez niego wallpaper
+2. Karty postów (`NewsCard`) i banery (`SponsorBanner`) zachowują własne tła (`bg-card`), więc treść jest czytelna
+3. Header i footer mogą wymagać własnego tła, jeśli go nie mają
+4. Z-index uporządkowany: wallpaper tło (z-0) → skrzydła (z-1) → content (z-10)
+
+### Dodatkowa weryfikacja
+
+Po wdrożeniu zmian sprawdzić:
+- [ ] Wallpaper widoczny na ekranach >1280px
+- [ ] Skrzydła klikalne (otwierają URL w nowej karcie)
+- [ ] Karty postów czytelne (mają własne tło)
+- [ ] Header widoczny i funkcjonalny
+- [ ] Footer czytelny
+- [ ] Na mobilnych/węższych ekranach standardowe białe tło (fallback)
