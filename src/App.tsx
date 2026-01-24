@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { WallpaperProvider } from "@/contexts/WallpaperContext";
-import { WallpaperBackground } from "@/components/WallpaperBackground";
+import { ConditionalWallpaper } from "@/components/ConditionalWallpaper";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -33,8 +33,8 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <WallpaperBackground />
           <BrowserRouter>
+            <ConditionalWallpaper />
             <Routes>
               <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
