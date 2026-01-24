@@ -78,6 +78,9 @@ const PostEditor = () => {
   const updatePost = useUpdatePost();
   const extractArticle = useExtractArticle();
 
+  // Get current date/time formatted for datetime-local input
+  const getCurrentDateTime = () => new Date().toISOString().slice(0, 16);
+
   const form = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
     defaultValues: {
@@ -90,9 +93,16 @@ const PostEditor = () => {
       tags: "",
       is_sponsored: false,
       is_news_of_day: false,
-      published_at: new Date().toISOString().slice(0, 16),
+      published_at: getCurrentDateTime(),
     },
   });
+
+  // Reset published_at to current time when creating a new post (not editing)
+  useEffect(() => {
+    if (!isEditing && !post) {
+      form.setValue("published_at", getCurrentDateTime());
+    }
+  }, [isEditing, post, form]);
 
   useEffect(() => {
     if (post) {
