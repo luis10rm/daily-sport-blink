@@ -14,6 +14,14 @@ export interface PostCategory {
   bg_color: string;
 }
 
+export interface PostAuthor {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  slug: string | null;
+  role_title: string | null;
+}
+
 export interface Post {
   id: string;
   title: string;
@@ -29,6 +37,7 @@ export interface Post {
   is_news_of_day: boolean;
   published_at: string;
   created_by?: string | null;
+  author?: PostAuthor | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,7 +65,8 @@ export type SportCategory = SportCategorySlug;
 
 const POST_SELECT = `
   *,
-  sport_category:sport_categories(id, slug, name, icon_name, icon_url, bg_color)
+  sport_category:sport_categories(id, slug, name, icon_name, icon_url, bg_color),
+  author:profiles!posts_created_by_fkey(id, display_name, avatar_url, slug, role_title)
 `;
 
 // Fetch all posts

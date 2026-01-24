@@ -21,6 +21,9 @@ import UsersList from "./pages/admin/UsersList";
 import Settings from "./pages/admin/Settings";
 import WallpapersList from "./pages/admin/WallpapersList";
 import WallpaperEditor from "./pages/admin/WallpaperEditor";
+import AuthorsList from "./pages/admin/AuthorsList";
+import AuthorEditor from "./pages/admin/AuthorEditor";
+import AuthorProfile from "./pages/AuthorProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +40,7 @@ function App() {
             <ConditionalWallpaper />
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/autor/:slug" element={<AuthorProfile />} />
             <Route path="/auth" element={<Auth />} />
             <Route
               path="/admin"
@@ -155,6 +159,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/authors"
+              element={
+                <ProtectedRoute>
+                  <AuthorsList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/authors/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <AuthorEditor />
                 </ProtectedRoute>
               }
             />
