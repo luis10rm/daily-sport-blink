@@ -131,6 +131,7 @@ const Index = () => {
                 imageUrl={post.image_url || undefined}
                 isSponsored={post.is_sponsored}
                 tags={post.tags || []}
+                author={post.author}
                 delay={index * 100}
               />
             ))}

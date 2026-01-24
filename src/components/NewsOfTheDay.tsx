@@ -1,5 +1,6 @@
 import { ExternalLink, Trophy } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
+import { AuthorCard } from "./AuthorCard";
 import { getCategoryImage } from "@/config/categoryImages";
 import { Post } from "@/hooks/usePosts";
 import { cn } from "@/lib/utils";
@@ -74,6 +75,8 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
               {post.excerpt}
             </p>
           </div>
+
+          {post.author && <AuthorCard author={post.author} />}
 
           <a
             href={post.source_url}

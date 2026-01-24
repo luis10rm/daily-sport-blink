@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { ExternalLink, Sparkles } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
+import { AuthorCard } from "./AuthorCard";
 import { getCategoryImage } from "@/config/categoryImages";
 import { cn } from "@/lib/utils";
 import { PostCategory, SportCategorySlug } from "@/hooks/usePosts";
@@ -15,6 +16,13 @@ interface NewsCardProps {
   imageUrl?: string;
   isSponsored?: boolean;
   tags?: string[];
+  author?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    slug: string | null;
+    role_title: string | null;
+  } | null;
   className?: string;
   delay?: number;
 }
@@ -31,6 +39,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
       imageUrl,
       isSponsored = false,
       tags,
+      author,
       className,
       delay = 0,
     },
@@ -102,6 +111,8 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
               {excerpt}
             </p>
           </div>
+
+          {author && <AuthorCard author={author} />}
 
           <a
             href={sourceUrl}
