@@ -3,15 +3,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { subDays } from "date-fns";
 
-export type SportCategory = "football" | "basketball" | "tennis" | "f1" | "mma" | "other";
+export type SportCategorySlug = "football" | "basketball" | "tennis" | "f1" | "mma" | "other";
+
+export interface PostCategory {
+  id: string;
+  slug: string;
+  name: string;
+  icon_name: string | null;
+  icon_url: string | null;
+  bg_color: string;
+}
 
 export interface Post {
   id: string;
   title: string;
   excerpt: string;
   content?: string | null;
-  category: SportCategory;
+  category: SportCategorySlug;
   category_id?: string | null;
+  sport_category?: PostCategory | null;
   image_url?: string | null;
   source_url: string;
   tags: string[];
@@ -27,7 +37,7 @@ export interface CreatePostInput {
   title: string;
   excerpt: string;
   content?: string;
-  category?: SportCategory;
+  category?: SportCategorySlug;
   category_id?: string;
   image_url?: string;
   source_url: string;
@@ -41,6 +51,14 @@ export interface UpdatePostInput extends Partial<CreatePostInput> {
   id: string;
 }
 
+// For backwards compatibility
+export type SportCategory = SportCategorySlug;
+
+const POST_SELECT = `
+  *,
+  sport_category:sport_categories(id, slug, name, icon_name, icon_url, bg_color)
+`;
+
 // Fetch all posts
 export const usePosts = () => {
   return useQuery({
@@ -48,7 +66,7 @@ export const usePosts = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*")
+        .select(POST_SELECT)
         .order("published_at", { ascending: false });
 
       if (error) throw error;
@@ -68,7 +86,7 @@ export const useTodaysPosts = () => {
       
       const { data, error } = await supabase
         .from("posts")
-        .select("*")
+        .select(POST_SELECT)
         .gte("published_at", startOfDay)
         .lte("published_at", endOfDay)
         .order("published_at", { ascending: false });
@@ -88,7 +106,7 @@ export const useRecentPosts = () => {
       
       const { data, error } = await supabase
         .from("posts")
-        .select("*")
+        .select(POST_SELECT)
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
@@ -105,7 +123,7 @@ export const useNewsOfTheDay = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*")
+        .select(POST_SELECT)
         .eq("is_news_of_day", true)
         .order("published_at", { ascending: false })
         .limit(1)
@@ -124,7 +142,7 @@ export const usePostsFeed = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*")
+        .select(POST_SELECT)
         .eq("is_news_of_day", false)
         .order("published_at", { ascending: false });
 
@@ -151,7 +169,7 @@ export const usePost = (id: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*")
+        .select(POST_SELECT)
         .eq("id", id)
         .single();
 

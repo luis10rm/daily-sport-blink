@@ -82,17 +82,7 @@ const Index = () => {
           </div>
         ) : newsOfTheDay && (
           <NewsOfTheDay 
-            post={{
-              id: newsOfTheDay.id,
-              title: newsOfTheDay.title,
-              excerpt: newsOfTheDay.excerpt,
-              category: newsOfTheDay.category,
-              publishedAt: newsOfTheDay.published_at,
-              sourceUrl: newsOfTheDay.source_url,
-              imageUrl: newsOfTheDay.image_url || undefined,
-              isNewsOfTheDay: newsOfTheDay.is_news_of_day,
-              tags: newsOfTheDay.tags || [],
-            }} 
+            post={newsOfTheDay} 
             className="mb-10" 
           />
         )}
@@ -140,6 +130,7 @@ const Index = () => {
                 title={post.title}
                 excerpt={post.excerpt}
                 category={post.category}
+                sportCategory={post.sport_category}
                 publishedAt={post.published_at}
                 sourceUrl={post.source_url}
                 imageUrl={post.image_url || undefined}

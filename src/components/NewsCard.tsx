@@ -1,13 +1,15 @@
 import { forwardRef } from "react";
 import { ExternalLink, Sparkles } from "lucide-react";
-import { SportIcon, SportCategory, getSportLabel } from "./SportIcon";
+import { DynamicSportIcon } from "./DynamicSportIcon";
 import { getCategoryImage } from "@/config/categoryImages";
 import { cn } from "@/lib/utils";
+import { PostCategory, SportCategorySlug } from "@/hooks/usePosts";
 
 interface NewsCardProps {
   title: string;
   excerpt: string;
-  category: SportCategory;
+  category: SportCategorySlug;
+  sportCategory?: PostCategory | null;
   publishedAt: string;
   sourceUrl: string;
   imageUrl?: string;
@@ -23,6 +25,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
       title,
       excerpt,
       category,
+      sportCategory,
       publishedAt,
       sourceUrl,
       imageUrl,
@@ -70,9 +73,9 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <SportIcon category={category} className="h-8 w-8" />
+                <DynamicSportIcon sportCategory={sportCategory} fallbackSlug={category} className="h-8 w-8" />
                 <span className="text-xs font-medium uppercase tracking-wider text-primary">
-                  {getSportLabel(category)}
+                  {sportCategory?.name || category}
                 </span>
               </div>
               <span className="text-xs text-muted-foreground">{formattedDate}</span>
