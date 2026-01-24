@@ -35,13 +35,27 @@ import { toast } from "sonner";
 
 // Categories are now fetched dynamically from sport_categories table
 
+// Custom URL validation that's more permissive for tracking URLs
+const isValidUrl = (url: string) => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const postSchema = z.object({
   title: z.string().min(5, "Tytuł musi mieć minimum 5 znaków"),
   excerpt: z.string().min(10, "Opis musi mieć minimum 10 znaków"),
   content: z.string().optional(),
   category_id: z.string().min(1, "Wybierz kategorię"),
-  image_url: z.string().url("Nieprawidłowy URL").or(z.literal("")).optional(),
-  source_url: z.string().url("Nieprawidłowy URL"),
+  image_url: z.string().refine((val) => !val || isValidUrl(val), {
+    message: "Nieprawidłowy URL obrazka",
+  }).optional(),
+  source_url: z.string().refine(isValidUrl, {
+    message: "Nieprawidłowy URL źródła",
+  }),
   tags: z.string(),
   is_sponsored: z.boolean(),
   is_news_of_day: z.boolean(),
