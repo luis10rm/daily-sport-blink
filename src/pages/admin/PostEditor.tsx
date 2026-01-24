@@ -8,6 +8,7 @@ import { ImageSourceSection } from "@/components/admin/ImageSourceSection";
 import { usePost, useCreatePost, useUpdatePost } from "@/hooks/usePosts";
 import { useExtractArticle } from "@/hooks/useSettings";
 import { useSportCategories } from "@/hooks/useSportCategories";
+import { QuickCategoryDialog } from "@/components/admin/QuickCategoryDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -361,23 +362,30 @@ const PostEditor = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Kategoria</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Wybierz kategorię" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {sportCategories?.map((cat) => (
-                                <SelectItem key={cat.id} value={cat.id}>
-                                  {cat.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex gap-2">
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Wybierz kategorię" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {sportCategories?.map((cat) => (
+                                  <SelectItem key={cat.id} value={cat.id}>
+                                    {cat.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <QuickCategoryDialog
+                              onCategoryCreated={(categoryId) => {
+                                form.setValue("category_id", categoryId);
+                              }}
+                            />
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
