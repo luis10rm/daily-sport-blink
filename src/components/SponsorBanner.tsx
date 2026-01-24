@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +27,8 @@ export const SponsorBanner = ({
   previewMode,
 }: SponsorBannerProps) => {
   const impressionFiredRef = useRef(false);
+  const bannerRef = useRef<HTMLDivElement>(null);
+  const [isHiddenByAdBlock, setIsHiddenByAdBlock] = useState(false);
   
   // Ensure ctaUrl is treated as plain string, not template literal
   // This prevents React from misinterpreting DoubleClick macros like ${GDPR}
@@ -56,7 +58,55 @@ export const SponsorBanner = ({
     }
   }, [impressionTag, previewMode]);
 
+  // Detect if banner is hidden by AdBlock
+  useEffect(() => {
+    if (previewMode) return;
+    
+    const checkVisibility = () => {
+      if (bannerRef.current) {
+        const rect = bannerRef.current.getBoundingClientRect();
+        // AdBlock often sets display:none or height:0
+        if (rect.height === 0 || rect.width === 0) {
+          setIsHiddenByAdBlock(true);
+        }
+      }
+    };
+    
+    // Check after small delay (AdBlock may act asynchronously)
+    const timer = setTimeout(checkVisibility, 150);
+    return () => clearTimeout(timer);
+  }, [previewMode]);
+
   const hasImages = imageDesktopUrl || imageMobileUrl;
+
+  // Compact fallback when AdBlock hides the banner
+  if (isHiddenByAdBlock) {
+    return (
+      <div className={cn("flex justify-center", className)}>
+        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-muted/50 border border-border shadow-sm">
+          <span className="text-xs font-medium text-muted-foreground">
+            Partner Szortsy
+          </span>
+          <span className="text-xs text-muted-foreground/40">·</span>
+          <span className="text-xs text-muted-foreground">
+            {description || "To miejsce może być Twoje"}
+          </span>
+          {ctaText && (
+            <>
+              <span className="text-xs text-muted-foreground/40">·</span>
+              <button
+                onClick={handleClick}
+                type="button"
+                className="text-xs font-semibold text-primary hover:underline underline-offset-2 transition-colors"
+              >
+                {ctaText}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // Image-based banner with fixed IAB dimensions
   if (hasImages) {
@@ -74,8 +124,8 @@ export const SponsorBanner = ({
           />
         )}
 
-        {/* Framed banner container */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        {/* Framed banner container - ref for AdBlock detection */}
+        <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {/* Header - Partner label */}
           <div className="bg-muted/50 px-4 py-2 border-b border-border">
             <span className="text-xs font-medium text-muted-foreground">
@@ -187,7 +237,8 @@ export const SponsorBanner = ({
   // Fallback text-based banner - również ze stałymi wymiarami IAB
   return (
     <div className={cn("flex justify-center", className)}>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      {/* ref for AdBlock detection */}
+      <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {/* Header - Partner label */}
         <div className="bg-muted/50 px-4 py-2 border-b border-border">
           <span className="text-xs font-medium text-muted-foreground">
