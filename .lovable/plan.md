@@ -1,198 +1,106 @@
 
 
-## Personalizowany komunikat o dzisiejszych newsach
+## Kompaktowy TodaysNewsBanner dla Desktop
 
-### Cel
-Zamiana sztywnego nagłówka "Dzisiejsze wiadomości" na dynamiczny, ciepły komunikat informujący użytkownika ile newsów zostało dla niego przygotowanych danego dnia.
+### Problem
+Obecnie banner zajmuje zbyt dużo przestrzeni - użytkownik widząc stronę po raz pierwszy widzi tylko reklamę i komunikat, bez żadnych newsów. To osłabia pierwsze wrażenie i może zniechęcać do scrollowania.
 
-### Projekt UI
+### Rozwiązanie
+Zredukować wysokość bannera na desktop poprzez:
+1. Zmianę layoutu z **wertykalnego** (elementy jeden pod drugim) na **horyzontalny** (elementy obok siebie)
+2. Zmniejszenie rozmiaru liczby
+3. Zredukowanie paddingów i marginesów
 
-**Sekcja powitalna na stronie głównej:**
+### Porównanie wizualne
 
+**PRZED (obecna wersja ~220px):**
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
+│                                                                 │
 │  🗞️  Dzisiaj mamy dla Ciebie                                   │
 │                                                                 │
-│      ████  12  ████                                             │
+│                          7                                      │
 │                                                                 │
-│  starannie wybranych newsów sportowych                          │
+│           starannie wybranych newsów sportowych                 │
 │                                                                 │
 │  ─────────────────────────────────────────────────────────────  │
 │  Przygotowaliśmy je z myślą o Tobie • Piątek, 24 stycznia       │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Warianty komunikatów
-
-System będzie losowo wybierać jeden z wariantów przy każdym odświeżeniu:
-
-| Wariant | Tekst |
-|---------|-------|
-| 1 | "Dzisiaj mamy dla Ciebie **X** starannie wybranych newsów sportowych" |
-| 2 | "Przygotowaliśmy **X** gorących informacji ze świata sportu" |
-| 3 | "Twoja codzienna dawka sportu: **X** newsów z ostatnich 24h" |
-| 4 | "Specjalnie dla Ciebie: **X** najciekawszych wydarzeń sportowych" |
-| 5 | "**X** powodów, żeby zostać na dłużej - sprawdź co się dzieje w sporcie" |
-
-### Architektura rozwiązania
-
-#### Nowy komponent: `src/components/TodaysNewsBanner.tsx`
-
-```tsx
-interface TodaysNewsBannerProps {
-  count: number;
-  isLoading?: boolean;
-}
-```
-
-Funkcjonalności:
-- Wyświetla dynamiczną liczbę newsów z animacją "count up"
-- Losuje wariant komunikatu przy montowaniu
-- Pokazuje aktualną datę w formacie "Piątek, 24 stycznia"
-- Subtelna animacja wejścia (fade + slide)
-- Responsywny design (kompaktowy na mobile)
-
-#### Zmiany w `src/pages/Index.tsx`
-
-Zamiana sekcji (linie 69-76):
-```tsx
-// Stare:
-<section className="mb-10">
-  <h1>Dzisiejsze wiadomości</h1>
-  <p>Najważniejsze wydarzenia sportowe z ostatnich 24 godzin</p>
-</section>
-
-// Nowe:
-<TodaysNewsBanner 
-  count={todaysPosts.length} 
-  isLoading={postsLoading} 
-/>
-```
-
-### Szczegóły implementacji
-
-#### Animacja liczby (count-up effect)
-
-```tsx
-// Animacja od 0 do docelowej wartości
-const [displayCount, setDisplayCount] = useState(0);
-
-useEffect(() => {
-  if (count === 0) return;
-  
-  const duration = 1000; // 1 sekunda
-  const steps = 20;
-  const increment = count / steps;
-  let current = 0;
-  
-  const timer = setInterval(() => {
-    current += increment;
-    if (current >= count) {
-      setDisplayCount(count);
-      clearInterval(timer);
-    } else {
-      setDisplayCount(Math.floor(current));
-    }
-  }, duration / steps);
-  
-  return () => clearInterval(timer);
-}, [count]);
-```
-
-#### Warianty tekstów
-
-```tsx
-const variants = [
-  { before: "Dzisiaj mamy dla Ciebie", after: "starannie wybranych newsów sportowych" },
-  { before: "Przygotowaliśmy", after: "gorących informacji ze świata sportu" },
-  { before: "Twoja codzienna dawka sportu:", after: "newsów z ostatnich 24h" },
-  { before: "Specjalnie dla Ciebie:", after: "najciekawszych wydarzeń sportowych" },
-];
-
-// Losowanie przy montowaniu
-const [variant] = useState(() => variants[Math.floor(Math.random() * variants.length)]);
-```
-
-#### Formatowanie daty
-
-```tsx
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
-
-const formattedDate = format(new Date(), "EEEE, d MMMM", { locale: pl });
-// Wynik: "piątek, 24 stycznia"
-```
-
-### Stylizacja
-
+**PO (nowa kompaktowa wersja ~80-90px):**
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│  DESKTOP                                                        │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ bg-gradient-to-r from-primary/5 to-primary/10             │  │
-│  │ border border-primary/20 rounded-2xl                       │  │
-│  │ p-8 text-center                                           │  │
-│  │                                                           │  │
-│  │ [Newspaper icon] Dzisiaj mamy dla Ciebie                  │  │
-│  │                                                           │  │
-│  │        ██ 12 ██  (duża liczba, gradient text)            │  │
-│  │                                                           │  │
-│  │ starannie wybranych newsów sportowych                     │  │
-│  │                                                           │  │
-│  │ ───────────────────────────────────────                   │  │
-│  │ Przygotowaliśmy je z myślą o Tobie • Piątek, 24 stycznia  │  │
-│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  🗞️  Dzisiaj mamy dla Ciebie  ██ 7 ██  newsów sportowych       │
+│      Piątek, 24 stycznia                                        │
+│                                                                 │
 └─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────┐
-│  MOBILE (kompaktowy)        │
-│  ┌───────────────────────┐  │
-│  │ p-4                   │  │
-│  │                       │  │
-│  │ Dzisiaj: 12 newsów   │  │
-│  │ Piątek, 24 stycznia   │  │
-│  └───────────────────────┘  │
-└─────────────────────────────┘
 ```
 
-### Aktualizacja ScrollProgress
+### Szczegóły zmian
 
-Uproszczenie komunikatu w pływającym wskaźniku - usunięcie duplikacji:
+| Element | Przed | Po |
+|---------|-------|-----|
+| **Layout** | Wertykalny (text-center, elementy pod sobą) | Horyzontalny (flex, elementy w linii) |
+| **Liczba** | `text-6xl md:text-7xl` (~72-96px) | `text-4xl` (~36px) |
+| **Padding** | `p-8` (32px) | `py-4 px-6` (16px/24px) |
+| **Margin-bottom** | `mb-10` (40px) | `mb-6` (24px) |
+| **Divider + footer** | Osobna sekcja z datą | Data inline pod tekstem |
+
+### Nowa struktura HTML
 
 ```tsx
-// Było: "5 newsów z dzisiaj • Scrolluj"
-// Będzie: "Jeszcze 3 do przeczytania • Scrolluj"
+// Desktop compact version
+<section className="mb-6 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 py-4 px-6 animate-fade-in">
+  <div className="flex items-center justify-center gap-4 flex-wrap">
+    {/* Left: Icon + intro text */}
+    <div className="flex items-center gap-2">
+      <Newspaper className="h-5 w-5 text-primary" />
+      <span className="text-base text-muted-foreground">{variant.before}</span>
+    </div>
+
+    {/* Center: Big number */}
+    <span className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+      {displayCount}
+    </span>
+
+    {/* Right: After text */}
+    <span className="text-base text-foreground font-medium">
+      {variant.after}
+    </span>
+  </div>
+
+  {/* Date below, smaller */}
+  <p className="text-center text-xs text-muted-foreground mt-2">
+    {capitalizedDate}
+  </p>
+</section>
 ```
 
-Opcjonalnie: dodanie progress bara pokazującego ile newsów użytkownik już "minął".
+### Korzyści
 
-### Obsługa przypadków brzegowych
+| Aspekt | Efekt |
+|--------|-------|
+| **Wysokość** | Redukcja z ~220px do ~80px (oszczędność ~140px) |
+| **Above the fold** | Użytkownik zobaczy pierwszy news bez scrollowania |
+| **Czytelność** | Zachowana - wszystkie informacje nadal widoczne |
+| **Animacja** | Count-up nadal działa |
+| **Estetyka** | Nadal elegancki gradient i styling |
 
-| Przypadek | Zachowanie |
-|-----------|------------|
-| 0 newsów | "Dzisiaj jeszcze nie dodaliśmy newsów - wróć później!" |
-| 1 news | "Mamy dla Ciebie 1 news sportowy" (odmiana) |
-| Ładowanie | Skeleton z pulsującą animacją |
+### Plan implementacji
 
-### Podsumowanie zmian
+| Krok | Plik | Zmiana |
+|------|------|--------|
+| 1 | `src/components/TodaysNewsBanner.tsx` | Przepisanie sekcji desktop (linie 113-147) na layout horyzontalny |
+| 2 | Testowanie | Weryfikacja że News of the Day jest widoczny bez scrollowania |
 
-| Plik | Zmiana |
-|------|--------|
-| `src/components/TodaysNewsBanner.tsx` | Nowy komponent z dynamicznym komunikatem |
-| `src/pages/Index.tsx` | Zamiana statycznej sekcji na TodaysNewsBanner |
-| `src/components/ScrollProgress.tsx` | Opcjonalna aktualizacja komunikatu |
+### Alternatywna opcja (do dyskusji)
 
-### Efekt końcowy
+Jeśli chcesz zachować większy efekt "wow" dla liczby, możemy też:
+- Przenieść banner **poniżej** News of the Day
+- Użyć sticky header z mini-wskaźnikiem
 
-Użytkownik wchodzi na stronę i widzi personalizowany, ciepły komunikat:
-
-> 🗞️ **Dzisiaj mamy dla Ciebie**
-> 
-> **12**
-> 
-> starannie wybranych newsów sportowych
-> 
-> *Przygotowaliśmy je z myślą o Tobie • Piątek, 24 stycznia*
-
-To buduje relację z użytkownikiem i zachęca do scrollowania i czytania.
+Ale podstawowa propozycja to kompaktowa wersja inline, która jest wystarczająco widoczna a nie blokuje contentu.
 
