@@ -152,7 +152,7 @@ const Dashboard = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium">
-                        {post.category}
+                        {post.sport_category?.name || "Inne"}
                       </span>
                       <Link to={`/admin/posts/${post.id}/edit`}>
                         <Button variant="ghost" size="sm">

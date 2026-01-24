@@ -4,12 +4,12 @@ import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { getCategoryImage } from "@/config/categoryImages";
 import { cn } from "@/lib/utils";
-import { PostCategory, SportCategorySlug } from "@/hooks/usePosts";
+import { PostCategory } from "@/hooks/usePosts";
 
 interface NewsCardProps {
   title: string;
   excerpt: string;
-  category: SportCategorySlug;
+  categorySlug?: string;
   sportCategory?: PostCategory | null;
   publishedAt: string;
   sourceUrl: string;
@@ -32,7 +32,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
     {
       title,
       excerpt,
-      category,
+      categorySlug,
       sportCategory,
       publishedAt,
       sourceUrl,
@@ -72,7 +72,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
         {/* Image area */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
           <img
-            src={getCategoryImage(category, imageUrl, sportCategory?.slug)}
+            src={getCategoryImage(categorySlug, imageUrl, sportCategory?.slug)}
             alt={title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
@@ -82,9 +82,9 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <DynamicSportIcon sportCategory={sportCategory} fallbackSlug={category} className="h-8 w-8" />
+                <DynamicSportIcon sportCategory={sportCategory} fallbackSlug={categorySlug} className="h-8 w-8" />
                 <span className="text-xs font-medium uppercase tracking-wider text-primary">
-                  {sportCategory?.name || category}
+                  {sportCategory?.name || categorySlug || "Inne"}
                 </span>
               </div>
               <span className="text-xs text-muted-foreground">{formattedDate}</span>

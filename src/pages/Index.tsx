@@ -126,7 +126,7 @@ const Index = () => {
                 ref={index === lastTodayIndex ? lastTodayRef : undefined}
                 title={post.title}
                 excerpt={post.excerpt}
-                category={post.category}
+                categorySlug={post.sport_category?.slug}
                 sportCategory={post.sport_category}
                 publishedAt={post.published_at}
                 sourceUrl={post.source_url}

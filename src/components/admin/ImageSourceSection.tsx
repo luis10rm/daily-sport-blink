@@ -6,13 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SportCategory } from "@/hooks/usePosts";
 import { categoryDefaultImages } from "@/config/categoryImages";
 import { Upload, Link as LinkIcon } from "lucide-react";
 
 interface ImageSourceSectionProps {
   form: UseFormReturn<any>;
-  category: SportCategory;
+  category?: string;
 }
 
 export const ImageSourceSection = ({ form, category }: ImageSourceSectionProps) => {
@@ -20,7 +19,7 @@ export const ImageSourceSection = ({ form, category }: ImageSourceSectionProps) 
   const [useCustomImage, setUseCustomImage] = useState(!!currentImageUrl);
   const [activeTab, setActiveTab] = useState<"upload" | "url">("upload");
 
-  const defaultImage = categoryDefaultImages[category];
+  const defaultImage = (category && categoryDefaultImages[category as keyof typeof categoryDefaultImages]) || categoryDefaultImages.other;
 
   const handleCustomImageToggle = (checked: boolean) => {
     setUseCustomImage(checked);

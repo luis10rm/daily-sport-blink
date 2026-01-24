@@ -37,7 +37,7 @@ const PostsList = () => {
   const filteredPosts = posts?.filter(
     (post) =>
       post.title.toLowerCase().includes(search.toLowerCase()) ||
-      post.category.toLowerCase().includes(search.toLowerCase())
+      (post.sport_category?.name || "").toLowerCase().includes(search.toLowerCase())
   );
 
   const handleDelete = () => {
@@ -127,7 +127,7 @@ const PostsList = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{post.category}</Badge>
+                      <Badge variant="secondary">{post.sport_category?.name || "Inne"}</Badge>
                     </TableCell>
                     <TableCell>
                       {format(new Date(post.published_at), "d MMM yyyy, HH:mm", {
