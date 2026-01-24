@@ -236,15 +236,18 @@ const WallpaperEditor = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="linked_banner">Powiązany baner (tryb borderless)</Label>
-                <Select
-                  value={formData.linked_banner_id}
-                  onValueChange={(val) => setFormData({ ...formData, linked_banner_id: val })}
+              <Select
+                  value={formData.linked_banner_id || "__none__"}
+                  onValueChange={(val) => setFormData({ 
+                    ...formData, 
+                    linked_banner_id: val === "__none__" ? "" : val 
+                  })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Wybierz baner..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Brak</SelectItem>
+                    <SelectItem value="__none__">Brak</SelectItem>
                     {banners?.map((banner) => (
                       <SelectItem key={banner.id} value={banner.id}>
                         {banner.title}
