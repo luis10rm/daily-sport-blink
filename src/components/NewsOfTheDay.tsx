@@ -1,7 +1,7 @@
 import { ExternalLink, Trophy } from "lucide-react";
-import { SportIcon, getSportLabel } from "./SportIcon";
+import { DynamicSportIcon } from "./DynamicSportIcon";
 import { getCategoryImage } from "@/config/categoryImages";
-import { Post } from "@/data/samplePosts";
+import { Post } from "@/hooks/usePosts";
 import { cn } from "@/lib/utils";
 
 interface NewsOfTheDayProps {
@@ -10,7 +10,7 @@ interface NewsOfTheDayProps {
 }
 
 export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
-  const formattedDate = new Date(post.publishedAt).toLocaleDateString("pl-PL", {
+  const formattedDate = new Date(post.published_at).toLocaleDateString("pl-PL", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -34,7 +34,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
         {/* Image area */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted md:aspect-auto md:w-1/2">
           <img
-            src={getCategoryImage(post.category, post.imageUrl)}
+            src={getCategoryImage(post.category, post.image_url || undefined)}
             alt={post.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
@@ -45,9 +45,9 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <SportIcon category={post.category} className="h-10 w-10" />
+                <DynamicSportIcon sportCategory={post.sport_category} fallbackSlug={post.category} className="h-10 w-10" />
                 <span className="text-sm font-medium uppercase tracking-wider text-primary">
-                  {getSportLabel(post.category)}
+                  {post.sport_category?.name || post.category}
                 </span>
               </div>
               <span className="text-sm text-muted-foreground">{formattedDate}</span>
@@ -76,7 +76,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
           </div>
 
           <a
-            href={post.sourceUrl}
+            href={post.source_url}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md transition-all hover:shadow-lg hover:brightness-110"
