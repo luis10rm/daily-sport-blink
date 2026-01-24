@@ -14,6 +14,7 @@ import {
   Megaphone,
   FolderKanban,
   Wallpaper,
+  UserPen,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/posts", label: "Posty", icon: FileText },
   { href: "/admin/banners", label: "Banery", icon: Megaphone },
+  { href: "/admin/authors", label: "Autorzy", icon: UserPen },
   { href: "/admin/wallpapers", label: "Wallpapery", icon: Wallpaper, adminOnly: true },
   { href: "/admin/categories", label: "Kategorie", icon: FolderKanban, adminOnly: true },
   { href: "/admin/users", label: "Użytkownicy", icon: Users, adminOnly: true },
