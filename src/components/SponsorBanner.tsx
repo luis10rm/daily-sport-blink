@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWallpaperContext } from "@/contexts/WallpaperContext";
 
 interface SponsorBannerProps {
   title?: string;
@@ -15,6 +16,8 @@ interface SponsorBannerProps {
   previewMode?: "desktop" | "mobile";
   // Render compact version for inactive slots (placeholder)
   isPlaceholder?: boolean;
+  // Banner ID to check against wallpaper's linked banner
+  bannerId?: string;
 }
 
 export const SponsorBanner = ({
@@ -28,7 +31,12 @@ export const SponsorBanner = ({
   className,
   previewMode,
   isPlaceholder,
+  bannerId,
 }: SponsorBannerProps) => {
+  const { isTakeoverActive, linkedBannerId } = useWallpaperContext();
+  
+  // Check if this banner is linked to the active wallpaper campaign
+  const isTakeoverMode = isTakeoverActive && bannerId && linkedBannerId === bannerId;
   const impressionFiredRef = useRef(false);
   const bannerRef = useRef<HTMLDivElement>(null);
   const [isHiddenByAdBlock, setIsHiddenByAdBlock] = useState(false);
@@ -107,6 +115,78 @@ export const SponsorBanner = ({
             </>
           )}
         </div>
+      </div>
+    );
+  }
+
+  // TAKEOVER MODE: Borderless banner for wallpaper campaign
+  // Renders clean image without frame, bg, or header for visual consistency
+  if (isTakeoverMode && hasImages) {
+    return (
+      <div className={cn("flex flex-col items-center", className)}>
+        {/* Impression pixel */}
+        {impressionTag && !previewMode && (
+          <img
+            src={impressionTag}
+            alt=""
+            width={1}
+            height={1}
+            className="absolute opacity-0 pointer-events-none"
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Borderless banner - no bg, no frame */}
+        <div
+          ref={bannerRef}
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          role="link"
+          tabIndex={0}
+          className="cursor-pointer group"
+          aria-label={title || "Reklama partnera"}
+        >
+          {/* Desktop slot: 970x250 - borderless */}
+          <div
+            className={cn(
+              "relative overflow-hidden",
+              previewMode === "mobile" ? "hidden" : "hidden md:block",
+              previewMode === "desktop" && "!block"
+            )}
+            style={{ width: "970px", height: "250px" }}
+          >
+            {imageDesktopUrl && (
+              <img
+                src={imageDesktopUrl}
+                alt={title || "Reklama"}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+              />
+            )}
+          </div>
+
+          {/* Mobile slot: 300x250 - borderless */}
+          <div
+            className={cn(
+              "relative overflow-hidden mx-auto",
+              previewMode === "desktop" ? "hidden" : "block md:hidden",
+              previewMode === "mobile" && "!block"
+            )}
+            style={{ width: "300px", height: "250px" }}
+          >
+            {(imageMobileUrl || imageDesktopUrl) && (
+              <img
+                src={imageMobileUrl || imageDesktopUrl}
+                alt={title || "Reklama"}
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Subtle label below - adapts to wallpaper */}
+        <span className="text-xs text-foreground/60 mt-2">
+          Reklama{title ? ` · ${title}` : ""}
+        </span>
       </div>
     );
   }

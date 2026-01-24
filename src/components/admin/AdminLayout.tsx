@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   Megaphone,
   FolderKanban,
+  Wallpaper,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/posts", label: "Posty", icon: FileText },
   { href: "/admin/banners", label: "Banery", icon: Megaphone },
+  { href: "/admin/wallpapers", label: "Wallpapery", icon: Wallpaper, adminOnly: true },
   { href: "/admin/categories", label: "Kategorie", icon: FolderKanban, adminOnly: true },
   { href: "/admin/users", label: "Użytkownicy", icon: Users, adminOnly: true },
   { href: "/admin/settings", label: "Ustawienia", icon: Settings },

@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { WallpaperProvider } from "@/contexts/WallpaperContext";
+import { WallpaperBackground } from "@/components/WallpaperBackground";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -17,6 +19,8 @@ import CategoriesList from "./pages/admin/CategoriesList";
 import CategoryEditor from "./pages/admin/CategoryEditor";
 import UsersList from "./pages/admin/UsersList";
 import Settings from "./pages/admin/Settings";
+import WallpapersList from "./pages/admin/WallpapersList";
+import WallpaperEditor from "./pages/admin/WallpaperEditor";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,12 +29,14 @@ function App() {
   return (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
+      <WallpaperProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <WallpaperBackground />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route
               path="/admin"
@@ -89,6 +95,30 @@ function App() {
               }
             />
             <Route
+              path="/admin/wallpapers"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <WallpapersList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/wallpapers/new"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <WallpaperEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/wallpapers/:id/edit"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <WallpaperEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/categories"
               element={
                 <ProtectedRoute requireAdmin>
@@ -132,8 +162,9 @@ function App() {
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+    </WallpaperProvider>
+  </AuthProvider>
+</QueryClientProvider>
   );
 }
 
