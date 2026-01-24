@@ -1,116 +1,59 @@
 
 
-## Wyłączenie Wallpapera w panelu admina
+## Naprawa wyświetlania obrazka OG w panelu admina
 
 ### Problem
-Komponent `WallpaperBackground` jest renderowany globalnie w `App.tsx`, **poza routerem**. Przez to:
-1. Wallpaper wyświetla się na wszystkich stronach, włącznie z `/admin/*`
-2. Klikalne skrzydła (`z-[1]`) przechwytują kliknięcia w panelu admina
-3. Każde kliknięcie w obszar skrzydeł otwiera link kampanii
+
+Podczas używania funkcji "Generuj AI":
+1. Edge function poprawnie pobiera obrazek OG ze strony źródłowej
+2. `PostEditor` poprawnie ustawia `image_url` w formularzu
+3. **Ale** komponent `ImageSourceSection` nie reaguje na tę zmianę - przełącznik "Użyj własnej grafiki" pozostaje wyłączony
+4. W rezultacie wyświetla się domyślna grafika kategorii zamiast pobranego obrazka
+
+### Przyczyna techniczna
+
+W pliku `src/components/admin/ImageSourceSection.tsx`:
+
+```tsx
+const [useCustomImage, setUseCustomImage] = useState(!!currentImageUrl);
+```
+
+Stan `useCustomImage` jest inicjalizowany **tylko raz** przy pierwszym renderowaniu. Gdy AI ustawia `image_url` przez `form.setValue()`, wartość w formularzu się zmienia, ale stan lokalny `useCustomImage` pozostaje `false`.
 
 ### Rozwiązanie
 
-Przenieść komponent `WallpaperBackground` **do środka routera** i renderować go warunkowo - tylko na stronach publicznych (strona główna `/`).
+Dodać `useEffect` który synchronizuje stan `useCustomImage` z wartością `image_url` z formularza:
 
-### Zmiany w `src/App.tsx`
-
-**1. Usunięcie globalnego renderowania:**
-
-```tsx
-// Usunąć (linia 36):
-<WallpaperBackground />
+```text
+src/components/admin/ImageSourceSection.tsx
++----------------------------------------------------+
+|  useEffect(() => {                                 |
+|    if (currentImageUrl && !useCustomImage) {       |
+|      setUseCustomImage(true);                      |
+|      // Automatycznie przełącz na zakładkę URL     |
+|      if (currentImageUrl.startsWith("http")) {     |
+|        setActiveTab("url");                        |
+|      }                                             |
+|    }                                               |
+|  }, [currentImageUrl]);                            |
++----------------------------------------------------+
 ```
 
-**2. Przeniesienie do konkretnych tras:**
+### Dodatkowe usprawnienie
 
-Dodać `WallpaperBackground` tylko tam, gdzie ma być widoczny - w komponencie `Index`:
+Gdy AI wklei URL obrazka, automatycznie przełączyć na zakładkę "URL" aby użytkownik od razu widział podgląd pobranego obrazka OG.
 
-```tsx
-// W src/pages/Index.tsx dodać:
-import { WallpaperBackground } from "@/components/WallpaperBackground";
-
-// I renderować przed <Header />:
-return (
-  <div className={cn(...)}>
-    <WallpaperBackground />
-    <Header />
-    ...
-  </div>
-);
-```
-
-### Alternatywne rozwiązanie (bez przenoszenia)
-
-Jeśli chcemy zachować `WallpaperBackground` w `App.tsx`, można dodać warunek sprawdzający ścieżkę URL:
-
-**W `src/components/WallpaperBackground.tsx`:**
-
-```tsx
-import { useLocation } from "react-router-dom";
-
-export function WallpaperBackground() {
-  const location = useLocation();
-  const { wallpaper, isTakeoverActive } = useWallpaperContext();
-
-  // Wyłącz na stronach admina
-  const isAdminRoute = location.pathname.startsWith("/admin");
-  
-  if (!isTakeoverActive || !wallpaper || isAdminRoute) {
-    return null;
-  }
-  // ... reszta kodu
-}
-```
-
-**Problem:** `useLocation` wymaga, aby komponent był wewnątrz `BrowserRouter`. Obecnie `WallpaperBackground` jest **poza** routerem.
-
-### Rekomendowane rozwiązanie
-
-Przenieść `WallpaperBackground` **do środka routera** i dodać warunek na ścieżkę:
-
-**`src/App.tsx`:**
-
-```tsx
-// Przed (linia 36-37):
-<WallpaperBackground />
-<BrowserRouter>
-
-// Po:
-<BrowserRouter>
-  <ConditionalWallpaper />
-```
-
-Gdzie `ConditionalWallpaper` to nowy wrapper:
-
-**`src/components/ConditionalWallpaper.tsx`:**
-
-```tsx
-import { useLocation } from "react-router-dom";
-import { WallpaperBackground } from "./WallpaperBackground";
-
-export function ConditionalWallpaper() {
-  const location = useLocation();
-  
-  // Nie renderuj wallpapera na stronach admina i auth
-  if (location.pathname.startsWith("/admin") || location.pathname === "/auth") {
-    return null;
-  }
-  
-  return <WallpaperBackground />;
-}
-```
-
-### Podsumowanie zmian
+### Zmiany w plikach
 
 | Plik | Zmiana |
 |------|--------|
-| `src/App.tsx` | Przenieść `WallpaperBackground` do środka `BrowserRouter` |
-| `src/components/ConditionalWallpaper.tsx` | **Nowy plik** - wrapper sprawdzający ścieżkę |
-| `src/components/WallpaperBackground.tsx` | Bez zmian |
+| `src/components/admin/ImageSourceSection.tsx` | Dodanie `useEffect` synchronizującego `useCustomImage` z `image_url` + automatyczne przełączanie na zakładkę URL |
 
-### Efekt
+### Efekt po naprawie
 
-- Strona główna (`/`): Wallpaper aktywny, skrzydła klikalne
-- Panel admina (`/admin/*`): Brak wallpapera, normalna obsługa kliknięć
-- Strona logowania (`/auth`): Brak wallpapera
+1. Użytkownik wkleja URL źródła i klika "Generuj AI"
+2. AI pobiera dane artykułu i obrazek OG
+3. Przełącznik "Użyj własnej grafiki" **automatycznie się włącza**
+4. Zakładka przełącza się na "URL"
+5. Użytkownik widzi podgląd pobranego obrazka OG w sekcji obrazka
 
