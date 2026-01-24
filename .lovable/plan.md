@@ -1,288 +1,129 @@
 
 
-## Dedykowane profile twórców treści
+## Integracja profili autorów z widokami postów
 
-### Cel
-Stworzyć system wyróżniający autorów postów poprzez dedykowaną podstronę profilu z dużą grafiką i bio, edytowalną z poziomu panelu admina.
+### Obecny stan
+Strona profilu autora (`/autor/:slug`) jest gotowa, ale użytkownicy nie mają do niej dostępu, ponieważ mini-karta autora (`AuthorCard`) nie jest jeszcze zintegrowana z komponentami wyświetlającymi posty.
 
----
-
-### Projekt UI
-
-**Publiczna strona profilu twórcy (`/autor/{slug}`):**
+### Propozycja: 3 punkty dostępu do profilu autora
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  [Header nawigacji serwisu]                                                 │
+│  PUNKT 1: NewsCard (każdy artykuł na stronie głównej)                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                    COVER IMAGE (pelna szerokosc)                    │    │
-│  │                         min. 300px wysokosci                        │    │
-│  │                       z gradientowym overlayem                      │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
+│  ┌──────────────────────────────────────┐                                   │
+│  │  [Zdjęcie artykułu]                  │                                   │
+│  │                                      │                                   │
+│  │  Piłka nożna • 24 stycznia 2026      │                                   │
+│  │                                      │                                   │
+│  │  Tytuł artykułu...                   │                                   │
+│  │  Zajawka artykułu...                 │                                   │
+│  │                                      │                                   │
+│  │  ┌─────────────────────────────────┐ │                                   │
+│  │  │  [O] Jan Kowalski              →│ │  ← NOWE: mini-karta autora       │
+│  │  │      Redaktor sportowy          │ │    kliknięcie → /autor/slug      │
+│  │  └─────────────────────────────────┘ │                                   │
+│  │                                      │                                   │
+│  │  [Przeczytaj więcej →]               │                                   │
+│  └──────────────────────────────────────┘                                   │
 │                                                                             │
-│           ┌──────────┐                                                      │
-│           │  AVATAR  │   <- okragly, wysuwa sie nad cover                  │
-│           │  120x120 │      z biala ramka                                  │
-│           └──────────┘                                                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PUNKT 2: NewsOfTheDay (wyróżniony artykuł dnia)                            │
+├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│              Jan Kowalski                                                   │
-│              Redaktor sportowy                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  🏆 Wiadomość dnia                                                    │  │
+│  │                                                                       │  │
+│  │  [Duże zdjęcie]  │  Tytuł artykułu...                                │  │
+│  │                  │  Zajawka...                                        │  │
+│  │                  │                                                    │  │
+│  │                  │  ┌─────────────────────────────┐                   │  │
+│  │                  │  │  [O] Jan Kowalski          →│  ← NOWE          │  │
+│  │                  │  │      Redaktor sportowy      │                   │  │
+│  │                  │  └─────────────────────────────┘                   │  │
+│  │                  │                                                    │  │
+│  │                  │  [Przeczytaj więcej →]                             │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
 │                                                                             │
-│              [Twitter] [Instagram]                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PUNKT 3 (opcjonalnie): Dedykowana sekcja "Nasi Autorzy" na stronie głównej │
+├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  ─────────────────────────────────────────────────────────────────────────  │
+│  ══ Nasi Autorzy ═══════════════════════════════════════════════════════   │
 │                                                                             │
-│  "Pasjonat pilki noznej i tenisa. Sledze sport od 15 lat.                  │
-│   Specjalizuje sie w analizach taktycznych i wywiadach z zawodnikami."     │
-│                                                                             │
-│  ┌────────────────────────────────────────────────────────────────────┐     │
-│  │  Statystyki autora                                                 │     │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐                         │     │
-│  │  │    47    │  │ Pilka    │  │ Aktywny  │                         │     │
-│  │  │artykulow │  │ nozna    │  │od 6 mies.│                         │     │
-│  │  └──────────┘  └──────────┘  └──────────┘                         │     │
-│  └────────────────────────────────────────────────────────────────────┘     │
-│                                                                             │
-│  == Artykuly autora ========================================================│
-│                                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                          │
-│  │  NewsCard   │  │  NewsCard   │  │  NewsCard   │                          │
-│  └─────────────┘  └─────────────┘  └─────────────┘                          │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
+│  │    [O]      │  │    [O]      │  │    [O]      │  │    [O]      │        │
+│  │ Jan Kowal.  │  │ Anna Nowak  │  │ Piotr Wiśn. │  │ Maria Ziel. │        │
+│  │ Redaktor    │  │ Ekspert F1  │  │ Tenis       │  │ MMA         │        │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘        │
+│       ↓                ↓                ↓                ↓                  │
+│  /autor/jan-k...  /autor/anna-n...  /autor/piotr-w... /autor/maria-z...    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Mini-profil autora w NewsCard:**
-
-```text
-┌──────────────────────────────────────────┐
-│  [Zdjecie artykulu]                      │
-│                                          │
-│  Pilka nozna • 24 stycznia 2026          │
-│                                          │
-│  Tytul artykulu...                       │
-│  Zajawka artykulu...                     │
-│                                          │
-│  ┌─────────────────────────────────────┐ │
-│  │  [O] Jan Kowalski                   │ │ <- klikniecie -> /autor/jan-kowalski
-│  │      Redaktor sportowy              │ │
-│  └─────────────────────────────────────┘ │
-│                                          │
-│  [Przeczytaj wiecej ->]                  │
-└──────────────────────────────────────────┘
-```
-
 ---
 
-### Architektura rozwiazania
+### Szczegóły techniczne
 
-#### 1. Rozszerzenie bazy danych
+#### 1. Aktualizacja NewsCard.tsx
 
-Nowe kolumny w tabeli `profiles`:
-
-| Kolumna | Typ | Opis |
-|---------|-----|------|
-| `slug` | text UNIQUE | URL-friendly identyfikator (np. "jan-kowalski") |
-| `display_name` | text | Wyswietlana nazwa (np. "Jan Kowalski") |
-| `bio` | text | Opis/biografia autora (do 500 znakow) |
-| `cover_image_url` | text | URL duzego zdjecia w tle profilu |
-| `role_title` | text | Tytul roli (np. "Redaktor sportowy") |
-| `is_public` | boolean | Czy profil ma byc widoczny publicznie |
-| `social_twitter` | text | Link do Twittera |
-| `social_instagram` | text | Link do Instagrama |
-
-**Nowa polityka RLS:**
-- "Anyone can view public profiles" - SELECT dla `is_public = true`
-
-**Nowy storage bucket:**
-- `author-images` - dla avatarow i cover images
-
-#### 2. Nowe pliki
-
-| Plik | Opis |
-|------|------|
-| `src/pages/AuthorProfile.tsx` | Publiczna strona profilu autora |
-| `src/pages/admin/AuthorEditor.tsx` | Edytor profilu w panelu admina |
-| `src/pages/admin/AuthorsList.tsx` | Lista autorow w panelu admina |
-| `src/components/AuthorCard.tsx` | Mini-karta autora do NewsCard |
-| `src/components/AuthorHero.tsx` | Sekcja hero z cover image na profilu |
-| `src/components/AuthorStats.tsx` | Statystyki autora na profilu |
-| `src/hooks/useAuthors.tsx` | Hook do pobierania danych autorow |
-
-#### 3. Routing
-
-Nowe trasy:
-- `/autor/:slug` - publiczny profil autora
-- `/admin/authors` - lista autorow (admin)
-- `/admin/authors/:id/edit` - edycja profilu autora
-
----
-
-### Szczegoly techniczne
-
-#### Migracja bazy danych
-
-```sql
--- Rozszerzenie tabeli profiles
-ALTER TABLE profiles 
-ADD COLUMN IF NOT EXISTS slug text UNIQUE,
-ADD COLUMN IF NOT EXISTS display_name text,
-ADD COLUMN IF NOT EXISTS bio text,
-ADD COLUMN IF NOT EXISTS cover_image_url text,
-ADD COLUMN IF NOT EXISTS role_title text DEFAULT 'Autor',
-ADD COLUMN IF NOT EXISTS is_public boolean DEFAULT false,
-ADD COLUMN IF NOT EXISTS social_twitter text,
-ADD COLUMN IF NOT EXISTS social_instagram text;
-
--- Indeks dla szybkiego wyszukiwania po slug
-CREATE INDEX IF NOT EXISTS idx_profiles_slug ON profiles(slug);
-
--- Polityka RLS dla publicznego dostepu do profili
-CREATE POLICY "Anyone can view public profiles" ON profiles
-FOR SELECT USING (is_public = true);
-```
-
-#### Hook useAuthors
+Dodanie nowego propsa `author` i renderowanie AuthorCard:
 
 ```tsx
-export interface Author {
-  id: string;
-  slug: string;
-  display_name: string;
-  bio: string | null;
-  avatar_url: string | null;
-  cover_image_url: string | null;
-  role_title: string;
-  is_public: boolean;
-  social_twitter: string | null;
-  social_instagram: string | null;
+interface NewsCardProps {
+  // ... istniejące propsy
+  author?: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    slug: string | null;
+    role_title: string | null;
+  } | null;
 }
 
-export const useAuthor = (slug: string) => {
-  return useQuery({
-    queryKey: ["author", slug],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("slug", slug)
-        .eq("is_public", true)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data as Author | null;
-    },
-  });
-};
-
-export const useAuthorPosts = (authorId: string) => {
-  return useQuery({
-    queryKey: ["author-posts", authorId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("posts")
-        .select("*, sport_category:sport_categories(*)")
-        .eq("created_by", authorId)
-        .order("published_at", { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!authorId,
-  });
-};
+// W komponencie, przed CTA:
+{author && <AuthorCard author={author} />}
 ```
 
-#### Strona profilu AuthorProfile.tsx
+#### 2. Aktualizacja NewsOfTheDay.tsx
 
-Kluczowe elementy:
-- **Hero section** z cover image i overlay gradientowym
-- **Avatar** wystajacy ponad cover (transform: translateY(-50%))
-- **Statystyki** w grid: liczba artykulow, ulubiona kategoria, czas od pierwszego postu
-- **Social links** z ikonami Twittera i Instagrama
-- **Grid postow** autora z komponentami NewsCard
+Wykorzystanie `post.author` do wyświetlenia mini-karty autora.
 
-#### Mini-karta autora w NewsCard
+#### 3. Aktualizacja Index.tsx
 
-Nowy props w NewsCard:
-```tsx
-author?: {
-  id: string;
-  display_name: string;
-  avatar_url: string | null;
-  slug: string;
-  role_title: string;
-} | null;
-```
+Przekazanie danych autora do komponentów NewsCard i NewsOfTheDay.
 
-Renderowanie przed CTA:
-```tsx
-{author && (
-  <Link to={`/autor/${author.slug}`} 
-    className="flex items-center gap-2 mt-2 p-2 -mx-2 rounded-lg hover:bg-muted/50 transition-colors">
-    <Avatar className="h-8 w-8">
-      <AvatarImage src={author.avatar_url || undefined} />
-      <AvatarFallback>{author.display_name?.charAt(0)}</AvatarFallback>
-    </Avatar>
-    <div className="text-sm">
-      <p className="font-medium">{author.display_name}</p>
-      <p className="text-xs text-muted-foreground">{author.role_title}</p>
-    </div>
-  </Link>
-)}
-```
+#### 4. (Opcjonalnie) Sekcja "Nasi Autorzy"
 
-#### Edytor profilu w adminie
-
-Formularz z polami:
-- Display Name (wymagane)
-- Slug (auto-generowany z nazwy)
-- Bio (textarea, max 500 znakow)
-- Avatar (ImageUploader)
-- Cover Image (ImageUploader z podgladem szerokosci)
-- Role Title (np. "Redaktor sportowy")
-- Is Public (switch - czy pokazywac na stronie)
-- Social links (Twitter, Instagram)
+Nowy komponent `AuthorsShowcase.tsx` wyświetlający wszystkich publicznych autorów w formie karuzeli lub grida.
 
 ---
 
-### Nawigacja admina
+### Plan wdrożenia
 
-Dodanie do `AdminLayout.tsx`:
-
-```tsx
-{ href: "/admin/authors", label: "Autorzy", icon: UserPen },
-```
-
----
-
-### Plan wdrozenia (kolejnosc)
-
-| Krok | Opis |
-|------|------|
-| 1 | Migracja bazy danych - rozszerzenie tabeli `profiles` |
-| 2 | Utworzenie bucketu `author-images` w storage |
-| 3 | Utworzenie `src/hooks/useAuthors.tsx` |
-| 4 | Utworzenie `src/components/AuthorCard.tsx` |
-| 5 | Utworzenie `src/components/AuthorHero.tsx` |
-| 6 | Utworzenie `src/components/AuthorStats.tsx` |
-| 7 | Utworzenie `src/pages/AuthorProfile.tsx` |
-| 8 | Utworzenie `src/pages/admin/AuthorsList.tsx` |
-| 9 | Utworzenie `src/pages/admin/AuthorEditor.tsx` |
-| 10 | Aktualizacja `AdminLayout.tsx` - dodanie linku |
-| 11 | Aktualizacja `App.tsx` - nowe trasy |
-| 12 | Aktualizacja `usePosts.tsx` - fetch danych autora z postami |
-| 13 | Aktualizacja `NewsCard.tsx` - integracja mini-karty autora |
-| 14 | Aktualizacja `NewsOfTheDay.tsx` - integracja mini-karty autora |
+| Krok | Plik | Zmiana |
+|------|------|--------|
+| 1 | `NewsCard.tsx` | Dodanie propsa `author` i renderowanie `AuthorCard` |
+| 2 | `NewsOfTheDay.tsx` | Dodanie `AuthorCard` przed przyciskiem CTA |
+| 3 | `Index.tsx` | Przekazanie `post.author` do NewsCard i NewsOfTheDay |
+| 4 | (opcja) `AuthorsShowcase.tsx` | Nowy komponent z listą autorów |
+| 5 | (opcja) `Index.tsx` | Dodanie sekcji "Nasi Autorzy" na stronie głównej |
 
 ---
 
-### Efekt koncowy
+### Efekt końcowy
 
-1. **Wyroznienie tworcow**: Kazdy autor ma swoja dedykowana strone z duza grafika, bio i statystykami
-2. **Budowanie marki osobistej**: Linki do social media, profesjonalny tytul roli
-3. **Engagement**: Uzytkownicy moga przegladac artykuly ulubionego autora
-4. **Latwa edycja**: Admin moze zarzadzac profilami bezposrednio z panelu
+Po wdrożeniu użytkownicy będą mogli dotrzeć do profilu autora poprzez:
+
+1. **Kliknięcie mini-karty autora** przy dowolnym artykule
+2. **Kliknięcie mini-karty autora** w "Wiadomości dnia"
+3. **(Opcjonalnie) Sekcję "Nasi Autorzy"** na stronie głównej
+
+Każde kliknięcie przeniesie na `/autor/{slug}` gdzie zobaczą pełny profil z cover image, bio, statystykami i listą artykułów.
 
