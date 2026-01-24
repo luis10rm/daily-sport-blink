@@ -1,104 +1,80 @@
 
-## Naprawa wyświetlania kategorii postów na stronie publicznej
+## Szybkie tworzenie kategorii z poziomu PostEditor
 
-### Problem
+### Cel
+Dodanie przycisku "+" obok selecta kategorii, który otwiera uproszczony modal do szybkiego tworzenia nowej kategorii bez opuszczania edytora posta.
 
-Post w panelu admina ma ustawioną kategorię "Piłka nożna", ale na stronie publicznej wyświetla się jako "other". 
+### Komponenty do utworzenia
 
-**Przyczyna:** System używa dwóch pól kategorii:
-- `category` - stare pole enum (wartość: "other" - domyślna)
-- `category_id` - nowe pole UUID połączone z tabelą `sport_categories` (poprawna wartość: "Piłka nożna")
-
-`PostEditor` zapisuje tylko `category_id`, a stare pole `category` pozostaje z domyślną wartością.
-
-### Plan naprawy
-
-#### 1. Aktualizacja PostEditor - synchronizacja pól
-
-Podczas zapisywania posta, dodać synchronizację pola `category` na podstawie wybranej kategorii z `sport_categories`:
+#### 1. QuickCategoryDialog - nowy komponent
+Uproszczony dialog do szybkiego tworzenia kategorii zawierający:
+- Pole "Nazwa kategorii" (generuje automatycznie slug)
+- Wybór ikony z predefiniowanej listy (6-8 najpopularniejszych)
+- Pole koloru tła (z domyślną wartością)
+- Przyciski "Anuluj" i "Utwórz"
 
 ```text
-PostEditor.tsx: onSubmit()
-+--------------------------------------------------+
-| const selectedCategory = sportCategories?.find( |
-|   c => c.id === data.category_id                 |
-| );                                               |
-|                                                  |
-| const postData = {                               |
-|   ...                                            |
-|   category_id: data.category_id,                 |
-|   category: selectedCategory?.slug || "other",  |  ← NOWE
-|   ...                                            |
-| };                                               |
-+--------------------------------------------------+
+src/components/admin/QuickCategoryDialog.tsx
++----------------------------------------------------+
+|  Dialog                                            |
+|  ├── DialogTrigger (przycisk "+")                  |
+|  └── DialogContent                                 |
+|      ├── DialogHeader: "Szybkie tworzenie..."      |
+|      ├── Input: Nazwa kategorii                    |
+|      ├── Grid: 6-8 ikon do wyboru                  |
+|      ├── Input: Kolor tła (HSL)                    |
+|      └── DialogFooter: Anuluj | Utwórz             |
++----------------------------------------------------+
 ```
 
-#### 2. Aktualizacja getCategoryImage - priorytet dla sport_category
+### Zmiany w PostEditor
 
-Zaktualizować funkcję `getCategoryImage()` aby akceptowała również dane z `sport_category`:
+Modyfikacja sekcji kategorii - dodanie przycisku "+" obok SelectTrigger:
 
 ```text
-categoryImages.ts:
-+--------------------------------------------------+
-| export const getCategoryImage = (                |
-|   category: SportCategory,                       |
-|   customImageUrl?: string | null,                |
-|   sportCategorySlug?: string                     |  ← NOWE
-| ): string => {                                   |
-|   if (customImageUrl) return customImageUrl;     |
-|                                                  |
-|   // Priorytet dla dynamicznej kategorii         |
-|   const slug = sportCategorySlug || category;    |
-|   return categoryDefaultImages[slug] ||          |
-|          categoryDefaultImages.other;            |
-| };                                               |
-+--------------------------------------------------+
+Przed:
+┌─────────────────────────────────────┐
+│ Kategoria                           │
+│ ┌─────────────────────────────────┐ │
+│ │ Wybierz kategorię           ▼  │ │
+│ └─────────────────────────────────┘ │
+└─────────────────────────────────────┘
+
+Po:
+┌─────────────────────────────────────┐
+│ Kategoria                           │
+│ ┌─────────────────────────────┐┌──┐ │
+│ │ Wybierz kategorię        ▼  ││+ │ │
+│ └─────────────────────────────┘└──┘ │
+└─────────────────────────────────────┘
 ```
 
-#### 3. Aktualizacja NewsCard - przekazanie nowego sluga
+### Przepływ użytkownika
 
-```text
-NewsCard.tsx:
-+--------------------------------------------------+
-| <img                                             |
-|   src={getCategoryImage(                         |
-|     category,                                    |
-|     imageUrl,                                    |
-|     sportCategory?.slug                          |  ← NOWE
-|   )}                                             |
-| />                                               |
-+--------------------------------------------------+
-```
-
-#### 4. Aktualizacja NewsOfTheDay - analogiczna zmiana
-
-Ta sama zmiana dla komponentu `NewsOfTheDay`.
-
-#### 5. Jednorazowa migracja istniejących danych
-
-Uruchomić SQL do zsynchronizowania starych postów:
-
-```sql
-UPDATE posts p
-SET category = sc.slug
-FROM sport_categories sc
-WHERE p.category_id = sc.id
-  AND p.category_id IS NOT NULL;
-```
+1. Użytkownik tworzy post i potrzebuje nowej kategorii
+2. Klika "+" obok selecta kategorii
+3. W modalu wpisuje nazwę (np. "Siatkówka")
+4. Slug generuje się automatycznie: "siatkowka"
+5. Wybiera ikonę z listy (opcjonalnie)
+6. Klika "Utwórz"
+7. Kategoria zostaje utworzona i automatycznie wybrana w formularzu posta
+8. Użytkownik kontynuuje tworzenie posta
 
 ### Zmiany w plikach
 
 | Plik | Zmiana |
 |------|--------|
-| `src/pages/admin/PostEditor.tsx` | Synchronizacja pola `category` podczas zapisu |
-| `src/config/categoryImages.ts` | Rozszerzenie `getCategoryImage()` o parametr `sportCategorySlug` |
-| `src/components/NewsCard.tsx` | Przekazanie `sportCategory?.slug` do `getCategoryImage()` |
-| `src/components/NewsOfTheDay.tsx` | Analogiczna zmiana jak w NewsCard |
-| Migracja SQL | Jednorazowa aktualizacja istniejących postów |
+| `src/components/admin/QuickCategoryDialog.tsx` | **NOWY** - Komponent dialogu |
+| `src/pages/admin/PostEditor.tsx` | Import QuickCategoryDialog, dodanie przycisku "+" i obsługa callback |
 
-### Efekt po naprawie
+### Szczegóły techniczne
 
-- Nowe posty będą miały zsynchronizowane oba pola kategorii
-- Istniejące posty zostaną naprawione przez migrację
-- Obrazki kategorii będą poprawnie dopasowane do dynamicznych kategorii
-- System będzie kompatybilny wstecz ze starym polem `category`
+**QuickCategoryDialog** będzie:
+- Używać istniejącego hooka `useCreateSportCategory` do tworzenia
+- Przyjmować prop `onCategoryCreated(categoryId: string)` do callbacku
+- Automatycznie zamykać się po utworzeniu
+- Invalidować query `sport-categories` (już obsługiwane przez hook)
+
+**PostEditor** otrzyma:
+- Callback `handleCategoryCreated` który ustawi `category_id` w formularzu
+- Layout flex dla sekcji kategorii (Select + przycisk "+")
