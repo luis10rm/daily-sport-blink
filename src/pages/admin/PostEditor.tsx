@@ -115,12 +115,17 @@ const PostEditor = () => {
     // Synchronize category slug with category_id for backward compatibility
     const selectedCategory = sportCategories?.find((c) => c.id === data.category_id);
     
+    // Valid enum values for backward compatibility
+    const validEnumCategories = ["football", "basketball", "tennis", "f1", "mma", "other"];
+    const categorySlug = selectedCategory?.slug || "other";
+    const enumCategory = validEnumCategories.includes(categorySlug) ? categorySlug : "other";
+    
     const postData = {
       title: data.title,
       excerpt: data.excerpt,
       content: data.content || undefined,
       category_id: data.category_id,
-      category: (selectedCategory?.slug || "other") as any,
+      category: enumCategory as any,
       image_url: data.image_url || undefined,
       source_url: data.source_url,
       tags: data.tags ? data.tags.split(",").map((t) => t.trim()) : [],
