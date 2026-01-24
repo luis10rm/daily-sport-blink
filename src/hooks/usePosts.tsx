@@ -65,9 +65,29 @@ export type SportCategory = SportCategorySlug;
 
 const POST_SELECT = `
   *,
-  sport_category:sport_categories(id, slug, name, icon_name, icon_url, bg_color),
-  author:profiles!posts_created_by_fkey(id, display_name, avatar_url, slug, role_title)
+  sport_category:sport_categories(id, slug, name, icon_name, icon_url, bg_color)
 `;
+
+// Helper to fetch author data for posts
+const fetchAuthorsForPosts = async (posts: any[]): Promise<Post[]> => {
+  const authorIds = [...new Set(posts.filter(p => p.created_by).map(p => p.created_by))];
+  
+  if (authorIds.length === 0) {
+    return posts.map(p => ({ ...p, author: null }));
+  }
+
+  const { data: authors } = await supabase
+    .from("profiles")
+    .select("id, display_name, avatar_url, slug, role_title")
+    .in("id", authorIds);
+
+  const authorsMap = new Map(authors?.map(a => [a.id, a]) || []);
+  
+  return posts.map(p => ({
+    ...p,
+    author: p.created_by ? authorsMap.get(p.created_by) || null : null,
+  }));
+};
 
 // Fetch all posts
 export const usePosts = () => {
@@ -80,7 +100,7 @@ export const usePosts = () => {
         .order("published_at", { ascending: false });
 
       if (error) throw error;
-      return data as Post[];
+      return fetchAuthorsForPosts(data || []);
     },
   });
 };
@@ -102,7 +122,7 @@ export const useTodaysPosts = () => {
         .order("published_at", { ascending: false });
 
       if (error) throw error;
-      return data as Post[];
+      return fetchAuthorsForPosts(data || []);
     },
   });
 };
@@ -121,7 +141,7 @@ export const useRecentPosts = () => {
         .order("published_at", { ascending: false });
 
       if (error) throw error;
-      return data as Post[];
+      return fetchAuthorsForPosts(data || []);
     },
   });
 };
@@ -137,10 +157,13 @@ export const useNewsOfTheDay = () => {
         .eq("is_news_of_day", true)
         .order("published_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== "PGRST116") throw error;
-      return data as Post | null;
+      if (error) throw error;
+      if (!data) return null;
+      
+      const postsWithAuthor = await fetchAuthorsForPosts([data]);
+      return postsWithAuthor[0] || null;
     },
   });
 };
@@ -158,7 +181,7 @@ export const usePostsFeed = () => {
 
       if (error) throw error;
       
-      const posts = data as Post[];
+      const posts = await fetchAuthorsForPosts(data || []);
       const sponsored = posts.find(p => p.is_sponsored);
       const nonSponsored = posts.filter(p => !p.is_sponsored);
       
@@ -184,7 +207,8 @@ export const usePost = (id: string) => {
         .single();
 
       if (error) throw error;
-      return data as Post;
+      const postsWithAuthor = await fetchAuthorsForPosts([data]);
+      return postsWithAuthor[0];
     },
     enabled: !!id,
   });
