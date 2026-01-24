@@ -34,7 +34,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
         {/* Image area */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted md:aspect-auto md:w-1/2">
           <img
-            src={getCategoryImage(post.category, post.image_url || undefined)}
+            src={getCategoryImage(post.category, post.image_url || undefined, post.sport_category?.slug)}
             alt={post.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
