@@ -11,6 +11,7 @@ export interface Post {
   excerpt: string;
   content?: string | null;
   category: SportCategory;
+  category_id?: string | null;
   image_url?: string | null;
   source_url: string;
   tags: string[];
@@ -26,7 +27,8 @@ export interface CreatePostInput {
   title: string;
   excerpt: string;
   content?: string;
-  category: SportCategory;
+  category?: SportCategory;
+  category_id?: string;
   image_url?: string;
   source_url: string;
   tags?: string[];

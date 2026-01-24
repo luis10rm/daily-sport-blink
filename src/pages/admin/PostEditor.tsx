@@ -5,8 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageSourceSection } from "@/components/admin/ImageSourceSection";
-import { usePost, useCreatePost, useUpdatePost, SportCategory } from "@/hooks/usePosts";
+import { usePost, useCreatePost, useUpdatePost } from "@/hooks/usePosts";
 import { useExtractArticle } from "@/hooks/useSettings";
+import { useSportCategories } from "@/hooks/useSportCategories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,20 +33,13 @@ import { Loader2, ArrowLeft, Save, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
-const categories: { value: SportCategory; label: string }[] = [
-  { value: "football", label: "Piłka nożna" },
-  { value: "basketball", label: "Koszykówka" },
-  { value: "tennis", label: "Tenis" },
-  { value: "f1", label: "Formuła 1" },
-  { value: "mma", label: "MMA" },
-  { value: "other", label: "Inne" },
-];
+// Categories are now fetched dynamically from sport_categories table
 
 const postSchema = z.object({
   title: z.string().min(5, "Tytuł musi mieć minimum 5 znaków"),
   excerpt: z.string().min(10, "Opis musi mieć minimum 10 znaków"),
   content: z.string().optional(),
-  category: z.enum(["football", "basketball", "tennis", "f1", "mma", "other"]),
+  category_id: z.string().min(1, "Wybierz kategorię"),
   image_url: z.string().url("Nieprawidłowy URL").or(z.literal("")).optional(),
   source_url: z.string().url("Nieprawidłowy URL"),
   tags: z.string(),
@@ -62,6 +56,7 @@ const PostEditor = () => {
   const isEditing = !!id;
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
+  const { data: sportCategories, isLoading: isLoadingCategories } = useSportCategories();
   const createPost = useCreatePost();
   const updatePost = useUpdatePost();
   const extractArticle = useExtractArticle();
@@ -72,7 +67,7 @@ const PostEditor = () => {
       title: "",
       excerpt: "",
       content: "",
-      category: "football",
+      category_id: "",
       image_url: "",
       source_url: "",
       tags: "",
@@ -88,7 +83,7 @@ const PostEditor = () => {
         title: post.title,
         excerpt: post.excerpt,
         content: post.content || "",
-        category: post.category,
+        category_id: post.category_id || "",
         image_url: post.image_url || "",
         source_url: post.source_url,
         tags: post.tags?.join(", ") || "",
@@ -104,7 +99,7 @@ const PostEditor = () => {
       title: data.title,
       excerpt: data.excerpt,
       content: data.content || undefined,
-      category: data.category as SportCategory,
+      category_id: data.category_id,
       image_url: data.image_url || undefined,
       source_url: data.source_url,
       tags: data.tags ? data.tags.split(",").map((t) => t.trim()) : [],
@@ -140,23 +135,29 @@ const PostEditor = () => {
 
     toast.info("Analizuję artykuł...");
 
-    const data = await extractArticle.mutateAsync(sourceUrl);
+    const extractedData = await extractArticle.mutateAsync(sourceUrl);
     
     // Fill form with extracted data
-    form.setValue("title", data.title);
-    form.setValue("excerpt", data.excerpt);
-    form.setValue("category", data.category);
-    form.setValue("tags", data.tags.join(", "));
+    form.setValue("title", extractedData.title);
+    form.setValue("excerpt", extractedData.excerpt);
+    // Try to match extracted category slug to a category_id
+    const matchedCategory = sportCategories?.find(
+      (cat) => cat.slug === extractedData.category
+    );
+    if (matchedCategory) {
+      form.setValue("category_id", matchedCategory.id);
+    }
+    form.setValue("tags", extractedData.tags.join(", "));
     
     // If OG image found and no image set yet, offer to use it
-    if (data.og_image && !form.getValues("image_url")) {
-      form.setValue("image_url", data.og_image);
+    if (extractedData.og_image && !form.getValues("image_url")) {
+      form.setValue("image_url", extractedData.og_image);
     }
     
     toast.success("Formularz wypełniony przez AI!");
   };
 
-  if (isEditing && isLoadingPost) {
+  if ((isEditing && isLoadingPost) || isLoadingCategories) {
     return (
       <AdminLayout>
         <div className="space-y-6">
@@ -166,6 +167,10 @@ const PostEditor = () => {
       </AdminLayout>
     );
   }
+
+  // Get current category for ImageSourceSection
+  const currentCategoryId = form.watch("category_id");
+  const currentCategory = sportCategories?.find((cat) => cat.id === currentCategoryId);
 
   return (
     <AdminLayout>
@@ -257,7 +262,7 @@ const PostEditor = () => {
                 {/* Image source section */}
                 <ImageSourceSection 
                   form={form} 
-                  category={form.watch("category")} 
+                  category={currentCategory?.slug as any} 
                 />
 
                 <Card>
@@ -334,7 +339,7 @@ const PostEditor = () => {
 
                     <FormField
                       control={form.control}
-                      name="category"
+                      name="category_id"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Kategoria</FormLabel>
@@ -348,9 +353,9 @@ const PostEditor = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {categories.map((cat) => (
-                                <SelectItem key={cat.value} value={cat.value}>
-                                  {cat.label}
+                              {sportCategories?.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>
+                                  {cat.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
