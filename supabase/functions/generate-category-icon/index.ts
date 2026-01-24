@@ -31,17 +31,39 @@ serve(async (req) => {
       );
     }
 
-    // Build consistent style prompt
-    const prompt = `Create a minimalist sport icon representing "${categoryName}".
-Requirements:
-- Simple, clean line art style
-- Single white color on transparent background
-- Geometric shapes, no gradients or shadows
-- Suitable for 64x64px display
-- Professional vector-like appearance
-- Similar style to Lucide icons
-- The icon should clearly represent the sport/activity
-- Centered composition`;
+    // Build strict style prompt for consistent Lucide-like icons
+    const prompt = `Generate a simple icon for the sport/activity: "${categoryName}"
+
+CRITICAL REQUIREMENTS - MUST FOLLOW EXACTLY:
+1. TRANSPARENT BACKGROUND - The background MUST be completely transparent (alpha = 0). No colored background, no white background, no gray background. ONLY transparency.
+
+2. WHITE COLOR ONLY - Use ONLY pure white color (#FFFFFF) for all lines and shapes. No other colors allowed.
+
+3. LINE ART STYLE - Draw using thin strokes/outlines only (like SVG stroke), NOT filled shapes. Similar to Lucide icons or Feather icons.
+
+4. STROKE WIDTH - Use consistent 2px stroke width throughout the icon.
+
+5. SIMPLE GEOMETRY - Use basic geometric shapes: circles, lines, rectangles, arcs. Maximum 5-10 shapes total.
+
+6. SIZE - Design for 64x64 pixel display. Keep the icon centered with small padding.
+
+7. SINGLE OBJECT - Show only ONE recognizable symbol representing the sport. No text, no multiple objects, no decorative elements.
+
+DO NOT:
+- Add any background color
+- Use gradients or shadows
+- Use filled shapes (use outlines only)
+- Add text or labels
+- Use colors other than white
+- Make complex detailed illustrations
+
+EXAMPLES OF CORRECT STYLE:
+- Football/Soccer: Simple circle outline
+- Tennis: Circle with crossed lines
+- Basketball: Circle with curved lines
+- Boxing: Two rectangular glove outlines
+
+OUTPUT: PNG image with transparent background and white stroke-based icon.`;
 
     console.log(`Generating icon for category: ${categoryName}`);
 

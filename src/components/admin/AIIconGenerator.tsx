@@ -149,8 +149,31 @@ export function AIIconGenerator({
                 className="h-16 w-16 object-contain"
               />
             </div>
-            <p className="text-sm text-muted-foreground text-center">
-              Podgląd wygenerowanej ikony
+            
+            {/* Multi-background preview */}
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground text-center">
+                Podgląd na różnych tłach:
+              </p>
+              <div className="flex gap-2 justify-center">
+                {["#22c55e", "#f97316", "#8b5cf6", "#ef4444"].map((color) => (
+                  <div
+                    key={color}
+                    className="h-10 w-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: color }}
+                  >
+                    <img 
+                      src={generatedIconUrl} 
+                      alt="" 
+                      className="h-6 w-6 object-contain" 
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <p className="text-xs text-muted-foreground text-center">
+              Jeśli ikona nie wygląda dobrze, spróbuj wygenerować ponownie
             </p>
           </div>
 
