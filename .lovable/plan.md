@@ -1,105 +1,152 @@
 
 
-## Kompaktowy placeholder dla nieaktywnego slotu reklamowego
+## Wallpaper/Screening Premium - Spójny Design
 
-### Problem
-Gdy slot środkowy nie ma przypisanego aktywnego banera, wyświetlany jest pełnowymiarowy placeholder (970x250px / 300x250px), który zajmuje nieproporcjonalnie dużo miejsca w stosunku do przekazywanej informacji "To miejsce może być Twoje".
+### Problem do rozwiązania
+Gdy aktywny jest wallpaper (np. czerwone tło klienta), baner w środku strony ma własne białe tło z ramką, co tworzy efekt "wycięcia" i brak spójności wizualnej.
 
-### Rozwiązanie
-Wprowadzić nowy prop `isPlaceholder` do komponentu SponsorBanner, który gdy ustawiony na `true`, automatycznie wyświetla kompaktową wersję "pill" zamiast pełnowymiarowego kontenera.
+### Rozwiązanie: Tryb "Takeover"
 
-### Architektura
+Wprowadzić tryb kampanii premium, w którym:
+1. Wallpaper przejmuje tło całej strony (klikalne boczne obszary)
+2. Baner środkowy automatycznie przełącza się w tryb "borderless" - bez ramek, bez tła
+
+### Architektura wizualna
 
 ```text
-PRZED (placeholder pełnowymiarowy):
-┌──────────────────────────────────────────────────────┐
-│ Partner Szortsy                                      │
-├──────────────────────────────────────────────────────┤
-│                                                      │
-│                                                      │
-│            Partner Szortsy                           │
-│         To miejsce może być Twoje                    │  ~350px
-│                                                      │
-│                                                      │
-├──────────────────────────────────────────────────────┤
-│ [Zostań partnerem ↗]                                 │
-└──────────────────────────────────────────────────────┘
+NORMALNY TRYB:
+┌─────────────────────────────────────────────────────────────────┐
+│                     BIAŁE TŁO STRONY                            │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ ╭──────────────────────────────────────────────────────╮│    │
+│  │ │ Partner Szortsy                           (ramka)    ││    │
+│  │ ├──────────────────────────────────────────────────────┤│    │
+│  │ │            BANER 970x250                             ││    │
+│  │ ├──────────────────────────────────────────────────────┤│    │
+│  │ │ [CTA]                                     (ramka)    ││    │
+│  │ ╰──────────────────────────────────────────────────────╯│    │
+│  └─────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────┘
 
-PO (kompaktowy placeholder):
-┌──────────────────────────────────────────────────────┐
-│ Partner Szortsy · To miejsce może być Twoje ·        │  ~40px
-│ [Zostań partnerem]                                   │
-└──────────────────────────────────────────────────────┘
+TRYB TAKEOVER (wallpaper aktywny):
+┌─────────────────────────────────────────────────────────────────┐
+│ ████████                  CONTENT                    ████████   │
+│ ████████                                             ████████   │
+│ ██ KLIK ██  ┌─────────────────────────────────────┐ ██ KLIK ██  │
+│ ██ LEFT ██  │                                     │ ██ RIGHT██  │
+│ ████████    │            BANER 970x250            │ ████████    │
+│ ████████    │         (bez ramki, bez tła!)       │ ████████    │
+│ ████████    │                                     │ ████████    │
+│ ████████    └─────────────────────────────────────┘ ████████    │
+│ ████████           CTA wycentrowany poniżej         ████████    │
+│ ████████                                             ████████   │
+└─────────────────────────────────────────────────────────────────┘
+  └───────┘                                           └───────┘
+   Klikalne                                            Klikalne
+```
+
+### Struktura bazy danych
+
+Nowa tabela `wallpapers`:
+
+| Kolumna | Typ | Opis |
+|---------|-----|------|
+| id | uuid | Klucz główny |
+| name | text | Nazwa kampanii (np. "Black Friday 2026") |
+| background_image_url | text | Główna grafika tła (rozciągana) |
+| left_wing_url | text | Opcjonalna grafika lewa (fixed) |
+| right_wing_url | text | Opcjonalna grafika prawa (fixed) |
+| background_color | text | Kolor fallback (np. "#ff0000") |
+| click_url | text | URL po kliknięciu w boczne obszary |
+| linked_banner_id | uuid | FK do banners - który baner jest częścią kampanii |
+| is_active | boolean | Czy aktywny |
+| start_date | timestamptz | Początek emisji |
+| end_date | timestamptz | Koniec emisji |
+| min_screen_width | integer | Min. szerokość ekranu (default 1280px) |
+
+### Komponenty
+
+**1. `WallpaperProvider.tsx`** - Context Provider
+- Pobiera aktywny wallpaper z bazy
+- Udostępnia info czy tryb takeover jest włączony
+- Przekazuje `linkedBannerId` do wykrycia przez SponsorBanner
+
+**2. `WallpaperBackground.tsx`** - Komponent tła
+- Renderuje się na poziomie App.tsx, poniżej contentu
+- Zawiera klikalne obszary left/right z `position: fixed`
+- Ustawia `background-image` lub `background-color` na body
+
+**3. Modyfikacja `SponsorBanner.tsx`**
+- Nowy prop `isTakeoverMode?: boolean` (lub z contextu)
+- Gdy aktywny: usuwa ramki, header "Partner Szortsy", footer z CTA
+- Renderuje czystą grafikę 970x250 bez obramowania
+- CTA przeniesiony jako overlay lub poniżej (prosty tekst)
+
+### Flow renderowania
+
+```text
+┌─────────────────────────────────────────────────────┐
+│ App.tsx                                             │
+│   └─ WallpaperProvider                              │
+│        └─ WallpaperBackground (fixed, z-index: -1)  │
+│        └─ Index.tsx                                 │
+│             └─ SponsorBanner                        │
+│                  → sprawdza: czy mój banner_id      │
+│                    === wallpaper.linked_banner_id?  │
+│                  → jeśli TAK → tryb borderless      │
+└─────────────────────────────────────────────────────┘
+```
+
+### Wygląd SponsorBanner w trybie Takeover
+
+**Normalny:**
+```tsx
+<div className="rounded-2xl border border-border bg-card">
+  <div className="bg-muted/50">Partner Szortsy</div>
+  <img src={banner} />
+  <div className="bg-muted/50"><button>CTA</button></div>
+</div>
+```
+
+**Takeover (borderless):**
+```tsx
+<div className="flex flex-col items-center">
+  <img 
+    src={banner} 
+    className="cursor-pointer" 
+    onClick={handleClick}
+  />
+  <span className="text-xs text-white/80 mt-2">
+    Reklama · {title}
+  </span>
+</div>
 ```
 
 ### Zmiany w plikach
 
-**1. `src/components/SponsorBanner.tsx`**
+| Plik | Akcja |
+|------|-------|
+| `supabase/migrations/` | Utworzenie tabeli `wallpapers` |
+| `src/hooks/useWallpaper.tsx` | Hook do pobierania aktywnego wallpapera |
+| `src/components/WallpaperBackground.tsx` | Komponent renderujący tło i klikalne skrzydła |
+| `src/contexts/WallpaperContext.tsx` | Context z info o aktywnej kampanii |
+| `src/components/SponsorBanner.tsx` | Dodanie trybu `isTakeoverMode` |
+| `src/App.tsx` | Wrapper z WallpaperProvider |
+| `src/pages/admin/WallpaperEditor.tsx` | Panel admina do zarządzania |
+| `src/pages/admin/WallpapersList.tsx` | Lista kampanii wallpaper |
 
-Dodać nowy prop `isPlaceholder`:
-```typescript
-interface SponsorBannerProps {
-  // ... existing props
-  isPlaceholder?: boolean; // Render compact version for inactive slots
-}
-```
+### Responsywność
 
-Dodać warunek wyświetlania kompaktowej wersji dla placeholdera (przed sprawdzeniem `hasImages`):
-```typescript
-// Compact version for placeholder (no active banner)
-if (isPlaceholder) {
-  return (
-    <div className={cn("flex justify-center", className)}>
-      <div className="inline-flex items-center gap-3 px-5 py-2.5 
-                      rounded-full bg-muted/50 border border-border shadow-sm">
-        <span className="text-xs font-medium text-muted-foreground">
-          Partner Szortsy
-        </span>
-        <span className="text-xs text-muted-foreground/40">·</span>
-        <span className="text-xs text-muted-foreground">
-          {description || "To miejsce może być Twoje"}
-        </span>
-        {ctaText && (
-          <>
-            <span className="text-xs text-muted-foreground/40">·</span>
-            <button onClick={handleClick} ...>
-              {ctaText}
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-```
+| Breakpoint | Zachowanie |
+|------------|------------|
+| Desktop (>1280px) | Pełny efekt wallpaper + borderless banner |
+| Tablet (768-1280px) | Tylko background-color, baner normalny |
+| Mobile (<768px) | Brak wallpapera, baner normalny |
 
-**2. `src/pages/Index.tsx`**
+### Uwagi techniczne
 
-Zmienić wywołanie placeholdera w slocie środkowym:
-```typescript
-// Linia 105-113 - zmiana z pełnowymiarowego na kompaktowy
-} : (
-  <SponsorBanner
-    title="Partner Szortsy"
-    description="To miejsce może być Twoje"
-    ctaText="Zostań partnerem"
-    ctaUrl="mailto:reklama@szortsy.pl"
-    isPlaceholder={true}  // <-- nowy prop
-    className="mb-10"
-  />
-)}
-```
-
-### Szczegóły techniczne
-
-| Aspekt | Pełny placeholder | Kompaktowy placeholder |
-|--------|------------------|----------------------|
-| Wysokość | ~350px (desktop) | ~40px |
-| Szerokość | 970px (fixed) | auto (content-based) |
-| Struktura | Header + Content + CTA | Single pill |
-| Układ | Pionowy | Poziomy inline |
-
-### Efekt końcowy
-
-Gdy slot środkowy nie ma aktywnego banera, zamiast dużego pustego kontenera wyświetli się dyskretny, kompaktowy element zachęcający do współpracy reklamowej - zajmujący ~10x mniej miejsca na stronie.
+- Wallpaper renderowany z `position: fixed`, `inset: 0`, `z-index: -1`
+- Klikalne obszary mają `pointer-events: auto` tylko na bokach
+- Główny content ma `pointer-events: auto` i `position: relative`
+- Grafiki boczne mogą być typu `background-attachment: fixed` dla efektu parallax
 
