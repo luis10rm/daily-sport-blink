@@ -1,70 +1,119 @@
 
-## Obejście blokowania AdBlock dla linków DoubleClick
+## Kompaktowy baner dla użytkowników AdBlocka
 
-### Diagnoza
-AdBlockery (uBlock, AdBlock Plus, Brave Shields) skanują DOM i ukrywają elementy HTML zawierające linki do znanych domen reklamowych jak `doubleclick.net`. Nawet jeśli obrazek się ładuje, cały element `<a href="...doubleclick...">` jest ukrywany przez regułę CSS typu `display: none !important`.
+### Problem
+Gdy AdBlock ukrywa główny kontener banera, pozostaje pełnowymiarowy pusty slot (970x250px / 300x250px), co wygląda niechlujnie i zajmuje dużo miejsca na stronie.
 
-### Rozwiązanie: onClick Handler zamiast href
+### Rozwiązanie
+Dodać detekcję widoczności banera i wyświetlić kompaktową wersję gdy główny slot jest niewidoczny.
 
-Zamiast umieszczać URL trackera bezpośrednio w atrybucie `href`, użyjemy JavaScript `onClick` handler który otworzy link dopiero po kliknięciu. AdBlockery nie parsują kodu JavaScript, więc URL pozostanie niewidoczny dla filtrów.
-
-### Architektura rozwiązania
+### Architektura
 
 ```text
-PRZED (blokowane):
-<a href="https://ad.doubleclick.net/...">
-  <img src="banner.jpg" />    ← AdBlock: "widzę doubleclick.net w href, ukrywam!"
-</a>
+┌─────────────────────────────────────────────────────┐
+│  BANER NORMALNY (gdy widoczny)                      │
+│  ┌───────────────────────────────────────────────┐  │
+│  │ Partner Szortsy                               │  │
+│  ├───────────────────────────────────────────────┤  │
+│  │                                               │  │
+│  │            GRAFIKA 970x250                    │  │
+│  │                                               │  │
+│  ├───────────────────────────────────────────────┤  │
+│  │ [Sprawdź ofertę →]                            │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
 
-PO (nieblokowane):
-<div onClick={() => window.open(url, '_blank')}>
-  <img src="banner.jpg" />    ← AdBlock nie widzi doubleclick.net w DOM
-</div>
+                       ↓ AdBlock ukrywa główny slot
+
+┌─────────────────────────────────────────────────────┐
+│  BANER KOMPAKTOWY (gdy ukryty przez AdBlock)        │
+│  ┌───────────────────────────────────────────────┐  │
+│  │ 🎯 Partner Szortsy · Twoja reklama może tu    │  │
+│  │    być · [Zostań partnerem]                   │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
 ```
 
 ### Zmiany w plikach
 
 **`src/components/SponsorBanner.tsx`**
 
-1. Zamienić wszystkie `<a href={safeCtaUrl}>` na `<div>` z onClick:
+1. Dodać state do śledzenia widoczności:
    ```typescript
-   const handleClick = () => {
-     if (safeCtaUrl && safeCtaUrl !== "#") {
-       window.open(safeCtaUrl, '_blank', 'noopener,noreferrer');
-     }
-   };
+   const [isHidden, setIsHidden] = useState(false);
+   const bannerRef = useRef<HTMLDivElement>(null);
    ```
 
-2. Dodać odpowiednie style i atrybuty dostępności:
+2. Dodać useEffect do detekcji ukrycia przez AdBlock:
+   ```typescript
+   useEffect(() => {
+     const checkVisibility = () => {
+       if (bannerRef.current) {
+         const rect = bannerRef.current.getBoundingClientRect();
+         // AdBlock często ustawia display:none lub height:0
+         if (rect.height === 0 || rect.width === 0) {
+           setIsHidden(true);
+         }
+       }
+     };
+     
+     // Sprawdź po małym opóźnieniu (AdBlock może działać asynchronicznie)
+     const timer = setTimeout(checkVisibility, 100);
+     return () => clearTimeout(timer);
+   }, []);
+   ```
+
+3. Dodać warunkowy render kompaktowej wersji:
    ```tsx
-   <div
-     onClick={handleClick}
-     role="link"
-     tabIndex={0}
-     onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-     className="cursor-pointer block group"
-   >
+   if (isHidden) {
+     return (
+       <div className={cn("flex justify-center", className)}>
+         <div className="inline-flex items-center gap-3 px-4 py-2 
+                         rounded-full bg-muted/50 border border-border">
+           <span className="text-xs text-muted-foreground">
+             Partner Szortsy
+           </span>
+           <span className="text-xs text-muted-foreground/50">·</span>
+           <span className="text-xs text-muted-foreground">
+             {description || "To miejsce może być Twoje"}
+           </span>
+           {ctaText && (
+             <>
+               <span className="text-xs text-muted-foreground/50">·</span>
+               <button
+                 onClick={handleClick}
+                 className="text-xs font-medium text-primary hover:underline"
+               >
+                 {ctaText}
+               </button>
+             </>
+           )}
+         </div>
+       </div>
+     );
+   }
    ```
 
-3. Zastosować to dla wszystkich miejsc gdzie używany jest link (5 miejsc w komponencie)
+4. Dodać `ref={bannerRef}` do głównego kontenera banera (który może być ukryty przez AdBlock)
 
-### Szczegóły techniczne
+### Wygląd kompaktowej wersji
 
-**Zmiany w `<a>` na `<div>` z onClick:**
-
-| Element | Linia | Zmiana |
-|---------|-------|--------|
-| Główny wrapper obrazka | 72-149 | `<a href>` → `<div onClick>` |
-| CTA button (image mode) | 154-162 | `<a href>` → `<button onClick>` |
-| Desktop text slot | 182-207 | `<a href>` → `<div onClick>` |
-| Mobile text slot | 210-235 | `<a href>` → `<div onClick>` |
-| CTA button (text mode) | 240-248 | `<a href>` → `<button onClick>` |
-
-**Zachowanie dostępności (accessibility):**
-- `role="link"` - informuje screen readery że to link
-- `tabIndex={0}` - umożliwia focus klawiszem Tab
-- `onKeyDown` z Enter - obsługuje nawigację klawiaturą
-- `cursor-pointer` - wizualny feedback
+Zamiast pełnego slotu reklamowego:
+- Jeden wiersz tekstu w formie "pill/badge"
+- Wysokość ~40px zamiast 250px
+- Zawiera: etykietę "Partner Szortsy" + komunikat + link CTA
+- Subtelne tło i ramka pasujące do designu
 
 ### Efekt końcowy
-Banery z linkami DoubleClick będą wyświetlane poprawnie nawet przy włączonym AdBlockerze, ponieważ URL trackera nie będzie widoczny w strukturze HTML - zostanie użyty dopiero w momencie kliknięcia przez JavaScript.
+
+| Scenariusz | Wyświetlenie |
+|------------|--------------|
+| Brak AdBlocka | Pełny baner 970x250 / 300x250 |
+| AdBlock ukrywa slot | Kompaktowy pill ~40px wysokości |
+| Brak aktywnego banera | Placeholder z komunikatem (bez zmian) |
+
+### Uwagi techniczne
+
+- Detekcja odbywa się po 100ms od renderowania (czas na działanie AdBlocka)
+- Używamy `getBoundingClientRect()` zamiast `offsetHeight` dla większej dokładności
+- Kompaktowa wersja jest odporna na AdBlock bo nie zawiera podejrzanych klas CSS ani atrybutów
