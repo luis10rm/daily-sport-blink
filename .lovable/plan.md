@@ -1,129 +1,129 @@
 
 
-## Integracja profili autorów z widokami postów
+## Nowa podstrona: Lista Autorów (`/autorzy`)
 
-### Obecny stan
-Strona profilu autora (`/autor/:slug`) jest gotowa, ale użytkownicy nie mają do niej dostępu, ponieważ mini-karta autora (`AuthorCard`) nie jest jeszcze zintegrowana z komponentami wyświetlającymi posty.
+### Cel
+Stworzyć dedykowaną podstronę `/autorzy` wyświetlającą wszystkich publicznych twórców serwisu w atrakcyjnej formie siatki/karuzeli.
 
-### Propozycja: 3 punkty dostępu do profilu autora
+---
+
+### Projekt UI
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  PUNKT 1: NewsCard (każdy artykuł na stronie głównej)                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌──────────────────────────────────────┐                                   │
-│  │  [Zdjęcie artykułu]                  │                                   │
-│  │                                      │                                   │
-│  │  Piłka nożna • 24 stycznia 2026      │                                   │
-│  │                                      │                                   │
-│  │  Tytuł artykułu...                   │                                   │
-│  │  Zajawka artykułu...                 │                                   │
-│  │                                      │                                   │
-│  │  ┌─────────────────────────────────┐ │                                   │
-│  │  │  [O] Jan Kowalski              →│ │  ← NOWE: mini-karta autora       │
-│  │  │      Redaktor sportowy          │ │    kliknięcie → /autor/slug      │
-│  │  └─────────────────────────────────┘ │                                   │
-│  │                                      │                                   │
-│  │  [Przeczytaj więcej →]               │                                   │
-│  └──────────────────────────────────────┘                                   │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  PUNKT 2: NewsOfTheDay (wyróżniony artykuł dnia)                            │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │  🏆 Wiadomość dnia                                                    │  │
-│  │                                                                       │  │
-│  │  [Duże zdjęcie]  │  Tytuł artykułu...                                │  │
-│  │                  │  Zajawka...                                        │  │
-│  │                  │                                                    │  │
-│  │                  │  ┌─────────────────────────────┐                   │  │
-│  │                  │  │  [O] Jan Kowalski          →│  ← NOWE          │  │
-│  │                  │  │      Redaktor sportowy      │                   │  │
-│  │                  │  └─────────────────────────────┘                   │  │
-│  │                  │                                                    │  │
-│  │                  │  [Przeczytaj więcej →]                             │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  PUNKT 3 (opcjonalnie): Dedykowana sekcja "Nasi Autorzy" na stronie głównej │
+│  [Header nawigacji serwisu]                                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ══ Nasi Autorzy ═══════════════════════════════════════════════════════   │
+│  Poznaj zespol tworcow, ktorzy dostarczaja Ci najswiezsze wiadomosci       │
+│  sportowe kazdego dnia.                                                     │
 │                                                                             │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │    [O]      │  │    [O]      │  │    [O]      │  │    [O]      │        │
-│  │ Jan Kowal.  │  │ Anna Nowak  │  │ Piotr Wiśn. │  │ Maria Ziel. │        │
-│  │ Redaktor    │  │ Ekspert F1  │  │ Tenis       │  │ MMA         │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘        │
-│       ↓                ↓                ↓                ↓                  │
-│  /autor/jan-k...  /autor/anna-n...  /autor/piotr-w... /autor/maria-z...    │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐             │
+│  │                 │  │                 │  │                 │             │
+│  │   [Cover BG]    │  │   [Cover BG]    │  │   [Cover BG]    │             │
+│  │                 │  │                 │  │                 │             │
+│  │      [O]        │  │      [O]        │  │      [O]        │             │
+│  │  Jan Kowalski   │  │  Anna Nowak     │  │  Piotr Wisniewski│            │
+│  │ Redaktor sport. │  │  Ekspert F1     │  │  Analityk tenisa│            │
+│  │                 │  │                 │  │                 │             │
+│  │  "Pasjonat      │  │  "Sledze F1     │  │  "Tenis to moja │            │
+│  │   pilki..."     │  │   od 10 lat..." │  │   pasja..."     │            │
+│  │                 │  │                 │  │                 │             │
+│  │  [47 artykulow] │  │  [23 artykuly]  │  │  [15 artykulow] │            │
+│  │                 │  │                 │  │                 │             │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘             │
+│         ↓                    ↓                    ↓                        │
+│  /autor/jan-kowalski  /autor/anna-nowak  /autor/piotr-wisniewski          │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Szczegóły techniczne
+### Architektura rozwiazania
 
-#### 1. Aktualizacja NewsCard.tsx
+#### 1. Nowy hook do pobierania publicznych autorow
 
-Dodanie nowego propsa `author` i renderowanie AuthorCard:
+Rozszerzenie `useAuthors.tsx` o nowy hook:
 
 ```tsx
-interface NewsCardProps {
-  // ... istniejące propsy
-  author?: {
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    slug: string | null;
-    role_title: string | null;
-  } | null;
-}
+// Fetch all PUBLIC authors for public page
+export const usePublicAuthors = () => {
+  return useQuery({
+    queryKey: ["public-authors"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("is_public", true)
+        .not("slug", "is", null)
+        .not("display_name", "is", null)
+        .order("display_name", { ascending: true });
 
-// W komponencie, przed CTA:
-{author && <AuthorCard author={author} />}
+      if (error) throw error;
+      return data as Author[];
+    },
+  });
+};
 ```
 
-#### 2. Aktualizacja NewsOfTheDay.tsx
+#### 2. Nowy komponent karty autora (rozbudowany)
 
-Wykorzystanie `post.author` do wyświetlenia mini-karty autora.
+`AuthorProfileCard.tsx` - wieksza karta z cover image, bio i statystykami:
 
-#### 3. Aktualizacja Index.tsx
+```tsx
+interface AuthorProfileCardProps {
+  author: Author;
+  postsCount?: number;
+}
 
-Przekazanie danych autora do komponentów NewsCard i NewsOfTheDay.
+// Renderuje:
+// - Cover image jako tlo (lub gradient fallback)
+// - Okragly avatar
+// - Display name + role_title
+// - Skrocone bio (max 100 znakow)
+// - Liczba artykulow
+// - Cale jako link do /autor/{slug}
+```
 
-#### 4. (Opcjonalnie) Sekcja "Nasi Autorzy"
+#### 3. Nowa strona AuthorsList (publiczna)
 
-Nowy komponent `AuthorsShowcase.tsx` wyświetlający wszystkich publicznych autorów w formie karuzeli lub grida.
+`src/pages/AuthorsList.tsx` - publiczna lista autorow:
+
+- Header serwisu
+- Tytul sekcji z opisem
+- Grid kart autorow (responsywny: 1-2-3 kolumny)
+- Stan ladowania (skeleton)
+- Stan pusty (brak autorow)
+
+#### 4. Nawigacja
+
+Aktualizacja `Header.tsx`:
+- Dodanie linku "Autorzy" w naglowku prowadzacego do `/autorzy`
+
+Aktualizacja `App.tsx`:
+- Nowa trasa `/autorzy` -> `AuthorsList`
 
 ---
 
-### Plan wdrożenia
+### Plan wdrozenia
 
 | Krok | Plik | Zmiana |
 |------|------|--------|
-| 1 | `NewsCard.tsx` | Dodanie propsa `author` i renderowanie `AuthorCard` |
-| 2 | `NewsOfTheDay.tsx` | Dodanie `AuthorCard` przed przyciskiem CTA |
-| 3 | `Index.tsx` | Przekazanie `post.author` do NewsCard i NewsOfTheDay |
-| 4 | (opcja) `AuthorsShowcase.tsx` | Nowy komponent z listą autorów |
-| 5 | (opcja) `Index.tsx` | Dodanie sekcji "Nasi Autorzy" na stronie głównej |
+| 1 | `src/hooks/useAuthors.tsx` | Dodanie hooka `usePublicAuthors` |
+| 2 | `src/components/AuthorProfileCard.tsx` | Nowy komponent rozbudowanej karty autora |
+| 3 | `src/pages/AuthorsList.tsx` | Nowa publiczna strona z lista autorow |
+| 4 | `src/App.tsx` | Dodanie trasy `/autorzy` |
+| 5 | `src/components/Header.tsx` | Dodanie linku nawigacyjnego "Autorzy" |
 
 ---
 
-### Efekt końcowy
+### Efekt koncowy
 
-Po wdrożeniu użytkownicy będą mogli dotrzeć do profilu autora poprzez:
+Uzytkownicy beda mogli dotrzec do listy autorow poprzez:
 
-1. **Kliknięcie mini-karty autora** przy dowolnym artykule
-2. **Kliknięcie mini-karty autora** w "Wiadomości dnia"
-3. **(Opcjonalnie) Sekcję "Nasi Autorzy"** na stronie głównej
+1. **Klikniecie linku "Autorzy"** w naglowku strony
+2. **Bezposrednie wejscie** na adres `/autorzy`
 
-Każde kliknięcie przeniesie na `/autor/{slug}` gdzie zobaczą pełny profil z cover image, bio, statystykami i listą artykułów.
+Na stronie zobacza wszystkich publicznych tworcow z ich zdjeciami, bio i liczba artykulow. Klikniecie karty przeniesie na pelny profil autora (`/autor/{slug}`).
 
