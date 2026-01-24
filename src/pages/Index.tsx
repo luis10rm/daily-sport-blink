@@ -10,6 +10,7 @@ import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
   const lastTodayRef = useRef<HTMLElement>(null);
@@ -39,7 +40,10 @@ const Index = () => {
   const { isTakeoverActive } = useWallpaperContext();
 
   return (
-    <div className="min-h-screen bg-background relative z-10">
+    <div className={cn(
+      "min-h-screen relative z-10",
+      !isTakeoverActive && "bg-background"
+    )}>
       <Header />
       
       <main className="container py-6 md:py-10">

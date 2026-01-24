@@ -27,7 +27,7 @@ export function WallpaperBackground() {
     <>
       {/* Main background layer - fixed, behind everything */}
       <div
-        className="fixed inset-0 -z-10 pointer-events-none"
+        className="fixed inset-0 z-0 pointer-events-none"
         style={{
           backgroundColor: wallpaper.background_color,
           backgroundImage: hasBackgroundImage
@@ -50,7 +50,7 @@ export function WallpaperBackground() {
             handleWingClick();
           }
         }}
-        className="fixed top-0 left-0 bottom-0 cursor-pointer z-0"
+        className="fixed top-0 left-0 bottom-0 cursor-pointer z-[1]"
         style={{
           width: "calc((100vw - 1024px) / 2)",
           minWidth: "100px",
@@ -75,7 +75,7 @@ export function WallpaperBackground() {
             handleWingClick();
           }
         }}
-        className="fixed top-0 right-0 bottom-0 cursor-pointer z-0"
+        className="fixed top-0 right-0 bottom-0 cursor-pointer z-[1]"
         style={{
           width: "calc((100vw - 1024px) / 2)",
           minWidth: "100px",
