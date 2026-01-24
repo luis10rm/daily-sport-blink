@@ -238,6 +238,68 @@ export type Database = {
         }
         Relationships: []
       }
+      wallpapers: {
+        Row: {
+          background_color: string
+          background_image_url: string | null
+          click_url: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean
+          left_wing_url: string | null
+          linked_banner_id: string | null
+          min_screen_width: number
+          name: string
+          right_wing_url: string | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          background_color?: string
+          background_image_url?: string | null
+          click_url: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          left_wing_url?: string | null
+          linked_banner_id?: string | null
+          min_screen_width?: number
+          name: string
+          right_wing_url?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          background_color?: string
+          background_image_url?: string | null
+          click_url?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          left_wing_url?: string | null
+          linked_banner_id?: string | null
+          min_screen_width?: number
+          name?: string
+          right_wing_url?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallpapers_linked_banner_id_fkey"
+            columns: ["linked_banner_id"]
+            isOneToOne: false
+            referencedRelation: "banners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

@@ -9,6 +9,7 @@ import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts"
 import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWallpaperContext } from "@/contexts/WallpaperContext";
 
 const Index = () => {
   const lastTodayRef = useRef<HTMLElement>(null);
@@ -35,8 +36,10 @@ const Index = () => {
     -1
   );
 
+  const { isTakeoverActive } = useWallpaperContext();
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative z-10">
       <Header />
       
       <main className="container py-6 md:py-10">
@@ -100,6 +103,7 @@ const Index = () => {
             imageDesktopUrl={middleBanner.image_desktop_url || undefined}
             imageMobileUrl={middleBanner.image_mobile_url || undefined}
             impressionTag={middleBanner.impression_tag || undefined}
+            bannerId={middleBanner.id}
             className="mb-10"
           />
         ) : (
