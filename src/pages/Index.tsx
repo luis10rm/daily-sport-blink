@@ -5,6 +5,7 @@ import { NewsOfTheDay } from "@/components/NewsOfTheDay";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
+import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
 import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts";
 import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -66,14 +67,8 @@ const Index = () => {
           />
         )}
 
-        <section className="mb-10">
-          <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">
-            Dzisiejsze wiadomości
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Najważniejsze wydarzenia sportowe z ostatnich 24 godzin
-          </p>
-        </section>
+        {/* Todays News Banner */}
+        <TodaysNewsBanner count={todaysPosts.length} isLoading={postsLoading} />
 
         {/* News of the Day */}
         {newsLoading ? (
