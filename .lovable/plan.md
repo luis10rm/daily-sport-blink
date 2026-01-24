@@ -1,178 +1,103 @@
 
-## Generowanie ikon AI dla kategorii sportowych
 
-### Cel
-Dodanie trzeciego taba "🤖 Wygeneruj AI" w sekcji wyboru ikony w CategoryEditor, który pozwoli na automatyczne generowanie ikon w spójnym stylu na podstawie nazwy kategorii.
+## Ulepszenie promptu dla spójnych ikon AI
 
-### Architektura rozwiązania
+### Problem
+Obecne ikony generowane przez AI nie są spójne z ikonami Lucide - brakuje:
+- Czystego przezroczystego tła (alpha channel)
+- Jednolitego białego koloru (pure white #FFFFFF)
+- Minimalistycznego stylu linii (stroke-based, nie fill-based)
+- Odpowiedniej grubości linii (2px stroke width)
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  CategoryEditor.tsx                                             │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ Tabs: Ikona Lucide | Własna grafika | 🤖 Wygeneruj AI     │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              │                                  │
-│                              ▼                                  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ AIIconGenerator (nowy komponent)                          │  │
-│  │ ├── Automatyczny prompt z nazwy kategorii                 │  │
-│  │ ├── Przycisk "Generuj ikonę"                             │  │
-│  │ ├── Podgląd wygenerowanej ikony                          │  │
-│  │ └── Przyciski "Użyj tej ikony" / "Generuj ponownie"      │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Edge Function: generate-category-icon                          │
-│  ├── Przyjmuje: { categoryName: string }                        │
-│  ├── Tworzy prompt w ustalonym stylu                           │
-│  ├── Wywołuje Lovable AI (gemini-2.5-flash-image)              │
-│  ├── Konwertuje base64 → upload do bucket                       │
-│  └── Zwraca: { iconUrl: string }                                │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Storage: category-icons bucket (już istnieje)                  │
-│  └── ai-generated/[slug]-[timestamp].png                        │
-└─────────────────────────────────────────────────────────────────┘
-```
+### Rozwiązanie
 
-### Nowe pliki do utworzenia
+Przebudowa promptu z bardziej technicznymi, precyzyjnymi instrukcjami oraz dodanie negatywnych wskazówek (czego unikać).
 
-#### 1. Edge Function: `supabase/functions/generate-category-icon/index.ts`
+### Zmiany w pliku
 
-Odpowiedzialności:
-- Przyjmuje nazwę kategorii
-- Generuje spójny prompt stylistyczny
-- Wywołuje model `google/gemini-2.5-flash-image` przez Lovable AI Gateway
-- Otrzymuje obraz w formacie base64
-- Uploaduje do bucketu `category-icons` w folderze `ai-generated/`
-- Zwraca publiczny URL ikony
+**`supabase/functions/generate-category-icon/index.ts`** - nowy prompt:
 
-Stały prompt stylistyczny:
-```
-"Create a minimalist sport icon representing [CATEGORY_NAME].
-Requirements:
-- Simple, clean line art style
-- Single white color on transparent background  
-- Geometric shapes, no gradients or shadows
-- Suitable for 64x64px display
-- Professional vector-like appearance
-- Similar style to Lucide icons"
-```
-
-#### 2. Komponent: `src/components/admin/AIIconGenerator.tsx`
-
-Interfejs:
 ```typescript
-interface AIIconGeneratorProps {
-  categoryName: string;        // Nazwa kategorii do wygenerowania ikony
-  onIconGenerated: (url: string) => void;  // Callback z URL
-  disabled?: boolean;
-}
+const prompt = `Generate a simple icon for the sport/activity: "${categoryName}"
+
+CRITICAL REQUIREMENTS - MUST FOLLOW EXACTLY:
+1. TRANSPARENT BACKGROUND - The background MUST be completely transparent (alpha = 0). No colored background, no white background, no gray background. ONLY transparency.
+
+2. WHITE COLOR ONLY - Use ONLY pure white color (#FFFFFF) for all lines and shapes. No other colors allowed.
+
+3. LINE ART STYLE - Draw using thin strokes/outlines only (like SVG stroke), NOT filled shapes. Similar to Lucide icons or Feather icons.
+
+4. STROKE WIDTH - Use consistent 2px stroke width throughout the icon.
+
+5. SIMPLE GEOMETRY - Use basic geometric shapes: circles, lines, rectangles, arcs. Maximum 5-10 shapes total.
+
+6. SIZE - Design for 64x64 pixel display. Keep the icon centered with small padding.
+
+7. SINGLE OBJECT - Show only ONE recognizable symbol representing the sport. No text, no multiple objects, no decorative elements.
+
+DO NOT:
+- Add any background color
+- Use gradients or shadows
+- Use filled shapes (use outlines only)
+- Add text or labels
+- Use colors other than white
+- Make complex detailed illustrations
+
+EXAMPLES OF CORRECT STYLE:
+- Football/Soccer: Simple circle outline
+- Tennis: Circle with crossed lines
+- Basketball: Circle with curved lines
+- Boxing: Two rectangular glove outlines
+
+OUTPUT: PNG image with transparent background and white stroke-based icon.`;
 ```
 
-Stany komponentu:
-- `isGenerating: boolean` - czy trwa generowanie
-- `generatedIconUrl: string | null` - URL wygenerowanej ikony
-- `error: string | null` - komunikat błędu
+### Dlaczego te zmiany pomogą
 
-UI:
-```text
-┌─────────────────────────────────────────────────────┐
-│  AI wygeneruje ikonę dla: "[nazwa kategorii]"      │
-│                                                     │
-│  [ 🎨 Generuj ikonę ]                              │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐   │
-│  │                                             │   │
-│  │         [Podgląd wygenerowanej ikony]       │   │
-│  │                                             │   │
-│  └─────────────────────────────────────────────┘   │
-│                                                     │
-│  [ Użyj tej ikony ]    [ Generuj ponownie ]        │
-└─────────────────────────────────────────────────────┘
+| Aspekt | Stary prompt | Nowy prompt |
+|--------|--------------|-------------|
+| Przezroczystość | "transparent background" (ogólne) | "alpha = 0", "no white background, no gray" (precyzyjne) |
+| Kolor | "Single white color" | "#FFFFFF", "pure white", "no other colors" |
+| Styl | "line art style" | "strokes/outlines only", "NOT filled shapes", "2px stroke width" |
+| Negatywne instrukcje | Brak | Sekcja "DO NOT" z konkretnymi zakazami |
+| Przykłady | Brak | Konkretne przykłady dla sportów |
+
+### Dodatkowe ulepszenia
+
+1. **Walidacja w komponencie** - dodanie informacji dla użytkownika, że jeśli ikona nie wygląda dobrze, może spróbować ponownie.
+
+2. **Podgląd na różnych tłach** - w `AIIconGenerator.tsx` dodanie podglądu ikony na kilku kolorach tła, żeby użytkownik widział jak będzie wyglądać:
+
+```tsx
+// Podgląd na różnych tłach
+<div className="flex gap-2 justify-center">
+  {["#22c55e", "#f97316", "#8b5cf6", "#ef4444"].map((color) => (
+    <div
+      key={color}
+      className="h-10 w-10 rounded-lg flex items-center justify-center"
+      style={{ backgroundColor: color }}
+    >
+      <img src={generatedIconUrl} alt="" className="h-6 w-6 object-contain" />
+    </div>
+  ))}
+</div>
 ```
 
-### Zmiany w istniejących plikach
+### Plan implementacji
 
-#### `src/pages/admin/CategoryEditor.tsx`
+| Krok | Plik | Zmiana |
+|------|------|--------|
+| 1 | `supabase/functions/generate-category-icon/index.ts` | Zastąpienie promptu nową wersją z precyzyjnymi instrukcjami |
+| 2 | `src/components/admin/AIIconGenerator.tsx` | Dodanie podglądu ikony na różnych kolorach tła |
+| 3 | Deploy | Wdrożenie edge function |
 
-1. Import nowego komponentu `AIIconGenerator`
-2. Rozszerzenie stanu `iconSource` o wartość `"ai"`:
-   ```typescript
-   const [iconSource, setIconSource] = useState<"lucide" | "upload" | "ai">("lucide");
-   ```
-3. Dodanie trzeciego taba w `TabsList`:
-   ```tsx
-   <TabsList className="grid w-full grid-cols-3">
-     <TabsTrigger value="lucide">Ikona Lucide</TabsTrigger>
-     <TabsTrigger value="upload">Własna grafika</TabsTrigger>
-     <TabsTrigger value="ai">🤖 Wygeneruj AI</TabsTrigger>
-   </TabsList>
-   ```
-4. Dodanie `TabsContent` dla AI:
-   ```tsx
-   <TabsContent value="ai">
-     <AIIconGenerator
-       categoryName={form.watch("name")}
-       onIconGenerated={(url) => {
-         form.setValue("icon_url", url);
-         form.setValue("icon_name", null);
-         setIconSource("upload"); // Przełącz na upload po użyciu
-       }}
-       disabled={!form.watch("name")}
-     />
-   </TabsContent>
-   ```
+### Uwagi techniczne
 
-#### `supabase/config.toml`
+- Model `google/gemini-2.5-flash-image-preview` lepiej reaguje na:
+  - Kapitalizowane słowa kluczowe (CRITICAL, MUST, DO NOT)
+  - Numerowane listy z konkretnymi wartościami
+  - Negatywne instrukcje (czego unikać)
+  - Konkretne przykłady
+  
+- Przezroczystość PNG jest obsługiwana przez model, ale wymaga bardzo wyraźnych instrukcji
 
-Dodanie konfiguracji nowej funkcji:
-```toml
-[functions.generate-category-icon]
-verify_jwt = false
-```
-
-### Przepływ użytkownika
-
-1. Administrator tworzy/edytuje kategorię "Siatkówka"
-2. Przechodzi do taba "🤖 Wygeneruj AI"
-3. Widzi komunikat: "AI wygeneruje ikonę dla: Siatkówka"
-4. Klika "Generuj ikonę"
-5. Wyświetla się spinner z komunikatem "Generuję ikonę..."
-6. Po chwili pojawia się podgląd wygenerowanej ikony
-7. Administrator może:
-   - Kliknąć "Użyj tej ikony" → ikona zostaje wybrana
-   - Kliknąć "Generuj ponownie" → generuje nową wersję
-8. Po wybraniu ikony, zakładka automatycznie przełącza się na "Własna grafika" z podglądem
-
-### Obsługa błędów
-
-| Błąd | Komunikat dla użytkownika |
-|------|---------------------------|
-| 429 Rate limit | "Zbyt wiele żądań. Spróbuj ponownie za chwilę." |
-| 402 Brak kredytów | "Brak kredytów AI. Doładuj konto aby kontynuować." |
-| Brak nazwy kategorii | Przycisk "Generuj" jest zablokowany |
-| Błąd uploadu | "Nie udało się zapisać ikony. Spróbuj ponownie." |
-| Timeout | "Generowanie trwa dłużej niż zwykle. Spróbuj ponownie." |
-
-### Szczegóły techniczne
-
-**Model AI**: `google/gemini-2.5-flash-image` (Nano banana)
-- Generuje obrazy na podstawie promptu tekstowego
-- Zwraca base64-encoded PNG
-- Dostępny przez Lovable AI Gateway bez dodatkowego klucza API
-
-**Format wyjściowy**:
-- PNG z przezroczystym tłem
-- Rozmiar: optymalizowany do 64x64px wyświetlania
-- Lokalizacja: `category-icons/ai-generated/[slug]-[timestamp].png`
-
-**Zależności**:
-- Wykorzystuje istniejący bucket `category-icons`
-- Wykorzystuje istniejący secret `LOVABLE_API_KEY`
-- Nie wymaga dodatkowych konfiguracji
