@@ -1,20 +1,28 @@
-import { Newspaper } from "lucide-react";
+import { Newspaper, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export const Header = () => {
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Newspaper className="h-5 w-5" />
           </div>
           <span className="font-heading text-xl font-bold tracking-tight text-foreground">
             Szortsy
           </span>
-        </div>
-        <p className="hidden text-sm text-muted-foreground sm:block">
-          Sport w pigułce • Codziennie
-        </p>
+        </Link>
+        
+        <nav className="flex items-center gap-4">
+          <Link 
+            to="/autorzy" 
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Autorzy</span>
+          </Link>
+        </nav>
       </div>
     </header>
   );
