@@ -1,9 +1,10 @@
 
 
-## Nowa podstrona: Lista Autorów (`/autorzy`)
+## Format reklamowy: Patron Serwisu
 
-### Cel
-Stworzyć dedykowaną podstronę `/autorzy` wyświetlającą wszystkich publicznych twórców serwisu w atrakcyjnej formie siatki/karuzeli.
+### Koncepcja
+
+Dodatkowy, natywny pasek pod headerem, który towarzyszy użytkownikowi podczas scrollowania. Format premium dla marek chcących długoterminowej ekspozycji i budowania skojarzeń z serwisem.
 
 ---
 
@@ -11,119 +12,149 @@ Stworzyć dedykowaną podstronę `/autorzy` wyświetlającą wszystkich publiczn
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  [Header nawigacji serwisu]                                                 │
+│  DOMYŚLNY STAN (przykład z kolorem marki)                                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  ══ Nasi Autorzy ═══════════════════════════════════════════════════════   │
-│  Poznaj zespol tworcow, ktorzy dostarczaja Ci najswiezsze wiadomosci       │
-│  sportowe kazdego dnia.                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │ [⭐ Głównym patronem serwisu jest] [LOGO?] NAZWA MARKI  [CTA?] [X] │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐             │
-│  │                 │  │                 │  │                 │             │
-│  │   [Cover BG]    │  │   [Cover BG]    │  │   [Cover BG]    │             │
-│  │                 │  │                 │  │                 │             │
-│  │      [O]        │  │      [O]        │  │      [O]        │             │
-│  │  Jan Kowalski   │  │  Anna Nowak     │  │  Piotr Wisniewski│            │
-│  │ Redaktor sport. │  │  Ekspert F1     │  │  Analityk tenisa│            │
-│  │                 │  │                 │  │                 │             │
-│  │  "Pasjonat      │  │  "Sledze F1     │  │  "Tenis to moja │            │
-│  │   pilki..."     │  │   od 10 lat..." │  │   pasja..."     │            │
-│  │                 │  │                 │  │                 │             │
-│  │  [47 artykulow] │  │  [23 artykuly]  │  │  [15 artykulow] │            │
-│  │                 │  │                 │  │                 │             │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘             │
-│         ↓                    ↓                    ↓                        │
-│  /autor/jan-kowalski  /autor/anna-nowak  /autor/piotr-wisniewski          │
+│  Wysokość: ~40px (h-10)                                                     │
+│  Pozycja: sticky, top-16 (pod headerem)                                     │
+│  Tło: konfigurowalny kolor + opcjonalny gradient                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  WARIANTY STYLIZACJI                                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. Solid Color:                                                            │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │████████████████████████████████████████████████████████████████████│   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  2. Gradient:                                                               │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │░░░▒▒▒▓▓▓████████████████████████████████████████████▓▓▓▒▒▒░░░│   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│  3. Glassmorphism (backdrop-blur):                                          │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │▓▓▓▓▓▓▓▓ półprzezroczysty + blur ▓▓▓▓▓▓▓▓│   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Architektura rozwiazania
+### Struktura danych (tabela settings)
 
-#### 1. Nowy hook do pobierania publicznych autorow
+Konfiguracja jako JSON w `settings` z kluczem `site_patron`:
 
-Rozszerzenie `useAuthors.tsx` o nowy hook:
+```json
+{
+  "enabled": true,
+  "prefix_text": "Głównym patronem serwisu jest",
+  "patron_name": "Red Bull",
+  "patron_logo_url": "https://...",
+  "cta_text": "Sprawdź ofertę",
+  "cta_url": "https://redbull.pl",
+  "background_color": "#1e3a5f",
+  "text_color": "#ffffff",
+  "style": "solid",
+  "dismissible": true
+}
+```
+
+---
+
+### Architektura techniczna
+
+#### 1. Nowy hook: usePatronSettings
 
 ```tsx
-// Fetch all PUBLIC authors for public page
-export const usePublicAuthors = () => {
-  return useQuery({
-    queryKey: ["public-authors"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("is_public", true)
-        .not("slug", "is", null)
-        .not("display_name", "is", null)
-        .order("display_name", { ascending: true });
+// src/hooks/usePatronSettings.ts
+export interface PatronSettings {
+  enabled: boolean;
+  prefix_text: string;
+  patron_name: string;
+  patron_logo_url?: string;
+  cta_text?: string;
+  cta_url?: string;
+  background_color: string;
+  text_color: string;
+  style: "solid" | "gradient" | "glass";
+  dismissible: boolean;
+}
 
-      if (error) throw error;
-      return data as Author[];
-    },
-  });
+export const usePatronSettings = () => {
+  // Pobiera z settings gdzie key = 'site_patron'
+  // Parsuje JSON i zwraca typowany obiekt
 };
 ```
 
-#### 2. Nowy komponent karty autora (rozbudowany)
-
-`AuthorProfileCard.tsx` - wieksza karta z cover image, bio i statystykami:
+#### 2. Nowy komponent: PatronBar
 
 ```tsx
-interface AuthorProfileCardProps {
-  author: Author;
-  postsCount?: number;
-}
+// src/components/PatronBar.tsx
+export const PatronBar = () => {
+  const { data: patron } = usePatronSettings();
+  const [dismissed, setDismissed] = useState(false);
 
-// Renderuje:
-// - Cover image jako tlo (lub gradient fallback)
-// - Okragly avatar
-// - Display name + role_title
-// - Skrocone bio (max 100 znakow)
-// - Liczba artykulow
-// - Cale jako link do /autor/{slug}
+  // Sprawdza sessionStorage dla stanu zamknięcia
+  // Renderuje pasek tylko jeśli enabled && !dismissed
+  // Sticky positioning: top-16 (pod headerem)
+};
 ```
 
-#### 3. Nowa strona AuthorsList (publiczna)
+#### 3. Panel admina: Sekcja Patron Serwisu
 
-`src/pages/AuthorsList.tsx` - publiczna lista autorow:
-
-- Header serwisu
-- Tytul sekcji z opisem
-- Grid kart autorow (responsywny: 1-2-3 kolumny)
-- Stan ladowania (skeleton)
-- Stan pusty (brak autorow)
-
-#### 4. Nawigacja
-
-Aktualizacja `Header.tsx`:
-- Dodanie linku "Autorzy" w naglowku prowadzacego do `/autorzy`
-
-Aktualizacja `App.tsx`:
-- Nowa trasa `/autorzy` -> `AuthorsList`
+Rozszerzenie `Settings.tsx` o nową kartę konfiguracyjną:
+- Toggle włącz/wyłącz
+- Pola tekstowe (prefix, nazwa, CTA)
+- Upload logo (opcjonalnie)
+- Color picker dla tła i tekstu
+- Wybór stylu (solid/gradient/glass)
+- Toggle "możliwość zamknięcia"
+- Podgląd na żywo
 
 ---
 
-### Plan wdrozenia
+### Plan wdrożenia
 
-| Krok | Plik | Zmiana |
-|------|------|--------|
-| 1 | `src/hooks/useAuthors.tsx` | Dodanie hooka `usePublicAuthors` |
-| 2 | `src/components/AuthorProfileCard.tsx` | Nowy komponent rozbudowanej karty autora |
-| 3 | `src/pages/AuthorsList.tsx` | Nowa publiczna strona z lista autorow |
-| 4 | `src/App.tsx` | Dodanie trasy `/autorzy` |
-| 5 | `src/components/Header.tsx` | Dodanie linku nawigacyjnego "Autorzy" |
+| Krok | Plik | Opis |
+|------|------|------|
+| 1 | Migracja SQL | Dodanie rekordu `site_patron` z domyślną konfiguracją (wyłączony) |
+| 2 | `usePatronSettings.ts` | Nowy hook do pobierania/aktualizacji konfiguracji patrona |
+| 3 | `PatronBar.tsx` | Nowy komponent paska patrona |
+| 4 | `Index.tsx` | Integracja PatronBar pod headerem |
+| 5 | `AuthorsPage.tsx` | Integracja PatronBar (spójność między stronami) |
+| 6 | `Settings.tsx` | Sekcja konfiguracji patrona w panelu admina |
 
 ---
 
-### Efekt koncowy
+### Funkcjonalności UX
 
-Uzytkownicy beda mogli dotrzec do listy autorow poprzez:
+| Funkcja | Opis |
+|---------|------|
+| Sticky position | Pasek przyklejony pod headerem, podąża za scrollem |
+| Dismissible | Użytkownik może zamknąć (X), wraca po odświeżeniu |
+| Animacja wejścia | Subtelne "fade-in" lub "slide-down" po załadowaniu |
+| Mobile-friendly | Responsywny tekst, mniejsze paddingi na mobile |
+| AdBlock-proof | Natywny CSS + tekst, nie jest blokowany |
+| Live preview | Podgląd w panelu admina przed zapisaniem |
 
-1. **Klikniecie linku "Autorzy"** w naglowku strony
-2. **Bezposrednie wejscie** na adres `/autorzy`
+---
 
-Na stronie zobacza wszystkich publicznych tworcow z ich zdjeciami, bio i liczba artykulow. Klikniecie karty przeniesie na pelny profil autora (`/autor/{slug}`).
+### Efekt końcowy
+
+Po wdrożeniu administrator będzie mógł:
+1. Włączyć/wyłączyć pasek patrona jednym kliknięciem
+2. Skonfigurować tekst, kolory i styl wizualny
+3. Opcjonalnie dodać logo i CTA
+4. Zobaczyć podgląd przed publikacją
+
+Użytkownicy zobaczą elegancki, natywny pasek budujący skojarzenie marki z serwisem.
 
