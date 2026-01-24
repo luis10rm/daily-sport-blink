@@ -13,6 +13,8 @@ interface SponsorBannerProps {
   className?: string;
   // For preview in admin panel
   previewMode?: "desktop" | "mobile";
+  // Render compact version for inactive slots (placeholder)
+  isPlaceholder?: boolean;
 }
 
 export const SponsorBanner = ({
@@ -25,6 +27,7 @@ export const SponsorBanner = ({
   impressionTag,
   className,
   previewMode,
+  isPlaceholder,
 }: SponsorBannerProps) => {
   const impressionFiredRef = useRef(false);
   const bannerRef = useRef<HTMLDivElement>(null);
@@ -79,8 +82,8 @@ export const SponsorBanner = ({
 
   const hasImages = imageDesktopUrl || imageMobileUrl;
 
-  // Compact fallback when AdBlock hides the banner
-  if (isHiddenByAdBlock) {
+  // Compact version for placeholder (no active banner) or AdBlock fallback
+  if (isPlaceholder || isHiddenByAdBlock) {
     return (
       <div className={cn("flex justify-center", className)}>
         <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-muted/50 border border-border shadow-sm">
