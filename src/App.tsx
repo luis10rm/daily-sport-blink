@@ -24,6 +24,7 @@ import WallpaperEditor from "./pages/admin/WallpaperEditor";
 import AuthorsList from "./pages/admin/AuthorsList";
 import AuthorEditor from "./pages/admin/AuthorEditor";
 import AuthorProfile from "./pages/AuthorProfile";
+import AuthorsPage from "./pages/AuthorsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ function App() {
             <ConditionalWallpaper />
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/autorzy" element={<AuthorsPage />} />
               <Route path="/autor/:slug" element={<AuthorProfile />} />
             <Route path="/auth" element={<Auth />} />
             <Route

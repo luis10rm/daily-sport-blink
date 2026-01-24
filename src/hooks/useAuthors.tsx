@@ -31,6 +31,25 @@ export interface AuthorUpdateInput {
   social_instagram?: string | null;
 }
 
+// Fetch all PUBLIC authors for public page
+export const usePublicAuthors = () => {
+  return useQuery({
+    queryKey: ["public-authors"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("is_public", true)
+        .not("slug", "is", null)
+        .not("display_name", "is", null)
+        .order("display_name", { ascending: true });
+
+      if (error) throw error;
+      return data as Author[];
+    },
+  });
+};
+
 // Fetch public author by slug
 export const useAuthor = (slug: string) => {
   return useQuery({
