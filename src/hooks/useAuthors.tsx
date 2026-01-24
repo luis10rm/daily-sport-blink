@@ -110,7 +110,7 @@ export const useAuthorPosts = (authorId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*, sport_category:sport_categories(*)")
+        .select("*, sport_category:sport_categories!category_id(*)")
         .eq("created_by", authorId)
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false });
@@ -139,21 +139,21 @@ export const useAuthorStats = (authorId: string) => {
       // Get most used category
       const { data: categoryData, error: categoryError } = await supabase
         .from("posts")
-        .select("category, sport_category:sport_categories(name)")
+        .select("category_id, sport_category:sport_categories!category_id(name)")
         .eq("created_by", authorId)
         .lte("published_at", new Date().toISOString());
 
       if (categoryError) throw categoryError;
 
       // Calculate most used category
-      const categoryCounts = categoryData?.reduce((acc, post) => {
-        const categoryName = post.sport_category?.name || post.category;
+      const categoryCounts = (categoryData as any[])?.reduce((acc, post) => {
+        const categoryName = post.sport_category?.name || "Inne";
         acc[categoryName] = (acc[categoryName] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
       const topCategory = Object.entries(categoryCounts || {}).sort(
-        ([, a], [, b]) => b - a
+        ([, a], [, b]) => (b as number) - (a as number)
       )[0]?.[0];
 
       // Get first post date

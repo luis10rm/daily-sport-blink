@@ -4,8 +4,6 @@ import { StoriesViewer } from "@/components/StoriesViewer";
 import { SportCategory } from "@/components/SportIcon";
 import { useRecentPosts, Post } from "@/hooks/usePosts";
 
-const CATEGORIES: SportCategory[] = ["football", "basketball", "tennis", "f1", "mma", "other"];
-
 // Map database post to component format
 interface StoryPost {
   id: string;
@@ -22,7 +20,7 @@ const mapPostToStory = (post: Post): StoryPost => ({
   id: post.id,
   title: post.title,
   excerpt: post.excerpt,
-  category: post.category,
+  category: (post.sport_category?.slug || "other") as SportCategory,
   publishedAt: post.published_at,
   sourceUrl: post.source_url,
   imageUrl: post.image_url || undefined,
@@ -41,13 +39,18 @@ const groupPostsByCategory = (posts: StoryPost[]): Record<SportCategory, StoryPo
   };
 
   posts.forEach((post) => {
-    if (grouped[post.category]) {
-      grouped[post.category].push(post);
+    const cat = post.category as SportCategory;
+    if (grouped[cat]) {
+      grouped[cat].push(post);
+    } else {
+      grouped.other.push(post);
     }
   });
 
   return grouped;
 };
+
+const CATEGORIES: SportCategory[] = ["football", "basketball", "tennis", "f1", "mma", "other"];
 
 export const StoriesRow = () => {
   const [activeCategory, setActiveCategory] = useState<SportCategory | null>(null);

@@ -3,8 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { subDays } from "date-fns";
 
-export type SportCategorySlug = "football" | "basketball" | "tennis" | "f1" | "mma" | "other";
-
 export interface PostCategory {
   id: string;
   slug: string;
@@ -27,7 +25,6 @@ export interface Post {
   title: string;
   excerpt: string;
   content?: string | null;
-  category: SportCategorySlug;
   category_id?: string | null;
   sport_category?: PostCategory | null;
   image_url?: string | null;
@@ -46,7 +43,6 @@ export interface CreatePostInput {
   title: string;
   excerpt: string;
   content?: string;
-  category?: SportCategorySlug;
   category_id?: string;
   image_url?: string;
   source_url: string;
@@ -61,12 +57,9 @@ export interface UpdatePostInput extends Partial<CreatePostInput> {
   id: string;
 }
 
-// For backwards compatibility
-export type SportCategory = SportCategorySlug;
-
 const POST_SELECT = `
   *,
-  sport_category:sport_categories(id, slug, name, icon_name, icon_url, bg_color)
+  sport_category:sport_categories!category_id(id, slug, name, icon_name, icon_url, bg_color)
 `;
 
 // Helper to fetch author data for posts

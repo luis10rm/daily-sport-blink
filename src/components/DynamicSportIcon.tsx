@@ -1,10 +1,10 @@
 import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PostCategory, SportCategorySlug } from "@/hooks/usePosts";
+import { PostCategory } from "@/hooks/usePosts";
 
 interface DynamicSportIconProps {
   sportCategory?: PostCategory | null;
-  fallbackSlug?: SportCategorySlug;
+  fallbackSlug?: string;
   className?: string;
 }
 

@@ -1,6 +1,4 @@
-import { SportCategory } from "@/components/SportIcon";
-
-export const categoryDefaultImages: Record<SportCategory, string> = {
+export const categoryDefaultImages: Record<string, string> = {
   football: "/images/categories/football.webp",
   basketball: "/images/categories/basketball.webp",
   tennis: "/images/categories/tennis.webp",
@@ -10,13 +8,13 @@ export const categoryDefaultImages: Record<SportCategory, string> = {
 };
 
 export const getCategoryImage = (
-  category: SportCategory,
+  category?: string | null,
   customImageUrl?: string | null,
   sportCategorySlug?: string | null
 ): string => {
   if (customImageUrl) return customImageUrl;
   
   // Priority for dynamic sport_category slug
-  const slug = sportCategorySlug || category;
-  return categoryDefaultImages[slug as SportCategory] || categoryDefaultImages.other;
+  const slug = sportCategorySlug || category || "other";
+  return categoryDefaultImages[slug] || categoryDefaultImages.other;
 };

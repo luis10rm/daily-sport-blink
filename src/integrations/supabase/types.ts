@@ -73,7 +73,6 @@ export type Database = {
       }
       posts: {
         Row: {
-          category: Database["public"]["Enums"]["sport_category"]
           category_id: string | null
           content: string | null
           created_at: string
@@ -90,7 +89,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          category?: Database["public"]["Enums"]["sport_category"]
           category_id?: string | null
           content?: string | null
           created_at?: string
@@ -107,7 +105,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          category?: Database["public"]["Enums"]["sport_category"]
           category_id?: string | null
           content?: string | null
           created_at?: string
@@ -124,6 +121,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_posts_category"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "sport_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "posts_category_id_fkey"
             columns: ["category_id"]
@@ -341,13 +345,6 @@ export type Database = {
     Enums: {
       app_role: "admin" | "editor" | "viewer"
       banner_position: "home_top" | "home_middle" | "home_bottom"
-      sport_category:
-        | "football"
-        | "basketball"
-        | "tennis"
-        | "f1"
-        | "mma"
-        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -477,14 +474,6 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "editor", "viewer"],
       banner_position: ["home_top", "home_middle", "home_bottom"],
-      sport_category: [
-        "football",
-        "basketball",
-        "tennis",
-        "f1",
-        "mma",
-        "other",
-      ],
     },
   },
 } as const

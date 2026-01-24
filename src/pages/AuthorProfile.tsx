@@ -87,8 +87,8 @@ const AuthorProfile = () => {
                 key={post.id}
                 title={post.title}
                 excerpt={post.excerpt}
-                category={post.category}
-                sportCategory={post.sport_category}
+                categorySlug={post.sport_category?.slug}
+                sportCategory={post.sport_category as any}
                 publishedAt={post.published_at}
                 sourceUrl={post.source_url}
                 imageUrl={post.image_url || undefined}
