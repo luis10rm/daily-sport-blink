@@ -1,103 +1,198 @@
 
 
-## Ulepszenie promptu dla spójnych ikon AI
+## Personalizowany komunikat o dzisiejszych newsach
 
-### Problem
-Obecne ikony generowane przez AI nie są spójne z ikonami Lucide - brakuje:
-- Czystego przezroczystego tła (alpha channel)
-- Jednolitego białego koloru (pure white #FFFFFF)
-- Minimalistycznego stylu linii (stroke-based, nie fill-based)
-- Odpowiedniej grubości linii (2px stroke width)
+### Cel
+Zamiana sztywnego nagłówka "Dzisiejsze wiadomości" na dynamiczny, ciepły komunikat informujący użytkownika ile newsów zostało dla niego przygotowanych danego dnia.
 
-### Rozwiązanie
+### Projekt UI
 
-Przebudowa promptu z bardziej technicznymi, precyzyjnymi instrukcjami oraz dodanie negatywnych wskazówek (czego unikać).
+**Sekcja powitalna na stronie głównej:**
 
-### Zmiany w pliku
-
-**`supabase/functions/generate-category-icon/index.ts`** - nowy prompt:
-
-```typescript
-const prompt = `Generate a simple icon for the sport/activity: "${categoryName}"
-
-CRITICAL REQUIREMENTS - MUST FOLLOW EXACTLY:
-1. TRANSPARENT BACKGROUND - The background MUST be completely transparent (alpha = 0). No colored background, no white background, no gray background. ONLY transparency.
-
-2. WHITE COLOR ONLY - Use ONLY pure white color (#FFFFFF) for all lines and shapes. No other colors allowed.
-
-3. LINE ART STYLE - Draw using thin strokes/outlines only (like SVG stroke), NOT filled shapes. Similar to Lucide icons or Feather icons.
-
-4. STROKE WIDTH - Use consistent 2px stroke width throughout the icon.
-
-5. SIMPLE GEOMETRY - Use basic geometric shapes: circles, lines, rectangles, arcs. Maximum 5-10 shapes total.
-
-6. SIZE - Design for 64x64 pixel display. Keep the icon centered with small padding.
-
-7. SINGLE OBJECT - Show only ONE recognizable symbol representing the sport. No text, no multiple objects, no decorative elements.
-
-DO NOT:
-- Add any background color
-- Use gradients or shadows
-- Use filled shapes (use outlines only)
-- Add text or labels
-- Use colors other than white
-- Make complex detailed illustrations
-
-EXAMPLES OF CORRECT STYLE:
-- Football/Soccer: Simple circle outline
-- Tennis: Circle with crossed lines
-- Basketball: Circle with curved lines
-- Boxing: Two rectangular glove outlines
-
-OUTPUT: PNG image with transparent background and white stroke-based icon.`;
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  🗞️  Dzisiaj mamy dla Ciebie                                   │
+│                                                                 │
+│      ████  12  ████                                             │
+│                                                                 │
+│  starannie wybranych newsów sportowych                          │
+│                                                                 │
+│  ─────────────────────────────────────────────────────────────  │
+│  Przygotowaliśmy je z myślą o Tobie • Piątek, 24 stycznia       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Dlaczego te zmiany pomogą
+### Warianty komunikatów
 
-| Aspekt | Stary prompt | Nowy prompt |
-|--------|--------------|-------------|
-| Przezroczystość | "transparent background" (ogólne) | "alpha = 0", "no white background, no gray" (precyzyjne) |
-| Kolor | "Single white color" | "#FFFFFF", "pure white", "no other colors" |
-| Styl | "line art style" | "strokes/outlines only", "NOT filled shapes", "2px stroke width" |
-| Negatywne instrukcje | Brak | Sekcja "DO NOT" z konkretnymi zakazami |
-| Przykłady | Brak | Konkretne przykłady dla sportów |
+System będzie losowo wybierać jeden z wariantów przy każdym odświeżeniu:
 
-### Dodatkowe ulepszenia
+| Wariant | Tekst |
+|---------|-------|
+| 1 | "Dzisiaj mamy dla Ciebie **X** starannie wybranych newsów sportowych" |
+| 2 | "Przygotowaliśmy **X** gorących informacji ze świata sportu" |
+| 3 | "Twoja codzienna dawka sportu: **X** newsów z ostatnich 24h" |
+| 4 | "Specjalnie dla Ciebie: **X** najciekawszych wydarzeń sportowych" |
+| 5 | "**X** powodów, żeby zostać na dłużej - sprawdź co się dzieje w sporcie" |
 
-1. **Walidacja w komponencie** - dodanie informacji dla użytkownika, że jeśli ikona nie wygląda dobrze, może spróbować ponownie.
+### Architektura rozwiązania
 
-2. **Podgląd na różnych tłach** - w `AIIconGenerator.tsx` dodanie podglądu ikony na kilku kolorach tła, żeby użytkownik widział jak będzie wyglądać:
+#### Nowy komponent: `src/components/TodaysNewsBanner.tsx`
 
 ```tsx
-// Podgląd na różnych tłach
-<div className="flex gap-2 justify-center">
-  {["#22c55e", "#f97316", "#8b5cf6", "#ef4444"].map((color) => (
-    <div
-      key={color}
-      className="h-10 w-10 rounded-lg flex items-center justify-center"
-      style={{ backgroundColor: color }}
-    >
-      <img src={generatedIconUrl} alt="" className="h-6 w-6 object-contain" />
-    </div>
-  ))}
-</div>
+interface TodaysNewsBannerProps {
+  count: number;
+  isLoading?: boolean;
+}
 ```
 
-### Plan implementacji
+Funkcjonalności:
+- Wyświetla dynamiczną liczbę newsów z animacją "count up"
+- Losuje wariant komunikatu przy montowaniu
+- Pokazuje aktualną datę w formacie "Piątek, 24 stycznia"
+- Subtelna animacja wejścia (fade + slide)
+- Responsywny design (kompaktowy na mobile)
 
-| Krok | Plik | Zmiana |
-|------|------|--------|
-| 1 | `supabase/functions/generate-category-icon/index.ts` | Zastąpienie promptu nową wersją z precyzyjnymi instrukcjami |
-| 2 | `src/components/admin/AIIconGenerator.tsx` | Dodanie podglądu ikony na różnych kolorach tła |
-| 3 | Deploy | Wdrożenie edge function |
+#### Zmiany w `src/pages/Index.tsx`
 
-### Uwagi techniczne
+Zamiana sekcji (linie 69-76):
+```tsx
+// Stare:
+<section className="mb-10">
+  <h1>Dzisiejsze wiadomości</h1>
+  <p>Najważniejsze wydarzenia sportowe z ostatnich 24 godzin</p>
+</section>
 
-- Model `google/gemini-2.5-flash-image-preview` lepiej reaguje na:
-  - Kapitalizowane słowa kluczowe (CRITICAL, MUST, DO NOT)
-  - Numerowane listy z konkretnymi wartościami
-  - Negatywne instrukcje (czego unikać)
-  - Konkretne przykłady
+// Nowe:
+<TodaysNewsBanner 
+  count={todaysPosts.length} 
+  isLoading={postsLoading} 
+/>
+```
+
+### Szczegóły implementacji
+
+#### Animacja liczby (count-up effect)
+
+```tsx
+// Animacja od 0 do docelowej wartości
+const [displayCount, setDisplayCount] = useState(0);
+
+useEffect(() => {
+  if (count === 0) return;
   
-- Przezroczystość PNG jest obsługiwana przez model, ale wymaga bardzo wyraźnych instrukcji
+  const duration = 1000; // 1 sekunda
+  const steps = 20;
+  const increment = count / steps;
+  let current = 0;
+  
+  const timer = setInterval(() => {
+    current += increment;
+    if (current >= count) {
+      setDisplayCount(count);
+      clearInterval(timer);
+    } else {
+      setDisplayCount(Math.floor(current));
+    }
+  }, duration / steps);
+  
+  return () => clearInterval(timer);
+}, [count]);
+```
+
+#### Warianty tekstów
+
+```tsx
+const variants = [
+  { before: "Dzisiaj mamy dla Ciebie", after: "starannie wybranych newsów sportowych" },
+  { before: "Przygotowaliśmy", after: "gorących informacji ze świata sportu" },
+  { before: "Twoja codzienna dawka sportu:", after: "newsów z ostatnich 24h" },
+  { before: "Specjalnie dla Ciebie:", after: "najciekawszych wydarzeń sportowych" },
+];
+
+// Losowanie przy montowaniu
+const [variant] = useState(() => variants[Math.floor(Math.random() * variants.length)]);
+```
+
+#### Formatowanie daty
+
+```tsx
+import { format } from "date-fns";
+import { pl } from "date-fns/locale";
+
+const formattedDate = format(new Date(), "EEEE, d MMMM", { locale: pl });
+// Wynik: "piątek, 24 stycznia"
+```
+
+### Stylizacja
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  DESKTOP                                                        │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ bg-gradient-to-r from-primary/5 to-primary/10             │  │
+│  │ border border-primary/20 rounded-2xl                       │  │
+│  │ p-8 text-center                                           │  │
+│  │                                                           │  │
+│  │ [Newspaper icon] Dzisiaj mamy dla Ciebie                  │  │
+│  │                                                           │  │
+│  │        ██ 12 ██  (duża liczba, gradient text)            │  │
+│  │                                                           │  │
+│  │ starannie wybranych newsów sportowych                     │  │
+│  │                                                           │  │
+│  │ ───────────────────────────────────────                   │  │
+│  │ Przygotowaliśmy je z myślą o Tobie • Piątek, 24 stycznia  │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────┐
+│  MOBILE (kompaktowy)        │
+│  ┌───────────────────────┐  │
+│  │ p-4                   │  │
+│  │                       │  │
+│  │ Dzisiaj: 12 newsów   │  │
+│  │ Piątek, 24 stycznia   │  │
+│  └───────────────────────┘  │
+└─────────────────────────────┘
+```
+
+### Aktualizacja ScrollProgress
+
+Uproszczenie komunikatu w pływającym wskaźniku - usunięcie duplikacji:
+
+```tsx
+// Było: "5 newsów z dzisiaj • Scrolluj"
+// Będzie: "Jeszcze 3 do przeczytania • Scrolluj"
+```
+
+Opcjonalnie: dodanie progress bara pokazującego ile newsów użytkownik już "minął".
+
+### Obsługa przypadków brzegowych
+
+| Przypadek | Zachowanie |
+|-----------|------------|
+| 0 newsów | "Dzisiaj jeszcze nie dodaliśmy newsów - wróć później!" |
+| 1 news | "Mamy dla Ciebie 1 news sportowy" (odmiana) |
+| Ładowanie | Skeleton z pulsującą animacją |
+
+### Podsumowanie zmian
+
+| Plik | Zmiana |
+|------|--------|
+| `src/components/TodaysNewsBanner.tsx` | Nowy komponent z dynamicznym komunikatem |
+| `src/pages/Index.tsx` | Zamiana statycznej sekcji na TodaysNewsBanner |
+| `src/components/ScrollProgress.tsx` | Opcjonalna aktualizacja komunikatu |
+
+### Efekt końcowy
+
+Użytkownik wchodzi na stronę i widzi personalizowany, ciepły komunikat:
+
+> 🗞️ **Dzisiaj mamy dla Ciebie**
+> 
+> **12**
+> 
+> starannie wybranych newsów sportowych
+> 
+> *Przygotowaliśmy je z myślą o Tobie • Piątek, 24 stycznia*
+
+To buduje relację z użytkownikiem i zachęca do scrollowania i czytania.
 
