@@ -110,7 +110,7 @@ export const useAuthorPosts = (authorId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("posts")
-        .select("*, sport_category:sport_categories!category_id(*)")
+        .select("*, sport_category:sport_categories!fk_posts_category(*)")
         .eq("created_by", authorId)
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false });
@@ -139,7 +139,7 @@ export const useAuthorStats = (authorId: string) => {
       // Get most used category
       const { data: categoryData, error: categoryError } = await supabase
         .from("posts")
-        .select("category_id, sport_category:sport_categories!category_id(name)")
+        .select("category_id, sport_category:sport_categories!fk_posts_category(name)")
         .eq("created_by", authorId)
         .lte("published_at", new Date().toISOString());
 
