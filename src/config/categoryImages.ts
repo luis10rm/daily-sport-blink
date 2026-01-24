@@ -11,7 +11,12 @@ export const categoryDefaultImages: Record<SportCategory, string> = {
 
 export const getCategoryImage = (
   category: SportCategory,
-  customImageUrl?: string | null
+  customImageUrl?: string | null,
+  sportCategorySlug?: string | null
 ): string => {
-  return customImageUrl || categoryDefaultImages[category];
+  if (customImageUrl) return customImageUrl;
+  
+  // Priority for dynamic sport_category slug
+  const slug = sportCategorySlug || category;
+  return categoryDefaultImages[slug as SportCategory] || categoryDefaultImages.other;
 };

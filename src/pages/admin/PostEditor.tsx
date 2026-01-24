@@ -109,11 +109,15 @@ const PostEditor = () => {
   }, [post, form]);
 
   const onSubmit = async (data: PostFormData) => {
+    // Synchronize category slug with category_id for backward compatibility
+    const selectedCategory = sportCategories?.find((c) => c.id === data.category_id);
+    
     const postData = {
       title: data.title,
       excerpt: data.excerpt,
       content: data.content || undefined,
       category_id: data.category_id,
+      category: (selectedCategory?.slug || "other") as any,
       image_url: data.image_url || undefined,
       source_url: data.source_url,
       tags: data.tags ? data.tags.split(",").map((t) => t.trim()) : [],

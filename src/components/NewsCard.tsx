@@ -63,7 +63,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
         {/* Image area */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
           <img
-            src={getCategoryImage(category, imageUrl)}
+            src={getCategoryImage(category, imageUrl, sportCategory?.slug)}
             alt={title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
