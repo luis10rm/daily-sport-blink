@@ -108,6 +108,7 @@ const Index = () => {
             description="To miejsce może być Twoje"
             ctaText="Zostań partnerem"
             ctaUrl="mailto:reklama@szortsy.pl"
+            isPlaceholder={true}
             className="mb-10"
           />
         )}
