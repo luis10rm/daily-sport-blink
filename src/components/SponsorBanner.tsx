@@ -32,6 +32,21 @@ export const SponsorBanner = ({
   // This prevents React from misinterpreting DoubleClick macros like ${GDPR}
   const safeCtaUrl = ctaUrl ? String(ctaUrl) : "#";
 
+  // AdBlock bypass: Use onClick handler instead of href attribute
+  // AdBlockers scan DOM for doubleclick.net in href, but don't parse JavaScript
+  const handleClick = () => {
+    if (safeCtaUrl && safeCtaUrl !== "#" && !previewMode) {
+      window.open(safeCtaUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   // Fire impression tag pixel on first render
   useEffect(() => {
     if (impressionTag && !impressionFiredRef.current && !previewMode) {
@@ -69,11 +84,14 @@ export const SponsorBanner = ({
           </div>
 
           {/* Banner image slot - fixed dimensions */}
-          <a
-            href={safeCtaUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block group"
+          {/* Using div with onClick instead of <a href> to bypass AdBlock */}
+          <div
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            role="link"
+            tabIndex={0}
+            className="block group cursor-pointer"
+            aria-label={title || "Reklama partnera"}
           >
             {/* Desktop slot: 970x250 */}
             <div
@@ -146,20 +164,19 @@ export const SponsorBanner = ({
                 Nie udało się wczytać grafiki
               </div>
             </div>
-          </a>
+          </div>
 
           {/* CTA section - below the banner */}
           {ctaText && (
             <div className="bg-muted/50 px-4 py-3 border-t border-border">
-            <a
-              href={safeCtaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
-            >
+              <button
+                onClick={handleClick}
+                type="button"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
+              >
                 {ctaText}
                 <ExternalLink className="h-4 w-4" />
-              </a>
+              </button>
             </div>
           )}
         </div>
@@ -179,16 +196,18 @@ export const SponsorBanner = ({
         </div>
 
         {/* Desktop slot: 970x250 */}
-        <a
-          href={safeCtaUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <div
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          role="link"
+          tabIndex={0}
           className={cn(
-            "relative overflow-hidden bg-gradient-to-br from-primary/5 via-card to-primary/10 items-center justify-center group",
+            "relative overflow-hidden bg-gradient-to-br from-primary/5 via-card to-primary/10 items-center justify-center group cursor-pointer",
             previewMode === "mobile" ? "hidden" : "hidden md:flex",
             previewMode === "desktop" && "!flex"
           )}
           style={{ width: "970px", height: "250px" }}
+          aria-label={title || "Reklama partnera"}
         >
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
           <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-primary/5 blur-3xl" />
@@ -204,19 +223,21 @@ export const SponsorBanner = ({
               </p>
             )}
           </div>
-        </a>
+        </div>
 
         {/* Mobile slot: 300x250 */}
-        <a
-          href={safeCtaUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+        <div
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+          role="link"
+          tabIndex={0}
           className={cn(
-            "relative overflow-hidden bg-gradient-to-br from-primary/5 via-card to-primary/10 items-center justify-center mx-auto group",
+            "relative overflow-hidden bg-gradient-to-br from-primary/5 via-card to-primary/10 items-center justify-center mx-auto group cursor-pointer",
             previewMode === "desktop" ? "hidden" : "flex md:hidden",
             previewMode === "mobile" && "!flex"
           )}
           style={{ width: "300px", height: "250px" }}
+          aria-label={title || "Reklama partnera"}
         >
           <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary/5 blur-2xl" />
           <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-primary/5 blur-2xl" />
@@ -232,20 +253,19 @@ export const SponsorBanner = ({
               </p>
             )}
           </div>
-        </a>
+        </div>
 
         {/* CTA section - below the banner */}
         {ctaText && (
           <div className="bg-muted/50 px-4 py-3 border-t border-border">
-          <a
-            href={safeCtaUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
-          >
+            <button
+              onClick={handleClick}
+              type="button"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
+            >
               {ctaText}
               <ExternalLink className="h-4 w-4" />
-            </a>
+            </button>
           </div>
         )}
       </div>
