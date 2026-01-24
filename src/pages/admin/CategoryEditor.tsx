@@ -36,6 +36,7 @@ import {
   useUploadCategoryIcon,
 } from "@/hooks/useSportCategories";
 import { ImageUploader } from "@/components/admin/ImageUploader";
+import { AIIconGenerator } from "@/components/admin/AIIconGenerator";
 import dynamicIconImports from "lucide-react/dynamicIconImports";
 import { LucideProps } from "lucide-react";
 
@@ -121,7 +122,7 @@ export default function CategoryEditor() {
   const updateCategory = useUpdateSportCategory();
   const uploadIcon = useUploadCategoryIcon();
 
-  const [iconSource, setIconSource] = useState<"lucide" | "upload">("lucide");
+  const [iconSource, setIconSource] = useState<"lucide" | "upload" | "ai">("lucide");
   const [previewColor, setPreviewColor] = useState("220 14% 46%");
 
   const form = useForm<CategoryFormData>({
@@ -344,11 +345,12 @@ export default function CategoryEditor() {
                   <CardContent className="space-y-4">
                     <Tabs
                       value={iconSource}
-                      onValueChange={(v) => setIconSource(v as "lucide" | "upload")}
+                      onValueChange={(v) => setIconSource(v as "lucide" | "upload" | "ai")}
                     >
-                      <TabsList className="grid w-full grid-cols-2">
+                      <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="lucide">Ikona Lucide</TabsTrigger>
                         <TabsTrigger value="upload">Własna grafika</TabsTrigger>
+                        <TabsTrigger value="ai">🤖 Wygeneruj AI</TabsTrigger>
                       </TabsList>
 
                       <TabsContent value="lucide" className="space-y-4">
@@ -402,6 +404,18 @@ export default function CategoryEditor() {
                               <FormMessage />
                             </FormItem>
                           )}
+                        />
+                      </TabsContent>
+
+                      <TabsContent value="ai" className="space-y-4">
+                        <AIIconGenerator
+                          categoryName={form.watch("name")}
+                          onIconGenerated={(url) => {
+                            form.setValue("icon_url", url);
+                            form.setValue("icon_name", null);
+                            setIconSource("upload");
+                          }}
+                          disabled={!form.watch("name")}
                         />
                       </TabsContent>
                     </Tabs>
