@@ -8,6 +8,7 @@ import { ImageSourceSection } from "@/components/admin/ImageSourceSection";
 import { usePost, useCreatePost, useUpdatePost } from "@/hooks/usePosts";
 import { useExtractArticle } from "@/hooks/useSettings";
 import { useSportCategories } from "@/hooks/useSportCategories";
+import { useAuth } from "@/hooks/useAuth";
 import { QuickCategoryDialog } from "@/components/admin/QuickCategoryDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +70,7 @@ const PostEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isEditing = !!id;
+  const { user } = useAuth();
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
   const { data: sportCategories, isLoading: isLoadingCategories } = useSportCategories();
@@ -130,7 +132,7 @@ const PostEditor = () => {
     if (isEditing && id) {
       await updatePost.mutateAsync({ id, ...postData });
     } else {
-      await createPost.mutateAsync(postData);
+      await createPost.mutateAsync({ ...postData, created_by: user?.id });
     }
     navigate("/admin/posts");
   };
