@@ -54,6 +54,7 @@ export interface CreatePostInput {
   is_sponsored?: boolean;
   is_news_of_day?: boolean;
   published_at?: string;
+  created_by?: string;
 }
 
 export interface UpdatePostInput extends Partial<CreatePostInput> {
