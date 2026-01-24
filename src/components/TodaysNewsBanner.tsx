@@ -110,38 +110,35 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
     );
   }
 
-  // Desktop full version
+  // Desktop compact version
   return (
     <section
       className={cn(
-        "mb-10 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/8 to-primary/10 p-8 text-center animate-fade-in",
+        "mb-6 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 py-4 px-6 animate-fade-in",
         className
       )}
     >
-      {/* Icon and intro text */}
-      <div className="flex items-center justify-center gap-2 mb-4">
-        <Newspaper className="h-6 w-6 text-primary" />
-        <span className="text-lg text-muted-foreground">{variant.before}</span>
-      </div>
+      <div className="flex items-center justify-center gap-4 flex-wrap">
+        {/* Icon + intro text */}
+        <div className="flex items-center gap-2">
+          <Newspaper className="h-5 w-5 text-primary" />
+          <span className="text-base text-muted-foreground">{variant.before}</span>
+        </div>
 
-      {/* Big animated number */}
-      <div className="mb-4">
-        <span className="text-6xl md:text-7xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+        {/* Animated number */}
+        <span className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
           {displayCount}
+        </span>
+
+        {/* After text */}
+        <span className="text-base text-foreground font-medium">
+          {variant.after}
         </span>
       </div>
 
-      {/* After text */}
-      <p className="text-xl text-foreground font-medium mb-6">
-        {variant.after}
-      </p>
-
-      {/* Divider */}
-      <div className="w-48 h-px bg-border mx-auto mb-4" />
-
-      {/* Footer with date */}
-      <p className="text-sm text-muted-foreground">
-        Przygotowaliśmy je z myślą o Tobie • {capitalizedDate}
+      {/* Date below */}
+      <p className="text-center text-xs text-muted-foreground mt-2">
+        {capitalizedDate}
       </p>
     </section>
   );
