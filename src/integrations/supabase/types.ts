@@ -128,13 +128,6 @@ export type Database = {
             referencedRelation: "sport_categories"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "posts_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "sport_categories"
-            referencedColumns: ["id"]
-          },
         ]
       }
       profiles: {
