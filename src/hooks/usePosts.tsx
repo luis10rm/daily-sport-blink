@@ -34,6 +34,7 @@ export interface Post {
   is_news_of_day: boolean;
   published_at: string;
   created_by?: string | null;
+  author_id?: string | null;
   author?: PostAuthor | null;
   created_at: string;
   updated_at: string;
@@ -51,6 +52,7 @@ export interface CreatePostInput {
   is_news_of_day?: boolean;
   published_at?: string;
   created_by?: string;
+  author_id?: string;
 }
 
 export interface UpdatePostInput extends Partial<CreatePostInput> {
@@ -59,29 +61,9 @@ export interface UpdatePostInput extends Partial<CreatePostInput> {
 
 const POST_SELECT = `
   *,
-  sport_category:sport_categories!fk_posts_category(id, slug, name, icon_name, icon_url, bg_color)
+  sport_category:sport_categories!fk_posts_category(id, slug, name, icon_name, icon_url, bg_color),
+  author:authors(id, display_name, avatar_url, slug, role_title)
 `;
-
-// Helper to fetch author data for posts
-const fetchAuthorsForPosts = async (posts: any[]): Promise<Post[]> => {
-  const authorIds = [...new Set(posts.filter(p => p.created_by).map(p => p.created_by))];
-  
-  if (authorIds.length === 0) {
-    return posts.map(p => ({ ...p, author: null }));
-  }
-
-  const { data: authors } = await supabase
-    .from("profiles")
-    .select("id, display_name, avatar_url, slug, role_title")
-    .in("id", authorIds);
-
-  const authorsMap = new Map(authors?.map(a => [a.id, a]) || []);
-  
-  return posts.map(p => ({
-    ...p,
-    author: p.created_by ? authorsMap.get(p.created_by) || null : null,
-  }));
-};
 
 // Fetch all posts
 export const usePosts = () => {
@@ -94,7 +76,7 @@ export const usePosts = () => {
         .order("published_at", { ascending: false });
 
       if (error) throw error;
-      return fetchAuthorsForPosts(data || []);
+      return data as Post[];
     },
   });
 };
@@ -116,7 +98,7 @@ export const useTodaysPosts = () => {
         .order("published_at", { ascending: false });
 
       if (error) throw error;
-      return fetchAuthorsForPosts(data || []);
+      return data as Post[];
     },
   });
 };
@@ -135,7 +117,7 @@ export const useRecentPosts = () => {
         .order("published_at", { ascending: false });
 
       if (error) throw error;
-      return fetchAuthorsForPosts(data || []);
+      return data as Post[];
     },
   });
 };
@@ -154,10 +136,7 @@ export const useNewsOfTheDay = () => {
         .maybeSingle();
 
       if (error) throw error;
-      if (!data) return null;
-      
-      const postsWithAuthor = await fetchAuthorsForPosts([data]);
-      return postsWithAuthor[0] || null;
+      return data as Post | null;
     },
   });
 };
@@ -175,7 +154,7 @@ export const usePostsFeed = () => {
 
       if (error) throw error;
       
-      const posts = await fetchAuthorsForPosts(data || []);
+      const posts = data as Post[];
       const sponsored = posts.find(p => p.is_sponsored);
       const nonSponsored = posts.filter(p => !p.is_sponsored);
       
@@ -201,8 +180,7 @@ export const usePost = (id: string) => {
         .single();
 
       if (error) throw error;
-      const postsWithAuthor = await fetchAuthorsForPosts([data]);
-      return postsWithAuthor[0];
+      return data as Post;
     },
     enabled: !!id,
   });

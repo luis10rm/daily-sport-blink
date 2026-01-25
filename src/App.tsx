@@ -173,6 +173,14 @@ function App() {
               }
             />
             <Route
+              path="/admin/authors/new"
+              element={
+                <ProtectedRoute>
+                  <AuthorEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/authors/:id/edit"
               element={
                 <ProtectedRoute>

@@ -20,7 +20,7 @@ const useAuthorsPostsCounts = (authorIds: string[]) => {
         const { count, error } = await supabase
           .from("posts")
           .select("*", { count: "exact", head: true })
-          .eq("created_by", authorId)
+          .eq("author_id", authorId)
           .lte("published_at", new Date().toISOString());
 
         if (!error && count !== null) {

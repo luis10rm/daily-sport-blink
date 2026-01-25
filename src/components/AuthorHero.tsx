@@ -9,7 +9,7 @@ interface AuthorHeroProps {
 }
 
 export const AuthorHero = ({ author }: AuthorHeroProps) => {
-  const displayName = author.display_name || author.full_name || "Autor";
+  const displayName = author.display_name || "Autor";
 
   return (
     <div className="relative">
