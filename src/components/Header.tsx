@@ -1,4 +1,4 @@
-import { Newspaper, Users } from "lucide-react";
+import { Archive, Newspaper, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export const Header = () => {
@@ -18,6 +18,13 @@ export const Header = () => {
         </Link>
         
         <nav className="flex items-center gap-4">
+          <Link 
+            to="/archiwum" 
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Archive className="h-4 w-4" />
+            <span className="hidden sm:inline">Archiwum</span>
+          </Link>
           <Link 
             to="/autorzy" 
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"

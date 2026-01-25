@@ -25,6 +25,7 @@ import AuthorsList from "./pages/admin/AuthorsList";
 import AuthorEditor from "./pages/admin/AuthorEditor";
 import AuthorProfile from "./pages/AuthorProfile";
 import AuthorsPage from "./pages/AuthorsPage";
+import Archive from "./pages/Archive";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ function App() {
             <ConditionalWallpaper />
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/archiwum" element={<Archive />} />
               <Route path="/autorzy" element={<AuthorsPage />} />
               <Route path="/autor/:slug" element={<AuthorProfile />} />
             <Route path="/auth" element={<Auth />} />
