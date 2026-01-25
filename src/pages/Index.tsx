@@ -1,4 +1,6 @@
 import { useRef } from "react";
+import { Link } from "react-router-dom";
+import { Archive } from "lucide-react";
 import { Header } from "@/components/Header";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
@@ -137,6 +139,19 @@ const Index = () => {
                 delay={index * 100}
               />
             ))}
+          </div>
+        )}
+
+        {/* Link to Archive */}
+        {posts.length > 0 && (
+          <div className="text-center mt-10">
+            <Link
+              to="/archiwum"
+              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 hover:underline transition-colors"
+            >
+              <Archive className="h-4 w-4" />
+              Zobacz starsze artykuły w Archiwum
+            </Link>
           </div>
         )}
 

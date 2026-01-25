@@ -141,15 +141,18 @@ export const useNewsOfTheDay = () => {
   });
 };
 
-// Fetch posts for feed (with sponsored in correct position)
+// Fetch posts for feed (with sponsored in correct position) - limited to 7 days
 export const usePostsFeed = () => {
   return useQuery({
     queryKey: ["posts", "feed"],
     queryFn: async () => {
+      const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+      
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
         .eq("is_news_of_day", false)
+        .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
       if (error) throw error;
@@ -164,6 +167,32 @@ export const usePostsFeed = () => {
       }
       
       return posts;
+    },
+  });
+};
+
+// Fetch archived posts (older than 7 days)
+export const useArchivedPosts = (filters?: {
+  categoryId?: string;
+}) => {
+  return useQuery({
+    queryKey: ["posts", "archive", filters],
+    queryFn: async () => {
+      const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+      
+      let query = supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .lt("published_at", sevenDaysAgo)
+        .order("published_at", { ascending: false });
+
+      if (filters?.categoryId) {
+        query = query.eq("category_id", filters.categoryId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as Post[];
     },
   });
 };
