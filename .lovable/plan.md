@@ -1,188 +1,150 @@
 
-# Plan: Niezależne profile autorów z opcjonalnym powiązaniem z kontem
+# Plan: Dynamiczne Stories dla wszystkich kategorii sportowych
 
-## Cel
-Umożliwić administratorowi tworzenie i zarządzanie profilami autorów niezależnie od kont użytkowników, z opcją przypisania profilu do konkretnego adresu email.
+## Problem
+Komponent Stories używa 6 zakodowanych kategorii (`football`, `basketball`, `tennis`, `f1`, `mma`, `other`), podczas gdy w bazie danych masz 9 dynamicznych kategorii (w tym "Skoki Narciarskie", "Łyżwiarstwo"). Wszystkie kategorie nierozpoznane przez statyczny kod trafiają do "Inne".
 
-## Obecna architektura (problem)
-- Tabela `profiles` jest powiązana 1:1 z `auth.users` (profile.id = auth.users.id)
-- Profile są tworzone automatycznie przez trigger `handle_new_user` przy rejestracji
-- Posty są przypisywane do zalogowanego użytkownika (`created_by = user.id`)
-- Nie można utworzyć profilu autora bez wcześniejszej rejestracji konta
+## Rozwiązanie
+Przepisanie Stories na dynamiczny system bazujący na tabeli `sport_categories`, analogicznie do tego jak działa `DynamicSportIcon`.
 
-## Nowa architektura
+## Zmiany
 
-### Opcja 1: Niezależna tabela `authors` (zalecana)
-Utworzenie osobnej tabeli `authors` oddzielonej od `profiles`:
+### 1. Nowy komponent `DynamicStoriesCircle`
+Zamieni statyczny `StoriesCircle` na wersję obsługującą dane z bazy:
+- Pobiera ikonę (Lucide lub custom URL) z `sport_category`
+- Używa koloru tła (`bg_color`) do gradientu pierścienia
+- Wyświetla nazwę kategorii z bazy zamiast statycznych tłumaczeń
 
-```text
-┌─────────────────────────────┐     ┌──────────────────────────────┐
-│       auth.users            │     │          authors             │
-├─────────────────────────────┤     ├──────────────────────────────┤
-│ id (UUID)                   │◄────│ linked_user_id (UUID, NULL)  │
-│ email                       │     │ id (UUID, auto)              │
-│ ...                         │     │ display_name                 │
-└─────────────────────────────┘     │ slug                         │
-                                    │ bio                          │
-                                    │ avatar_url                   │
-                                    │ cover_image_url              │
-                                    │ role_title                   │
-                                    │ is_public                    │
-                                    │ social_twitter               │
-                                    │ social_instagram             │
-                                    │ linked_email (TEXT, NULL)    │
-                                    └──────────────────────────────┘
-```
+### 2. Przepisanie `StoriesRow`
+- Grupowanie postów po `category_id` (UUID) zamiast po slug
+- Wyświetlanie kółek dla KAŻDEJ kategorii która ma posty z ostatnich 7 dni
+- Sortowanie według `sort_order` z tabeli kategorii
 
-**Zalety:**
-- Pełna elastyczność - autorzy mogą istnieć bez konta
-- Można tworzyć profile "zarezerwowane" pod przyszłe konta
-- Pole `linked_email` umożliwia pokazanie jakiego emaila dotyczy profil
-- Pole `linked_user_id` łączy autora z kontem gdy użytkownik się zarejestruje
+### 3. Aktualizacja `StoriesViewer`
+- Przyjmowanie pełnych danych kategorii (nazwa, ikona, kolor) zamiast statycznego typu
+- Dynamiczne wyświetlanie nagłówka z właściwą nazwą i ikoną
 
-**Przepływ:**
-1. Admin tworzy autora z `linked_email = "jan@example.com"`
-2. Jan rejestruje się na platformie
-3. System (trigger lub ręcznie) aktualizuje `linked_user_id` w tabeli `authors`
-4. Gdy Jan pisze post, system automatycznie przypisuje go do jego profilu autora
-
-### Opcja 2: Rozszerzenie obecnej tabeli `profiles` (prostsza)
-Dodanie pola `linked_email` do istniejącej tabeli `profiles` i możliwość tworzenia rekordów bez powiązania z `auth.users.id`:
-
-**Problem:** Obecna struktura wymusza `profiles.id = auth.users.id`, co uniemożliwia tworzenie niezależnych profili.
-
----
-
-## Rekomendacja: Opcja 1 (nowa tabela `authors`)
-
-### Zmiany w bazie danych
-
-1. **Nowa tabela `authors`:**
-   - `id` (UUID, klucz główny)
-   - `linked_user_id` (UUID, opcjonalne, referencja do auth.users)
-   - `linked_email` (TEXT, opcjonalne - email do którego profil ma być przypisany)
-   - `display_name`, `slug`, `bio`, `avatar_url`, `cover_image_url`, `role_title`, `is_public`, `social_twitter`, `social_instagram`
-   - `created_at`, `updated_at`
-
-2. **Migracja danych:**
-   - Przeniesienie istniejących profili autorów z `profiles` do `authors`
-   - Ustawienie `linked_user_id` dla profili które mają powiązane konta
-
-3. **Aktualizacja tabeli `posts`:**
-   - Zmiana referencji `created_by` z `profiles.id` na `authors.id`
-   - LUB dodanie nowego pola `author_id` wskazującego na `authors`
-
-4. **Polityki RLS:**
-   - Publiczny odczyt dla `is_public = true`
-   - Pełny CRUD dla administratorów
-   - Edycja własnego profilu dla użytkowników z `linked_user_id`
-
-### Zmiany w kodzie
-
-1. **Nowy hook `useAuthors.tsx`:**
-   - `useCreateAuthor()` - tworzenie nowego autora
-   - Aktualizacja pozostałych hooków do pracy z nową tabelą
-
-2. **Aktualizacja `AuthorsList.tsx`:**
-   - Przycisk "Dodaj autora" 
-   - Wyświetlanie `linked_email` w tabeli
-
-3. **Aktualizacja `AuthorEditor.tsx`:**
-   - Obsługa tworzenia nowego autora (route `/admin/authors/new`)
-   - Nowe pole "Email powiązany" z podpowiedzią
-   - Dropdown z listą zarejestrowanych użytkowników (opcjonalnie)
-
-4. **Aktualizacja `PostEditor.tsx`:**
-   - Dropdown wyboru autora zamiast automatycznego przypisania
-   - Domyślnie wybrany autor powiązany z zalogowanym użytkownikiem
-
-5. **Aktualizacja wszystkich hooków i komponentów:**
-   - `usePosts.tsx` - pobieranie autora z nowej tabeli
-   - `AuthorCard.tsx`, `NewsCard.tsx`, `NewsOfTheDay.tsx` - bez zmian w logice wyświetlania
-
-### Przepływ użytkownika (admin)
-
-1. Wchodzi w `/admin/authors` → widzi listę autorów
-2. Klika "Dodaj autora" → formularz tworzenia
-3. Wypełnia dane profilu + opcjonalnie wpisuje email (np. "jan@przyklad.pl")
-4. Zapisuje → autor pojawia się na liście
-5. Gdy Jan się zarejestruje, admin może "podpiąć" jego konto do profilu
-
----
+### 4. Konfiguracja obrazów tła
+Rozszerzenie `categoryImages.ts` o obsługę dynamicznych kategorii - użycie domyślnego obrazu gdy brak dedykowanego.
 
 ## Sekcja techniczna
 
-### Migracja SQL
+### Nowe interfejsy
 
-```sql
--- Tworzenie tabeli authors
-CREATE TABLE public.authors (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  linked_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  linked_email TEXT,
-  display_name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
-  bio TEXT,
-  avatar_url TEXT,
-  cover_image_url TEXT,
-  role_title TEXT DEFAULT 'Autor',
-  is_public BOOLEAN DEFAULT false,
-  social_twitter TEXT,
-  social_instagram TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
+```typescript
+// Dynamiczna kategoria dla Stories
+interface StoryCategoryData {
+  id: string;
+  slug: string;
+  name: string;
+  iconName?: string | null;
+  iconUrl?: string | null;
+  bgColor: string;
+  sortOrder: number;
+}
 
--- Indeksy
-CREATE INDEX idx_authors_linked_user_id ON public.authors(linked_user_id);
-CREATE INDEX idx_authors_slug ON public.authors(slug);
-CREATE INDEX idx_authors_is_public ON public.authors(is_public);
-
--- RLS
-ALTER TABLE public.authors ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Anyone can view public authors" ON public.authors
-  FOR SELECT USING (is_public = true);
-
-CREATE POLICY "Admins can do everything" ON public.authors
-  FOR ALL USING (has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Users can update their linked profile" ON public.authors
-  FOR UPDATE USING (linked_user_id = auth.uid());
-
--- Migracja danych z profiles
-INSERT INTO public.authors (id, linked_user_id, display_name, slug, bio, avatar_url, cover_image_url, role_title, is_public, social_twitter, social_instagram, created_at, updated_at)
-SELECT 
-  gen_random_uuid(),
-  id,
-  COALESCE(display_name, full_name, 'Autor'),
-  COALESCE(slug, 'autor-' || substr(id::text, 1, 8)),
-  bio,
-  avatar_url,
-  cover_image_url,
-  role_title,
-  is_public,
-  social_twitter,
-  social_instagram,
-  created_at,
-  updated_at
-FROM profiles
-WHERE display_name IS NOT NULL OR slug IS NOT NULL;
-
--- Dodanie author_id do posts (opcjonalnie)
-ALTER TABLE public.posts ADD COLUMN author_id UUID REFERENCES public.authors(id);
+// Post w Stories
+interface StoryPost {
+  id: string;
+  title: string;
+  excerpt: string;
+  categoryId: string;
+  publishedAt: string;
+  sourceUrl: string;
+  imageUrl?: string;
+  tags?: string[];
+}
 ```
 
-### Pliki do modyfikacji
+### Nowy `DynamicStoriesCircle.tsx`
 
-1. **`src/hooks/useAuthors.tsx`** - dodanie `useCreateAuthor`, aktualizacja zapytań
-2. **`src/pages/admin/AuthorsList.tsx`** - przycisk "Dodaj autora", kolumna email
-3. **`src/pages/admin/AuthorEditor.tsx`** - obsługa tworzenia, pole email
-4. **`src/App.tsx`** - nowa route `/admin/authors/new`
-5. **`src/pages/admin/PostEditor.tsx`** - dropdown wyboru autora
-6. **`src/hooks/usePosts.tsx`** - aktualizacja joinów do nowej tabeli
+```typescript
+interface DynamicStoriesCircleProps {
+  category: StoryCategoryData;
+  hasUnread: boolean;
+  onClick: () => void;
+}
 
-### Szacowany nakład pracy
-- Migracja bazy: 1 migracja SQL
-- Frontend: ~6 plików do modyfikacji
-- Testowanie: weryfikacja postów, profili publicznych, panelu admin
+export const DynamicStoriesCircle = ({ category, hasUnread, onClick }) => {
+  // Renderuje ikonę Lucide lub custom URL
+  // Gradient pierścienia z category.bgColor
+  // Nazwa z category.name
+};
+```
+
+### Przepisany `StoriesRow.tsx`
+
+```typescript
+export const StoriesRow = () => {
+  const { data: recentPosts = [] } = useRecentPosts();
+  const { data: allCategories = [] } = useSportCategories();
+  
+  // Grupowanie po category_id
+  const postsByCategory = useMemo(() => {
+    const grouped: Record<string, StoryPost[]> = {};
+    recentPosts.forEach(post => {
+      const catId = post.sport_category?.id;
+      if (catId) {
+        if (!grouped[catId]) grouped[catId] = [];
+        grouped[catId].push(mapPostToStory(post));
+      }
+    });
+    return grouped;
+  }, [recentPosts]);
+
+  // Kategorie z postami, posortowane
+  const availableCategories = useMemo(() => 
+    allCategories
+      .filter(cat => postsByCategory[cat.id]?.length > 0)
+      .sort((a, b) => a.sort_order - b.sort_order)
+  , [allCategories, postsByCategory]);
+
+  return (
+    <>
+      <div className="flex gap-4">
+        {availableCategories.map(category => (
+          <DynamicStoriesCircle
+            key={category.id}
+            category={category}
+            hasUnread={true}
+            onClick={() => setActiveCategory(category)}
+          />
+        ))}
+      </div>
+      {activeCategory && (
+        <StoriesViewer
+          posts={postsByCategory[activeCategory.id]}
+          category={activeCategory}
+          onClose={handleClose}
+        />
+      )}
+    </>
+  );
+};
+```
+
+### Zaktualizowany `StoriesViewer.tsx`
+
+```typescript
+interface StoriesViewerProps {
+  posts: StoryPost[];
+  category: StoryCategoryData;  // Zamiast SportCategory
+  onClose: () => void;
+}
+
+// W nagłówku:
+<p className="text-white font-medium">{category.name}</p>
+// Zamiast getSportLabel(category)
+```
+
+### Pliki do modyfikacji/utworzenia
+
+| Plik | Akcja |
+|------|-------|
+| `src/components/DynamicStoriesCircle.tsx` | Utworzenie |
+| `src/components/StoriesRow.tsx` | Przepisanie na dynamiczny system |
+| `src/components/StoriesViewer.tsx` | Aktualizacja interfejsu i nagłówka |
+| `src/config/categoryImages.ts` | Rozszerzenie o fallback dla nieznanych kategorii |
+
+### Efekt końcowy
+Po zmianach Stories będą wyświetlać dedykowane kółko dla KAŻDEJ kategorii która ma posty z ostatnich 7 dni - w tym "Skoki Narciarskie", "Łyżwiarstwo" itd. Każde kółko będzie miało właściwą ikonę i kolor z bazy danych.
