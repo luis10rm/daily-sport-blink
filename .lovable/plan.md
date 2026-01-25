@@ -1,204 +1,235 @@
 
-# Plan: Ograniczenie postów do 7 dni + Strona Archiwum
+# Strategia SEO dla Szortsy
 
-## Zakres zmian
+## Filozofia podejścia
 
-### 1. Modyfikacja `usePostsFeed` - ograniczenie do 7 dni
-Zmiana hooka pobierającego posty na stronę główną, aby filtrował tylko posty z ostatnich 7 dni.
+Szortsy to **agregator newsów sportowych**, nie portal z własnymi artykułami. Zamiast walczyć o pozycjonowanie pojedynczych newsów, stawiamy na:
 
-### 2. Nowy hook `useArchivedPosts`
-Hook z paginacją i filtrami do pobierania starszych postów.
+1. **SEO "przy okazji"** - mechanizmy, które działają automatycznie bez dodatkowej pracy redakcji
+2. **Strony kategorii** - nowe strony `/kategoria/:slug` które zbierają ruch długookresowy
+3. **Structured data** - Google News i rich snippets
 
-### 3. Nowa strona `/archiwum`
-Strona z listą wszystkich historycznych postów, filtrami po kategorii i dacie.
+---
 
-### 4. Link do archiwum w nawigacji
-Dodanie linku "Archiwum" w Header i na końcu strony głównej.
+## Zmiany do wdrożenia
+
+### 1. Poprawione meta tagi w `index.html`
+
+Aktualizacja statycznych meta tagów z brandingiem Szortsy:
+
+| Element | Przed | Po |
+|---------|-------|-----|
+| Title | "Lovable App" | "Szortsy - Wiadomości sportowe krótko i na temat" |
+| Description | "Lovable Generated Project" | "Najważniejsze wiadomości ze świata sportu w 60 słowach. Piłka nożna, koszykówka, F1, tenis, MMA i więcej. Codziennie." |
+| og:image | Lovable logo | Dedykowana grafika OG |
+| lang | "en" | "pl" |
+
+### 2. Dynamiczne tytuły stron (hook `useDocumentTitle`)
+
+Nowy hook automatycznie ustawiający tytuł strony:
+
+```
+/                    → "Szortsy - Wiadomości sportowe"
+/archiwum            → "Archiwum | Szortsy"
+/autorzy             → "Nasi autorzy | Szortsy"
+/autor/jan-kowalski  → "Jan Kowalski | Szortsy"
+/kategoria/football  → "Piłka nożna | Szortsy"
+```
+
+### 3. Nowe strony kategorii `/kategoria/:slug`
+
+Dedykowane strony dla każdej kategorii sportowej z:
+- Pełną listą postów z danej kategorii (7 dni + link do archiwum)
+- Unikalnym tytułem i opisem dla SEO
+- Możliwością pozycjonowania na frazy typu "wiadomości piłka nożna"
+
+**URL struktura:**
+```
+/kategoria/football      → Piłka nożna
+/kategoria/basketball    → Koszykówka
+/kategoria/f1            → Formuła 1
+/kategoria/mma           → MMA
+```
+
+### 4. Automatyczny sitemap.xml
+
+Statyczny plik sitemap z głównymi stronami + dynamiczne strony kategorii:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://daily-sport-blink.lovable.app/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://daily-sport-blink.lovable.app/archiwum</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://daily-sport-blink.lovable.app/autorzy</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://daily-sport-blink.lovable.app/kategoria/football</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <!-- pozostałe kategorie -->
+</urlset>
+```
+
+### 5. Schema.org JSON-LD (structured data)
+
+Dodanie structured data na stronę główną i kategorie:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Szortsy",
+  "description": "Wiadomości sportowe krótko i na temat",
+  "url": "https://daily-sport-blink.lovable.app",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://daily-sport-blink.lovable.app/archiwum?q={search_term_string}"
+  }
+}
+```
+
+Dla strony kategorii - `ItemList` z newsami:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Wiadomości - Piłka nożna",
+  "itemListElement": [
+    {
+      "@type": "NewsArticle",
+      "headline": "Tytuł newsa",
+      "datePublished": "2026-01-25",
+      "author": { "@type": "Person", "name": "Jan Kowalski" }
+    }
+  ]
+}
+```
+
+---
+
+## Zmiany "przy okazji" (zero dodatkowej pracy)
+
+| Mechanizm | Jak działa |
+|-----------|------------|
+| Dynamiczne title | Hook automatycznie ustawia tytuł na podstawie aktualnej strony |
+| Linki do kategorii | Ikona kategorii na NewsCard staje się linkiem do `/kategoria/:slug` |
+| Breadcrumbs | Automatyczne okruszki: "Strona główna > Piłka nożna > Archiwum" |
+| Canonical URLs | Zapobiega duplikacji treści między stronami |
 
 ---
 
 ## Sekcja techniczna
 
-### Zmiana 1: `src/hooks/usePosts.tsx`
+### Nowe pliki do utworzenia
+
+| Plik | Opis |
+|------|------|
+| `src/hooks/useDocumentTitle.ts` | Hook do dynamicznego ustawiania tytułu |
+| `src/pages/CategoryPage.tsx` | Strona kategorii `/kategoria/:slug` |
+| `src/components/SEO.tsx` | Komponent z JSON-LD structured data |
+| `public/sitemap.xml` | Mapa strony dla wyszukiwarek |
+
+### Pliki do modyfikacji
+
+| Plik | Zmiana |
+|------|--------|
+| `index.html` | Meta tagi, lang="pl", OG image |
+| `public/robots.txt` | Dodanie linku do sitemap |
+| `src/App.tsx` | Nowa trasa `/kategoria/:slug` |
+| `src/pages/Index.tsx` | Dodanie hook `useDocumentTitle` + SEO component |
+| `src/pages/Archive.tsx` | Hook `useDocumentTitle` |
+| `src/pages/AuthorsPage.tsx` | Hook `useDocumentTitle` |
+| `src/pages/AuthorProfile.tsx` | Hook `useDocumentTitle` z nazwą autora |
+| `src/components/NewsCard.tsx` | Ikona kategorii jako link do strony kategorii |
+| `src/components/Header.tsx` | Dropdown z kategoriami w nawigacji |
+
+### Hook useDocumentTitle
 
 ```typescript
-// usePostsFeed - dodanie filtra 7 dni (linie 144-169)
-export const usePostsFeed = () => {
-  return useQuery({
-    queryKey: ["posts", "feed"],
-    queryFn: async () => {
-      const sevenDaysAgo = subDays(new Date(), 7).toISOString();
-      
-      const { data, error } = await supabase
-        .from("posts")
-        .select(POST_SELECT)
-        .eq("is_news_of_day", false)
-        .gte("published_at", sevenDaysAgo)  // NOWY FILTR
-        .order("published_at", { ascending: false });
+import { useEffect } from "react";
 
-      if (error) throw error;
-      // ... reszta logiki sponsored
-    },
-  });
-};
-
-// NOWY HOOK - useArchivedPosts
-export const useArchivedPosts = (filters?: {
-  categoryId?: string;
-  startDate?: string;
-  endDate?: string;
-}) => {
-  return useQuery({
-    queryKey: ["posts", "archive", filters],
-    queryFn: async () => {
-      const sevenDaysAgo = subDays(new Date(), 7).toISOString();
-      
-      let query = supabase
-        .from("posts")
-        .select(POST_SELECT)
-        .lt("published_at", sevenDaysAgo)  // Starsze niż 7 dni
-        .order("published_at", { ascending: false });
-
-      if (filters?.categoryId) {
-        query = query.eq("category_id", filters.categoryId);
-      }
-      if (filters?.startDate) {
-        query = query.gte("published_at", filters.startDate);
-      }
-      if (filters?.endDate) {
-        query = query.lte("published_at", filters.endDate);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as Post[];
-    },
-  });
+export const useDocumentTitle = (title: string, suffix = "Szortsy") => {
+  useEffect(() => {
+    const fullTitle = title ? `${title} | ${suffix}` : suffix;
+    document.title = fullTitle;
+    
+    // Update OG title meta tag
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", fullTitle);
+  }, [title, suffix]);
 };
 ```
 
-### Zmiana 2: Nowa strona `src/pages/Archive.tsx`
+### Komponent SEO z JSON-LD
 
 ```typescript
-import { useState } from "react";
-import { Header } from "@/components/Header";
-import { NewsCard } from "@/components/NewsCard";
-import { useArchivedPosts } from "@/hooks/usePosts";
-import { useSportCategories } from "@/hooks/useSportCategories";
-import { Select } from "@/components/ui/select";
-import { Archive as ArchiveIcon } from "lucide-react";
+import { useEffect } from "react";
 
-const Archive = () => {
-  const [categoryFilter, setCategoryFilter] = useState<string>();
-  const { data: posts = [], isLoading } = useArchivedPosts({ 
-    categoryId: categoryFilter 
-  });
-  const { data: categories = [] } = useSportCategories();
+interface SEOProps {
+  type: "website" | "itemList" | "person";
+  data: Record<string, any>;
+}
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container py-6 md:py-10">
-        <div className="flex items-center gap-3 mb-8">
-          <ArchiveIcon className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold">Archiwum</h1>
-        </div>
-        
-        {/* Filtry */}
-        <div className="flex gap-4 mb-6">
-          <Select 
-            value={categoryFilter} 
-            onValueChange={setCategoryFilter}
-            placeholder="Wszystkie kategorie"
-          >
-            {categories.map(cat => (
-              <SelectItem key={cat.id} value={cat.id}>
-                {cat.name}
-              </SelectItem>
-            ))}
-          </Select>
-        </div>
-
-        {/* Lista postów */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post, index) => (
-            <NewsCard key={post.id} {...post} delay={index * 50} />
-          ))}
-        </div>
-
-        {posts.length === 0 && !isLoading && (
-          <p className="text-center text-muted-foreground py-12">
-            Brak archiwalnych postów
-          </p>
-        )}
-      </main>
-    </div>
-  );
+export const SEO = ({ type, data }: SEOProps) => {
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": type === "itemList" ? "ItemList" : type === "person" ? "Person" : "WebSite",
+      ...data,
+    });
+    script.id = "seo-structured-data";
+    
+    // Remove old script if exists
+    const existing = document.getElementById("seo-structured-data");
+    if (existing) existing.remove();
+    
+    document.head.appendChild(script);
+    
+    return () => script.remove();
+  }, [type, data]);
+  
+  return null;
 };
-
-export default Archive;
 ```
 
-### Zmiana 3: `src/components/Header.tsx` - dodanie linku
+### Strona kategorii (CategoryPage.tsx)
 
-```typescript
-<nav className="flex items-center gap-4">
-  <Link 
-    to="/archiwum" 
-    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-  >
-    <Archive className="h-4 w-4" />
-    <span className="hidden sm:inline">Archiwum</span>
-  </Link>
-  <Link 
-    to="/autorzy" 
-    ...
-  />
-</nav>
-```
-
-### Zmiana 4: `src/pages/Index.tsx` - link na dole strony
-
-Po gridzie z postami, przed footer:
-
-```typescript
-{posts.length > 0 && (
-  <div className="text-center mt-8">
-    <Link 
-      to="/archiwum"
-      className="inline-flex items-center gap-2 text-primary hover:underline"
-    >
-      <Archive className="h-4 w-4" />
-      Zobacz starsze artykuły w Archiwum
-    </Link>
-  </div>
-)}
-```
-
-### Zmiana 5: `src/App.tsx` - nowa trasa
-
-```typescript
-import Archive from "./pages/Archive";
-
-// W Routes:
-<Route path="/archiwum" element={<Archive />} />
-```
+Nowa strona wyświetlająca posty z konkretnej kategorii:
+- Pobiera posty przez `usePostsByCategory(slug)`
+- Ustawia dynamiczny tytuł przez `useDocumentTitle(categoryName)`
+- Renderuje JSON-LD z listą newsów
+- Linki do archiwum danej kategorii
 
 ---
 
-## Pliki do utworzenia/modyfikacji
-
-| Plik | Akcja |
-|------|-------|
-| `src/hooks/usePosts.tsx` | Modyfikacja usePostsFeed + nowy useArchivedPosts |
-| `src/pages/Archive.tsx` | Nowa strona archiwum |
-| `src/components/Header.tsx` | Dodanie linku do archiwum |
-| `src/pages/Index.tsx` | Link "Zobacz starsze artykuły" |
-| `src/App.tsx` | Nowa trasa /archiwum |
-
 ## Efekt końcowy
 
-- Strona główna pokazuje tylko posty z **ostatnich 7 dni**
-- Nowa strona `/archiwum` zawiera wszystkie **starsze posty**
-- Możliwość filtrowania archiwum po kategorii sportowej
-- Łatwa nawigacja między stroną główną a archiwum
+1. **Lepsze indeksowanie** - Google zna strukturę strony przez sitemap
+2. **Rich snippets** - Structured data zwiększa CTR w wynikach wyszukiwania
+3. **Strony kategorii** - Nowe punkty wejścia dla ruchu organicznego
+4. **Social sharing** - Poprawne podglądy przy udostępnianiu linków
+5. **Zero dodatkowej pracy** - Wszystko dzieje się automatycznie przy publikacji postów
+
+---
+
+## Priorytet wdrożenia
+
+1. **Natychmiastowe** - Poprawka `index.html` (meta tagi, język)
+2. **Wysokie** - Hook `useDocumentTitle` + zastosowanie na wszystkich stronach
+3. **Średnie** - Strony kategorii + nawigacja
+4. **Niskie** - Structured data JSON-LD + sitemap
