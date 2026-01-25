@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageUploader } from "@/components/admin/ImageUploader";
-import { useAuthorById, useUpdateAuthor, generateSlug } from "@/hooks/useAuthors";
+import { useAuthorById, useUpdateAuthor, useCreateAuthor, generateSlug } from "@/hooks/useAuthors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,7 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ArrowLeft, Save, ExternalLink, Wand2 } from "lucide-react";
+import { ArrowLeft, Save, ExternalLink, Wand2, Plus } from "lucide-react";
 
 const authorSchema = z.object({
   display_name: z.string().min(2, "Nazwa musi mieć minimum 2 znaki"),
@@ -38,6 +38,7 @@ const authorSchema = z.object({
   is_public: z.boolean(),
   social_twitter: z.string().url("Nieprawidłowy URL").nullable().optional().or(z.literal("")),
   social_instagram: z.string().url("Nieprawidłowy URL").nullable().optional().or(z.literal("")),
+  linked_email: z.string().email("Nieprawidłowy email").nullable().optional().or(z.literal("")),
 });
 
 type AuthorFormValues = z.infer<typeof authorSchema>;
@@ -45,8 +46,10 @@ type AuthorFormValues = z.infer<typeof authorSchema>;
 const AuthorEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: author, isLoading } = useAuthorById(id || "");
+  const isCreating = id === "new";
+  const { data: author, isLoading } = useAuthorById(isCreating ? "" : id || "");
   const updateAuthor = useUpdateAuthor();
+  const createAuthor = useCreateAuthor();
   const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<AuthorFormValues>({
@@ -61,13 +64,14 @@ const AuthorEditor = () => {
       is_public: false,
       social_twitter: "",
       social_instagram: "",
+      linked_email: "",
     },
   });
 
   useEffect(() => {
-    if (author) {
+    if (author && !isCreating) {
       form.reset({
-        display_name: author.display_name || author.full_name || "",
+        display_name: author.display_name || "",
         slug: author.slug || "",
         bio: author.bio || "",
         role_title: author.role_title || "Autor",
@@ -76,29 +80,33 @@ const AuthorEditor = () => {
         is_public: author.is_public,
         social_twitter: author.social_twitter || "",
         social_instagram: author.social_instagram || "",
+        linked_email: author.linked_email || "",
       });
     }
-  }, [author, form]);
+  }, [author, form, isCreating]);
 
   const onSubmit = async (values: AuthorFormValues) => {
-    if (!id) return;
     setIsSaving(true);
 
     try {
-      await updateAuthor.mutateAsync({
-        id,
-        data: {
-          display_name: values.display_name,
-          slug: values.slug,
-          bio: values.bio || null,
-          role_title: values.role_title || "Autor",
-          avatar_url: values.avatar_url || null,
-          cover_image_url: values.cover_image_url || null,
-          is_public: values.is_public,
-          social_twitter: values.social_twitter || null,
-          social_instagram: values.social_instagram || null,
-        },
-      });
+      const authorData = {
+        display_name: values.display_name,
+        slug: values.slug,
+        bio: values.bio || null,
+        role_title: values.role_title || "Autor",
+        avatar_url: values.avatar_url || null,
+        cover_image_url: values.cover_image_url || null,
+        is_public: values.is_public,
+        social_twitter: values.social_twitter || null,
+        social_instagram: values.social_instagram || null,
+        linked_email: values.linked_email || null,
+      };
+
+      if (isCreating) {
+        await createAuthor.mutateAsync(authorData);
+      } else if (id) {
+        await updateAuthor.mutateAsync({ id, data: authorData });
+      }
       navigate("/admin/authors");
     } finally {
       setIsSaving(false);
@@ -112,7 +120,7 @@ const AuthorEditor = () => {
     }
   };
 
-  if (isLoading) {
+  if (!isCreating && isLoading) {
     return (
       <AdminLayout>
         <div className="space-y-6">
@@ -123,7 +131,7 @@ const AuthorEditor = () => {
     );
   }
 
-  if (!author) {
+  if (!isCreating && !author) {
     return (
       <AdminLayout>
         <div className="py-12 text-center">
@@ -148,13 +156,18 @@ const AuthorEditor = () => {
               </Link>
             </Button>
             <div>
-              <h1 className="font-heading text-2xl font-bold">Edytuj profil autora</h1>
+              <h1 className="font-heading text-2xl font-bold">
+                {isCreating ? "Dodaj nowego autora" : "Edytuj profil autora"}
+              </h1>
               <p className="text-sm text-muted-foreground">
-                {author.display_name || author.full_name || "Bez nazwy"}
+                {isCreating 
+                  ? "Utwórz nowy profil autora"
+                  : author?.display_name || "Bez nazwy"
+                }
               </p>
             </div>
           </div>
-          {author.is_public && author.slug && (
+          {!isCreating && author?.is_public && author?.slug && (
             <Button variant="outline" asChild>
               <Link
                 to={`/autor/${author.slug}`}
@@ -264,6 +277,30 @@ const AuthorEditor = () => {
               />
             </div>
 
+            {/* Email powiązany */}
+            <FormField
+              control={form.control}
+              name="linked_email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email powiązany</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="jan@example.com"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Wpisz email użytkownika, do którego ma być przypisany ten profil.
+                    Gdy użytkownik zarejestruje się z tym emailem, zostanie automatycznie powiązany.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Role title */}
             <FormField
               control={form.control}
@@ -295,7 +332,7 @@ const AuthorEditor = () => {
                   <FormLabel>Biografia</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Napisz kilka słów o sobie..."
+                      placeholder="Napisz kilka słów o autorze..."
                       className="min-h-24 resize-none"
                       maxLength={500}
                       {...field}
@@ -377,8 +414,17 @@ const AuthorEditor = () => {
                 <Link to="/admin/authors">Anuluj</Link>
               </Button>
               <Button type="submit" disabled={isSaving}>
-                <Save className="mr-2 h-4 w-4" />
-                {isSaving ? "Zapisywanie..." : "Zapisz zmiany"}
+                {isCreating ? (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {isSaving ? "Tworzenie..." : "Utwórz autora"}
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {isSaving ? "Zapisywanie..." : "Zapisz zmiany"}
+                  </>
+                )}
               </Button>
             </div>
           </form>

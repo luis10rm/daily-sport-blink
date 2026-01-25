@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      authors: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          cover_image_url: string | null
+          created_at: string | null
+          display_name: string
+          id: string
+          is_public: boolean | null
+          linked_email: string | null
+          linked_user_id: string | null
+          role_title: string | null
+          slug: string
+          social_instagram: string | null
+          social_twitter: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          display_name: string
+          id?: string
+          is_public?: boolean | null
+          linked_email?: string | null
+          linked_user_id?: string | null
+          role_title?: string | null
+          slug: string
+          social_instagram?: string | null
+          social_twitter?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          cover_image_url?: string | null
+          created_at?: string | null
+          display_name?: string
+          id?: string
+          is_public?: boolean | null
+          linked_email?: string | null
+          linked_user_id?: string | null
+          role_title?: string | null
+          slug?: string
+          social_instagram?: string | null
+          social_twitter?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       banners: {
         Row: {
           click_tag: string
@@ -73,6 +124,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          author_id: string | null
           category_id: string | null
           content: string | null
           created_at: string
@@ -89,6 +141,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          author_id?: string | null
           category_id?: string | null
           content?: string | null
           created_at?: string
@@ -105,6 +158,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          author_id?: string | null
           category_id?: string | null
           content?: string | null
           created_at?: string
@@ -126,6 +180,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "sport_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
             referencedColumns: ["id"]
           },
         ]

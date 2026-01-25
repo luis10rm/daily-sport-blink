@@ -9,6 +9,7 @@ import { usePost, useCreatePost, useUpdatePost } from "@/hooks/usePosts";
 import { useExtractArticle } from "@/hooks/useSettings";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthors, useAuthorByUserId } from "@/hooks/useAuthors";
 import { QuickCategoryDialog } from "@/components/admin/QuickCategoryDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ const postSchema = z.object({
   excerpt: z.string().min(10, "Opis musi mieć minimum 10 znaków"),
   content: z.string().optional(),
   category_id: z.string().min(1, "Wybierz kategorię"),
+  author_id: z.string().optional(),
   image_url: z.string().refine((val) => !val || isValidUrl(val), {
     message: "Nieprawidłowy URL obrazka",
   }).optional(),
@@ -74,6 +76,8 @@ const PostEditor = () => {
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
   const { data: sportCategories, isLoading: isLoadingCategories } = useSportCategories();
+  const { data: authors } = useAuthors();
+  const { data: currentUserAuthor } = useAuthorByUserId(user?.id || "");
   const createPost = useCreatePost();
   const updatePost = useUpdatePost();
   const extractArticle = useExtractArticle();
@@ -88,6 +92,7 @@ const PostEditor = () => {
       excerpt: "",
       content: "",
       category_id: "",
+      author_id: "",
       image_url: "",
       source_url: "",
       tags: "",
@@ -96,6 +101,13 @@ const PostEditor = () => {
       published_at: getCurrentDateTime(),
     },
   });
+
+  // Set default author to current user's author profile when creating new post
+  useEffect(() => {
+    if (!isEditing && currentUserAuthor && !form.getValues("author_id")) {
+      form.setValue("author_id", currentUserAuthor.id);
+    }
+  }, [isEditing, currentUserAuthor, form]);
 
   // Reset published_at to current time when creating a new post (not editing)
   useEffect(() => {
@@ -111,6 +123,7 @@ const PostEditor = () => {
         excerpt: post.excerpt,
         content: post.content || "",
         category_id: post.category_id || "",
+        author_id: post.author_id || "",
         image_url: post.image_url || "",
         source_url: post.source_url,
         tags: post.tags?.join(", ") || "",
@@ -127,6 +140,7 @@ const PostEditor = () => {
       excerpt: data.excerpt,
       content: data.content || undefined,
       category_id: data.category_id,
+      author_id: data.author_id || undefined,
       image_url: data.image_url || undefined,
       source_url: data.source_url,
       tags: data.tags ? data.tags.split(",").map((t) => t.trim()) : [],
@@ -394,6 +408,37 @@ const PostEditor = () => {
                               }}
                             />
                           </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="author_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Autor</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Wybierz autora" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {authors?.map((author) => (
+                                <SelectItem key={author.id} value={author.id}>
+                                  {author.display_name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            Autor widoczny przy artykule
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
