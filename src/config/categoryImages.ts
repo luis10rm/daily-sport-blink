@@ -1,3 +1,4 @@
+// Default images for known sport categories
 export const categoryDefaultImages: Record<string, string> = {
   football: "/images/categories/football.webp",
   basketball: "/images/categories/basketball.webp",
@@ -5,6 +6,8 @@ export const categoryDefaultImages: Record<string, string> = {
   f1: "/images/categories/f1.webp",
   mma: "/images/categories/mma.webp",
   other: "/images/categories/other.webp",
+  // Fallback used for any dynamic categories not listed above
+  default: "/images/categories/other.webp",
 };
 
 export const getCategoryImage = (

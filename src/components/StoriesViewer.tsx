@@ -1,15 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Post } from "@/data/samplePosts";
-import { getSportLabel, SportCategory } from "@/components/SportIcon";
+import { StoryPost } from "@/components/StoriesRow";
+import { StoryCategoryData } from "@/components/DynamicStoriesCircle";
 import { getCategoryImage } from "@/config/categoryImages";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
 interface StoriesViewerProps {
-  posts: Post[];
-  category: SportCategory;
+  posts: StoryPost[];
+  category: StoryCategoryData;
   initialIndex?: number;
   onClose: () => void;
 }
@@ -144,12 +144,12 @@ export const StoriesViewer = ({
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
               <span className="text-primary-foreground text-sm font-bold">
-                {getSportLabel(category).charAt(0)}
+                {category.name.charAt(0)}
               </span>
             </div>
             <div>
               <p className="text-white font-medium text-sm">
-                {getSportLabel(category)}
+                {category.name}
               </p>
               <p className="text-white/60 text-xs">{formattedDate}</p>
             </div>
@@ -168,7 +168,7 @@ export const StoriesViewer = ({
         {/* Background image */}
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${getCategoryImage(category, currentPost.imageUrl)})` }}
+          style={{ backgroundImage: `url(${getCategoryImage(category.slug, currentPost.imageUrl)})` }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/80" />
         </div>

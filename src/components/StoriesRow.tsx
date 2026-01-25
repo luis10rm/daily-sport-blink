@@ -1,71 +1,91 @@
 import { useState, useMemo } from "react";
-import { StoriesCircle } from "@/components/StoriesCircle";
+import { DynamicStoriesCircle, StoryCategoryData } from "@/components/DynamicStoriesCircle";
 import { StoriesViewer } from "@/components/StoriesViewer";
-import { SportCategory } from "@/components/SportIcon";
 import { useRecentPosts, Post } from "@/hooks/usePosts";
+import { useSportCategories } from "@/hooks/useSportCategories";
 
-// Map database post to component format
-interface StoryPost {
+// Story post format for the viewer
+export interface StoryPost {
   id: string;
   title: string;
   excerpt: string;
-  category: SportCategory;
+  categoryId: string;
   publishedAt: string;
   sourceUrl: string;
   imageUrl?: string;
   tags?: string[];
 }
 
+// Map database post to story format
 const mapPostToStory = (post: Post): StoryPost => ({
   id: post.id,
   title: post.title,
   excerpt: post.excerpt,
-  category: (post.sport_category?.slug || "other") as SportCategory,
+  categoryId: post.sport_category?.id || "",
   publishedAt: post.published_at,
   sourceUrl: post.source_url,
   imageUrl: post.image_url || undefined,
   tags: post.tags || [],
 });
 
-// Group posts by category
-const groupPostsByCategory = (posts: StoryPost[]): Record<SportCategory, StoryPost[]> => {
-  const grouped: Record<SportCategory, StoryPost[]> = {
-    football: [],
-    basketball: [],
-    tennis: [],
-    f1: [],
-    mma: [],
-    other: [],
-  };
-
-  posts.forEach((post) => {
-    const cat = post.category as SportCategory;
-    if (grouped[cat]) {
-      grouped[cat].push(post);
-    } else {
-      grouped.other.push(post);
-    }
-  });
-
-  return grouped;
-};
-
-const CATEGORIES: SportCategory[] = ["football", "basketball", "tennis", "f1", "mma", "other"];
+// Map database category to StoryCategoryData
+const mapCategoryToStoryCategory = (cat: {
+  id: string;
+  slug: string;
+  name: string;
+  icon_name: string | null;
+  icon_url: string | null;
+  bg_color: string;
+  sort_order: number;
+}): StoryCategoryData => ({
+  id: cat.id,
+  slug: cat.slug,
+  name: cat.name,
+  icon_name: cat.icon_name,
+  icon_url: cat.icon_url,
+  bg_color: cat.bg_color,
+  sort_order: cat.sort_order,
+});
 
 export const StoriesRow = () => {
-  const [activeCategory, setActiveCategory] = useState<SportCategory | null>(null);
+  const [activeCategory, setActiveCategory] = useState<StoryCategoryData | null>(null);
   const { data: recentDbPosts = [] } = useRecentPosts();
+  const { data: allDbCategories = [] } = useSportCategories();
 
+  // Map posts to story format
   const recentPosts = useMemo(() => recentDbPosts.map(mapPostToStory), [recentDbPosts]);
-  const postsByCategory = useMemo(() => groupPostsByCategory(recentPosts), [recentPosts]);
 
-  // Only show categories that have posts
-  const availableCategories = CATEGORIES.filter(
-    (cat) => postsByCategory[cat].length > 0
+  // Map categories to StoryCategoryData format
+  const allCategories = useMemo(
+    () => allDbCategories.map(mapCategoryToStoryCategory),
+    [allDbCategories]
   );
 
-  const handleOpenStory = (category: SportCategory) => {
-    if (postsByCategory[category].length > 0) {
+  // Group posts by category ID
+  const postsByCategory = useMemo(() => {
+    const grouped: Record<string, StoryPost[]> = {};
+    recentPosts.forEach((post) => {
+      if (post.categoryId) {
+        if (!grouped[post.categoryId]) {
+          grouped[post.categoryId] = [];
+        }
+        grouped[post.categoryId].push(post);
+      }
+    });
+    return grouped;
+  }, [recentPosts]);
+
+  // Get categories that have posts, sorted by sort_order
+  const availableCategories = useMemo(
+    () =>
+      allCategories
+        .filter((cat) => postsByCategory[cat.id]?.length > 0)
+        .sort((a, b) => a.sort_order - b.sort_order),
+    [allCategories, postsByCategory]
+  );
+
+  const handleOpenStory = (category: StoryCategoryData) => {
+    if (postsByCategory[category.id]?.length > 0) {
       setActiveCategory(category);
     }
   };
@@ -82,10 +102,10 @@ export const StoriesRow = () => {
       <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
         <div className="flex gap-4 pb-2">
           {availableCategories.map((category) => (
-            <StoriesCircle
-              key={category}
+            <DynamicStoriesCircle
+              key={category.id}
               category={category}
-              hasUnread={postsByCategory[category].length > 0}
+              hasUnread={postsByCategory[category.id].length > 0}
               onClick={() => handleOpenStory(category)}
             />
           ))}
@@ -93,9 +113,9 @@ export const StoriesRow = () => {
       </div>
 
       {/* Story viewer modal */}
-      {activeCategory && postsByCategory[activeCategory].length > 0 && (
+      {activeCategory && postsByCategory[activeCategory.id]?.length > 0 && (
         <StoriesViewer
-          posts={postsByCategory[activeCategory]}
+          posts={postsByCategory[activeCategory.id]}
           category={activeCategory}
           onClose={handleCloseStory}
         />
