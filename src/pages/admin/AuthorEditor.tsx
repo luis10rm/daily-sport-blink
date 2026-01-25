@@ -46,7 +46,7 @@ type AuthorFormValues = z.infer<typeof authorSchema>;
 const AuthorEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const isCreating = id === "new";
+  const isCreating = !id || id === "new";
   const { data: author, isLoading } = useAuthorById(isCreating ? "" : id || "");
   const updateAuthor = useUpdateAuthor();
   const createAuthor = useCreateAuthor();
@@ -131,7 +131,7 @@ const AuthorEditor = () => {
     );
   }
 
-  if (!isCreating && !isLoading && !author) {
+  if (id && id !== "new" && !isLoading && !author) {
     return (
       <AdminLayout>
         <div className="py-12 text-center">
