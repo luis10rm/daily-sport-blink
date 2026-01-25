@@ -1,235 +1,326 @@
 
-# Strategia SEO dla Szortsy
+# Plan: Kadrowanie zdjęć profilowych i tła autorów
 
-## Filozofia podejścia
+## Cel
 
-Szortsy to **agregator newsów sportowych**, nie portal z własnymi artykułami. Zamiast walczyć o pozycjonowanie pojedynczych newsów, stawiamy na:
+Dodanie funkcji kadrowania (crop) dla:
+1. **Zdjęcia profilowego (avatar)** - okrągły podgląd, proporcje 1:1
+2. **Zdjęcia w tle (cover)** - panoramiczny format, proporcje 5:1
 
-1. **SEO "przy okazji"** - mechanizmy, które działają automatycznie bez dodatkowej pracy redakcji
-2. **Strony kategorii** - nowe strony `/kategoria/:slug` które zbierają ruch długookresowy
-3. **Structured data** - Google News i rich snippets
+## Rozwiązanie
+
+Wykorzystamy bibliotekę **react-easy-crop** - popularną, lekką (12KB gzipped) i łatwą w integracji. Po wybraniu pliku użytkownik zobaczy modal z możliwością:
+- Przesuwania obrazka (drag)
+- Powiększania (zoom slider)
+- Zapisania przyciętego obrazka
 
 ---
 
 ## Zmiany do wdrożenia
 
-### 1. Poprawione meta tagi w `index.html`
+### 1. Nowy komponent `ImageCropModal`
 
-Aktualizacja statycznych meta tagów z brandingiem Szortsy:
+Modal z funkcją kadrowania:
+- Wyświetla `Cropper` z react-easy-crop
+- Slider do zoomu
+- Przyciski "Anuluj" i "Zapisz"
+- Po zapisie: generuje przycięty obraz jako Blob, uploaduje do storage
 
-| Element | Przed | Po |
-|---------|-------|-----|
-| Title | "Lovable App" | "Szortsy - Wiadomości sportowe krótko i na temat" |
-| Description | "Lovable Generated Project" | "Najważniejsze wiadomości ze świata sportu w 60 słowach. Piłka nożna, koszykówka, F1, tenis, MMA i więcej. Codziennie." |
-| og:image | Lovable logo | Dedykowana grafika OG |
-| lang | "en" | "pl" |
+### 2. Modyfikacja `ImageUploader`
 
-### 2. Dynamiczne tytuły stron (hook `useDocumentTitle`)
+Rozszerzenie o opcjonalne kadrowanie:
+- Nowe propsy: `enableCrop`, `cropAspect` (np. 1 dla avatara, 5 dla covera)
+- Po wybraniu pliku → otwiera modal cropera zamiast od razu uploadować
+- Po zatwierdzeniu cropa → upload przyciętego obrazka
 
-Nowy hook automatycznie ustawiający tytuł strony:
+### 3. Aktualizacja `AuthorEditor`
 
-```
-/                    → "Szortsy - Wiadomości sportowe"
-/archiwum            → "Archiwum | Szortsy"
-/autorzy             → "Nasi autorzy | Szortsy"
-/autor/jan-kowalski  → "Jan Kowalski | Szortsy"
-/kategoria/football  → "Piłka nożna | Szortsy"
-```
-
-### 3. Nowe strony kategorii `/kategoria/:slug`
-
-Dedykowane strony dla każdej kategorii sportowej z:
-- Pełną listą postów z danej kategorii (7 dni + link do archiwum)
-- Unikalnym tytułem i opisem dla SEO
-- Możliwością pozycjonowania na frazy typu "wiadomości piłka nożna"
-
-**URL struktura:**
-```
-/kategoria/football      → Piłka nożna
-/kategoria/basketball    → Koszykówka
-/kategoria/f1            → Formuła 1
-/kategoria/mma           → MMA
-```
-
-### 4. Automatyczny sitemap.xml
-
-Statyczny plik sitemap z głównymi stronami + dynamiczne strony kategorii:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://daily-sport-blink.lovable.app/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://daily-sport-blink.lovable.app/archiwum</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://daily-sport-blink.lovable.app/autorzy</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://daily-sport-blink.lovable.app/kategoria/football</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <!-- pozostałe kategorie -->
-</urlset>
-```
-
-### 5. Schema.org JSON-LD (structured data)
-
-Dodanie structured data na stronę główną i kategorie:
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "Szortsy",
-  "description": "Wiadomości sportowe krótko i na temat",
-  "url": "https://daily-sport-blink.lovable.app",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": "https://daily-sport-blink.lovable.app/archiwum?q={search_term_string}"
-  }
-}
-```
-
-Dla strony kategorii - `ItemList` z newsami:
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "ItemList",
-  "name": "Wiadomości - Piłka nożna",
-  "itemListElement": [
-    {
-      "@type": "NewsArticle",
-      "headline": "Tytuł newsa",
-      "datePublished": "2026-01-25",
-      "author": { "@type": "Person", "name": "Jan Kowalski" }
-    }
-  ]
-}
-```
-
----
-
-## Zmiany "przy okazji" (zero dodatkowej pracy)
-
-| Mechanizm | Jak działa |
-|-----------|------------|
-| Dynamiczne title | Hook automatycznie ustawia tytuł na podstawie aktualnej strony |
-| Linki do kategorii | Ikona kategorii na NewsCard staje się linkiem do `/kategoria/:slug` |
-| Breadcrumbs | Automatyczne okruszki: "Strona główna > Piłka nożna > Archiwum" |
-| Canonical URLs | Zapobiega duplikacji treści między stronami |
+Dodanie propsów kadrowania:
+- Avatar: `cropAspect={1}` (kwadrat, wyświetlany jako okrąg)
+- Cover: `cropAspect={5}` (panorama 5:1)
 
 ---
 
 ## Sekcja techniczna
 
-### Nowe pliki do utworzenia
+### Nowa zależność
 
-| Plik | Opis |
-|------|------|
-| `src/hooks/useDocumentTitle.ts` | Hook do dynamicznego ustawiania tytułu |
-| `src/pages/CategoryPage.tsx` | Strona kategorii `/kategoria/:slug` |
-| `src/components/SEO.tsx` | Komponent z JSON-LD structured data |
-| `public/sitemap.xml` | Mapa strony dla wyszukiwarek |
-
-### Pliki do modyfikacji
-
-| Plik | Zmiana |
-|------|--------|
-| `index.html` | Meta tagi, lang="pl", OG image |
-| `public/robots.txt` | Dodanie linku do sitemap |
-| `src/App.tsx` | Nowa trasa `/kategoria/:slug` |
-| `src/pages/Index.tsx` | Dodanie hook `useDocumentTitle` + SEO component |
-| `src/pages/Archive.tsx` | Hook `useDocumentTitle` |
-| `src/pages/AuthorsPage.tsx` | Hook `useDocumentTitle` |
-| `src/pages/AuthorProfile.tsx` | Hook `useDocumentTitle` z nazwą autora |
-| `src/components/NewsCard.tsx` | Ikona kategorii jako link do strony kategorii |
-| `src/components/Header.tsx` | Dropdown z kategoriami w nawigacji |
-
-### Hook useDocumentTitle
-
-```typescript
-import { useEffect } from "react";
-
-export const useDocumentTitle = (title: string, suffix = "Szortsy") => {
-  useEffect(() => {
-    const fullTitle = title ? `${title} | ${suffix}` : suffix;
-    document.title = fullTitle;
-    
-    // Update OG title meta tag
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.setAttribute("content", fullTitle);
-  }, [title, suffix]);
-};
+```bash
+npm install react-easy-crop
 ```
 
-### Komponent SEO z JSON-LD
+### Nowy plik: `src/components/admin/ImageCropModal.tsx`
 
 ```typescript
-import { useEffect } from "react";
+import { useState, useCallback } from "react";
+import Cropper, { Area } from "react-easy-crop";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Loader2 } from "lucide-react";
 
-interface SEOProps {
-  type: "website" | "itemList" | "person";
-  data: Record<string, any>;
+interface ImageCropModalProps {
+  open: boolean;
+  onClose: () => void;
+  imageSrc: string;
+  aspect: number;         // 1 = kwadrat, 5 = panorama
+  onCropComplete: (croppedBlob: Blob) => void;
 }
 
-export const SEO = ({ type, data }: SEOProps) => {
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.type = "application/ld+json";
-    script.text = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": type === "itemList" ? "ItemList" : type === "person" ? "Person" : "WebSite",
-      ...data,
-    });
-    script.id = "seo-structured-data";
+export const ImageCropModal = ({
+  open,
+  onClose,
+  imageSrc,
+  aspect,
+  onCropComplete,
+}: ImageCropModalProps) => {
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const onCropAreaChange = useCallback((_: Area, areaPixels: Area) => {
+    setCroppedAreaPixels(areaPixels);
+  }, []);
+
+  const handleSave = async () => {
+    if (!croppedAreaPixels) return;
+    setIsProcessing(true);
     
-    // Remove old script if exists
-    const existing = document.getElementById("seo-structured-data");
-    if (existing) existing.remove();
-    
-    document.head.appendChild(script);
-    
-    return () => script.remove();
-  }, [type, data]);
-  
-  return null;
+    const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+    onCropComplete(croppedBlob);
+    setIsProcessing(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Kadruj zdjęcie</DialogTitle>
+        </DialogHeader>
+
+        <div className="relative h-80 w-full bg-muted rounded-lg overflow-hidden">
+          <Cropper
+            image={imageSrc}
+            crop={crop}
+            zoom={zoom}
+            aspect={aspect}
+            onCropChange={setCrop}
+            onZoomChange={setZoom}
+            onCropComplete={onCropAreaChange}
+            cropShape={aspect === 1 ? "round" : "rect"}
+            showGrid={false}
+          />
+        </div>
+
+        <div className="flex items-center gap-4 px-2">
+          <span className="text-sm text-muted-foreground">Zoom</span>
+          <Slider
+            value={[zoom]}
+            onValueChange={([v]) => setZoom(v)}
+            min={1}
+            max={3}
+            step={0.1}
+            className="flex-1"
+          />
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Anuluj
+          </Button>
+          <Button onClick={handleSave} disabled={isProcessing}>
+            {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Zapisz
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 };
+
+// Funkcja pomocnicza - generuje przycięty obraz jako Blob
+async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d")!;
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 0.9);
+  });
+}
+
+function createImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = url;
+  });
+}
 ```
 
-### Strona kategorii (CategoryPage.tsx)
+### Modyfikacja: `src/components/admin/ImageUploader.tsx`
 
-Nowa strona wyświetlająca posty z konkretnej kategorii:
-- Pobiera posty przez `usePostsByCategory(slug)`
-- Ustawia dynamiczny tytuł przez `useDocumentTitle(categoryName)`
-- Renderuje JSON-LD z listą newsów
-- Linki do archiwum danej kategorii
+```typescript
+interface ImageUploaderProps {
+  value?: string;
+  onChange: (url: string) => void;
+  onRemove: () => void;
+  disabled?: boolean;
+  enableCrop?: boolean;      // NOWE - włącza kadrowanie
+  cropAspect?: number;       // NOWE - proporcje (1 = avatar, 5 = cover)
+  storageBucket?: string;    // NOWE - docelowy bucket
+  storagePath?: string;      // NOWE - ścieżka w buckecie
+}
+
+// Wewnątrz komponentu:
+const [cropModalOpen, setCropModalOpen] = useState(false);
+const [pendingImage, setPendingImage] = useState<string | null>(null);
+
+const onDrop = useCallback((acceptedFiles: File[]) => {
+  if (acceptedFiles.length > 0) {
+    const file = acceptedFiles[0];
+    
+    if (enableCrop) {
+      // Otwórz modal cropera z podglądem obrazka
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPendingImage(reader.result as string);
+        setCropModalOpen(true);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // Standardowy upload bez cropowania
+      uploadFile(file);
+    }
+  }
+}, [enableCrop]);
+
+const handleCropComplete = async (croppedBlob: Blob) => {
+  setCropModalOpen(false);
+  setPendingImage(null);
+  
+  // Utwórz plik z Blob i uploaduj
+  const file = new File([croppedBlob], `cropped-${Date.now()}.jpg`, { 
+    type: "image/jpeg" 
+  });
+  await uploadFile(file);
+};
+
+// W renderze - dodaj modal:
+{enableCrop && pendingImage && (
+  <ImageCropModal
+    open={cropModalOpen}
+    onClose={() => {
+      setCropModalOpen(false);
+      setPendingImage(null);
+    }}
+    imageSrc={pendingImage}
+    aspect={cropAspect || 1}
+    onCropComplete={handleCropComplete}
+  />
+)}
+```
+
+### Modyfikacja: `src/pages/admin/AuthorEditor.tsx`
+
+```typescript
+{/* Cover image - z cropowaniem */}
+<FormField
+  control={form.control}
+  name="cover_image_url"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Zdjęcie w tle (cover)</FormLabel>
+      <FormDescription>
+        Duże zdjęcie wyświetlane na górze profilu. 
+        Po wybraniu pliku będziesz mógł je przyciąć.
+      </FormDescription>
+      <FormControl>
+        <ImageUploader
+          value={field.value || undefined}
+          onChange={field.onChange}
+          onRemove={() => field.onChange(null)}
+          enableCrop          // NOWE
+          cropAspect={5}      // NOWE - panorama 5:1
+        />
+      </FormControl>
+    </FormItem>
+  )}
+/>
+
+{/* Avatar - z cropowaniem */}
+<FormField
+  control={form.control}
+  name="avatar_url"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Avatar</FormLabel>
+      <FormDescription>
+        Okrągłe zdjęcie profilowe. Po wybraniu pliku będziesz mógł je przyciąć.
+      </FormDescription>
+      <FormControl>
+        <ImageUploader
+          value={field.value || undefined}
+          onChange={field.onChange}
+          onRemove={() => field.onChange(null)}
+          enableCrop          // NOWE
+          cropAspect={1}      // NOWE - kwadrat 1:1 (wyświetlany jako okrąg)
+        />
+      </FormControl>
+    </FormItem>
+  )}
+/>
+```
 
 ---
 
-## Efekt końcowy
+## Pliki do modyfikacji
 
-1. **Lepsze indeksowanie** - Google zna strukturę strony przez sitemap
-2. **Rich snippets** - Structured data zwiększa CTR w wynikach wyszukiwania
-3. **Strony kategorii** - Nowe punkty wejścia dla ruchu organicznego
-4. **Social sharing** - Poprawne podglądy przy udostępnianiu linków
-5. **Zero dodatkowej pracy** - Wszystko dzieje się automatycznie przy publikacji postów
+| Plik | Akcja |
+|------|-------|
+| `package.json` | Dodanie zależności `react-easy-crop` |
+| `src/components/admin/ImageCropModal.tsx` | **Nowy** - modal z cropperem |
+| `src/components/admin/ImageUploader.tsx` | Rozszerzenie o integrację z cropperem |
+| `src/pages/admin/AuthorEditor.tsx` | Dodanie propsów `enableCrop` i `cropAspect` |
 
 ---
 
-## Priorytet wdrożenia
+## UX Flow
 
-1. **Natychmiastowe** - Poprawka `index.html` (meta tagi, język)
-2. **Wysokie** - Hook `useDocumentTitle` + zastosowanie na wszystkich stronach
-3. **Średnie** - Strony kategorii + nawigacja
-4. **Niskie** - Structured data JSON-LD + sitemap
+```text
+1. Admin wybiera plik (drag & drop lub klik)
+         ↓
+2. Otwiera się modal z podglądem cropera
+         ↓
+3. Admin przesuwa/zoomuje obrazek
+         ↓
+4. Klik "Zapisz" → wycina fragment → upload do storage
+         ↓
+5. URL zapisany w formularzu, modal zamknięty
+```
+
+## Zalety rozwiązania
+
+- **Przy okazji** - cropowanie wbudowane w istniejący flow uploadu
+- **Uniwersalne** - ten sam komponent dla avatara i covera (różne proporcje)
+- **Lekkie** - react-easy-crop to tylko 12KB
+- **Intuicyjne** - drag to move, slider to zoom
+- **Okrągły podgląd** dla avatara - użytkownik od razu widzi jak będzie wyglądać
