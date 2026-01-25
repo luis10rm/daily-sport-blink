@@ -192,7 +192,7 @@ const AuthorEditor = () => {
                 <FormItem>
                   <FormLabel>Zdjęcie w tle (cover)</FormLabel>
                   <FormDescription>
-                    Duże zdjęcie wyświetlane na górze profilu. Zalecana rozdzielczość: 1920x400px
+                    Duże zdjęcie wyświetlane na górze profilu. Po wybraniu pliku będziesz mógł je przyciąć.
                   </FormDescription>
                   <FormControl>
                     <div className="aspect-[5/1] max-h-48 overflow-hidden rounded-lg border border-dashed">
@@ -200,6 +200,10 @@ const AuthorEditor = () => {
                         value={field.value || undefined}
                         onChange={field.onChange}
                         onRemove={() => field.onChange(null)}
+                        enableCrop
+                        cropAspect={5}
+                        storageBucket="author-images"
+                        storagePath="covers"
                       />
                     </div>
                   </FormControl>
@@ -216,7 +220,7 @@ const AuthorEditor = () => {
                 <FormItem>
                   <FormLabel>Avatar</FormLabel>
                   <FormDescription>
-                    Okrągłe zdjęcie profilowe. Zalecana rozdzielczość: 400x400px
+                    Okrągłe zdjęcie profilowe. Po wybraniu pliku będziesz mógł je przyciąć.
                   </FormDescription>
                   <FormControl>
                     <div className="h-32 w-32 overflow-hidden rounded-full border border-dashed">
@@ -224,6 +228,10 @@ const AuthorEditor = () => {
                         value={field.value || undefined}
                         onChange={field.onChange}
                         onRemove={() => field.onChange(null)}
+                        enableCrop
+                        cropAspect={1}
+                        storageBucket="author-images"
+                        storagePath="avatars"
                       />
                     </div>
                   </FormControl>

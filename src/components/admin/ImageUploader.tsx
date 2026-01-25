@@ -1,16 +1,21 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ImageCropModal } from "./ImageCropModal";
 
 interface ImageUploaderProps {
   value?: string;
   onChange: (url: string) => void;
   onRemove: () => void;
   disabled?: boolean;
+  enableCrop?: boolean;
+  cropAspect?: number;
+  storageBucket?: string;
+  storagePath?: string;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -25,18 +30,24 @@ export const ImageUploader = ({
   onChange,
   onRemove,
   disabled,
+  enableCrop = false,
+  cropAspect = 1,
+  storageBucket = "post-images",
+  storagePath = "posts",
 }: ImageUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
 
   const uploadFile = async (file: File) => {
     setIsUploading(true);
     try {
-      const fileExt = file.name.split(".").pop();
+      const fileExt = file.name.split(".").pop() || "jpg";
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
-      const filePath = `posts/${fileName}`;
+      const filePath = `${storagePath}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("post-images")
+        .from(storageBucket)
         .upload(filePath, file);
 
       if (uploadError) {
@@ -44,7 +55,7 @@ export const ImageUploader = ({
       }
 
       const { data } = supabase.storage
-        .from("post-images")
+        .from(storageBucket)
         .getPublicUrl(filePath);
 
       onChange(data.publicUrl);
@@ -65,11 +76,36 @@ export const ImageUploader = ({
           toast.error("Plik jest za duży. Maksymalny rozmiar to 5MB.");
           return;
         }
-        uploadFile(file);
+
+        if (enableCrop) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            setPendingImage(reader.result as string);
+            setCropModalOpen(true);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          uploadFile(file);
+        }
       }
     },
-    [onChange]
+    [enableCrop]
   );
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setCropModalOpen(false);
+    setPendingImage(null);
+
+    const file = new File([croppedBlob], `cropped-${Date.now()}.jpg`, {
+      type: "image/jpeg",
+    });
+    await uploadFile(file);
+  };
+
+  const handleCropClose = () => {
+    setCropModalOpen(false);
+    setPendingImage(null);
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -101,37 +137,49 @@ export const ImageUploader = ({
   }
 
   return (
-    <div
-      {...getRootProps()}
-      className={cn(
-        "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-        isDragActive
-          ? "border-primary bg-primary/5"
-          : "border-muted-foreground/25 hover:border-primary/50",
-        (disabled || isUploading) && "opacity-50 cursor-not-allowed"
-      )}
-    >
-      <input {...getInputProps()} />
-      <div className="flex flex-col items-center gap-2">
-        {isUploading ? (
-          <>
-            <Loader2 className="h-10 w-10 text-muted-foreground animate-spin" />
-            <p className="text-sm text-muted-foreground">Przesyłanie...</p>
-          </>
-        ) : (
-          <>
-            <Upload className="h-10 w-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              {isDragActive
-                ? "Upuść plik tutaj..."
-                : "Przeciągnij plik lub kliknij aby wybrać"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              JPG, PNG, WebP - max 5MB
-            </p>
-          </>
+    <>
+      <div
+        {...getRootProps()}
+        className={cn(
+          "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+          isDragActive
+            ? "border-primary bg-primary/5"
+            : "border-muted-foreground/25 hover:border-primary/50",
+          (disabled || isUploading) && "opacity-50 cursor-not-allowed"
         )}
+      >
+        <input {...getInputProps()} />
+        <div className="flex flex-col items-center gap-2">
+          {isUploading ? (
+            <>
+              <Loader2 className="h-10 w-10 text-muted-foreground animate-spin" />
+              <p className="text-sm text-muted-foreground">Przesyłanie...</p>
+            </>
+          ) : (
+            <>
+              <Upload className="h-10 w-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                {isDragActive
+                  ? "Upuść plik tutaj..."
+                  : "Przeciągnij plik lub kliknij aby wybrać"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                JPG, PNG, WebP - max 5MB
+              </p>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+
+      {enableCrop && pendingImage && (
+        <ImageCropModal
+          open={cropModalOpen}
+          onClose={handleCropClose}
+          imageSrc={pendingImage}
+          aspect={cropAspect}
+          onCropComplete={handleCropComplete}
+        />
+      )}
+    </>
   );
 };
