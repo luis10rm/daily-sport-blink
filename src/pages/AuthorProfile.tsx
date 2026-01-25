@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { AuthorHero } from "@/components/AuthorHero";
 import { AuthorStats } from "@/components/AuthorStats";
 import { NewsCard } from "@/components/NewsCard";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useAuthor, useAuthorPosts, useAuthorStats } from "@/hooks/useAuthors";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileX } from "lucide-react";
@@ -12,6 +13,8 @@ const AuthorProfile = () => {
   const { data: author, isLoading: authorLoading } = useAuthor(slug || "");
   const { data: posts, isLoading: postsLoading } = useAuthorPosts(author?.id || "");
   const { data: stats, isLoading: statsLoading } = useAuthorStats(author?.id || "");
+  
+  useDocumentTitle(author?.display_name || "Profil autora");
 
   if (authorLoading) {
     return (

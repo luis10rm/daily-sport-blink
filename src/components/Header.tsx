@@ -1,7 +1,17 @@
-import { Archive, Newspaper, Users } from "lucide-react";
+import { Archive, ChevronDown, Newspaper, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useSportCategories } from "@/hooks/useSportCategories";
+import { DynamicSportIcon } from "./DynamicSportIcon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Header = () => {
+  const { data: categories = [] } = useSportCategories();
+
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
@@ -18,6 +28,31 @@ export const Header = () => {
         </Link>
         
         <nav className="flex items-center gap-4">
+          {/* Categories Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <span className="hidden sm:inline">Kategorie</span>
+              <ChevronDown className="h-4 w-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {categories.map((category) => (
+                <DropdownMenuItem key={category.id} asChild>
+                  <Link
+                    to={`/kategoria/${category.slug}`}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <DynamicSportIcon
+                      sportCategory={category}
+                      fallbackSlug={category.slug}
+                      className="h-5 w-5"
+                    />
+                    <span>{category.name}</span>
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Link 
             to="/archiwum" 
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"

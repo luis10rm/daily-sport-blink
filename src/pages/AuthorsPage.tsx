@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { PatronBar } from "@/components/PatronBar";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { usePublicAuthors } from "@/hooks/useAuthors";
 import { AuthorProfileCard } from "@/components/AuthorProfileCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,6 +36,8 @@ const useAuthorsPostsCounts = (authorIds: string[]) => {
 };
 
 const AuthorsPage = () => {
+  useDocumentTitle("Nasi autorzy");
+  
   const { data: authors, isLoading } = usePublicAuthors();
   const authorIds = authors?.map((a) => a.id) || [];
   const { data: postsCounts } = useAuthorsPostsCounts(authorIds);
