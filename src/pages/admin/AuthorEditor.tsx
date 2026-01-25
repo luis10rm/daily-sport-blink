@@ -131,7 +131,7 @@ const AuthorEditor = () => {
     );
   }
 
-  if (!isCreating && !author) {
+  if (!isCreating && !isLoading && !author) {
     return (
       <AdminLayout>
         <div className="py-12 text-center">
