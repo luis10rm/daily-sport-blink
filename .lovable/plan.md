@@ -1,87 +1,204 @@
 
-# Plan naprawy błędu "Autor nie znaleziony"
+# Plan: Ograniczenie postów do 7 dni + Strona Archiwum
 
-## Zdiagnozowany problem
+## Zakres zmian
 
-Błąd wynika z wyścigów warunków w `AuthorEditor.tsx`. Gdy użytkownik przechodzi do `/admin/authors/new`:
+### 1. Modyfikacja `usePostsFeed` - ograniczenie do 7 dni
+Zmiana hooka pobierającego posty na stronę główną, aby filtrował tylko posty z ostatnich 7 dni.
 
-1. `id` z `useParams()` = `"new"` (string)
-2. `isCreating` = `id === "new"` = `true`
-3. `useAuthorById("")` jest wywoływane z pustym stringiem
-4. Query jest **wyłączone** (`enabled: false`), więc `isLoading = false` natychmiast
-5. `author = undefined` (brak danych)
-6. Warunek `!isCreating && !isLoading && !author` powinien być `false`...
+### 2. Nowy hook `useArchivedPosts`
+Hook z paginacją i filtrami do pobierania starszych postów.
 
-**ALE** - sprawdzając hook `useAuthorById`, widzę że przy `enabled: false` React Query zwraca `isLoading: false` od razu. To oznacza, że warunek `!isCreating && !isLoading && !author` = `!true && !false && !undefined` = `false && true && true` = `false` - więc ten warunek **powinien działać**.
+### 3. Nowa strona `/archiwum`
+Strona z listą wszystkich historycznych postów, filtrami po kategorii i dacie.
 
-## Prawdopodobna przyczyna
+### 4. Link do archiwum w nawigacji
+Dodanie linku "Archiwum" w Header i na końcu strony głównej.
 
-Problem może być w **kolejności renderowania**. Podczas pierwszego renderowania:
-- `id` może być jeszcze `undefined` zanim router zainicjalizuje parametry
-- W tym momencie `isCreating = false`, `isLoading = false`, `author = undefined`
-- Warunek `!false && !false && !undefined` = `true` - wyświetla "Autor nie znaleziony"
-
-## Rozwiązanie
-
-Zmiana logiki w `AuthorEditor.tsx`:
-
-```typescript
-// Linie 46-50 - poprawiona inicjalizacja
-const { id } = useParams<{ id: string }>();
-const navigate = useNavigate();
-const isCreating = !id || id === "new";  // Dodane !id dla edge case
-```
-
-Oraz zmiana warunku wyświetlania błędu (linie 134-145):
-
-```typescript
-// Stary warunek:
-if (!isCreating && !isLoading && !author) {
-
-// Nowy, bezpieczniejszy warunek:
-if (id && id !== "new" && !isLoading && !author) {
-```
-
-## Pliki do modyfikacji
-
-| Plik | Zmiana |
-|------|--------|
-| `src/pages/admin/AuthorEditor.tsx` | Poprawka warunku `isCreating` i warunku "nie znaleziono" |
+---
 
 ## Sekcja techniczna
 
-### Zmiana 1: Lepsza definicja `isCreating`
+### Zmiana 1: `src/hooks/usePosts.tsx`
 
 ```typescript
-// Było:
-const isCreating = id === "new";
+// usePostsFeed - dodanie filtra 7 dni (linie 144-169)
+export const usePostsFeed = () => {
+  return useQuery({
+    queryKey: ["posts", "feed"],
+    queryFn: async () => {
+      const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+      
+      const { data, error } = await supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .eq("is_news_of_day", false)
+        .gte("published_at", sevenDaysAgo)  // NOWY FILTR
+        .order("published_at", { ascending: false });
 
-// Będzie:
-const isCreating = !id || id === "new";
+      if (error) throw error;
+      // ... reszta logiki sponsored
+    },
+  });
+};
+
+// NOWY HOOK - useArchivedPosts
+export const useArchivedPosts = (filters?: {
+  categoryId?: string;
+  startDate?: string;
+  endDate?: string;
+}) => {
+  return useQuery({
+    queryKey: ["posts", "archive", filters],
+    queryFn: async () => {
+      const sevenDaysAgo = subDays(new Date(), 7).toISOString();
+      
+      let query = supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .lt("published_at", sevenDaysAgo)  // Starsze niż 7 dni
+        .order("published_at", { ascending: false });
+
+      if (filters?.categoryId) {
+        query = query.eq("category_id", filters.categoryId);
+      }
+      if (filters?.startDate) {
+        query = query.gte("published_at", filters.startDate);
+      }
+      if (filters?.endDate) {
+        query = query.lte("published_at", filters.endDate);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as Post[];
+    },
+  });
+};
 ```
 
-### Zmiana 2: Bezpieczniejszy warunek błędu
+### Zmiana 2: Nowa strona `src/pages/Archive.tsx`
 
 ```typescript
-// Było (linia 134):
-if (!isCreating && !isLoading && !author) {
+import { useState } from "react";
+import { Header } from "@/components/Header";
+import { NewsCard } from "@/components/NewsCard";
+import { useArchivedPosts } from "@/hooks/usePosts";
+import { useSportCategories } from "@/hooks/useSportCategories";
+import { Select } from "@/components/ui/select";
+import { Archive as ArchiveIcon } from "lucide-react";
 
-// Będzie:
-if (id && id !== "new" && !isLoading && !author) {
+const Archive = () => {
+  const [categoryFilter, setCategoryFilter] = useState<string>();
+  const { data: posts = [], isLoading } = useArchivedPosts({ 
+    categoryId: categoryFilter 
+  });
+  const { data: categories = [] } = useSportCategories();
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="container py-6 md:py-10">
+        <div className="flex items-center gap-3 mb-8">
+          <ArchiveIcon className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold">Archiwum</h1>
+        </div>
+        
+        {/* Filtry */}
+        <div className="flex gap-4 mb-6">
+          <Select 
+            value={categoryFilter} 
+            onValueChange={setCategoryFilter}
+            placeholder="Wszystkie kategorie"
+          >
+            {categories.map(cat => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
+
+        {/* Lista postów */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.map((post, index) => (
+            <NewsCard key={post.id} {...post} delay={index * 50} />
+          ))}
+        </div>
+
+        {posts.length === 0 && !isLoading && (
+          <p className="text-center text-muted-foreground py-12">
+            Brak archiwalnych postów
+          </p>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default Archive;
 ```
 
-### Alternatywna zmiana 2b (jeśli pierwsza nie zadziała):
-
-Dodanie explicite sprawdzenia czy hook zakończył ładowanie:
+### Zmiana 3: `src/components/Header.tsx` - dodanie linku
 
 ```typescript
-const { data: author, isLoading, isFetched } = useAuthorById(isCreating ? "" : id || "");
-
-// ...
-
-if (!isCreating && isFetched && !author) {
-  return <AdminLayout>Autor nie znaleziony</AdminLayout>;
-}
+<nav className="flex items-center gap-4">
+  <Link 
+    to="/archiwum" 
+    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+  >
+    <Archive className="h-4 w-4" />
+    <span className="hidden sm:inline">Archiwum</span>
+  </Link>
+  <Link 
+    to="/autorzy" 
+    ...
+  />
+</nav>
 ```
 
-To gwarantuje, że komunikat błędu pojawi się tylko gdy zapytanie zostało wykonane i nie znaleziono autora.
+### Zmiana 4: `src/pages/Index.tsx` - link na dole strony
+
+Po gridzie z postami, przed footer:
+
+```typescript
+{posts.length > 0 && (
+  <div className="text-center mt-8">
+    <Link 
+      to="/archiwum"
+      className="inline-flex items-center gap-2 text-primary hover:underline"
+    >
+      <Archive className="h-4 w-4" />
+      Zobacz starsze artykuły w Archiwum
+    </Link>
+  </div>
+)}
+```
+
+### Zmiana 5: `src/App.tsx` - nowa trasa
+
+```typescript
+import Archive from "./pages/Archive";
+
+// W Routes:
+<Route path="/archiwum" element={<Archive />} />
+```
+
+---
+
+## Pliki do utworzenia/modyfikacji
+
+| Plik | Akcja |
+|------|-------|
+| `src/hooks/usePosts.tsx` | Modyfikacja usePostsFeed + nowy useArchivedPosts |
+| `src/pages/Archive.tsx` | Nowa strona archiwum |
+| `src/components/Header.tsx` | Dodanie linku do archiwum |
+| `src/pages/Index.tsx` | Link "Zobacz starsze artykuły" |
+| `src/App.tsx` | Nowa trasa /archiwum |
+
+## Efekt końcowy
+
+- Strona główna pokazuje tylko posty z **ostatnich 7 dni**
+- Nowa strona `/archiwum` zawiera wszystkie **starsze posty**
+- Możliwość filtrowania archiwum po kategorii sportowej
+- Łatwa nawigacja między stroną główną a archiwum
