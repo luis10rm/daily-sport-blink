@@ -26,6 +26,7 @@ import AuthorEditor from "./pages/admin/AuthorEditor";
 import AuthorProfile from "./pages/AuthorProfile";
 import AuthorsPage from "./pages/AuthorsPage";
 import Archive from "./pages/Archive";
+import CategoryPage from "./pages/CategoryPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/archiwum" element={<Archive />} />
+              <Route path="/kategoria/:slug" element={<CategoryPage />} />
               <Route path="/autorzy" element={<AuthorsPage />} />
               <Route path="/autor/:slug" element={<AuthorProfile />} />
             <Route path="/auth" element={<Auth />} />

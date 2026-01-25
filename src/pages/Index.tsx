@@ -9,6 +9,8 @@ import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
 import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
+import { SEO, getWebsiteSEO } from "@/components/SEO";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts";
 import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +22,9 @@ const Index = () => {
   const lastTodayRef = useRef<HTMLElement>(null);
   const isMobile = useIsMobile();
   const device = isMobile ? "mobile" : "desktop";
+  
+  useDocumentTitle("");
+  const websiteSEO = getWebsiteSEO();
   
   const { data: posts = [], isLoading: postsLoading } = usePostsFeed();
   const { data: newsOfTheDay, isLoading: newsLoading } = useNewsOfTheDay();
@@ -48,6 +53,7 @@ const Index = () => {
       "min-h-screen relative z-10",
       !isTakeoverActive && "bg-background"
     )}>
+      <SEO {...websiteSEO} />
       <Header />
       <PatronBar />
       
