@@ -1,150 +1,87 @@
 
-# Plan: Dynamiczne Stories dla wszystkich kategorii sportowych
+# Plan naprawy błędu "Autor nie znaleziony"
 
-## Problem
-Komponent Stories używa 6 zakodowanych kategorii (`football`, `basketball`, `tennis`, `f1`, `mma`, `other`), podczas gdy w bazie danych masz 9 dynamicznych kategorii (w tym "Skoki Narciarskie", "Łyżwiarstwo"). Wszystkie kategorie nierozpoznane przez statyczny kod trafiają do "Inne".
+## Zdiagnozowany problem
+
+Błąd wynika z wyścigów warunków w `AuthorEditor.tsx`. Gdy użytkownik przechodzi do `/admin/authors/new`:
+
+1. `id` z `useParams()` = `"new"` (string)
+2. `isCreating` = `id === "new"` = `true`
+3. `useAuthorById("")` jest wywoływane z pustym stringiem
+4. Query jest **wyłączone** (`enabled: false`), więc `isLoading = false` natychmiast
+5. `author = undefined` (brak danych)
+6. Warunek `!isCreating && !isLoading && !author` powinien być `false`...
+
+**ALE** - sprawdzając hook `useAuthorById`, widzę że przy `enabled: false` React Query zwraca `isLoading: false` od razu. To oznacza, że warunek `!isCreating && !isLoading && !author` = `!true && !false && !undefined` = `false && true && true` = `false` - więc ten warunek **powinien działać**.
+
+## Prawdopodobna przyczyna
+
+Problem może być w **kolejności renderowania**. Podczas pierwszego renderowania:
+- `id` może być jeszcze `undefined` zanim router zainicjalizuje parametry
+- W tym momencie `isCreating = false`, `isLoading = false`, `author = undefined`
+- Warunek `!false && !false && !undefined` = `true` - wyświetla "Autor nie znaleziony"
 
 ## Rozwiązanie
-Przepisanie Stories na dynamiczny system bazujący na tabeli `sport_categories`, analogicznie do tego jak działa `DynamicSportIcon`.
 
-## Zmiany
+Zmiana logiki w `AuthorEditor.tsx`:
 
-### 1. Nowy komponent `DynamicStoriesCircle`
-Zamieni statyczny `StoriesCircle` na wersję obsługującą dane z bazy:
-- Pobiera ikonę (Lucide lub custom URL) z `sport_category`
-- Używa koloru tła (`bg_color`) do gradientu pierścienia
-- Wyświetla nazwę kategorii z bazy zamiast statycznych tłumaczeń
+```typescript
+// Linie 46-50 - poprawiona inicjalizacja
+const { id } = useParams<{ id: string }>();
+const navigate = useNavigate();
+const isCreating = !id || id === "new";  // Dodane !id dla edge case
+```
 
-### 2. Przepisanie `StoriesRow`
-- Grupowanie postów po `category_id` (UUID) zamiast po slug
-- Wyświetlanie kółek dla KAŻDEJ kategorii która ma posty z ostatnich 7 dni
-- Sortowanie według `sort_order` z tabeli kategorii
+Oraz zmiana warunku wyświetlania błędu (linie 134-145):
 
-### 3. Aktualizacja `StoriesViewer`
-- Przyjmowanie pełnych danych kategorii (nazwa, ikona, kolor) zamiast statycznego typu
-- Dynamiczne wyświetlanie nagłówka z właściwą nazwą i ikoną
+```typescript
+// Stary warunek:
+if (!isCreating && !isLoading && !author) {
 
-### 4. Konfiguracja obrazów tła
-Rozszerzenie `categoryImages.ts` o obsługę dynamicznych kategorii - użycie domyślnego obrazu gdy brak dedykowanego.
+// Nowy, bezpieczniejszy warunek:
+if (id && id !== "new" && !isLoading && !author) {
+```
+
+## Pliki do modyfikacji
+
+| Plik | Zmiana |
+|------|--------|
+| `src/pages/admin/AuthorEditor.tsx` | Poprawka warunku `isCreating` i warunku "nie znaleziono" |
 
 ## Sekcja techniczna
 
-### Nowe interfejsy
+### Zmiana 1: Lepsza definicja `isCreating`
 
 ```typescript
-// Dynamiczna kategoria dla Stories
-interface StoryCategoryData {
-  id: string;
-  slug: string;
-  name: string;
-  iconName?: string | null;
-  iconUrl?: string | null;
-  bgColor: string;
-  sortOrder: number;
-}
+// Było:
+const isCreating = id === "new";
 
-// Post w Stories
-interface StoryPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  categoryId: string;
-  publishedAt: string;
-  sourceUrl: string;
-  imageUrl?: string;
-  tags?: string[];
+// Będzie:
+const isCreating = !id || id === "new";
+```
+
+### Zmiana 2: Bezpieczniejszy warunek błędu
+
+```typescript
+// Było (linia 134):
+if (!isCreating && !isLoading && !author) {
+
+// Będzie:
+if (id && id !== "new" && !isLoading && !author) {
+```
+
+### Alternatywna zmiana 2b (jeśli pierwsza nie zadziała):
+
+Dodanie explicite sprawdzenia czy hook zakończył ładowanie:
+
+```typescript
+const { data: author, isLoading, isFetched } = useAuthorById(isCreating ? "" : id || "");
+
+// ...
+
+if (!isCreating && isFetched && !author) {
+  return <AdminLayout>Autor nie znaleziony</AdminLayout>;
 }
 ```
 
-### Nowy `DynamicStoriesCircle.tsx`
-
-```typescript
-interface DynamicStoriesCircleProps {
-  category: StoryCategoryData;
-  hasUnread: boolean;
-  onClick: () => void;
-}
-
-export const DynamicStoriesCircle = ({ category, hasUnread, onClick }) => {
-  // Renderuje ikonę Lucide lub custom URL
-  // Gradient pierścienia z category.bgColor
-  // Nazwa z category.name
-};
-```
-
-### Przepisany `StoriesRow.tsx`
-
-```typescript
-export const StoriesRow = () => {
-  const { data: recentPosts = [] } = useRecentPosts();
-  const { data: allCategories = [] } = useSportCategories();
-  
-  // Grupowanie po category_id
-  const postsByCategory = useMemo(() => {
-    const grouped: Record<string, StoryPost[]> = {};
-    recentPosts.forEach(post => {
-      const catId = post.sport_category?.id;
-      if (catId) {
-        if (!grouped[catId]) grouped[catId] = [];
-        grouped[catId].push(mapPostToStory(post));
-      }
-    });
-    return grouped;
-  }, [recentPosts]);
-
-  // Kategorie z postami, posortowane
-  const availableCategories = useMemo(() => 
-    allCategories
-      .filter(cat => postsByCategory[cat.id]?.length > 0)
-      .sort((a, b) => a.sort_order - b.sort_order)
-  , [allCategories, postsByCategory]);
-
-  return (
-    <>
-      <div className="flex gap-4">
-        {availableCategories.map(category => (
-          <DynamicStoriesCircle
-            key={category.id}
-            category={category}
-            hasUnread={true}
-            onClick={() => setActiveCategory(category)}
-          />
-        ))}
-      </div>
-      {activeCategory && (
-        <StoriesViewer
-          posts={postsByCategory[activeCategory.id]}
-          category={activeCategory}
-          onClose={handleClose}
-        />
-      )}
-    </>
-  );
-};
-```
-
-### Zaktualizowany `StoriesViewer.tsx`
-
-```typescript
-interface StoriesViewerProps {
-  posts: StoryPost[];
-  category: StoryCategoryData;  // Zamiast SportCategory
-  onClose: () => void;
-}
-
-// W nagłówku:
-<p className="text-white font-medium">{category.name}</p>
-// Zamiast getSportLabel(category)
-```
-
-### Pliki do modyfikacji/utworzenia
-
-| Plik | Akcja |
-|------|-------|
-| `src/components/DynamicStoriesCircle.tsx` | Utworzenie |
-| `src/components/StoriesRow.tsx` | Przepisanie na dynamiczny system |
-| `src/components/StoriesViewer.tsx` | Aktualizacja interfejsu i nagłówka |
-| `src/config/categoryImages.ts` | Rozszerzenie o fallback dla nieznanych kategorii |
-
-### Efekt końcowy
-Po zmianach Stories będą wyświetlać dedykowane kółko dla KAŻDEJ kategorii która ma posty z ostatnich 7 dni - w tym "Skoki Narciarskie", "Łyżwiarstwo" itd. Każde kółko będzie miało właściwą ikonę i kolor z bazy danych.
+To gwarantuje, że komunikat błędu pojawi się tylko gdy zapytanie zostało wykonane i nie znaleziono autora.
