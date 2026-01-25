@@ -180,8 +180,9 @@ const Index = () => {
       <ScrollProgress todaysCount={todaysPosts.length} lastTodayRef={lastTodayRef} />
 
       <footer className="border-t border-border py-8">
-        <div className="container text-center text-sm text-muted-foreground">
-          © 2024 Szortsy. Wszystkie prawa zastrzeżone.
+        <div className="container text-center text-sm text-muted-foreground space-y-2">
+          <p>Serwis agreguje nagłówki i odsyła do źródeł. Prawa do treści należą do wydawców.</p>
+          <p>© 2024 Szortsy. Wszystkie prawa zastrzeżone.</p>
         </div>
       </footer>
     </div>
