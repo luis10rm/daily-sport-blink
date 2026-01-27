@@ -142,7 +142,10 @@ const Index = () => {
                 isSponsored={post.is_sponsored}
                 tags={post.tags || []}
                 author={post.author}
-                delay={index * 100}
+                delay={index === 0 ? 0 : index * 100}
+                loading={index === 0 ? "eager" : "lazy"}
+                fetchPriority={index === 0 ? "high" : "auto"}
+                disableAnimation={index === 0}
               />
             ))}
           </div>

@@ -6,6 +6,7 @@ import { AuthorCard } from "./AuthorCard";
 import { getCategoryImage } from "@/config/categoryImages";
 import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
+
 interface NewsCardProps {
   title: string;
   excerpt: string;
@@ -25,6 +26,12 @@ interface NewsCardProps {
   } | null;
   className?: string;
   delay?: number;
+  /** Image loading strategy - "eager" for LCP, "lazy" for below-fold */
+  loading?: "lazy" | "eager";
+  /** Fetch priority for LCP optimization */
+  fetchPriority?: "high" | "auto";
+  /** Disable fade-in animation for first visible card */
+  disableAnimation?: boolean;
 }
 
 export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
@@ -42,6 +49,9 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
       author,
       className,
       delay = 0,
+      loading = "lazy",
+      fetchPriority = "auto",
+      disableAnimation = false,
     },
     ref
   ) => {
@@ -55,11 +65,12 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
       <article
         ref={ref}
         className={cn(
-          "group relative flex flex-col overflow-hidden rounded-xl border bg-card card-hover opacity-0 animate-fade-in",
+          "group relative flex flex-col overflow-hidden rounded-xl border bg-card card-hover",
+          !disableAnimation && "opacity-0 animate-fade-in",
           isSponsored ? "border-primary/30 ring-1 ring-primary/20" : "border-border",
           className
         )}
-        style={{ animationDelay: `${delay}ms` }}
+        style={!disableAnimation ? { animationDelay: `${delay}ms` } : undefined}
       >
         {/* Sponsored badge */}
         {isSponsored && (
@@ -74,6 +85,9 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           <img
             src={getCategoryImage(categorySlug, imageUrl, sportCategory?.slug)}
             alt={title}
+            loading={loading}
+            // @ts-ignore - fetchpriority is valid HTML but not in React types
+            fetchpriority={fetchPriority}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>

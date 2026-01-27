@@ -49,6 +49,35 @@ export const usePostsByTag = (tagName: string | undefined) => {
   });
 };
 
+// Fetch posts by tag slug - optimized to avoid API cascade
+export const usePostsByTagSlug = (slug: string | undefined) => {
+  return useQuery({
+    queryKey: ["posts", "tagSlug", slug],
+    queryFn: async () => {
+      // Get tag name first
+      const { data: tag } = await supabase
+        .from("tags")
+        .select("name")
+        .eq("slug", slug)
+        .single();
+
+      if (!tag) return [];
+
+      // Then fetch posts
+      const { data, error } = await supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .contains("tags", [tag.name])
+        .lte("published_at", new Date().toISOString())
+        .order("published_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Post[];
+    },
+    enabled: !!slug,
+  });
+};
+
 // Fetch all tags with minimum post count
 export const useTags = (minPostCount: number = 1) => {
   return useQuery({
