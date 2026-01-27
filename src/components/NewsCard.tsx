@@ -1,11 +1,11 @@
 import { forwardRef } from "react";
+import { Link } from "react-router-dom";
 import { ExternalLink, Sparkles } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { getCategoryImage } from "@/config/categoryImages";
-import { cn, getSourceName } from "@/lib/utils";
+import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
-
 interface NewsCardProps {
   title: string;
   excerpt: string;
@@ -92,12 +92,14 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             {tags && tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {tags.slice(0, 3).map((tag) => (
-                  <span
+                  <Link
                     key={tag}
-                    className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                    to={`/tag/${generateSlug(tag)}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                   >
                     {tag}
-                  </span>
+                  </Link>
                 ))}
               </div>
             )}
