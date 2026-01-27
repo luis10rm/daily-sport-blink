@@ -138,7 +138,10 @@ const CategoryPage = () => {
                   isSponsored={post.is_sponsored}
                   tags={post.tags || undefined}
                   author={post.author}
-                  delay={index * 50}
+                  delay={index === 0 ? 0 : index * 50}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                  disableAnimation={index === 0}
                 />
               ))}
             </div>

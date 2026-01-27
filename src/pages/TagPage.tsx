@@ -4,7 +4,7 @@ import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { SEO, getItemListSEO } from "@/components/SEO";
-import { useTagBySlug, usePostsByTag } from "@/hooks/useTags";
+import { useTagBySlug, usePostsByTagSlug } from "@/hooks/useTags";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tag, ArrowLeft, Archive } from "lucide-react";
 import {
@@ -19,7 +19,8 @@ import {
 const TagPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: tag, isLoading: tagLoading } = useTagBySlug(slug);
-  const { data: posts = [], isLoading: postsLoading } = usePostsByTag(tag?.name);
+  // Use optimized hook that fetches posts by slug directly to avoid API cascade
+  const { data: posts = [], isLoading: postsLoading } = usePostsByTagSlug(slug);
 
   useDocumentTitle(tag?.name ? `${tag.name} - Szortsy` : "Tag");
 
@@ -150,7 +151,10 @@ const TagPage = () => {
                   isSponsored={post.is_sponsored}
                   tags={post.tags || undefined}
                   author={post.author}
-                  delay={index * 50}
+                  delay={index === 0 ? 0 : index * 50}
+                  loading={index === 0 ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                  disableAnimation={index === 0}
                 />
               ))}
             </div>
