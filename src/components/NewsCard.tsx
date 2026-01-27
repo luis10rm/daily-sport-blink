@@ -3,7 +3,7 @@ import { ExternalLink, Sparkles } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { getCategoryImage } from "@/config/categoryImages";
-import { cn } from "@/lib/utils";
+import { cn, getSourceName } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
 
 interface NewsCardProps {
@@ -128,6 +128,9 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             Przeczytaj więcej
             <ExternalLink className="h-4 w-4" />
           </a>
+          <span className="text-xs text-muted-foreground text-center">
+            Źródło: {getSourceName(sourceUrl)}
+          </span>
         </div>
       </article>
     );
