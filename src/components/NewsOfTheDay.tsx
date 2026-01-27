@@ -3,7 +3,7 @@ import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { getCategoryImage } from "@/config/categoryImages";
 import { Post } from "@/hooks/usePosts";
-import { cn } from "@/lib/utils";
+import { cn, getSourceName } from "@/lib/utils";
 
 interface NewsOfTheDayProps {
   post: Post;
@@ -87,6 +87,9 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
             Przeczytaj więcej
             <ExternalLink className="h-5 w-5" />
           </a>
+          <span className="text-sm text-muted-foreground mt-2">
+            Źródło: {getSourceName(post.source_url)}
+          </span>
         </div>
       </div>
     </article>
