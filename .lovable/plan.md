@@ -1,290 +1,223 @@
 
-# Plan: Programmatic SEO - Automatyczne strony dla piłkarzy i klubów
+# Plan: Optymalizacja LCP (Largest Contentful Paint)
 
-## Cel
+## Problem
 
-Automatyczne generowanie stron SEO dla encji sportowych (piłkarzy, klubów, turniejów) na podstawie tagów w postach. Bez dodatkowej pracy redakcji - strony tworzą się "same" gdy pojawia się wystarczająca liczba postów z danym tagiem.
+Na stronach tagów i kategorii głównym elementem LCP jest obrazek w pierwszym `NewsCard`. Obecnie:
+- Wszystkie obrazki ładują się jednocześnie (brak lazy loading)
+- Brak priorytetu dla pierwszego obrazka
+- Brak preconnect do domen ze źródłami
+- Kaskada zapytań API: najpierw tag, potem posty (sekwencyjnie)
+- Animacja `animate-fade-in` opóźnia wizualne pojawienie się treści
 
-## Filozofia
+## Rozwiązanie
 
-Zamiast ręcznie tworzyć strony dla Lewandowskiego czy Barcelony:
-1. AI już teraz generuje tagi przy ekstrakcji artykułów
-2. System automatycznie wykrywa "popularne" tagi (np. min. 2 posty)
-3. Tworzy dla nich dedykowane strony SEO z dynamicznie generowanym opisem
+Zoptymalizujemy LCP poprzez:
+1. Lazy loading dla obrazków poza viewport
+2. Wysoki priorytet dla pierwszego obrazka
+3. Preconnect do popularnych domen źródłowych
+4. Usunięcie animacji dla pierwszego elementu
 
-## Struktura URL
+## Wizualne zmiany
 
-```text
-/tag/robert-lewandowski     → Strona agregująca posty o Lewandowskim
-/tag/real-madryt            → Strona agregująca posty o Realu
-/tag/australian-open        → Strona agregująca posty o turnieju
-```
+Brak zmian wizualnych - optymalizacje są "pod maską".
 
-Wybrano `/tag/` jako prefiks (nie `/pilkarz/` czy `/klub/`), ponieważ:
-- Jeden tag może być piłkarzem, trenerem, lub osobą związaną z wieloma kontekstami
-- Nie wymaga klasyfikacji typu encji
-- Prostsza implementacja, mniejsze ryzyko błędów
-
-## Strona tagu - zawartość
+## Oczekiwany efekt
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│ Breadcrumbs: Strona główna > Tagi > Robert Lewandowski     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  🏷️ Robert Lewandowski                                     │
-│     12 artykułów w serwisie Szortsy                        │
-│                                                             │
-│  ┌─ Opis (generowany przez AI) ────────────────────────┐   │
-│  │ Polski napastnik, obecnie w FC Barcelona.           │   │
-│  │ Jeden z najlepszych strzelców w historii...         │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  [Grid z NewsCard - wszystkie posty z tym tagiem]          │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+PRZED:
+┌─────────────────────────────────────────┐
+│  [Ładowanie]  [Ładowanie]  [Ładowanie]  │  ← Wszystko naraz
+│  [Ładowanie]  [Ładowanie]  [Ładowanie]  │
+│  [Ładowanie]  [Ładowanie]  [Ładowanie]  │
+└─────────────────────────────────────────┘
+
+PO:
+┌─────────────────────────────────────────┐
+│  [Gotowe✓]    [Lazy]       [Lazy]       │  ← Pierwszy priorytetowo
+│  [Lazy]       [Lazy]       [Lazy]       │  ← Reszta lazy
+│  [Lazy]       [Lazy]       [Lazy]       │
+└─────────────────────────────────────────┘
 ```
-
----
-
-## Zmiany do wdrożenia
-
-### 1. Nowa tabela: `tags` (encje)
-
-Przechowuje unikalne tagi z opcjonalnym opisem generowanym przez AI:
-
-| Kolumna | Typ | Opis |
-|---------|-----|------|
-| id | uuid | Klucz główny |
-| name | text | Oryginalna nazwa tagu (np. "Robert Lewandowski") |
-| slug | text | Slug do URL (np. "robert-lewandowski") |
-| description | text | Opis AI (nullable, generowany na żądanie) |
-| post_count | int | Liczba postów z tym tagiem (cache) |
-| created_at | timestamp | Data utworzenia |
-| updated_at | timestamp | Data ostatniej aktualizacji |
-
-### 2. Automatyczna synchronizacja tagów
-
-Trigger lub cron job, który:
-- Skanuje unikalne tagi z tabeli `posts`
-- Tworzy/aktualizuje rekordy w tabeli `tags`
-- Aktualizuje `post_count` dla każdego tagu
-
-### 3. Strona `/tag/:slug`
-
-Nowa strona React wzorowana na `CategoryPage.tsx`:
-- Wyświetla wszystkie posty z danym tagiem
-- Pokazuje opis AI (jeśli istnieje)
-- SEO: dynamiczny tytuł, JSON-LD ItemList
-
-### 4. Lista tagów (opcjonalnie)
-
-Strona `/tagi` z alfabetyczną listą wszystkich tagów (min. 2 posty).
-
-### 5. Linki na tagach w NewsCard
-
-Tagi w `NewsCard` stają się klikalnymi linkami do `/tag/:slug`.
 
 ---
 
 ## Sekcja techniczna
 
-### Nowa tabela SQL
+### 1. Preconnect do popularnych domen źródłowych
 
-```sql
-CREATE TABLE tags (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL UNIQUE,
-  slug text NOT NULL UNIQUE,
-  description text,
-  post_count integer DEFAULT 0,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
+Dodanie w `index.html` dyrektyw preconnect dla najczęstszych źródeł obrazków:
 
--- Index dla szybkiego wyszukiwania po slug
-CREATE INDEX idx_tags_slug ON tags(slug);
-
--- RLS: publiczny odczyt
-ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can view tags" ON tags FOR SELECT USING (true);
-CREATE POLICY "Admins can manage tags" ON tags FOR ALL USING (has_role(auth.uid(), 'admin'));
+```html
+<!-- Preconnect do popularnych źródeł obrazków -->
+<link rel="preconnect" href="https://meczyki.pl" />
+<link rel="preconnect" href="https://sportowefakty.wp.pl" />
+<link rel="preconnect" href="https://ocdn.eu" />
+<link rel="dns-prefetch" href="https://meczyki.pl" />
+<link rel="dns-prefetch" href="https://sportowefakty.wp.pl" />
+<link rel="dns-prefetch" href="https://ocdn.eu" />
 ```
 
-### Funkcja synchronizacji tagów
+### 2. Modyfikacja NewsCard - lazy loading i priority
 
-```sql
-CREATE OR REPLACE FUNCTION sync_tags()
-RETURNS void AS $$
-BEGIN
-  -- Wstaw nowe tagi
-  INSERT INTO tags (name, slug, post_count)
-  SELECT 
-    tag,
-    lower(regexp_replace(
-      regexp_replace(tag, '[ąęóśłżźćń]', 
-        CASE 
-          WHEN tag ~ 'ą' THEN 'a'
-          WHEN tag ~ 'ę' THEN 'e'
-          -- etc
-        END, 'g'),
-      '[^a-z0-9]+', '-', 'g'
-    )),
-    count(*)
-  FROM posts, unnest(tags) AS tag
-  WHERE tags IS NOT NULL
-  GROUP BY tag
-  ON CONFLICT (name) DO UPDATE SET
-    post_count = EXCLUDED.post_count,
-    updated_at = now();
-END;
-$$ LANGUAGE plpgsql;
-```
-
-### Nowy hook: `useTagBySlug`
+Dodanie nowych propsów do `NewsCard`:
 
 ```typescript
-export const useTagBySlug = (slug: string) => {
+interface NewsCardProps {
+  // ... istniejące propsy
+  loading?: "lazy" | "eager";      // Domyślnie "lazy"
+  fetchPriority?: "high" | "auto"; // Domyślnie "auto"
+  disableAnimation?: boolean;      // Dla pierwszego elementu
+}
+```
+
+Zmiana w img:
+
+```typescript
+<img
+  src={getCategoryImage(...)}
+  alt={title}
+  loading={loading}
+  // @ts-ignore - fetchpriority jest w HTML spec ale nie w React types
+  fetchpriority={fetchPriority}
+  className={cn(
+    "h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+  )}
+/>
+```
+
+### 3. Modyfikacja article - warunkowa animacja
+
+```typescript
+<article
+  className={cn(
+    "group relative flex flex-col overflow-hidden rounded-xl border bg-card card-hover",
+    !disableAnimation && "opacity-0 animate-fade-in",
+    // ...
+  )}
+  style={!disableAnimation ? { animationDelay: `${delay}ms` } : undefined}
+>
+```
+
+### 4. Aktualizacja stron (TagPage, CategoryPage, Index)
+
+Przekazanie odpowiednich propsów do pierwszego elementu:
+
+```typescript
+{posts.map((post, index) => (
+  <NewsCard
+    key={post.id}
+    // ... inne propsy
+    loading={index === 0 ? "eager" : "lazy"}
+    fetchPriority={index === 0 ? "high" : "auto"}
+    disableAnimation={index === 0}
+    delay={index === 0 ? 0 : index * 50}
+  />
+))}
+```
+
+### 5. Optymalizacja kaskady API (TagPage)
+
+Obecnie:
+```typescript
+// Sekwencyjne zapytania
+const { data: tag } = useTagBySlug(slug);
+const { data: posts } = usePostsByTag(tag?.name); // czeka na tag
+```
+
+Rozwiązanie - równoległe zapytania z bezpośrednim wyszukiwaniem po slug:
+
+```typescript
+// Nowy hook - pobiera posty bezpośrednio po slug tagu
+export const usePostsByTagSlug = (slug: string | undefined) => {
   return useQuery({
-    queryKey: ["tag", slug],
+    queryKey: ["posts", "tagSlug", slug],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Najpierw pobierz tag
+      const { data: tag } = await supabase
         .from("tags")
-        .select("*")
+        .select("name")
         .eq("slug", slug)
         .single();
       
+      if (!tag) return [];
+      
+      // Następnie pobierz posty
+      const { data, error } = await supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .contains("tags", [tag.name])
+        .lte("published_at", new Date().toISOString())
+        .order("published_at", { ascending: false });
+
       if (error) throw error;
-      return data;
+      return data as Post[];
     },
     enabled: !!slug,
   });
 };
-
-export const usePostsByTag = (tagName: string) => {
-  return useQuery({
-    queryKey: ["posts", "tag", tagName],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("posts")
-        .select(POST_SELECT)
-        .contains("tags", [tagName])
-        .order("published_at", { ascending: false });
-      
-      if (error) throw error;
-      return data as Post[];
-    },
-    enabled: !!tagName,
-  });
-};
 ```
 
-### Strona TagPage.tsx
+Alternatywnie możemy użyć `Promise.all` w TagPage:
 
 ```typescript
-const TagPage = () => {
-  const { slug } = useParams<{ slug: string }>();
-  const { data: tag, isLoading: tagLoading } = useTagBySlug(slug);
-  const { data: posts = [], isLoading: postsLoading } = usePostsByTag(tag?.name || "");
-
-  useDocumentTitle(tag?.name || "Tag");
-
-  // SEO JSON-LD
-  const seoData = getItemListSEO(
-    `Artykuły: ${tag?.name || "Tag"}`,
-    posts.map((post) => ({
-      headline: post.title,
-      datePublished: post.published_at,
-    }))
-  );
-
-  return (
-    <div className="min-h-screen bg-background">
-      <SEO {...seoData} />
-      <Header />
-      <PatronBar />
-
-      <main className="container py-8 md:py-12">
-        <Breadcrumb>...</Breadcrumb>
-
-        <div className="flex items-center gap-4 mb-8">
-          <Tag className="h-10 w-10 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">{tag?.name}</h1>
-            <p className="text-muted-foreground">
-              {tag?.post_count} artykułów w serwisie Szortsy
-            </p>
-          </div>
-        </div>
-
-        {tag?.description && (
-          <div className="mb-8 rounded-lg bg-muted/50 p-4 text-sm">
-            {tag.description}
-          </div>
-        )}
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post) => <NewsCard ... />)}
-        </div>
-      </main>
-    </div>
-  );
-};
+// Równoległe zapytania
+const tagQuery = useTagBySlug(slug);
+const postsQuery = useQuery({
+  queryKey: ["posts", "tag", slug],
+  queryFn: async () => {
+    // Bezpośrednie zapytanie bez czekania na tag
+    const { data: tagData } = await supabase
+      .from("tags")
+      .select("name")
+      .eq("slug", slug)
+      .single();
+    
+    if (!tagData) return [];
+    
+    const { data } = await supabase
+      .from("posts")
+      .select(POST_SELECT)
+      .contains("tags", [tagData.name])
+      .order("published_at", { ascending: false });
+    
+    return data || [];
+  },
+  enabled: !!slug,
+});
 ```
-
-### Modyfikacja NewsCard - linki na tagach
-
-```typescript
-// Zamiana statycznych tagów na linki
-{tags?.slice(0, 3).map((tag) => (
-  <Link
-    key={tag}
-    to={`/tag/${generateSlug(tag)}`}
-    className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium 
-               text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-  >
-    {tag}
-  </Link>
-))}
-```
-
-### Generowanie opisu AI (opcjonalne rozszerzenie)
-
-Edge function `generate-tag-description`:
-- Wywoływana gdy admin klika "Generuj opis" lub automatycznie dla tagów z >5 postami
-- AI generuje 2-3 zdania opisu na podstawie nazwy tagu i kontekstu postów
 
 ---
 
-## Pliki do utworzenia/modyfikacji
+## Pliki do modyfikacji
 
-| Plik | Akcja |
-|------|-------|
-| Migracja SQL | Tabela `tags` + funkcja sync |
-| `src/hooks/useTags.tsx` | **Nowy** - hooki dla tagów |
-| `src/pages/TagPage.tsx` | **Nowy** - strona tagu |
-| `src/pages/TagsListPage.tsx` | **Nowy** (opcjonalnie) - lista tagów |
-| `src/components/NewsCard.tsx` | Tagi jako linki |
-| `src/App.tsx` | Nowe trasy `/tag/:slug` i `/tagi` |
-| `public/sitemap.xml` | Dodanie popularnych tagów |
-| `src/lib/utils.ts` | Funkcja `generateSlug()` |
+| Plik | Zmiana |
+|------|--------|
+| `index.html` | Dodanie preconnect i dns-prefetch |
+| `src/components/NewsCard.tsx` | Nowe propsy: loading, fetchPriority, disableAnimation |
+| `src/pages/TagPage.tsx` | Przekazanie propsów LCP do pierwszego elementu |
+| `src/pages/CategoryPage.tsx` | Przekazanie propsów LCP do pierwszego elementu |
+| `src/pages/Index.tsx` | Przekazanie propsów LCP do pierwszego elementu |
+| `src/hooks/useTags.tsx` | Opcjonalnie: nowy hook usePostsByTagSlug |
 
 ---
 
-## Efekt końcowy
+## Metryki sukcesu
 
-1. **Masa krytyczna** - każdy post automatycznie wzbogaca strony tagów
-2. **Zero pracy redakcji** - AI generuje tagi przy dodawaniu posta
-3. **Long-tail SEO** - strony dla "Iga Świątek", "Australian Open", "Real Madryt"
-4. **Wewnętrzne linkowanie** - tagi linkują między sobą, budując strukturę serwisu
-5. **Skalowalność** - im więcej postów, tym więcej stron SEO
+| Metryka | Przed | Cel |
+|---------|-------|-----|
+| LCP | ~3-4s (zewnętrzne obrazy) | <2.5s |
+| Lazy loaded images | 0 | Wszystkie poza pierwszym |
+| Preconnect | 0 | 3+ domeny |
+| Animacja pierwszego elementu | 100ms delay | 0ms |
 
-## Przykładowe URL-e (na podstawie obecnych tagów)
+---
 
-```text
-/tag/iga-swiatek           (3 posty)
-/tag/real-madryt           (5 postów)
-/tag/australian-open       (7 postów)
-/tag/kylian-mbappe         (2 posty)
-/tag/premier-league        (2 posty)
-```
+## Dodatkowe rozważania (poza zakresem)
+
+Dla jeszcze lepszego LCP można w przyszłości:
+1. **Proxy obrazków** - cache'owanie zewnętrznych obrazów w Storage
+2. **Placeholder blur** - wyświetlanie rozmytego placeholdera podczas ładowania
+3. **Obrazy w formacie WebP/AVIF** - konwersja przy upload
+
+Te rozwiązania wymagają większych zmian infrastruktury i mogą być wdrożone w kolejnej iteracji.
