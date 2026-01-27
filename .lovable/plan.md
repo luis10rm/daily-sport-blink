@@ -1,223 +1,204 @@
 
-# Plan: Optymalizacja LCP (Largest Contentful Paint)
+# Plan: Wdrożenie Google Indexing API
 
-## Problem
+## Cel
 
-Na stronach tagów i kategorii głównym elementem LCP jest obrazek w pierwszym `NewsCard`. Obecnie:
-- Wszystkie obrazki ładują się jednocześnie (brak lazy loading)
-- Brak priorytetu dla pierwszego obrazka
-- Brak preconnect do domen ze źródłami
-- Kaskada zapytań API: najpierw tag, potem posty (sekwencyjnie)
-- Animacja `animate-fade-in` opóźnia wizualne pojawienie się treści
+Automatyczne powiadamianie Google o nowych i zaktualizowanych artykułach, co przyspiesza ich indeksowanie. Dla serwisu newsowego jak Szortsy, gdzie świeżość treści jest kluczowa, to znacząca przewaga SEO.
 
-## Rozwiązanie
-
-Zoptymalizujemy LCP poprzez:
-1. Lazy loading dla obrazków poza viewport
-2. Wysoki priorytet dla pierwszego obrazka
-3. Preconnect do popularnych domen źródłowych
-4. Usunięcie animacji dla pierwszego elementu
-
-## Wizualne zmiany
-
-Brak zmian wizualnych - optymalizacje są "pod maską".
-
-## Oczekiwany efekt
+## Jak to działa?
 
 ```text
-PRZED:
-┌─────────────────────────────────────────┐
-│  [Ładowanie]  [Ładowanie]  [Ładowanie]  │  ← Wszystko naraz
-│  [Ładowanie]  [Ładowanie]  [Ładowanie]  │
-│  [Ładowanie]  [Ładowanie]  [Ładowanie]  │
-└─────────────────────────────────────────┘
-
-PO:
-┌─────────────────────────────────────────┐
-│  [Gotowe✓]    [Lazy]       [Lazy]       │  ← Pierwszy priorytetowo
-│  [Lazy]       [Lazy]       [Lazy]       │  ← Reszta lazy
-│  [Lazy]       [Lazy]       [Lazy]       │
-└─────────────────────────────────────────┘
+┌─────────────────┐       ┌────────────────────┐       ┌─────────────────┐
+│ Admin dodaje    │──────▶│ Edge function      │──────▶│ Google Indexing │
+│ nowy post       │       │ notify-google-index│       │ API             │
+└─────────────────┘       └────────────────────┘       └─────────────────┘
+                                    │
+                                    ▼
+                          ┌────────────────────┐
+                          │ Google natychmiast │
+                          │ indeksuje stronę   │
+                          └────────────────────┘
 ```
 
----
+Zamiast czekać aż Googlebot sam odkryje nową stronę (godziny/dni), API informuje go w ciągu sekund.
 
-## Sekcja techniczna
+## Wymagania wstępne (jednorazowa konfiguracja)
 
-### 1. Preconnect do popularnych domen źródłowych
+Przed wdrożeniem potrzebne będzie:
 
-Dodanie w `index.html` dyrektyw preconnect dla najczęstszych źródeł obrazków:
+1. **Konto Google Cloud Platform** z włączonym Indexing API
+2. **Service Account** z uprawnieniami do Indexing API
+3. **Weryfikacja własności strony** w Google Search Console
+4. **Klucz JSON Service Account** jako secret w Lovable Cloud
 
-```html
-<!-- Preconnect do popularnych źródeł obrazków -->
-<link rel="preconnect" href="https://meczyki.pl" />
-<link rel="preconnect" href="https://sportowefakty.wp.pl" />
-<link rel="preconnect" href="https://ocdn.eu" />
-<link rel="dns-prefetch" href="https://meczyki.pl" />
-<link rel="dns-prefetch" href="https://sportowefakty.wp.pl" />
-<link rel="dns-prefetch" href="https://ocdn.eu" />
-```
+### Instrukcja konfiguracji (dla użytkownika):
 
-### 2. Modyfikacja NewsCard - lazy loading i priority
+1. Wejdź na [Google Cloud Console](https://console.cloud.google.com)
+2. Utwórz nowy projekt lub wybierz istniejący
+3. Włącz "Indexing API" w Library
+4. Utwórz Service Account (IAM → Service Accounts → Create)
+5. Pobierz klucz JSON (Actions → Manage Keys → Add Key → JSON)
+6. W [Search Console](https://search.console.google.com) dodaj email Service Account jako właściciela witryny
+7. Wklej zawartość pliku JSON jako secret `GOOGLE_SERVICE_ACCOUNT_JSON` w Lovable Cloud
 
-Dodanie nowych propsów do `NewsCard`:
+## Zmiany techniczne
+
+### 1. Nowa Edge Function: `notify-google-index`
+
+Funkcja odpowiedzialna za:
+- Generowanie JWT tokenu z klucza Service Account
+- Wysyłanie powiadomień do Google Indexing API
+- Obsługę typów: `URL_UPDATED` (nowy/zmieniony) i `URL_DELETED` (usunięty)
 
 ```typescript
-interface NewsCardProps {
-  // ... istniejące propsy
-  loading?: "lazy" | "eager";      // Domyślnie "lazy"
-  fetchPriority?: "high" | "auto"; // Domyślnie "auto"
-  disableAnimation?: boolean;      // Dla pierwszego elementu
+// supabase/functions/notify-google-index/index.ts
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// Generate JWT for Google API authentication
+async function generateGoogleJWT(serviceAccount: any): Promise<string> {
+  const header = { alg: "RS256", typ: "JWT" };
+  const now = Math.floor(Date.now() / 1000);
+  
+  const payload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600,
+    scope: "https://www.googleapis.com/auth/indexing"
+  };
+
+  // Sign JWT with private key
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToArrayBuffer(serviceAccount.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signedJWT = await signJWT(header, payload, key);
+  
+  // Exchange JWT for access token
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${signedJWT}`
+  });
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.access_token;
+}
+
+// Notify Google about URL update
+async function notifyGoogle(url: string, type: "URL_UPDATED" | "URL_DELETED", accessToken: string) {
+  const response = await fetch(
+    "https://indexing.googleapis.com/v3/urlNotifications:publish",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ url, type })
+    }
+  );
+  return response.json();
 }
 ```
 
-Zmiana w img:
+### 2. Modyfikacja `usePosts.tsx`
+
+Wywołanie edge function po zapisaniu posta:
 
 ```typescript
-<img
-  src={getCategoryImage(...)}
-  alt={title}
-  loading={loading}
-  // @ts-ignore - fetchpriority jest w HTML spec ale nie w React types
-  fetchpriority={fetchPriority}
-  className={cn(
-    "h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-  )}
-/>
-```
-
-### 3. Modyfikacja article - warunkowa animacja
-
-```typescript
-<article
-  className={cn(
-    "group relative flex flex-col overflow-hidden rounded-xl border bg-card card-hover",
-    !disableAnimation && "opacity-0 animate-fade-in",
-    // ...
-  )}
-  style={!disableAnimation ? { animationDelay: `${delay}ms` } : undefined}
->
-```
-
-### 4. Aktualizacja stron (TagPage, CategoryPage, Index)
-
-Przekazanie odpowiednich propsów do pierwszego elementu:
-
-```typescript
-{posts.map((post, index) => (
-  <NewsCard
-    key={post.id}
-    // ... inne propsy
-    loading={index === 0 ? "eager" : "lazy"}
-    fetchPriority={index === 0 ? "high" : "auto"}
-    disableAnimation={index === 0}
-    delay={index === 0 ? 0 : index * 50}
-  />
-))}
-```
-
-### 5. Optymalizacja kaskady API (TagPage)
-
-Obecnie:
-```typescript
-// Sekwencyjne zapytania
-const { data: tag } = useTagBySlug(slug);
-const { data: posts } = usePostsByTag(tag?.name); // czeka na tag
-```
-
-Rozwiązanie - równoległe zapytania z bezpośrednim wyszukiwaniem po slug:
-
-```typescript
-// Nowy hook - pobiera posty bezpośrednio po slug tagu
-export const usePostsByTagSlug = (slug: string | undefined) => {
-  return useQuery({
-    queryKey: ["posts", "tagSlug", slug],
-    queryFn: async () => {
-      // Najpierw pobierz tag
-      const { data: tag } = await supabase
-        .from("tags")
-        .select("name")
-        .eq("slug", slug)
-        .single();
-      
-      if (!tag) return [];
-      
-      // Następnie pobierz posty
-      const { data, error } = await supabase
-        .from("posts")
-        .select(POST_SELECT)
-        .contains("tags", [tag.name])
-        .lte("published_at", new Date().toISOString())
-        .order("published_at", { ascending: false });
-
-      if (error) throw error;
-      return data as Post[];
-    },
-    enabled: !!slug,
+// W useCreatePost i useUpdatePost
+onSuccess: async (post) => {
+  queryClient.invalidateQueries({ queryKey: ["posts"] });
+  
+  // Notify Google about new/updated URL
+  const postUrl = `https://daily-sport-blink.lovable.app/tag/${generateSlug(post.tags?.[0] || "")}`;
+  await supabase.functions.invoke("notify-google-index", {
+    body: { 
+      urls: [
+        `https://daily-sport-blink.lovable.app/`, // Homepage
+        // Add tag pages for each tag
+        ...post.tags?.map(tag => 
+          `https://daily-sport-blink.lovable.app/tag/${generateSlug(tag)}`
+        ) || []
+      ],
+      type: "URL_UPDATED"
+    }
   });
+  
+  toast({ title: "Sukces!", description: "Post opublikowany i zgłoszony do Google" });
 };
 ```
 
-Alternatywnie możemy użyć `Promise.all` w TagPage:
+### 3. Limity API
+
+Google Indexing API ma limity:
+- **200 URL-i dziennie** (domyślnie)
+- Można zwiększyć przez formularz Google
+
+Będziemy wysyłać tylko:
+- Stronę główną (przy każdym nowym poście)
+- Strony tagów powiązanych z postem
+- Nie wysyłamy pojedynczych postów (Szortsy nie ma dedykowanych stron dla artykułów)
+
+### 4. Integracja z edytorem postów
+
+W `PostEditor.tsx` - wyświetlenie statusu:
 
 ```typescript
-// Równoległe zapytania
-const tagQuery = useTagBySlug(slug);
-const postsQuery = useQuery({
-  queryKey: ["posts", "tag", slug],
-  queryFn: async () => {
-    // Bezpośrednie zapytanie bez czekania na tag
-    const { data: tagData } = await supabase
-      .from("tags")
-      .select("name")
-      .eq("slug", slug)
-      .single();
-    
-    if (!tagData) return [];
-    
-    const { data } = await supabase
-      .from("posts")
-      .select(POST_SELECT)
-      .contains("tags", [tagData.name])
-      .order("published_at", { ascending: false });
-    
-    return data || [];
-  },
-  enabled: !!slug,
-});
+// Po zapisaniu posta
+{googleIndexingStatus === "success" && (
+  <div className="flex items-center gap-2 text-green-600 text-sm">
+    <CheckCircle className="h-4 w-4" />
+    Zgłoszono do Google Indexing
+  </div>
+)}
 ```
 
 ---
 
-## Pliki do modyfikacji
+## Pliki do utworzenia/modyfikacji
 
-| Plik | Zmiana |
-|------|--------|
-| `index.html` | Dodanie preconnect i dns-prefetch |
-| `src/components/NewsCard.tsx` | Nowe propsy: loading, fetchPriority, disableAnimation |
-| `src/pages/TagPage.tsx` | Przekazanie propsów LCP do pierwszego elementu |
-| `src/pages/CategoryPage.tsx` | Przekazanie propsów LCP do pierwszego elementu |
-| `src/pages/Index.tsx` | Przekazanie propsów LCP do pierwszego elementu |
-| `src/hooks/useTags.tsx` | Opcjonalnie: nowy hook usePostsByTagSlug |
+| Plik | Akcja |
+|------|-------|
+| `supabase/functions/notify-google-index/index.ts` | **Nowy** - Edge function |
+| `supabase/config.toml` | Dodanie konfiguracji funkcji |
+| `src/hooks/usePosts.tsx` | Wywołanie API po create/update |
+| `src/pages/admin/PostEditor.tsx` | Status powiadomienia (opcjonalnie) |
 
 ---
 
-## Metryki sukcesu
+## Kolejność wdrożenia
 
-| Metryka | Przed | Cel |
-|---------|-------|-----|
-| LCP | ~3-4s (zewnętrzne obrazy) | <2.5s |
-| Lazy loaded images | 0 | Wszystkie poza pierwszym |
-| Preconnect | 0 | 3+ domeny |
-| Animacja pierwszego elementu | 100ms delay | 0ms |
+1. **Secret** - Poproszę o dodanie klucza Service Account jako `GOOGLE_SERVICE_ACCOUNT_JSON`
+2. **Edge function** - Utworzę `notify-google-index` z pełną logiką JWT i API
+3. **Integracja** - Zmodyfikuję hooki do wywoływania funkcji
+4. **Testy** - Sprawdzę czy powiadomienia docierają do Google
 
 ---
 
-## Dodatkowe rozważania (poza zakresem)
+## Korzyści
 
-Dla jeszcze lepszego LCP można w przyszłości:
-1. **Proxy obrazków** - cache'owanie zewnętrznych obrazów w Storage
-2. **Placeholder blur** - wyświetlanie rozmytego placeholdera podczas ładowania
-3. **Obrazy w formacie WebP/AVIF** - konwersja przy upload
+| Aspekt | Przed | Po |
+|--------|-------|-----|
+| Czas indeksowania | Godziny/dni | Minuty |
+| Wymagana akcja | Czekanie na crawl | Automatyczne |
+| Świeżość w Google | Opóźniona | Natychmiastowa |
 
-Te rozwiązania wymagają większych zmian infrastruktury i mogą być wdrożone w kolejnej iteracji.
+---
+
+## Uwagi
+
+1. **Wymagana weryfikacja własności** - Service Account musi być właścicielem w Search Console
+2. **Limit 200 URL/dzień** - wystarczający dla serwisu newsowego
+3. **Nie gwarantuje indeksacji** - Google może odrzucić URL jeśli nie spełnia wymagań jakościowych
+4. **Działa tylko dla zweryfikowanych domen** - musi być `daily-sport-blink.lovable.app` lub własna domena
