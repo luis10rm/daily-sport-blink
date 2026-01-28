@@ -1,188 +1,236 @@
 
-# Plan: Wdrożenie Google Indexing API
+
+# Plan: Dedykowane strony blinków + AI Content Generation
 
 ## Cel
 
-Automatyczne powiadamianie Google o nowych i zaktualizowanych artykułach, co przyspiesza ich indeksowanie. Dla serwisu newsowego jak Szortsy, gdzie świeżość treści jest kluczowa, to znacząca przewaga SEO.
+1. Utworzenie dedykowanych stron dla każdego blinka pod `/blink/:id` z pełnym JSON-LD NewsArticle
+2. Rozszerzenie "Generuj AI" o tworzenie unikatowej pełnej treści artykułu
+3. Osobny, edytowalny prompt dla generowania treści (oddzielny od ekstrakcji metadanych)
 
-## Jak to działa?
+## Jak to będzie działać?
 
 ```text
-┌─────────────────┐       ┌────────────────────┐       ┌─────────────────┐
-│ Admin dodaje    │──────▶│ Edge function      │──────▶│ Google Indexing │
-│ nowy post       │       │ notify-google-index│       │ API             │
-└─────────────────┘       └────────────────────┘       └─────────────────┘
-                                    │
-                                    ▼
-                          ┌────────────────────┐
-                          │ Google natychmiast │
-                          │ indeksuje stronę   │
-                          └────────────────────┘
+OBECNIE:
+┌─────────────────┐     ┌──────────────────┐
+│ Wklej URL       │────▶│ AI generuje:     │
+│ + kliknij AI    │     │ - tytuł          │
+└─────────────────┘     │ - excerpt        │
+                        │ - kategoria      │
+                        │ - tagi           │
+                        └──────────────────┘
+                                 │
+                                 ▼
+                        ┌──────────────────┐
+                        │ Karta z linkiem  │
+                        │ do źródła        │
+                        └──────────────────┘
+
+PO ZMIANACH:
+┌─────────────────┐     ┌──────────────────┐
+│ Wklej URL       │────▶│ AI generuje:     │
+│ + kliknij AI    │     │ - tytuł          │
+└─────────────────┘     │ - excerpt        │
+                        │ - kategoria      │
+                        │ - tagi           │
+                        │ - PEŁNA TREŚĆ ✨ │
+                        └──────────────────┘
+                                 │
+                                 ▼
+                        ┌──────────────────┐
+                        │ Dedykowana strona│
+                        │ /blink/:id       │
+                        │ + pełny JSON-LD  │
+                        └──────────────────┘
 ```
 
-Zamiast czekać aż Googlebot sam odkryje nową stronę (godziny/dni), API informuje go w ciągu sekund.
+---
 
-## Wymagania wstępne (jednorazowa konfiguracja)
+## 1. Nowa strona: BlinkPage (`/blink/:id`)
 
-Przed wdrożeniem potrzebne będzie:
+Dedykowana strona artykułu zawierająca:
+- Pełną treść blinka (pole `content`)
+- Kompletny JSON-LD NewsArticle zgodny ze schematem eksperta
+- Link do źródła z `isBasedOn`
+- Linki do autora i kategorii
 
-1. **Konto Google Cloud Platform** z włączonym Indexing API
-2. **Service Account** z uprawnieniami do Indexing API
-3. **Weryfikacja własności strony** w Google Search Console
-4. **Klucz JSON Service Account** jako secret w Lovable Cloud
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  [Logo] Daily Sport Blink              [Kategorie] [Menu]   │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  🏈 PIŁKA NOŻNA                              28 stycznia    │
+│                                                             │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │
+│  TYTUŁ ARTYKUŁU Z KEYWORDEM                                 │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   │
+│                                                             │
+│  [ Obrazek 16:9 - min 1200px szerokości ]                   │
+│                                                             │
+│  Pełna treść artykułu wygenerowana przez AI...              │
+│  Lorem ipsum dolor sit amet, consectetur adipiscing elit.   │
+│  Sed do eiusmod tempor incididunt ut labore et dolore.      │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │ 📰 Źródło: sportowefakty.wp.pl                      │    │
+│  │    [Przeczytaj oryginalny artykuł →]                │    │
+│  └─────────────────────────────────────────────────────┘    │
+│                                                             │
+│  ┌──────────────────────────┐                               │
+│  │ 👤 Jan Kowalski          │                               │
+│  │    Redaktor sportowy     │                               │
+│  └──────────────────────────┘                               │
+│                                                             │
+│  #Lewandowski  #Transfery  #LaLiga                          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### Instrukcja konfiguracji (dla użytkownika):
+---
 
-1. Wejdź na [Google Cloud Console](https://console.cloud.google.com)
-2. Utwórz nowy projekt lub wybierz istniejący
-3. Włącz "Indexing API" w Library
-4. Utwórz Service Account (IAM → Service Accounts → Create)
-5. Pobierz klucz JSON (Actions → Manage Keys → Add Key → JSON)
-6. W [Search Console](https://search.console.google.com) dodaj email Service Account jako właściciela witryny
-7. Wklej zawartość pliku JSON jako secret `GOOGLE_SERVICE_ACCOUNT_JSON` w Lovable Cloud
+## 2. JSON-LD zgodny ze schematem eksperta
+
+Na stronie `/blink/:id` wstrzykiwany będzie pełny schemat:
+
+```json
+{
+  "@context": "https://schema.org",
+  "@type": "NewsArticle",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://daily-sport-blink.lovable.app/blink/abc123"
+  },
+  "headline": "Lewandowski wraca do formy - 2 gole w meczu z Valencią",
+  "description": "Polski napastnik strzelił 2 bramki i zaliczył asystę...",
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://...",
+    "width": 1200,
+    "height": 675
+  },
+  "datePublished": "2026-01-28T10:30:00Z",
+  "dateModified": "2026-01-28T11:00:00Z",
+  "author": {
+    "@type": "Person",
+    "name": "Jan Kowalski",
+    "url": "https://daily-sport-blink.lovable.app/redakcja/jan-kowalski"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Daily Sport Blink",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://daily-sport-blink.lovable.app/logo-seo.png"
+    }
+  },
+  "isBasedOn": "https://sportowefakty.wp.pl/...",
+  "articleSection": "Piłka nożna",
+  "keywords": ["Lewandowski", "Barcelona", "LaLiga"]
+}
+```
+
+---
+
+## 3. Rozszerzenie Edge Function o generowanie treści
+
+Aktualizacja `extract-article` aby generowała również pełną treść:
+
+```typescript
+// Nowe pole w odpowiedzi AI
+content: {
+  type: "string",
+  description: "Pełna, unikatowa treść artykułu (300-500 słów, po polsku)"
+}
+```
+
+**Dwa oddzielne prompty:**
+- `article_extraction_prompt` - obecny, do metadanych (tytuł, excerpt, tagi)
+- `article_content_prompt` - **NOWY**, do generowania pełnej treści
+
+---
+
+## 4. Nowy prompt w Settings
+
+Dodanie drugiego edytowalnego promptu:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ Ustawienia AI                                               │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ 📝 Prompt ekstrakcji metadanych                             │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Jesteś asystentem redakcji sportowej...                 │ │
+│ │ Wygeneruj tytuł, excerpt, kategorię i tagi...           │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ ✨ Prompt generowania treści (NOWY)                         │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ Na podstawie oryginalnego artykułu napisz unikatową,    │ │
+│ │ skróconą wersję newsa sportowego. Treść musi być:       │ │
+│ │ - 300-500 słów                                          │ │
+│ │ - Napisana prostym językiem                             │ │
+│ │ - Zawierać kluczowe fakty                               │ │
+│ │ - Mieć angażujący ton                                   │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│                                                             │
+│ [Zapisz zmiany]  [Przywróć domyślne]                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 5. Aktualizacja NewsCard
+
+Zmiana linku "Przeczytaj więcej":
+- Jeśli post ma `content` → link do `/blink/:id` (wewnętrzny)
+- Jeśli brak `content` → link do `source_url` (zewnętrzny, jak teraz)
+
+---
 
 ## Zmiany techniczne
 
-### 1. Nowa Edge Function: `notify-google-index`
+### Nowe pliki
 
-Funkcja odpowiedzialna za:
-- Generowanie JWT tokenu z klucza Service Account
-- Wysyłanie powiadomień do Google Indexing API
-- Obsługę typów: `URL_UPDATED` (nowy/zmieniony) i `URL_DELETED` (usunięty)
+| Plik | Opis |
+|------|------|
+| `src/pages/BlinkPage.tsx` | Strona dedykowana dla pojedynczego blinka |
 
-```typescript
-// supabase/functions/notify-google-index/index.ts
+### Modyfikowane pliki
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+| Plik | Zmiana |
+|------|--------|
+| `src/App.tsx` | Dodanie route `/blink/:id` |
+| `src/components/SEO.tsx` | Aktualizacja `mainEntityOfPage` na URL blinka, zmiana `/autor/` na `/redakcja/`, publisher name na "Daily Sport Blink" |
+| `src/components/NewsCard.tsx` | Warunkowe linkowanie do `/blink/:id` lub zewnętrznego URL |
+| `supabase/functions/extract-article/index.ts` | Dodanie generowania `content` z osobnym promptem |
+| `src/hooks/useSettings.ts` | Nowy hook `useContentPrompt` dla drugiego promptu |
+| `src/pages/admin/Settings.tsx` | Sekcja dla nowego promptu |
+| `src/hooks/usePosts.tsx` | Hook `usePostBySlug` lub `usePostById` dla strony blinka |
 
-// Generate JWT for Google API authentication
-async function generateGoogleJWT(serviceAccount: any): Promise<string> {
-  const header = { alg: "RS256", typ: "JWT" };
-  const now = Math.floor(Date.now() / 1000);
-  
-  const payload = {
-    iss: serviceAccount.client_email,
-    sub: serviceAccount.client_email,
-    aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 3600,
-    scope: "https://www.googleapis.com/auth/indexing"
-  };
+### Migracja bazy danych
 
-  // Sign JWT with private key
-  const key = await crypto.subtle.importKey(
-    "pkcs8",
-    pemToArrayBuffer(serviceAccount.private_key),
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
+Dodanie nowego ustawienia w tabeli `settings`:
 
-  const signedJWT = await signJWT(header, payload, key);
-  
-  // Exchange JWT for access token
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${signedJWT}`
-  });
-
-  const tokenData = await tokenResponse.json();
-  return tokenData.access_token;
-}
-
-// Notify Google about URL update
-async function notifyGoogle(url: string, type: "URL_UPDATED" | "URL_DELETED", accessToken: string) {
-  const response = await fetch(
-    "https://indexing.googleapis.com/v3/urlNotifications:publish",
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ url, type })
-    }
-  );
-  return response.json();
-}
-```
-
-### 2. Modyfikacja `usePosts.tsx`
-
-Wywołanie edge function po zapisaniu posta:
-
-```typescript
-// W useCreatePost i useUpdatePost
-onSuccess: async (post) => {
-  queryClient.invalidateQueries({ queryKey: ["posts"] });
-  
-  // Notify Google about new/updated URL
-  const postUrl = `https://daily-sport-blink.lovable.app/tag/${generateSlug(post.tags?.[0] || "")}`;
-  await supabase.functions.invoke("notify-google-index", {
-    body: { 
-      urls: [
-        `https://daily-sport-blink.lovable.app/`, // Homepage
-        // Add tag pages for each tag
-        ...post.tags?.map(tag => 
-          `https://daily-sport-blink.lovable.app/tag/${generateSlug(tag)}`
-        ) || []
-      ],
-      type: "URL_UPDATED"
-    }
-  });
-  
-  toast({ title: "Sukces!", description: "Post opublikowany i zgłoszony do Google" });
-};
-```
-
-### 3. Limity API
-
-Google Indexing API ma limity:
-- **200 URL-i dziennie** (domyślnie)
-- Można zwiększyć przez formularz Google
-
-Będziemy wysyłać tylko:
-- Stronę główną (przy każdym nowym poście)
-- Strony tagów powiązanych z postem
-- Nie wysyłamy pojedynczych postów (Szortsy nie ma dedykowanych stron dla artykułów)
-
-### 4. Integracja z edytorem postów
-
-W `PostEditor.tsx` - wyświetlenie statusu:
-
-```typescript
-// Po zapisaniu posta
-{googleIndexingStatus === "success" && (
-  <div className="flex items-center gap-2 text-green-600 text-sm">
-    <CheckCircle className="h-4 w-4" />
-    Zgłoszono do Google Indexing
-  </div>
-)}
+```sql
+INSERT INTO settings (key, value)
+VALUES ('article_content_prompt', 'Na podstawie oryginalnego artykułu...')
+ON CONFLICT (key) DO NOTHING;
 ```
 
 ---
 
-## Pliki do utworzenia/modyfikacji
+## Przepływ użytkownika (po zmianach)
 
-| Plik | Akcja |
-|------|-------|
-| `supabase/functions/notify-google-index/index.ts` | **Nowy** - Edge function |
-| `supabase/config.toml` | Dodanie konfiguracji funkcji |
-| `src/hooks/usePosts.tsx` | Wywołanie API po create/update |
-| `src/pages/admin/PostEditor.tsx` | Status powiadomienia (opcjonalnie) |
-
----
-
-## Kolejność wdrożenia
-
-1. **Secret** - Poproszę o dodanie klucza Service Account jako `GOOGLE_SERVICE_ACCOUNT_JSON`
-2. **Edge function** - Utworzę `notify-google-index` z pełną logiką JWT i API
-3. **Integracja** - Zmodyfikuję hooki do wywoływania funkcji
-4. **Testy** - Sprawdzę czy powiadomienia docierają do Google
+1. **Admin** wkleja URL źródła w edytorze posta
+2. Klika **"Generuj AI"**
+3. AI generuje:
+   - Tytuł, excerpt, kategoria, tagi (jak dotychczas)
+   - **NOWE:** Pełna, unikatowa treść artykułu (300-500 słów)
+4. Post zapisywany z polem `content`
+5. Na froncie karta linkuje do `/blink/:id`
+6. Strona `/blink/:id` wyświetla pełny artykuł z poprawnym JSON-LD
+7. Google indeksuje stronę jako pełnoprawny `NewsArticle`
 
 ---
 
@@ -190,15 +238,19 @@ W `PostEditor.tsx` - wyświetlenie statusu:
 
 | Aspekt | Przed | Po |
 |--------|-------|-----|
-| Czas indeksowania | Godziny/dni | Minuty |
-| Wymagana akcja | Czekanie na crawl | Automatyczne |
-| Świeżość w Google | Opóźniona | Natychmiastowa |
+| Dedykowane URL | Brak | `/blink/:id` dla każdego artykułu |
+| JSON-LD `mainEntityOfPage` | Strona główna | Konkretny URL artykułu |
+| Unikatowa treść | Tylko excerpt | Pełny artykuł 300-500 słów |
+| Kontrola nad AI | 1 prompt | 2 osobne prompty (metadane + treść) |
+| Google Discover | Niskie szanse | Wysokie szanse (pełna treść + 1200px obrazy) |
 
 ---
 
-## Uwagi
+## Uwagi dotyczące rekomendacji eksperta
 
-1. **Wymagana weryfikacja własności** - Service Account musi być właścicielem w Search Console
-2. **Limit 200 URL/dzień** - wystarczający dla serwisu newsowego
-3. **Nie gwarantuje indeksacji** - Google może odrzucić URL jeśli nie spełnia wymagań jakościowych
-4. **Działa tylko dla zweryfikowanych domen** - musi być `daily-sport-blink.lovable.app` lub własna domena
+1. **`/redakcja/:slug`** - zmienię ścieżkę autora z `/autor/` na `/redakcja/`
+2. **Publisher name** - zmienię z "Szortsy" na "Daily Sport Blink"
+3. **`logo-seo.png`** - przygotuję ścieżkę, ale plik trzeba będzie wgrać ręcznie (1200x630px)
+4. **Keywords jako array** - zmienię z `join(", ")` na tablicę
+5. **`articleSection`** - używam nazwy kategorii
+
