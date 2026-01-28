@@ -8,8 +8,10 @@ import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
 
 interface NewsCardProps {
+  id: string;
   title: string;
   excerpt: string;
+  content?: string | null;
   categorySlug?: string;
   sportCategory?: PostCategory | null;
   publishedAt: string;
@@ -37,8 +39,10 @@ interface NewsCardProps {
 export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
   (
     {
+      id,
       title,
       excerpt,
+      content,
       categorySlug,
       sportCategory,
       publishedAt,
@@ -55,6 +59,10 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
     },
     ref
   ) => {
+    // Determine if this post has AI-generated content (link to /blink/:id)
+    const hasContent = Boolean(content);
+    const blinkUrl = `/blink/${id}`;
+    
     const formattedDate = new Date(publishedAt).toLocaleDateString("pl-PL", {
       day: "numeric",
       month: "long",
@@ -130,20 +138,35 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
 
           {author && <AuthorCard author={author} />}
 
-          <a
-            href={sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-              "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all",
-              isSponsored
-                ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg"
-                : "bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
-            )}
-          >
-            Przeczytaj więcej
-            <ExternalLink className="h-4 w-4" />
-          </a>
+          {/* Conditional link: internal blink page if content exists, otherwise external source */}
+          {hasContent ? (
+            <Link
+              to={blinkUrl}
+              className={cn(
+                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all",
+                isSponsored
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg"
+                  : "bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
+              )}
+            >
+              Przeczytaj więcej
+            </Link>
+          ) : (
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all",
+                isSponsored
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg"
+                  : "bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
+              )}
+            >
+              Przeczytaj więcej
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
           <span className="text-xs text-muted-foreground text-center">
             Źródło: {getSourceName(sourceUrl)}
           </span>

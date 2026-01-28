@@ -63,6 +63,7 @@ export const useExtractArticle = () => {
       return data as {
         title: string;
         excerpt: string;
+        content: string;
         category: "football" | "basketball" | "tennis" | "f1" | "mma" | "other";
         tags: string[];
         og_image: string | null;

@@ -42,8 +42,8 @@ function extractTextFromHtml(html: string): string {
   // Clean up whitespace
   text = text.replace(/\s+/g, " ").trim();
   
-  // Limit to first ~4000 characters to not exceed token limits
-  return text.slice(0, 4000);
+  // Limit to first ~6000 characters to allow for content generation
+  return text.slice(0, 6000);
 }
 
 // Extract Open Graph image from HTML
@@ -61,6 +61,25 @@ function extractOgImage(html: string): string | null {
   
   return null;
 }
+
+// Default prompts
+const DEFAULT_EXTRACTION_PROMPT = `Jesteś asystentem redakcji sportowej Daily Sport Blink. Na podstawie podanego artykułu wygeneruj dane do publikacji.
+
+ZASADY:
+1. Tytuł: max 80 znaków, chwytliwy, po polsku, bez clickbaitu
+2. Excerpt: max 200 znaków, zachęcający do kliknięcia, streszczający główną myśl
+3. Kategoria: wybierz JEDNĄ z: football, basketball, tennis, f1, mma, other
+4. Tagi: 3-5 krótkich słów kluczowych (bez #), po polsku
+
+Odpowiedz w formacie JSON zgodnym ze schematem.`;
+
+const DEFAULT_CONTENT_PROMPT = `Na podstawie oryginalnego artykułu napisz unikatową, skróconą wersję newsa sportowego w języku polskim. Treść musi być:
+- 300-500 słów
+- Napisana prostym, angażującym językiem
+- Zawierać wszystkie kluczowe fakty z oryginału
+- Mieć dynamiczny, dziennikarski ton
+- Podzielona na 2-3 akapity
+- Bez powtarzania tytułu na początku`;
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -103,28 +122,29 @@ serve(async (req) => {
     console.log("Extracted text length:", articleText.length);
     console.log("Found OG image:", ogImage);
 
-    // Get master prompt from database
+    // Get prompts from database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { data: settingData } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "article_extraction_prompt")
-      .single();
+    // Fetch both prompts in parallel
+    const [extractionPromptResult, contentPromptResult] = await Promise.all([
+      supabase.from("settings").select("value").eq("key", "article_extraction_prompt").single(),
+      supabase.from("settings").select("value").eq("key", "article_content_prompt").single(),
+    ]);
 
-    const masterPrompt = settingData?.value || `Wygeneruj tytuł, excerpt, kategorię i tagi dla artykułu sportowego.`;
+    const extractionPrompt = extractionPromptResult.data?.value || DEFAULT_EXTRACTION_PROMPT;
+    const contentPrompt = contentPromptResult.data?.value || DEFAULT_CONTENT_PROMPT;
 
-    console.log("Using master prompt from settings");
+    console.log("Using prompts from settings");
 
-    // Call Lovable AI Gateway
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Step 1: Extract metadata (title, excerpt, category, tags)
+    const metadataResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -133,7 +153,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: masterPrompt },
+          { role: "system", content: extractionPrompt },
           { role: "user", content: `Przeanalizuj ten artykuł i wygeneruj dane:\n\n${articleText}` },
         ],
         tools: [
@@ -174,42 +194,98 @@ serve(async (req) => {
       }),
     });
 
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
+    if (!metadataResponse.ok) {
+      if (metadataResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (aiResponse.status === 402) {
+      if (metadataResponse.status === 402) {
         return new Response(
           JSON.stringify({ error: "AI credits depleted. Please add credits to continue." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await aiResponse.text();
-      console.error("AI Gateway error:", aiResponse.status, errorText);
-      throw new Error(`AI Gateway error: ${aiResponse.status}`);
+      const errorText = await metadataResponse.text();
+      console.error("AI Gateway error (metadata):", metadataResponse.status, errorText);
+      throw new Error(`AI Gateway error: ${metadataResponse.status}`);
     }
 
-    const aiData = await aiResponse.json();
-    console.log("AI response:", JSON.stringify(aiData, null, 2));
-
-    // Extract the tool call result
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall || toolCall.function.name !== "extract_article_data") {
-      throw new Error("Invalid AI response format");
+    const metadataData = await metadataResponse.json();
+    const metadataToolCall = metadataData.choices?.[0]?.message?.tool_calls?.[0];
+    if (!metadataToolCall || metadataToolCall.function.name !== "extract_article_data") {
+      throw new Error("Invalid AI response format for metadata");
     }
 
-    const extractedData = JSON.parse(toolCall.function.arguments);
+    const extractedMetadata = JSON.parse(metadataToolCall.function.arguments);
+    console.log("Extracted metadata:", extractedMetadata);
 
-    // Add OG image if found
+    // Step 2: Generate full article content
+    const contentResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: contentPrompt },
+          { 
+            role: "user", 
+            content: `Tytuł: ${extractedMetadata.title}\n\nOryginalny artykuł:\n${articleText}` 
+          },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "generate_article_content",
+              description: "Wygeneruj pełną treść artykułu sportowego",
+              parameters: {
+                type: "object",
+                properties: {
+                  content: { 
+                    type: "string", 
+                    description: "Pełna treść artykułu (300-500 słów, po polsku, podzielona na akapity)" 
+                  },
+                },
+                required: ["content"],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: "function", function: { name: "generate_article_content" } },
+      }),
+    });
+
+    let generatedContent = "";
+    
+    if (contentResponse.ok) {
+      const contentData = await contentResponse.json();
+      const contentToolCall = contentData.choices?.[0]?.message?.tool_calls?.[0];
+      if (contentToolCall && contentToolCall.function.name === "generate_article_content") {
+        const contentResult = JSON.parse(contentToolCall.function.arguments);
+        generatedContent = contentResult.content || "";
+        console.log("Generated content length:", generatedContent.length);
+      }
+    } else {
+      console.error("Content generation failed, continuing without content");
+    }
+
+    // Combine results
     const result = {
-      ...extractedData,
+      ...extractedMetadata,
+      content: generatedContent,
       og_image: ogImage,
     };
 
-    console.log("Extraction complete:", result);
+    console.log("Extraction complete:", {
+      ...result,
+      content: result.content ? `${result.content.substring(0, 100)}...` : null,
+    });
 
     return new Response(
       JSON.stringify(result),

@@ -29,6 +29,7 @@ import Archive from "./pages/Archive";
 import CategoryPage from "./pages/CategoryPage";
 import TagPage from "./pages/TagPage";
 import TagsListPage from "./pages/TagsListPage";
+import BlinkPage from "./pages/BlinkPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ function App() {
             <ConditionalWallpaper />
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/blink/:id" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
               <Route path="/kategoria/:slug" element={<CategoryPage />} />
               <Route path="/tagi" element={<TagsListPage />} />

@@ -181,6 +181,12 @@ const PostEditor = () => {
     // Fill form with extracted data
     form.setValue("title", extractedData.title);
     form.setValue("excerpt", extractedData.excerpt);
+    
+    // Set AI-generated content if available
+    if (extractedData.content) {
+      form.setValue("content", extractedData.content);
+    }
+    
     // Try to match extracted category slug to a category_id
     const matchedCategory = sportCategories?.find(
       (cat) => cat.slug === extractedData.category
@@ -282,16 +288,17 @@ const PostEditor = () => {
                       name="content"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Pełna treść (opcjonalnie)</FormLabel>
+                          <FormLabel>Pełna treść artykułu</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Pełna treść artykułu..."
-                              rows={6}
+                              placeholder="Pełna treść artykułu (generowana automatycznie przez AI)..."
+                              rows={10}
                               {...field}
                             />
                           </FormControl>
                           <FormDescription>
-                            Opcjonalna rozszerzona treść artykułu
+                            Ta treść będzie wyświetlana na dedykowanej stronie artykułu (/blink/:id).
+                            Kliknij "Generuj AI" przy URL źródła, aby wypełnić automatycznie.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

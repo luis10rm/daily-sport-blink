@@ -124,8 +124,10 @@ const CategoryPage = () => {
               {posts.map((post, index) => (
                 <NewsCard
                   key={post.id}
+                  id={post.id}
                   title={post.title}
                   excerpt={post.excerpt}
+                  content={post.content}
                   categorySlug={post.sport_category?.slug}
                   sportCategory={post.sport_category}
                   publishedAt={post.published_at}
