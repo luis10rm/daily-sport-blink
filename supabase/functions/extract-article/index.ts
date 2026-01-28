@@ -78,8 +78,11 @@ const DEFAULT_CONTENT_PROMPT = `Na podstawie oryginalnego artykułu napisz unika
 - Napisana prostym, angażującym językiem
 - Zawierać wszystkie kluczowe fakty z oryginału
 - Mieć dynamiczny, dziennikarski ton
-- Podzielona na 2-3 akapity
-- Bez powtarzania tytułu na początku`;
+- Podzielona na 3-5 akapitów oddzielonych PUSTYMI LINIAMI (\\n\\n)
+- Każdy akapit powinien mieć 2-4 zdania
+- Bez powtarzania tytułu na początku
+
+WAŻNE: Każdy akapit MUSI być oddzielony pustą linią dla czytelności!`;
 
 serve(async (req) => {
   // Handle CORS preflight
