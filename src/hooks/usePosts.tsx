@@ -197,7 +197,7 @@ export const useArchivedPosts = (filters?: {
   });
 };
 
-// Fetch single post
+// Fetch single post (for admin editor)
 export const usePost = (id: string) => {
   return useQuery({
     queryKey: ["posts", id],
@@ -210,6 +210,24 @@ export const usePost = (id: string) => {
 
       if (error) throw error;
       return data as Post;
+    },
+    enabled: !!id,
+  });
+};
+
+// Fetch single post by ID (for public BlinkPage)
+export const usePostById = (id: string) => {
+  return useQuery({
+    queryKey: ["posts", "public", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .eq("id", id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as Post | null;
     },
     enabled: !!id,
   });

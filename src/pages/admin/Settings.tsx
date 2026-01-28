@@ -14,7 +14,7 @@ import { Loader2, Save, RotateCcw, Star, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_PROMPT = `Jesteś asystentem redakcji sportowej Daily Sport. Na podstawie podanego artykułu wygeneruj dane do publikacji.
+const DEFAULT_EXTRACTION_PROMPT = `Jesteś asystentem redakcji sportowej Daily Sport Blink. Na podstawie podanego artykułu wygeneruj dane do publikacji.
 
 ZASADY:
 1. Tytuł: max 80 znaków, chwytliwy, po polsku, bez clickbaitu
@@ -23,6 +23,14 @@ ZASADY:
 4. Tagi: 3-5 krótkich słów kluczowych (bez #), po polsku
 
 Odpowiedz w formacie JSON zgodnym ze schematem.`;
+
+const DEFAULT_CONTENT_PROMPT = `Na podstawie oryginalnego artykułu napisz unikatową, skróconą wersję newsa sportowego w języku polskim. Treść musi być:
+- 300-500 słów
+- Napisana prostym, angażującym językiem
+- Zawierać wszystkie kluczowe fakty z oryginału
+- Mieć dynamiczny, dziennikarski ton
+- Podzielona na 2-3 akapity
+- Bez powtarzania tytułu na początku`;
 
 const DEFAULT_PATRON: PatronSettings = {
   enabled: false,
@@ -100,12 +108,18 @@ const PatronBarPreview = ({ settings }: { settings: PatronSettings }) => {
 const Settings = () => {
   const { user, isAdmin } = useAuth();
   const { data: promptValue, isLoading: isLoadingPrompt } = useSetting("article_extraction_prompt");
+  const { data: contentPromptValue, isLoading: isLoadingContentPrompt } = useSetting("article_content_prompt");
   const { data: patronData, isLoading: isLoadingPatron } = usePatronSettings();
   const updateSetting = useUpdateSetting();
   const updatePatron = useUpdatePatronSettings();
   
+  // Extraction prompt state
   const [localPrompt, setLocalPrompt] = useState("");
   const [hasPromptChanges, setHasPromptChanges] = useState(false);
+  
+  // Content prompt state
+  const [localContentPrompt, setLocalContentPrompt] = useState("");
+  const [hasContentPromptChanges, setHasContentPromptChanges] = useState(false);
   
   const [patronSettings, setPatronSettings] = useState<PatronSettings>(DEFAULT_PATRON);
   const [hasPatronChanges, setHasPatronChanges] = useState(false);
@@ -117,6 +131,12 @@ const Settings = () => {
   }, [promptValue]);
 
   useEffect(() => {
+    if (contentPromptValue) {
+      setLocalContentPrompt(contentPromptValue);
+    }
+  }, [contentPromptValue]);
+
+  useEffect(() => {
     if (patronData) {
       setPatronSettings(patronData);
     }
@@ -125,6 +145,10 @@ const Settings = () => {
   useEffect(() => {
     setHasPromptChanges(localPrompt !== promptValue && localPrompt !== "");
   }, [localPrompt, promptValue]);
+
+  useEffect(() => {
+    setHasContentPromptChanges(localContentPrompt !== contentPromptValue && localContentPrompt !== "");
+  }, [localContentPrompt, contentPromptValue]);
 
   useEffect(() => {
     if (patronData) {
@@ -141,7 +165,19 @@ const Settings = () => {
   };
 
   const handleResetPrompt = () => {
-    setLocalPrompt(DEFAULT_PROMPT);
+    setLocalPrompt(DEFAULT_EXTRACTION_PROMPT);
+  };
+
+  const handleSaveContentPrompt = async () => {
+    await updateSetting.mutateAsync({
+      key: "article_content_prompt",
+      value: localContentPrompt,
+    });
+    setHasContentPromptChanges(false);
+  };
+
+  const handleResetContentPrompt = () => {
+    setLocalContentPrompt(DEFAULT_CONTENT_PROMPT);
   };
 
   const handleSavePatron = async () => {
@@ -365,9 +401,10 @@ const Settings = () => {
                 Konfiguracja automatycznego wypełniania postów na podstawie URL
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
+              {/* Extraction Prompt */}
               <div className="space-y-2">
-                <Label htmlFor="master-prompt">Master prompt do ekstrakcji artykułów</Label>
+                <Label htmlFor="master-prompt">📝 Prompt ekstrakcji metadanych</Label>
                 {isLoadingPrompt ? (
                   <Skeleton className="h-48 w-full" />
                 ) : (
@@ -375,37 +412,81 @@ const Settings = () => {
                     id="master-prompt"
                     value={localPrompt}
                     onChange={(e) => setLocalPrompt(e.target.value)}
-                    rows={10}
+                    rows={8}
                     className="font-mono text-sm"
                     placeholder="Wprowadź prompt dla AI..."
                   />
                 )}
                 <p className="text-sm text-muted-foreground">
-                  Ten prompt określa jak AI analizuje artykuły i generuje dane dla postów.
-                  Możesz dostosować styl, limity znaków i inne wytyczne.
+                  Ten prompt określa jak AI generuje tytuł, excerpt, kategorię i tagi.
                 </p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSavePrompt} 
+                    disabled={!hasPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleResetPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
               </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleSavePrompt} 
-                  disabled={!hasPromptChanges || updateSetting.isPending}
-                >
-                  {updateSetting.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="mr-2 h-4 w-4" />
-                  )}
-                  Zapisz zmiany
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleResetPrompt}
-                  disabled={updateSetting.isPending}
-                >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Przywróć domyślny
-                </Button>
+
+              {/* Content Generation Prompt */}
+              <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor="content-prompt">✨ Prompt generowania treści artykułu</Label>
+                {isLoadingContentPrompt ? (
+                  <Skeleton className="h-48 w-full" />
+                ) : (
+                  <Textarea
+                    id="content-prompt"
+                    value={localContentPrompt}
+                    onChange={(e) => setLocalContentPrompt(e.target.value)}
+                    rows={8}
+                    className="font-mono text-sm"
+                    placeholder="Wprowadź prompt do generowania treści..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Ten prompt określa jak AI generuje pełną, unikatową treść artykułu (300-500 słów).
+                  Treść jest wyświetlana na dedykowanych stronach blinków.
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSaveContentPrompt} 
+                    disabled={!hasContentPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleResetContentPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

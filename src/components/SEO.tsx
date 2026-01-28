@@ -10,8 +10,8 @@ interface SEOProps {
 
 // Base URL for the site
 const SITE_URL = "https://daily-sport-blink.lovable.app";
-const SITE_NAME = "Szortsy";
-const LOGO_URL = `${SITE_URL}/og-image.png`;
+const SITE_NAME = "Daily Sport Blink";
+const LOGO_URL = `${SITE_URL}/logo-seo.png`;
 
 // Publisher object (reused across NewsArticle schemas)
 const PUBLISHER = {
@@ -20,8 +20,6 @@ const PUBLISHER = {
   logo: {
     "@type": "ImageObject",
     url: LOGO_URL,
-    width: 1200,
-    height: 630,
   },
 };
 
@@ -95,13 +93,19 @@ export const getWebsiteSEO = () => ({
   },
 });
 
-// Full NewsArticle schema for individual posts
+// Full NewsArticle schema for individual posts (used on BlinkPage)
 export const getNewsArticleSEO = (post: Post) => {
-  const authorUrl = post.author?.slug ? `${SITE_URL}/autor/${post.author.slug}` : undefined;
+  // Use /redakcja/ path per SEO expert recommendation
+  const authorUrl = post.author?.slug ? `${SITE_URL}/redakcja/${post.author.slug}` : undefined;
   
   return {
     type: "NewsArticle" as const,
     data: {
+      // mainEntityOfPage pointing to dedicated blink URL
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/blink/${post.id}`,
+      },
       headline: post.title,
       description: post.excerpt,
       // Image with 1200px requirement for Google Discover
@@ -109,7 +113,7 @@ export const getNewsArticleSEO = (post: Post) => {
         "@type": "ImageObject",
         url: post.image_url,
         width: 1200,
-        height: 630,
+        height: 675,
       } : undefined,
       datePublished: post.published_at,
       dateModified: post.updated_at,
@@ -118,29 +122,20 @@ export const getNewsArticleSEO = (post: Post) => {
         "@type": "Person",
         name: post.author.display_name,
         ...(authorUrl && { url: authorUrl }),
-        ...(post.author.role_title && { jobTitle: post.author.role_title }),
       } : {
         "@type": "Organization",
         name: SITE_NAME,
       },
       publisher: PUBLISHER,
       // isBasedOn - CRITICAL for E-E-A-T when curating content
-      isBasedOn: {
-        "@type": "WebPage",
-        url: post.source_url,
-      },
-      // Main entity reference
-      mainEntityOfPage: {
-        "@type": "WebPage",
-        "@id": SITE_URL,
-      },
+      isBasedOn: post.source_url,
       // Article section (category)
       ...(post.sport_category && {
         articleSection: post.sport_category.name,
       }),
-      // Keywords from tags
+      // Keywords as array (not comma-separated string)
       ...(post.tags?.length && {
-        keywords: post.tags.join(", "),
+        keywords: post.tags,
       }),
       // In Polish
       inLanguage: "pl-PL",
@@ -195,6 +190,11 @@ export const getRichItemListSEO = (name: string, posts: Post[]) => ({
       position: index + 1,
       item: {
         "@type": "NewsArticle",
+        // Each article links to its dedicated blink page
+        mainEntityOfPage: {
+          "@type": "WebPage",
+          "@id": `${SITE_URL}/blink/${post.id}`,
+        },
         headline: post.title,
         description: post.excerpt,
         datePublished: post.published_at,
@@ -204,24 +204,24 @@ export const getRichItemListSEO = (name: string, posts: Post[]) => ({
             "@type": "ImageObject",
             url: post.image_url,
             width: 1200,
-            height: 630,
+            height: 675,
           },
         }),
         ...(post.author && {
           author: {
             "@type": "Person",
             name: post.author.display_name,
-            ...(post.author.slug && { url: `${SITE_URL}/autor/${post.author.slug}` }),
+            // Use /redakcja/ path per SEO expert recommendation
+            ...(post.author.slug && { url: `${SITE_URL}/redakcja/${post.author.slug}` }),
           },
         }),
-        isBasedOn: {
-          "@type": "WebPage",
-          url: post.source_url,
-        },
+        // isBasedOn as direct URL string
+        isBasedOn: post.source_url,
         publisher: PUBLISHER,
         inLanguage: "pl-PL",
         ...(post.sport_category && { articleSection: post.sport_category.name }),
-        ...(post.tags?.length && { keywords: post.tags.join(", ") }),
+        // Keywords as array
+        ...(post.tags?.length && { keywords: post.tags }),
       },
     })),
   },
@@ -238,8 +238,9 @@ export const getPersonSEO = (
     name,
     ...(description && { description }),
     ...(image && { image }),
-    ...(slug && { url: `${SITE_URL}/autor/${slug}` }),
-    // Affiliation with Szortsy
+    // Use /redakcja/ path per SEO expert recommendation
+    ...(slug && { url: `${SITE_URL}/redakcja/${slug}` }),
+    // Affiliation with Daily Sport Blink
     worksFor: {
       "@type": "Organization",
       name: SITE_NAME,
