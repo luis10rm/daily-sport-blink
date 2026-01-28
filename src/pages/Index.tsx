@@ -9,7 +9,7 @@ import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
 import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
-import { SEO, getWebsiteSEO } from "@/components/SEO";
+import { MultiSEO, getWebsiteSEO, getRichItemListSEO } from "@/components/SEO";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts";
 import { useActiveBannerForDevice } from "@/hooks/useBanners";
@@ -24,7 +24,6 @@ const Index = () => {
   const device = isMobile ? "mobile" : "desktop";
   
   useDocumentTitle("");
-  const websiteSEO = getWebsiteSEO();
   
   const { data: posts = [], isLoading: postsLoading } = usePostsFeed();
   const { data: newsOfTheDay, isLoading: newsLoading } = useNewsOfTheDay();
@@ -32,6 +31,10 @@ const Index = () => {
   const { data: topBanner } = useActiveBannerForDevice("home_top", device);
   const { data: middleBanner } = useActiveBannerForDevice("home_middle", device);
   const { data: bottomBanner } = useActiveBannerForDevice("home_bottom", device);
+
+  // SEO schemas - Website + ItemList with full NewsArticle data
+  const websiteSEO = getWebsiteSEO();
+  const itemListSEO = getRichItemListSEO("Najnowsze wiadomości sportowe", posts);
 
   // Check if post is from today
   const isToday = (dateString: string) => {
@@ -53,7 +56,7 @@ const Index = () => {
       "min-h-screen relative z-10",
       !isTakeoverActive && "bg-background"
     )}>
-      <SEO {...websiteSEO} />
+      <MultiSEO schemas={[websiteSEO, itemListSEO]} />
       <Header />
       <PatronBar />
       

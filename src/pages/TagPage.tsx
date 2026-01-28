@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { SEO, getItemListSEO } from "@/components/SEO";
+import { SEO, getRichItemListSEO } from "@/components/SEO";
 import { useTagBySlug, usePostsByTagSlug } from "@/hooks/useTags";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tag, ArrowLeft, Archive } from "lucide-react";
@@ -24,14 +24,10 @@ const TagPage = () => {
 
   useDocumentTitle(tag?.name ? `${tag.name} - Szortsy` : "Tag");
 
-  const seoData = getItemListSEO(
+  // Rich SEO with full NewsArticle schema including isBasedOn for E-E-A-T
+  const seoData = getRichItemListSEO(
     `Artykuły: ${tag?.name || "Tag"}`,
-    posts.map((post) => ({
-      headline: post.title,
-      datePublished: post.published_at,
-      author: post.author?.display_name || undefined,
-      url: post.source_url,
-    }))
+    posts
   );
 
   if (tagLoading) {
