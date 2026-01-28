@@ -10,6 +10,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { getSourceName, generateSlug } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const SITE_URL = "https://daily-sport-blink.lovable.app";
 
@@ -156,9 +157,20 @@ const BlinkPage = () => {
           {/* Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
             {post.content ? (
-              post.content.split("\n\n").map((paragraph, index) => (
-                <p key={index}>{paragraph}</p>
-              ))
+              post.content
+                .split(/\n+/)
+                .filter(p => p.trim().length > 0)
+                .map((paragraph, index) => (
+                  <p 
+                    key={index} 
+                    className={cn(
+                      "mb-4 leading-relaxed text-foreground/90",
+                      index === 0 && "first-letter:text-5xl first-letter:font-bold first-letter:float-left first-letter:mr-2 first-letter:text-primary"
+                    )}
+                  >
+                    {paragraph.trim()}
+                  </p>
+                ))
             ) : (
               <p className="text-lg leading-relaxed">{post.excerpt}</p>
             )}
