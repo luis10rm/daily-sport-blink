@@ -2,10 +2,10 @@ import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, User } from "lucide-react";
-import { Author } from "@/hooks/useAuthors";
+import { PublicAuthor } from "@/hooks/useAuthors";
 
 interface AuthorProfileCardProps {
-  author: Author;
+  author: PublicAuthor;
   postsCount?: number;
 }
 
