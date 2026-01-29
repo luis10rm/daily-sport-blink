@@ -1,100 +1,99 @@
 
-# Plan: Naprawa renderowania mieszanego formatu HTML + Markdown
+Cel: usunąć widoczne `**...**` (gwiazdki) zarówno na stronie artykułu (/blink/:id), jak i w edytorze WYSIWYG w panelu admina – także dla już zapisanych postów.
 
-## Zidentyfikowany problem
-
-Treść artykułu w bazie danych zawiera **mieszany format**:
+## Dlaczego nadal widać gwiazdki (prawdziwa przyczyna)
+1) **Markdown w środku HTML nie jest parsowany tak, jak zakładaliśmy.**  
+Twoja treść ma postać mieszaną, np.:
 ```html
-<p>Poznaliśmy pełny zestaw drużyn... **Liverpool FC**, **Bayern Monachium**...</p>
+<p>... **Liverpool FC** ...</p>
 ```
+Markdown parsers (w tym `marked`) traktują blok HTML jako “surowy HTML” i **nie interpretują** `**...**` wewnątrz tagów HTML. Dlatego gwiazdki zostają.
 
-AI generuje tag `<p>` ale używa wewnątrz składni Markdown (`**bold**`).
+2) **Prompt w backendzie jest nadpisany przez ustawienia w bazie (`settings`).**  
+Funkcja generowania treści bierze `article_content_prompt` z bazy (jeśli istnieje), więc zmiana “DEFAULT_CONTENT_PROMPT” w kodzie nie zadziała, dopóki w ustawieniach jest stara wersja promptu.  
+Potwierdziłem to: `article_content_prompt` istnieje i ma długi tekst (len ~1329), więc domyślny prompt z kodu nie jest używany.
 
-Obecna logika wykrywa tag `<p>` → traktuje całość jako HTML → nie konwertuje gwiazdek.
+3) Dane dla przykładowego posta faktycznie zawierają `**` w HTML.  
+Dla posta `6f8133c3-ecf1-4010-bd25-d5a7da291314` w bazie wykryłem `**` (pozycja ~323), więc problem jest w treści, nie w samym CSS.
 
-## Rozwiązanie dwutorowe
+## Co robimy (naprawa “raz a dobrze”)
+Wprowadzimy 2 poprawki: (A) renderowanie dla istniejących treści + (B) źródło generowania, żeby nowe treści już nie miały gwiazdek.
 
-### Opcja A: Naprawić renderowanie (szybkie, natychmiastowe)
+---
 
-Zmienić logikę `parseContent` tak, aby **zawsze** konwertowała Markdown wewnątrz HTML:
+# A) Naprawa wyświetlania istniejących artykułów (frontend)
+## A1. Zastępujemy obecną logikę `parseContent` w `src/pages/BlinkPage.tsx`
+Zamiast `marked.parse(content)` dla wszystkiego, robimy:
+- jeśli to **czysty Markdown** → `marked.parse(...)` (ok)
+- jeśli to **HTML lub miks HTML+Markdown** → parsujemy HTML przez `DOMParser`, przechodzimy po **tekstowych węzłach** i na nich stosujemy `marked.parseInline(...)` (czyli Markdown inline zamieniamy na `<strong>`, `<em>` itp.) i podmieniamy te text-node’y na HTML
 
-```typescript
-const parseContent = (content: string): string => {
-  // Zawsze przetwórz przez marked - obsługuje zarówno czysty Markdown,
-  // jak i mieszany HTML+Markdown
-  return marked.parse(content, { async: false }) as string;
-};
-```
+Efekt: nawet gdy masz `<p>**Liverpool**</p>`, wynik stanie się `<p><strong>Liverpool</strong></p>`.
 
-Biblioteka `marked` jest w stanie przetwarzać HTML z Markdownem w środku - pozostawi tagi HTML bez zmian, ale skonwertuje `**bold**` na `<strong>`.
+## A2. Użyjemy tej samej normalizacji w edytorze admina
+Problem “w edytorze też widać gwiazdki” wynika z tego, że Tiptap dostaje HTML z tekstem `**...**` jako zwykły tekst.  
+Dlatego przed wstawieniem treści do edytora:
+- przy ładowaniu posta do formularza (useEffect w `src/pages/admin/PostEditor.tsx`) normalizujemy `post.content`
+- przy wypełnianiu treści z AI (w `handleAIExtract`) normalizujemy `extractedData.content` zanim `setValue("content", ...)`
 
-### Opcja B: Naprawić źródło (trwałe rozwiązanie)
+To sprawi, że w panelu administracyjnym gwiazdki znikną “od razu” (a przy zapisie edytor zapisze już czysty HTML).
 
-Zaktualizować prompt w edge function, aby AI generował **czysty HTML**:
+---
 
-```text
-FORMATOWANIE:
-- Używaj tagów HTML do formatowania tekstu
-- <strong>tekst</strong> dla pogrubienia (NIE **)
-- <em>tekst</em> dla kursywy (NIE *)
-- <p>...</p> dla akapitów
-- NIE używaj składni Markdown!
-```
+# B) Naprawa źródła (backend), żeby nowe artykuły już nie miały Markdown
+## B1. Zmieniamy funkcję backendową `supabase/functions/extract-article/index.ts` tak, aby wymuszała HTML nawet przy promptach z ustawień
+Dziś jest tak:
+- pobiera `article_content_prompt` z bazy
+- jeśli istnieje → używa go wprost (bez Twoich nowych zasad “nie używaj Markdown”)
 
-## Rekomendacja
+Zrobimy funkcję typu `enforceHtmlFormattingRules(promptFromDb)`:
+- jeśli prompt nie zawiera jasnych reguł HTML (np. brak `<strong>` / brak “NIE używaj Markdown”) → automatycznie **doklei** nasz blok “FORMATOWANIE (OBOWIĄZKOWE)” na końcu promptu
+- dzięki temu nawet jeśli w ustawieniach jest rozbudowany prompt SEO/Discover, to zawsze dojdzie twarda instrukcja “tylko HTML, bez **”.
 
-**Wykonać obie opcje**:
-1. Najpierw naprawić renderowanie - natychmiast naprawia istniejące artykuły
-2. Potem zaktualizować prompt - nowe artykuły będą w czystym HTML
+Opcjonalnie (ale polecam): po wygenerowaniu treści, jeśli nadal wykryjemy `**` / `*` → zalogujemy ostrzeżenie i (w razie potrzeby) dołożymy prostą korektę “ostatniej szansy” po stronie backendu (np. minimalna zamiana inline w tekście). To zabezpieczenie na wypadek “nieposłuszeństwa” modelu.
 
-## Zmiany w plikach
+## B2. (Opcjonalnie) Uaktualniamy wpis w `settings.article_content_prompt`
+Możemy:
+- albo zostawić go (bo B1 i tak wymusi HTML),
+- albo dodać w panelu admina przycisk “Wstaw rekomendowane FORMATOWANIE HTML do promptu”, który automatycznie dopisze sekcję – bez ręcznego grzebania.
 
-| Plik | Zmiana |
-|------|--------|
-| `src/pages/BlinkPage.tsx` | Uproszczenie `parseContent` - zawsze przez `marked` |
-| `supabase/functions/extract-article/index.ts` | Dodanie instrukcji formatowania HTML do promptu |
+---
 
-## Szczegóły techniczne
+# Test plan (konkretnie, żeby zakończyć temat)
+1) Test istniejącego posta (ten problematyczny):
+   - Otwórz w podglądzie/test: `/blink/6f8133c3-ecf1-4010-bd25-d5a7da291314`
+   - Sprawdź, czy fragment “Liverpool FC” jest już pogrubiony i nie ma `**`.
 
-### BlinkPage.tsx - nowa logika
+2) Test w panelu admina:
+   - Otwórz edycję tego posta.
+   - W polu edytora “Pełna treść artykułu” sprawdź, czy gwiazdki zniknęły.
+   - Kliknij “Pogrubienie” na fragmencie – upewnij się, że edytor działa normalnie (generuje `<strong>`).
 
-```typescript
-const parseContent = (content: string): string => {
-  if (!content) return "";
-  
-  // marked.parse() obsługuje:
-  // - Czysty Markdown: **bold** → <strong>bold</strong>
-  // - Czysty HTML: <p>text</p> → <p>text</p> (bez zmian)
-  // - Mieszany: <p>**bold**</p> → <p><strong>bold</strong></p>
-  return marked.parse(content, { async: false }) as string;
-};
-```
+3) Test generowania z linku WP:
+   - Wklej URL i kliknij “Generuj AI”.
+   - Sprawdź, czy wygenerowana treść w edytorze już od razu jest HTML (pogrubienia jako `<strong>`, bez `**`).
+   - Zapisz post i sprawdź jego publiczny widok.
 
-### extract-article/index.ts - zaktualizowany prompt
+4) Jeśli testujesz na domenie publicznej `daily-sport-blink.lovable.app`, upewnij się, że zmiany zostały opublikowane (inaczej zobaczysz stary kod).
 
-```typescript
-const DEFAULT_CONTENT_PROMPT = `Na podstawie oryginalnego artykułu napisz unikatową, skróconą wersję newsa sportowego w języku polskim.
+---
 
-ZASADY TREŚCI:
-- 300-500 słów
-- Prosty, angażujący język
-- Wszystkie kluczowe fakty z oryginału
-- Dynamiczny, dziennikarski ton
-- 3-5 akapitów (każdy 2-4 zdania)
-- Bez powtarzania tytułu na początku
+# Zakres zmian w plikach (do wdrożenia)
+- `src/pages/BlinkPage.tsx`
+  - zamiana `parseContent` na wersję “DOMParser + marked.parseInline dla text nodes”, z fallbackiem dla czystego Markdown
+- `src/pages/admin/PostEditor.tsx`
+  - normalizacja `post.content` przy `form.reset(...)`
+  - normalizacja `extractedData.content` przy `form.setValue("content", ...)`
+- `supabase/functions/extract-article/index.ts`
+  - dodanie “enforceHtmlFormattingRules” i używanie jej dla promptu z bazy
+  - (opcjonalnie) logika ostrzegania, jeśli model zwraca `**` mimo zakazu
 
-FORMATOWANIE (OBOWIĄZKOWE):
-- Używaj TYLKO tagów HTML, NIE składni Markdown!
-- <strong>tekst</strong> dla pogrubienia (NIE ** **)
-- <em>tekst</em> dla kursywy (NIE * *)
-- Każdy akapit otocz tagiem <p>...</p>
-- Oddzielaj akapity pustą linią dla czytelności`;
-```
+---
 
-## Efekt po naprawie
+# Ryzyka / uwagi
+- To jest treść renderowana przez `dangerouslySetInnerHTML`. Ponieważ treść jest tworzona przez redakcję/AI, ryzyko XSS jest głównie “wewnętrzne”, ale nadal warto pilnować, żeby nie dopuszczać niechcianych tagów (jeśli będziesz chciał, kolejnym krokiem może być sanitizacja HTML).
+- Normalizacja w edytorze zmienia wygląd treści “na wejściu”; faktyczna zmiana w bazie nastąpi po zapisaniu posta (co jest pożądane).
 
-| Sytuacja | Przed | Po |
-|----------|-------|-----|
-| Istniejące artykuły z `<p>**bold**</p>` | Gwiazdki widoczne | Tekst pogrubiony |
-| Nowe artykuły z edytora WYSIWYG | Działa | Działa (bez zmian) |
-| Nowe artykuły z AI | Mieszany format | Czysty HTML |
+Po wdrożeniu powyższego gwiazdki znikną:
+- natychmiast na stronie /blink (nawet dla starych postów),
+- w edytorze dla starych postów (a zapis utrwali czysty HTML),
+- oraz nowe generacje AI przestaną produkować Markdown (nawet jeśli prompt w ustawieniach był stary).
