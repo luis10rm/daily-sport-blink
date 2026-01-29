@@ -80,7 +80,7 @@ const AuthorEditor = () => {
         is_public: author.is_public,
         social_twitter: author.social_twitter || "",
         social_instagram: author.social_instagram || "",
-        linked_email: author.linked_email || "",
+        linked_email: author.email || "",
       });
     }
   }, [author, form, isCreating]);
@@ -99,7 +99,7 @@ const AuthorEditor = () => {
         is_public: values.is_public,
         social_twitter: values.social_twitter || null,
         social_instagram: values.social_instagram || null,
-        linked_email: values.linked_email || null,
+        email: values.linked_email || null, // mapped to email field for hooks
       };
 
       if (isCreating) {

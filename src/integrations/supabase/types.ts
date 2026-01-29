@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      author_emails: {
+        Row: {
+          author_id: string
+          created_at: string
+          email: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          email: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "author_emails_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: true
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "author_emails_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: true
+            referencedRelation: "authors_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       authors: {
         Row: {
           avatar_url: string | null
@@ -23,7 +62,6 @@ export type Database = {
           display_name: string
           id: string
           is_public: boolean | null
-          linked_email: string | null
           linked_user_id: string | null
           role_title: string | null
           slug: string
@@ -39,7 +77,6 @@ export type Database = {
           display_name: string
           id?: string
           is_public?: boolean | null
-          linked_email?: string | null
           linked_user_id?: string | null
           role_title?: string | null
           slug: string
@@ -55,7 +92,6 @@ export type Database = {
           display_name?: string
           id?: string
           is_public?: boolean | null
-          linked_email?: string | null
           linked_user_id?: string | null
           role_title?: string | null
           slug?: string
