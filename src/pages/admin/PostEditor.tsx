@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -59,9 +59,9 @@ const postSchema = z.object({
   image_url: z.string().refine((val) => !val || isValidUrl(val), {
     message: "Nieprawidłowy URL obrazka",
   }).optional(),
-  source_url: z.string().refine(isValidUrl, {
+  source_url: z.string().refine((val) => !val || isValidUrl(val), {
     message: "Nieprawidłowy URL źródła",
-  }),
+  }).optional().default(""),
   tags: z.string(),
   is_sponsored: z.boolean(),
   is_news_of_day: z.boolean(),
@@ -70,11 +70,22 @@ const postSchema = z.object({
 
 type PostFormData = z.infer<typeof postSchema>;
 
+interface PrefillData {
+  title?: string;
+  excerpt?: string;
+  content?: string;
+  tags?: string;
+}
+
 const PostEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const isEditing = !!id;
   const { user } = useAuth();
+
+  // Check for prefill data from navigation state (e.g., from daily summary generator)
+  const prefillData = (location.state as { prefill?: PrefillData })?.prefill;
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
   const { data: sportCategories, isLoading: isLoadingCategories } = useSportCategories();
@@ -103,6 +114,27 @@ const PostEditor = () => {
       published_at: getCurrentDateTime(),
     },
   });
+
+  // Apply prefill data when component mounts with prefill state
+  useEffect(() => {
+    if (prefillData && !isEditing) {
+      if (prefillData.title) form.setValue("title", prefillData.title);
+      if (prefillData.excerpt) form.setValue("excerpt", prefillData.excerpt);
+      if (prefillData.content) {
+        const normalizedContent = normalizeMarkdownInHtml(prefillData.content);
+        form.setValue("content", normalizedContent);
+      }
+      if (prefillData.tags) form.setValue("tags", prefillData.tags);
+      
+      // Find "other" category for summary posts
+      const otherCategory = sportCategories?.find((cat) => cat.slug === "other");
+      if (otherCategory) {
+        form.setValue("category_id", otherCategory.id);
+      }
+      
+      toast.info("Formularz wypełniony danymi z generatora podsumowania");
+    }
+  }, [prefillData, isEditing, sportCategories, form]);
 
   // Set default author to current user's author profile when creating new post
   useEffect(() => {
