@@ -6,6 +6,81 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// ============= SECURITY: Authentication & Authorization =============
+
+async function authenticateRequest(
+  req: Request,
+  requiredRoles: string[] = ["admin", "editor"]
+): Promise<{ user: any; error?: Response }> {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.error("Missing or invalid authorization header");
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Brak autoryzacji" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data, error: authError } = await supabase.auth.getClaims(token);
+
+  if (authError || !data?.claims) {
+    console.error("Invalid JWT token:", authError?.message);
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Nieprawidłowy token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  const userId = data.claims.sub;
+
+  // Check user roles
+  const { data: roles, error: rolesError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+
+  if (rolesError) {
+    console.error("Error fetching user roles:", rolesError.message);
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Błąd weryfikacji uprawnień" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  const userRoles = roles?.map((r) => r.role) || [];
+  const hasAccess = userRoles.some((role) => requiredRoles.includes(role));
+
+  if (!hasAccess) {
+    console.error(`User ${userId} lacks required roles: ${requiredRoles.join(", ")}`);
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Brak wymaganych uprawnień (wymagana rola: admin lub editor)" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  console.log(`User ${userId} authenticated with roles: ${userRoles.join(", ")}`);
+  return { user: { id: userId, roles: userRoles } };
+}
+
 const DEFAULT_SUMMARY_PROMPT = `Jesteś redaktorem sportowym Daily Sport Blink. Napisz profesjonalne podsumowanie dnia sportowego w języku polskim.
 
 DANE WEJŚCIOWE:
@@ -50,8 +125,12 @@ serve(async (req) => {
   }
 
   try {
+    // ============= SECURITY: Authenticate user =============
+    const { user, error: authError } = await authenticateRequest(req, ["admin", "editor"]);
+    if (authError) return authError;
+
     const { date } = await req.json();
-    
+
     if (!date) {
       return new Response(
         JSON.stringify({ error: "Date is required" }),
@@ -59,9 +138,9 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Generating daily summary for date: ${date}`);
+    console.log(`User ${user.id} generating daily summary for date: ${date}`);
 
-    // Initialize Supabase client
+    // Initialize Supabase client with service role for data access
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -119,7 +198,7 @@ serve(async (req) => {
     if (promptSetting?.value) {
       summaryPrompt = promptSetting.value;
       console.log("Using custom prompt from settings");
-      
+
       // Ensure HTML formatting rules are present
       if (!summaryPrompt.includes("<strong>") && !summaryPrompt.includes("NIE używaj Markdown")) {
         summaryPrompt += `
@@ -192,7 +271,7 @@ ${JSON.stringify(postsContext, null, 2)}`;
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error("AI API error:", aiResponse.status, errorText);
-      
+
       if (aiResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Zbyt wiele zapytań AI. Spróbuj ponownie za chwilę." }),
@@ -205,7 +284,7 @@ ${JSON.stringify(postsContext, null, 2)}`;
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
+
       return new Response(
         JSON.stringify({ error: "AI generation failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -228,7 +307,6 @@ ${JSON.stringify(postsContext, null, 2)}`;
     // Parse JSON from AI response
     let result;
     try {
-      // Try to extract JSON from the response (it might be wrapped in markdown code blocks)
       let jsonString = aiContent;
       const jsonMatch = aiContent.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch) {
