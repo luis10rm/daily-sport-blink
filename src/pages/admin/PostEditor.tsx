@@ -129,6 +129,9 @@ const PostEditor = () => {
       // Set internal source URL for AI-generated summary posts
       form.setValue("source_url", "https://daily-sport-blink.lovable.app/podsumowanie");
       
+      // Set unique daily summary image
+      form.setValue("image_url", "/images/categories/daily-summary.webp");
+      
       // Find "other" category for summary posts
       const otherCategory = sportCategories?.find((cat) => cat.slug === "other");
       if (otherCategory) {

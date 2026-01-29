@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ExternalLink, Sparkles } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
-import { getCategoryImage } from "@/config/categoryImages";
+import { getPostImage } from "@/config/categoryImages";
 import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
 
@@ -91,7 +91,12 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
         {/* Image area */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
           <img
-            src={getCategoryImage(categorySlug, imageUrl, sportCategory?.slug)}
+            src={getPostImage({
+              image_url: imageUrl,
+              source_url: sourceUrl,
+              tags,
+              sport_category: sportCategory,
+            })}
             alt={title}
             loading={loading}
             // @ts-ignore - fetchpriority is valid HTML but not in React types
