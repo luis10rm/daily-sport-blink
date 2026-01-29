@@ -1,108 +1,173 @@
 
+# Plan: Edytor tekstu z formatowaniem (WYSIWYG)
 
-# Plan: Poprawa formatowania tekstu na stronie BlinkPage
+## Obecny stan
 
-## Problem
+Edytor treści to zwykłe pole tekstowe (`<Textarea>`), które nie obsługuje żadnego formatowania. Treść jest zapisywana jako plain text i renderowana bezpośrednio na stronie.
 
-Obecnie treść artykułu jest wyświetlana jako ciągły blok tekstu bez wyraźnych separacji między akapitami, co utrudnia czytanie.
+## Proponowane rozwiązanie
 
-## Rozwiązanie
+Dodanie edytora WYSIWYG (What You See Is What You Get) z paskiem narzędzi do formatowania.
 
-### 1. Ulepszone dzielenie tekstu
+### Opcje techniczne
 
-Zmienię logikę parsowania treści, aby obsługiwać różne przypadki:
-- Podwójne entery (`\n\n`)
-- Pojedyncze entery (`\n`)
-- Bardzo długie akapity (automatyczne dzielenie co ~500 znaków przy kropce)
+| Biblioteka | Zalety | Wady |
+|------------|--------|------|
+| **Tiptap** (rekomendowany) | Lekki, rozszerzalny, React-native, Tailwind-friendly | Wymaga konfiguracji |
+| **React Quill** | Prosty w użyciu, gotowy toolbar | Cięższy, mniej customizacji |
+| **Lexical** (Facebook) | Bardzo wydajny | Stroma krzywa uczenia |
 
-### 2. Lepsze stylowanie akapitów
+**Moja rekomendacja: Tiptap** - najlepsze dopasowanie do stosu technologicznego projektu (React + Tailwind).
+
+### Co będzie dostępne w edytorze?
 
 ```text
-OBECNIE:
 ┌─────────────────────────────────────────────────────────────┐
-│ Młodzieżowy turniej „Live Adventure Future Stars" w        │
-│ Zabrzu, zamiast radosnej sportowej rywalizacji, stał się   │
-│ areną skandalu o podłożu politycznym. Dwa ukraińskie       │
-│ kluby – LNZ Czerkasy oraz Ruch Lwów – wysunęły bardzo      │
-│ poważne oskarżenia wobec młodych zawodników i sztabu       │
-│ szkoleniowego Rakowa Częstochowa. Według relacji           │
-│ przedstawicieli ukraińskich drużyn, podczas meczów...      │
-│ Władze Rakowa Częstochowa kategorycznie zaprzeczają tym    │
-│ doniesieniom, nazywając je szkalowaniem klubu i jego       │
-│ wychowanków... (cały tekst bez przerw)                     │
-└─────────────────────────────────────────────────────────────┘
-
-PO ZMIANACH:
-┌─────────────────────────────────────────────────────────────┐
-│ Młodzieżowy turniej „Live Adventure Future Stars" w        │
-│ Zabrzu, zamiast radosnej sportowej rywalizacji, stał się   │
-│ areną skandalu o podłożu politycznym.                      │
+│ [B] [I] [U] [S] │ [H2] [H3] │ [•] [1.] │ [Link] [Cytat]    │
+├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│ Dwa ukraińskie kluby – LNZ Czerkasy oraz Ruch Lwów –       │
-│ wysunęły bardzo poważne oskarżenia wobec młodych           │
-│ zawodników i sztabu szkoleniowego Rakowa Częstochowa.      │
+│ Tutaj piszesz treść artykułu z **pogrubieniem**,           │
+│ *kursywą* i innymi formatami...                             │
 │                                                             │
-│ Według relacji przedstawicieli ukraińskich drużyn,         │
-│ podczas meczów dochodziło do skandalicznych zaczepek       │
-│ słownych. Ukraińcy twierdzą, że polscy gracze...           │
+│ > Cytat z wypowiedzi trenera                                │
 │                                                             │
-│ Władze Rakowa Częstochowa kategorycznie zaprzeczają        │
-│ tym doniesieniom, nazywając je szkalowaniem klubu          │
-│ i jego wychowanków.                                         │
+│ • Lista punktowana                                          │
+│ • Drugi punkt                                               │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 3. Zmiany w BlinkPage.tsx
+### Obsługiwane formaty
 
-Zmienię sekcję renderowania treści:
+| Format | Skrót | Tag HTML |
+|--------|-------|----------|
+| Pogrubienie | Ctrl+B | `<strong>` |
+| Kursywa | Ctrl+I | `<em>` |
+| Podkreślenie | Ctrl+U | `<u>` |
+| Przekreślenie | - | `<s>` |
+| Nagłówek H2 | - | `<h2>` |
+| Nagłówek H3 | - | `<h3>` |
+| Lista punktowana | - | `<ul><li>` |
+| Lista numerowana | - | `<ol><li>` |
+| Cytat | - | `<blockquote>` |
+| Link | Ctrl+K | `<a href="...">` |
 
-```tsx
-{/* Content - ULEPSZONE FORMATOWANIE */}
-<div className="prose prose-lg dark:prose-invert max-w-none mb-8">
-  {post.content ? (
-    post.content
-      .split(/\n+/)  // Dziel przez dowolną liczbę enterów
-      .filter(p => p.trim().length > 0)  // Usuń puste linie
-      .map((paragraph, index) => (
-        <p 
-          key={index} 
-          className="mb-4 leading-relaxed text-foreground/90"
-        >
-          {paragraph.trim()}
-        </p>
-      ))
-  ) : (
-    <p className="text-lg leading-relaxed">{post.excerpt}</p>
-  )}
-</div>
+---
+
+## Zmiany techniczne
+
+### 1. Nowa zależność
+
+```bash
+npm install @tiptap/react @tiptap/starter-kit @tiptap/extension-link @tiptap/extension-underline
 ```
 
-### 4. Dodatkowo: Drop cap (pierwsza litera)
+### 2. Nowy komponent: RichTextEditor
 
-Mogę też dodać elegancką dużą pierwszą literę w stylu gazetowym:
-
-```tsx
-{paragraphs.map((paragraph, index) => (
-  <p 
-    key={index} 
-    className={cn(
-      "mb-4 leading-relaxed text-foreground/90",
-      index === 0 && "first-letter:text-5xl first-letter:font-bold first-letter:float-left first-letter:mr-2 first-letter:text-primary"
-    )}
-  >
-    {paragraph.trim()}
-  </p>
-))}
+```text
+src/components/admin/RichTextEditor.tsx
 ```
 
-### 5. Aktualizacja promptu AI
+Komponent z:
+- Paskiem narzędzi (toolbar)
+- Edytorem WYSIWYG
+- Eksportem do HTML
 
-Dodam wskazówkę do `article_content_prompt`, aby AI generowała tekst z wyraźnymi akapitami oddzielonymi pustymi liniami.
+### 3. Aktualizacja PostEditor
 
-## Zmiany w plikach
+Zamiana:
+```tsx
+// BYŁO
+<Textarea
+  placeholder="Pełna treść artykułu..."
+  rows={10}
+  {...field}
+/>
 
-| Plik | Zmiana |
-|------|--------|
-| `src/pages/BlinkPage.tsx` | Ulepszone parsowanie i stylowanie akapitów + opcjonalny drop cap |
-| `supabase/functions/extract-article/index.ts` | Instrukcja w prompcie o formatowaniu akapitów |
+// BĘDZIE
+<RichTextEditor
+  content={field.value}
+  onChange={field.onChange}
+/>
+```
 
+### 4. Aktualizacja BlinkPage
+
+Zmiana renderowania treści:
+```tsx
+// BYŁO - plain text split
+{post.content.split(/\n+/).map((p, i) => <p key={i}>{p}</p>)}
+
+// BĘDZIE - HTML rendering
+<div 
+  className="prose prose-lg dark:prose-invert"
+  dangerouslySetInnerHTML={{ __html: post.content }}
+/>
+```
+
+### 5. Kompatybilność wsteczna
+
+Wykrywanie formatu treści:
+- Jeśli treść zawiera tagi HTML → renderuj jako HTML
+- Jeśli plain text → zachowaj obecne dzielenie na akapity
+
+```tsx
+const isHtml = (content: string) => /<[^>]+>/.test(content);
+
+{isHtml(post.content) ? (
+  <div dangerouslySetInnerHTML={{ __html: post.content }} />
+) : (
+  // Obecna logika z split
+)}
+```
+
+---
+
+## Wygląd edytora (mockup)
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ Pełna treść artykułu                                        │
+├─────────────────────────────────────────────────────────────┤
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ [B] [I] [U] [~S~] │ [H2] [H3] │ [•] [1.] │ [🔗] [❝]    │ │
+│ ├─────────────────────────────────────────────────────────┤ │
+│ │                                                         │ │
+│ │ Młodzieżowy turniej „Live Adventure Future Stars" w    │ │
+│ │ Zabrzu stał się areną **skandalu politycznego**.       │ │
+│ │                                                         │ │
+│ │ Dwa ukraińskie kluby wysunęły *poważne oskarżenia*     │ │
+│ │ wobec młodych zawodników Rakowa Częstochowa:           │ │
+│ │                                                         │ │
+│ │ • Zaczepki słowne podczas meczów                       │ │
+│ │ • Skandowanie haseł politycznych                        │ │
+│ │                                                         │ │
+│ │ > "To absolutnie niedopuszczalne zachowanie"           │ │
+│ │ > — rzecznik LNZ Czerkasy                              │ │
+│ │                                                         │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ Ta treść będzie wyświetlana na dedykowanej stronie...       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Pliki do zmiany/utworzenia
+
+| Plik | Operacja | Opis |
+|------|----------|------|
+| `package.json` | MODYFIKACJA | Dodanie zależności Tiptap |
+| `src/components/admin/RichTextEditor.tsx` | NOWY | Komponent edytora WYSIWYG |
+| `src/pages/admin/PostEditor.tsx` | MODYFIKACJA | Użycie RichTextEditor zamiast Textarea |
+| `src/pages/BlinkPage.tsx` | MODYFIKACJA | Obsługa renderowania HTML z zachowaniem kompatybilności wstecznej |
+
+---
+
+## Korzyści
+
+| Aspekt | Przed | Po |
+|--------|-------|-----|
+| Formatowanie | Brak | Pogrubienie, kursywa, listy, cytaty, linki |
+| Doświadczenie redaktora | Tekst plain | Edytor wizualny WYSIWYG |
+| Wygląd artykułów | Monotonne akapity | Bogato sformatowana treść |
+| SEO | Tylko `<p>` | Nagłówki `<h2>`, `<h3>`, semantyczny HTML |
