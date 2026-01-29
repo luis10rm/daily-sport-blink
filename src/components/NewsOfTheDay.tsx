@@ -1,7 +1,7 @@
 import { ExternalLink, Trophy } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
-import { getCategoryImage } from "@/config/categoryImages";
+import { getPostImage } from "@/config/categoryImages";
 import { Post } from "@/hooks/usePosts";
 import { cn, getSourceName } from "@/lib/utils";
 
@@ -35,7 +35,12 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
         {/* Image area */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted md:aspect-auto md:w-1/2">
           <img
-            src={getCategoryImage(post.sport_category?.slug, post.image_url || undefined, post.sport_category?.slug)}
+            src={getPostImage({
+              image_url: post.image_url,
+              source_url: post.source_url,
+              tags: post.tags,
+              sport_category: post.sport_category,
+            })}
             alt={post.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
