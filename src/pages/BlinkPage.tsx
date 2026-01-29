@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { ExternalLink, Calendar, Tag, ArrowLeft } from "lucide-react";
+import { marked } from "marked";
 import { Header } from "@/components/Header";
 import { SEO } from "@/components/SEO";
 import { AuthorCard } from "@/components/AuthorCard";
@@ -11,6 +12,25 @@ import { getSourceName, generateSlug } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+// Content format detection and parsing
+const isHtml = (text: string) => /<[^>]+>/.test(text);
+const isMarkdown = (text: string) => /\*\*[^*]+\*\*|\*[^*]+\*|^#{1,6}\s|^[-*]\s/m.test(text);
+
+const parseContent = (content: string): string => {
+  if (isHtml(content)) {
+    return content; // Already HTML from WYSIWYG editor
+  }
+  if (isMarkdown(content)) {
+    return marked.parse(content, { async: false }) as string; // Convert Markdown to HTML
+  }
+  // Fallback - plain text, wrap in paragraphs
+  return content
+    .split(/\n+/)
+    .filter(p => p.trim())
+    .map(p => `<p>${p}</p>`)
+    .join("");
+};
 
 const SITE_URL = "https://daily-sport-blink.lovable.app";
 
@@ -157,29 +177,10 @@ const BlinkPage = () => {
           {/* Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
             {post.content ? (
-              // Check if content contains HTML tags (from rich text editor)
-              /<[^>]+>/.test(post.content) ? (
-                <div 
-                  className="article-content"
-                  dangerouslySetInnerHTML={{ __html: post.content }} 
-                />
-              ) : (
-                // Fallback for plain text content (legacy posts)
-                post.content
-                  .split(/\n+/)
-                  .filter(p => p.trim().length > 0)
-                  .map((paragraph, index) => (
-                    <p 
-                      key={index} 
-                      className={cn(
-                        "mb-4 leading-relaxed text-foreground/90",
-                        index === 0 && "first-letter:text-5xl first-letter:font-bold first-letter:float-left first-letter:mr-2 first-letter:text-primary"
-                      )}
-                    >
-                      {paragraph.trim()}
-                    </p>
-                  ))
-              )
+              <div 
+                className="article-content"
+                dangerouslySetInnerHTML={{ __html: parseContent(post.content) }} 
+              />
             ) : (
               <p className="text-lg leading-relaxed">{post.excerpt}</p>
             )}
