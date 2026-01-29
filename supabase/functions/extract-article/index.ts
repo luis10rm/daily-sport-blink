@@ -143,7 +143,28 @@ serve(async (req) => {
     ]);
 
     const extractionPrompt = extractionPromptResult.data?.value || DEFAULT_EXTRACTION_PROMPT;
-    const contentPrompt = contentPromptResult.data?.value || DEFAULT_CONTENT_PROMPT;
+    
+    // For content prompt, always enforce HTML formatting rules
+    let contentPrompt = contentPromptResult.data?.value || DEFAULT_CONTENT_PROMPT;
+    
+    // If custom prompt doesn't mention HTML formatting rules, append them
+    const hasHtmlRules = contentPrompt.includes("<strong>") || 
+                         contentPrompt.includes("NIE używaj Markdown") ||
+                         contentPrompt.includes("NIE składni Markdown") ||
+                         contentPrompt.includes("TYLKO tagów HTML");
+    
+    if (!hasHtmlRules) {
+      const htmlFormattingRules = `
+
+FORMATOWANIE (OBOWIĄZKOWE):
+- Używaj TYLKO tagów HTML, NIE składni Markdown!
+- <strong>tekst</strong> dla pogrubienia (NIE ** **)
+- <em>tekst</em> dla kursywy (NIE * *)
+- Każdy akapit otocz tagiem <p>...</p>`;
+      
+      contentPrompt = contentPrompt + htmlFormattingRules;
+      console.log("Appended HTML formatting rules to content prompt");
+    }
 
     console.log("Using prompts from settings");
 
@@ -279,6 +300,15 @@ serve(async (req) => {
         const contentResult = JSON.parse(contentToolCall.function.arguments);
         generatedContent = contentResult.content || "";
         console.log("Generated content length:", generatedContent.length);
+        
+        // Safety check: if AI still used Markdown despite instructions, convert it
+        if (generatedContent.includes("**")) {
+          console.warn("AI used Markdown despite HTML instructions, converting...");
+          // Convert **text** to <strong>text</strong>
+          generatedContent = generatedContent.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+          generatedContent = generatedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+          generatedContent = generatedContent.replace(/(?<![a-zA-Z0-9])\*([^*]+)\*(?![a-zA-Z0-9])/g, '<em>$1</em>');
+        }
       }
     } else {
       console.error("Content generation failed, continuing without content");

@@ -12,15 +12,17 @@ import { getSourceName, generateSlug } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 
 // Parse content - handles HTML, Markdown, and mixed formats
 const parseContent = (content: string): string => {
   if (!content) return "";
-  // marked.parse() handles all formats correctly:
-  // - Pure HTML: preserved as-is
-  // - Pure Markdown: converted to HTML
-  // - Mixed (e.g. <p>**bold**</p>): HTML preserved, Markdown converted
-  return marked.parse(content, { async: false }) as string;
+  
+  // First normalize any Markdown patterns inside HTML (e.g. <p>**bold**</p>)
+  const normalized = normalizeMarkdownInHtml(content);
+  
+  // Then parse through marked for any remaining pure Markdown
+  return marked.parse(normalized, { async: false }) as string;
 };
 
 const SITE_URL = "https://daily-sport-blink.lovable.app";
