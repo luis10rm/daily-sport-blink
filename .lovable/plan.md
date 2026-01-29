@@ -1,224 +1,127 @@
 
-# Moduł: AI Podsumowanie Dnia Sportowego
+# Unikalna grafika dla artykułów "Podsumowanie Dnia"
 
 ## Cel
-Stworzenie funkcji w panelu admina, która jednym kliknięciem generuje profesjonalny, długi artykuł SEO podsumowujący wszystkie newsy opublikowane danego dnia.
+Artykuły z podsumowaniem dnia powinny mieć charakterystyczną, wyróżniającą się grafikę - inną niż standardowe grafiki kategorii sportowych.
 
 ---
 
-## Architektura rozwiązania
+## Rozwiązanie
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    PANEL ADMINA (Dashboard)                      │
-│  ┌─────────────────────────────────────────────────────────────┐ │
-│  │  📊 Statystyki dnia   │   🔄 Generuj podsumowanie dnia      │ │
-│  └─────────────────────────────────────────────────────────────┘ │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              EDGE FUNCTION: generate-daily-summary               │
-│  1. Pobierz wszystkie posty z wybranego dnia                    │
-│  2. Pogrupuj po kategoriach                                     │
-│  3. Wyślij do Lovable AI (Gemini Pro) z promptem SEO            │
-│  4. Zwróć: title, excerpt, content (1500-2500 słów)            │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   NOWY POST (typ: summary)                       │
-│  - Automatyczny tytuł: "Sportowe podsumowanie dnia - DD.MM.YYYY"│
-│  - Długa treść SEO z odnośnikami do oryginalnych newsów         │
-│  - Kategoria: "other" (lub nowa "podsumowania")                 │
-│  - Tagi: dyscypliny + "podsumowanie dnia"                       │
-└─────────────────────────────────────────────────────────────────┘
-```
+### 1. Nowa grafika w projekcie
+Dodamy nową grafikę `/images/categories/daily-summary.webp` (lub podobną) - wyróżniającą się wizualnie, np.:
+- Kolaż sportowy / mozaika
+- Gradient z ikoną kalendarza/zegara
+- Stylizowany napis "Podsumowanie dnia"
 
----
+**Opcja A**: Użyjesz własnej grafiki (prześlij plik, a ja go dodam do projektu)  
+**Opcja B**: Wygeneruję grafikę za pomocą AI (Gemini Image)
 
-## Funkcjonalności
+### 2. Wykrywanie artykułu "podsumowanie dnia"
+Posty z podsumowaniem mają charakterystyczną cechę:
+- `source_url` = `https://daily-sport-blink.lovable.app/podsumowanie`
+- lub tag `"podsumowanie dnia"` w tablicy `tags`
 
-### 1. Przycisk w Dashboardzie
-- Nowy przycisk "Generuj podsumowanie dnia" na głównym dashboardzie admina
-- Możliwość wyboru daty (domyślnie: dzisiaj)
-- Podgląd liczby dostępnych artykułów przed generowaniem
-- Loading state podczas generowania
+Wykorzystamy to do automatycznego przypisania unikalnej grafiki.
 
-### 2. Edge Function `generate-daily-summary`
-Nowa funkcja backendowa która:
-- Pobiera wszystkie posty z wybranej daty z bazy
-- Grupuje je wg kategorii sportowej
-- Tworzy rozbudowany prompt dla AI z kontekstem SEO
-- Generuje artykuł 1500-2500 słów w formacie HTML
-- Opcjonalnie: dodaje wewnętrzne linki do oryginalnych artykułów
+### 3. Aktualizacja logiki obrazków
 
-### 3. Konfigurowalny prompt (Ustawienia)
-Nowy wpis w ustawieniach: `daily_summary_prompt`
-- Edytowalny przez admina
-- Domyślny prompt zoptymalizowany pod SEO
-- Zasady stylistyczne, długość, struktura
-
-### 4. Automatyczne tworzenie posta
-Po wygenerowaniu:
-- Otwiera PostEditor z wypełnionymi danymi
-- Admin może przejrzeć, zedytować i opublikować
-- Lub: automatycznie zapisuje jako "draft" do późniejszej edycji
-
----
-
-## Struktura generowanego artykułu
-
-```text
-# [Tytuł SEO - np. "Piłka, F1 i MMA - Sportowe podsumowanie 29 stycznia 2026"]
-
-## Wprowadzenie (1 akapit)
-Krótkie powitanie i zapowiedź najważniejszych wydarzeń dnia.
-
-## Piłka nożna (sekcja per kategoria)
-Streszczenie 2-5 najważniejszych newsów z tej kategorii.
-Wewnętrzne linki do oryginalnych artykułów.
-
-## Formuła 1
-...
-
-## MMA
-...
-
-## Podsumowanie
-Krótka refleksja, zapowiedź kolejnego dnia.
-
----
-*Artykuł wygenerowany automatycznie na podstawie [X] newsów z dnia DD.MM.YYYY*
-```
-
----
-
-## Zmiany w plikach
-
-| Plik | Zmiana |
-|------|--------|
-| `supabase/functions/generate-daily-summary/index.ts` | **NOWY** - edge function do generowania podsumowania |
-| `src/hooks/useSettings.ts` | Dodanie `useGenerateDailySummary` mutation |
-| `src/pages/admin/Dashboard.tsx` | Dodanie przycisku i logiki generowania |
-| `src/pages/admin/Settings.tsx` | Sekcja konfiguracji promptu podsumowania |
-| `supabase/config.toml` | Rejestracja nowej funkcji |
-
----
-
-## Szczegóły techniczne
-
-### Edge Function - główna logika
-
+#### Plik: `src/config/categoryImages.ts`
 ```typescript
-// supabase/functions/generate-daily-summary/index.ts
+export const categoryDefaultImages: Record<string, string> = {
+  football: "/images/categories/football.webp",
+  basketball: "/images/categories/basketball.webp",
+  // ... inne kategorie
+  "daily-summary": "/images/categories/daily-summary.webp", // NOWA
+  other: "/images/categories/other.webp",
+  default: "/images/categories/other.webp",
+};
 
-// 1. Pobierz posty z wybranej daty
-const { data: posts } = await supabase
-  .from("posts")
-  .select("id, title, excerpt, content, sport_category(name)")
-  .gte("published_at", startOfDay)
-  .lte("published_at", endOfDay);
-
-// 2. Przygotuj kontekst dla AI
-const postsContext = posts.map(p => ({
-  title: p.title,
-  excerpt: p.excerpt,
-  category: p.sport_category?.name,
-  id: p.id // do linków wewnętrznych
-}));
-
-// 3. Wywołaj Lovable AI z rozbudowanym promptem
-const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-  body: JSON.stringify({
-    model: "google/gemini-2.5-pro", // mocniejszy model dla długiej treści
-    messages: [
-      { role: "system", content: summaryPrompt },
-      { role: "user", content: JSON.stringify(postsContext) }
-    ]
-  })
-});
-
-// 4. Zwróć wygenerowany artykuł
-return { title, excerpt, content, suggested_tags };
-```
-
-### Domyślny prompt SEO
-
-```text
-Jesteś redaktorem sportowym Daily Sport Blink. Napisz profesjonalne podsumowanie dnia sportowego.
-
-DANE WEJŚCIOWE:
-Lista newsów opublikowanych dziś (JSON z: title, excerpt, category, id).
-
-WYMAGANIA TREŚCI:
-- 1500-2500 słów
-- Podziel na sekcje wg kategorii sportowych (H2)
-- Każda sekcja: 2-4 akapity streszczające newsy
-- Dodaj kontekst, analizę i opinie eksperta
-- Ton: profesjonalny, angażujący, dziennikarski
-- Na końcu: krótkie podsumowanie i zapowiedź
-
-SEO:
-- Tytuł: max 60 znaków, zawiera datę i sport
-- Meta description (excerpt): max 155 znaków
-- Naturalne użycie słów kluczowych
-- Wewnętrzne linki: /blink/{id} dla każdego wspomnianego newsa
-
-FORMATOWANIE:
-- HTML: <h2>, <p>, <strong>, <a href="/blink/ID">
-- NIE używaj Markdown!
-```
-
-### Dashboard UI
-
-```tsx
-// W Dashboard.tsx
-const [isGenerating, setIsGenerating] = useState(false);
-const [selectedDate, setSelectedDate] = useState(new Date());
-const generateSummary = useGenerateDailySummary();
-
-const handleGenerate = async () => {
-  setIsGenerating(true);
-  const result = await generateSummary.mutateAsync(selectedDate);
-  // Przekieruj do /admin/posts/new z wypełnionymi danymi
-  navigate("/admin/posts/new", { 
-    state: { 
-      prefill: result,
-      isSummary: true 
-    }
-  });
+// Nowa funkcja lub rozszerzenie istniejącej
+export const getPostImage = (
+  post: {
+    image_url?: string | null;
+    source_url?: string;
+    tags?: string[] | null;
+    sport_category?: { slug: string } | null;
+  }
+): string => {
+  // 1. Jeśli ma własny obrazek - użyj go
+  if (post.image_url) return post.image_url;
+  
+  // 2. Sprawdź czy to podsumowanie dnia
+  const isSummary = 
+    post.source_url?.includes("/podsumowanie") ||
+    post.tags?.includes("podsumowanie dnia");
+  
+  if (isSummary) {
+    return categoryDefaultImages["daily-summary"];
+  }
+  
+  // 3. Domyślna grafika kategorii
+  const slug = post.sport_category?.slug || "other";
+  return categoryDefaultImages[slug] || categoryDefaultImages.other;
 };
 ```
 
+### 4. Aktualizacja komponentów używających obrazków
+
+#### `src/components/NewsCard.tsx`
+Zmiana z:
+```tsx
+src={getCategoryImage(categorySlug, imageUrl, sportCategory?.slug)}
+```
+Na:
+```tsx
+src={getPostImage({ 
+  image_url: imageUrl, 
+  source_url: sourceUrl,
+  tags,
+  sport_category: sportCategory 
+})}
+```
+
+Trzeba dodać `sourceUrl` i `tags` do wywołania.
+
+#### `src/components/NewsOfTheDay.tsx` (jeśli istnieje)
+Analogiczna zmiana.
+
+### 5. Automatyczne ustawienie grafiki w PostEditor
+Przy generowaniu podsumowania (prefill) możemy od razu ustawić `image_url` na grafikę podsumowania:
+
+```typescript
+// W useEffect dla prefillData
+if (prefillData) {
+  // ... existing code
+  form.setValue("image_url", "/images/categories/daily-summary.webp");
+}
+```
+
 ---
 
-## Korzyści SEO
+## Zakres zmian
 
-1. **Długa forma** - Google preferuje treści 1500+ słów
-2. **Wewnętrzne linkowanie** - wzmacnia strukturę serwisu
-3. **Regularna publikacja** - sygnał aktywności
-4. **Słowa kluczowe** - naturalne pokrycie wielu fraz
-5. **Unikalność** - każdy dzień = unikatowa treść
-
----
-
-## Opcjonalne rozszerzenia (na przyszłość)
-
-1. **Automatyczne planowanie** - CRON o 23:00 generuje draft
-2. **Podsumowanie tygodniowe** - większy artykuł raz w tygodniu
-3. **Statystyki w artykule** - ile newsów, najpopularniejsze kategorie
-4. **Obrazek tytułowy** - kolaż z obrazków dnia (AI/Canvas)
-5. **Newsletter** - wysyłka podsumowania do subskrybentów
+| Plik | Zmiana |
+|------|--------|
+| `public/images/categories/daily-summary.webp` | **NOWY** - unikalna grafika |
+| `src/config/categoryImages.ts` | Dodanie `daily-summary` + funkcja `getPostImage()` |
+| `src/components/NewsCard.tsx` | Użycie `getPostImage()` zamiast `getCategoryImage()` |
+| `src/pages/admin/PostEditor.tsx` | Auto-ustawienie grafiki przy prefill podsumowania |
 
 ---
 
-## Estymowany czas wdrożenia
+## Pytanie do Ciebie
 
-| Etap | Czas |
-|------|------|
-| Edge function | ~20 min |
-| Hook + Dashboard UI | ~15 min |
-| Ustawienia promptu | ~10 min |
-| Testy i poprawki | ~15 min |
-| **Razem** | ~1 godzina |
+Wolisz:
+1. **Własna grafika** - prześlij plik, a ja go dodam
+2. **Wygenerowana przez AI** - opiszesz styl, a ja wygeneruję grafikę przez Gemini Image
+3. **Placeholder** - na razie użyjemy prostego gradientu/placeholder, a grafikę dodasz później
+
+---
+
+## Efekt końcowy
+
+- Artykuły "Podsumowanie dnia" automatycznie wyświetlają unikalną grafikę
+- Wyróżniają się wizualnie na liście newsów
+- Redaktor może nadal nadpisać grafikę własnym obrazkiem w edytorze
+- System działa automatycznie - bez dodatkowej pracy przy każdym podsumowaniu
