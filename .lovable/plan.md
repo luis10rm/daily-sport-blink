@@ -1,48 +1,91 @@
 
-# Plan: Naprawa formatowania tekstu w edytorze i podglądzie
+
+# Plan: Konwersja Markdown do HTML przy wyświetlaniu artykułów
 
 ## Zidentyfikowany problem
 
-Plugin `@tailwindcss/typography` jest zainstalowany w projekcie, ale **nie został dodany do konfiguracji Tailwind CSS**. Bez tego pluginu klasy `prose`, `prose-sm`, `prose-lg` nie mają żadnych stylów CSS.
+Treści generowane przez AI używają składni Markdown (`**pogrubienie**`, `*kursywa*`), ale strona BlinkPage nie rozpoznaje tego formatu i wyświetla gwiazdki dosłownie.
 
 ```text
-OBECNY STAN tailwind.config.ts:
+OBECNY STAN:
 ┌─────────────────────────────────────────────────────────────┐
-│ plugins: [require("tailwindcss-animate")]                   │
+│ AI generuje: **Liverpool FC** wygrał mecz                   │
 │                                                             │
-│ ❌ Brak: @tailwindcss/typography                            │
+│ Strona wyświetla: **Liverpool FC** wygrał mecz              │
+│                   ↑↑ gwiazdki widoczne ↑↑                   │
+└─────────────────────────────────────────────────────────────┘
+
+PO NAPRAWIE:
+┌─────────────────────────────────────────────────────────────┐
+│ AI generuje: **Liverpool FC** wygrał mecz                   │
+│                                                             │
+│ Strona wyświetla: Liverpool FC wygrał mecz                  │
+│                   ↑↑ pogrubienie ↑↑                         │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## Rozwiązanie
 
-Dodanie pluginu `@tailwindcss/typography` do konfiguracji Tailwind.
+Dodanie konwersji Markdown do HTML przy użyciu biblioteki `marked` (lekka, popularny parser Markdown).
 
-## Zmiana w pliku
+## Zmiany w plikach
 
-### `tailwind.config.ts` (linia 103)
+### 1. Nowa zależność
 
-```typescript
-// BYŁO:
-plugins: [require("tailwindcss-animate")],
-
-// BĘDZIE:
-plugins: [
-  require("tailwindcss-animate"),
-  require("@tailwindcss/typography"),
-],
+```bash
+npm install marked
 ```
 
-## Efekt po naprawie
+### 2. Aktualizacja BlinkPage.tsx
 
-| Miejsce | Przed | Po |
-|---------|-------|-----|
-| Edytor WYSIWYG (admin) | Tekst bez formatowania | Pogrubienie, kursywa, nagłówki widoczne |
-| Strona /blink/:id | Tekst bez stylów | Pełne formatowanie HTML z klasą `prose` |
+Dodanie funkcji konwertującej Markdown do HTML:
 
-## Uwaga techniczna
+```tsx
+import { marked } from 'marked';
 
-Po tej zmianie:
-- Klasa `prose prose-sm` w edytorze będzie działać
-- Klasa `prose prose-lg dark:prose-invert` na stronie /blink/ będzie działać
-- Formatowanie (pogrubienie, kursywa, listy, cytaty, linki) będzie widoczne zarówno w edytorze, jak i na stronie publicznej
+// Funkcja wykrywająca format treści
+const isHtml = (text: string) => /<[^>]+>/.test(text);
+const isMarkdown = (text: string) => /\*\*[^*]+\*\*|\*[^*]+\*|^#{1,6}\s|^[-*]\s|\n\n/.test(text);
+
+// Konwersja Markdown do HTML
+const parseContent = (content: string): string => {
+  if (isHtml(content)) {
+    return content; // Już HTML
+  }
+  if (isMarkdown(content)) {
+    return marked.parse(content); // Konwertuj Markdown
+  }
+  // Fallback - plain text, wrap w <p>
+  return content.split(/\n+/)
+    .filter(p => p.trim())
+    .map(p => `<p>${p}</p>`)
+    .join('');
+};
+```
+
+## Logika wykrywania formatu
+
+| Format | Wzorzec | Obsługa |
+|--------|---------|---------|
+| HTML | `<p>`, `<strong>`, etc. | Renderuj bezpośrednio |
+| Markdown | `**bold**`, `*italic*`, `##` | Konwertuj przez `marked` |
+| Plain text | Brak formatowania | Dziel na akapity, wrap w `<p>` |
+
+## Korzyści
+
+- Stare artykuły z Markdown będą wyświetlane poprawnie
+- Nowe artykuły z edytora WYSIWYG (HTML) nadal działają
+- Przyszłe artykuły generowane przez AI będą automatycznie konwertowane
+
+## Alternatywna opcja (bez nowej biblioteki)
+
+Możemy też zaktualizować prompt AI, aby generował HTML zamiast Markdown:
+
+```text
+WAŻNE: Używaj tagów HTML do formatowania:
+- <strong>tekst</strong> dla pogrubienia (nie **)
+- <em>tekst</em> dla kursywy (nie *)
+```
+
+Jednak biblioteka `marked` jest bardziej elastyczna i obsłuży wszystkie istniejące artykuły.
+
