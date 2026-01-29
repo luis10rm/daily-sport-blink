@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export interface Author {
+// Public author interface (from authors_public view - no sensitive fields)
+export interface PublicAuthor {
   id: string;
   slug: string;
   display_name: string;
@@ -13,10 +14,14 @@ export interface Author {
   is_public: boolean;
   social_twitter: string | null;
   social_instagram: string | null;
-  linked_user_id: string | null;
-  linked_email: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// Full author interface (for admin - includes sensitive fields)
+export interface Author extends PublicAuthor {
+  linked_user_id: string | null;
+  linked_email: string | null;
 }
 
 export interface AuthorCreateInput {
@@ -47,37 +52,39 @@ export interface AuthorUpdateInput {
   linked_email?: string | null;
 }
 
-// Fetch all PUBLIC authors for public page
+// Fetch all PUBLIC authors for public page (uses secure view without sensitive fields)
 export const usePublicAuthors = () => {
   return useQuery({
     queryKey: ["public-authors"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("authors")
-        .select("*")
-        .eq("is_public", true)
-        .order("display_name", { ascending: true });
+        .from("authors_public" as any)
+        .select("*");
 
       if (error) throw error;
-      return data as Author[];
+      
+      // Sort and return with correct type
+      const authors = (data as unknown as PublicAuthor[]) || [];
+      return authors.sort((a, b) => a.display_name.localeCompare(b.display_name));
     },
   });
 };
 
-// Fetch public author by slug
+// Fetch public author by slug (uses secure view without sensitive fields)
 export const useAuthor = (slug: string) => {
   return useQuery({
     queryKey: ["author", slug],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("authors")
+        .from("authors_public" as any)
         .select("*")
         .eq("slug", slug)
-        .eq("is_public", true)
-        .maybeSingle();
+        .limit(1);
 
       if (error) throw error;
-      return data as Author | null;
+      
+      const authors = data as unknown as PublicAuthor[];
+      return authors?.[0] || null;
     },
     enabled: !!slug,
   });
