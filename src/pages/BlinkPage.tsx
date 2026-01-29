@@ -157,20 +157,29 @@ const BlinkPage = () => {
           {/* Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
             {post.content ? (
-              post.content
-                .split(/\n+/)
-                .filter(p => p.trim().length > 0)
-                .map((paragraph, index) => (
-                  <p 
-                    key={index} 
-                    className={cn(
-                      "mb-4 leading-relaxed text-foreground/90",
-                      index === 0 && "first-letter:text-5xl first-letter:font-bold first-letter:float-left first-letter:mr-2 first-letter:text-primary"
-                    )}
-                  >
-                    {paragraph.trim()}
-                  </p>
-                ))
+              // Check if content contains HTML tags (from rich text editor)
+              /<[^>]+>/.test(post.content) ? (
+                <div 
+                  className="article-content"
+                  dangerouslySetInnerHTML={{ __html: post.content }} 
+                />
+              ) : (
+                // Fallback for plain text content (legacy posts)
+                post.content
+                  .split(/\n+/)
+                  .filter(p => p.trim().length > 0)
+                  .map((paragraph, index) => (
+                    <p 
+                      key={index} 
+                      className={cn(
+                        "mb-4 leading-relaxed text-foreground/90",
+                        index === 0 && "first-letter:text-5xl first-letter:font-bold first-letter:float-left first-letter:mr-2 first-letter:text-primary"
+                      )}
+                    >
+                      {paragraph.trim()}
+                    </p>
+                  ))
+              )
             ) : (
               <p className="text-lg leading-relaxed">{post.excerpt}</p>
             )}
