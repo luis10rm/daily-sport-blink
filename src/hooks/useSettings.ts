@@ -81,3 +81,44 @@ export const useExtractArticle = () => {
     },
   });
 };
+
+export interface DailySummaryResult {
+  title: string;
+  excerpt: string;
+  content: string;
+  suggested_tags: string[];
+  posts_count: number;
+  date: string;
+}
+
+export const useGenerateDailySummary = () => {
+  return useMutation({
+    mutationFn: async (date: Date): Promise<DailySummaryResult> => {
+      const dateString = date.toISOString().split("T")[0];
+      
+      const { data, error } = await supabase.functions.invoke("generate-daily-summary", {
+        body: { date: dateString },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      
+      return data as DailySummaryResult;
+    },
+    onError: (error) => {
+      console.error("Error generating daily summary:", error);
+      if (error.message.includes("No posts found")) {
+        toast.error("Brak postów dla wybranej daty");
+      } else if (error.message.includes("Rate limit") || error.message.includes("wiele zapytań")) {
+        toast.error("Zbyt wiele zapytań AI. Spróbuj ponownie za chwilę.");
+      } else if (error.message.includes("credits") || error.message.includes("kredytów")) {
+        toast.error("Brak kredytów AI. Doładuj konto w ustawieniach.");
+      } else {
+        toast.error("Nie udało się wygenerować podsumowania");
+      }
+    },
+    onSuccess: () => {
+      toast.success("Podsumowanie dnia wygenerowane!");
+    },
+  });
+};

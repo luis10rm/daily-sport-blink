@@ -1,20 +1,36 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { usePosts } from "@/hooks/usePosts";
+import { useGenerateDailySummary } from "@/hooks/useSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Eye, Star, TrendingUp } from "lucide-react";
-import { format, isToday, isThisWeek, isThisMonth } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { FileText, Eye, Star, TrendingUp, CalendarIcon, Sparkles, Loader2 } from "lucide-react";
+import { format, isToday, isThisWeek, isThisMonth, isSameDay } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { data: posts, isLoading } = usePosts();
+  const generateSummary = useGenerateDailySummary();
+  
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const todayPosts = posts?.filter((p) => isToday(new Date(p.published_at))) || [];
   const weekPosts = posts?.filter((p) => isThisWeek(new Date(p.published_at))) || [];
   const monthPosts = posts?.filter((p) => isThisMonth(new Date(p.published_at))) || [];
   const newsOfDay = posts?.find((p) => p.is_news_of_day);
+
+  // Count posts for selected date
+  const selectedDatePosts = posts?.filter((p) => 
+    isSameDay(new Date(p.published_at), selectedDate)
+  ) || [];
 
   const stats = [
     {
@@ -42,6 +58,22 @@ const Dashboard = () => {
       description: "Łączna liczba",
     },
   ];
+
+  const handleGenerateSummary = async () => {
+    const result = await generateSummary.mutateAsync(selectedDate);
+    
+    // Navigate to PostEditor with prefilled data
+    navigate("/admin/posts/new", {
+      state: {
+        prefill: {
+          title: result.title,
+          excerpt: result.excerpt,
+          content: result.content,
+          tags: result.suggested_tags.join(", "),
+        },
+      },
+    });
+  };
 
   return (
     <AdminLayout>
@@ -79,6 +111,93 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
+
+        {/* Daily Summary Generator */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Podsumowanie dnia (AI)
+            </CardTitle>
+            <CardDescription>
+              Wygeneruj długi artykuł SEO podsumowujący wszystkie newsy z wybranego dnia
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[200px] justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? (
+                        format(selectedDate, "d MMMM yyyy", { locale: pl })
+                      ) : (
+                        <span>Wybierz datę</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={(date) => {
+                        if (date) {
+                          setSelectedDate(date);
+                          setIsCalendarOpen(false);
+                        }
+                      }}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                      locale={pl}
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <span className="text-sm text-muted-foreground">
+                  {selectedDatePosts.length} {selectedDatePosts.length === 1 ? "post" : "postów"}
+                </span>
+              </div>
+
+              <Button
+                onClick={handleGenerateSummary}
+                disabled={generateSummary.isPending || selectedDatePosts.length === 0}
+                className="gap-2"
+              >
+                {generateSummary.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Generuję...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Generuj podsumowanie
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            {selectedDatePosts.length === 0 && (
+              <p className="text-sm text-muted-foreground mt-3">
+                Brak postów dla wybranej daty. Wybierz inny dzień.
+              </p>
+            )}
+            
+            {generateSummary.isPending && (
+              <div className="flex items-center gap-2 mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <span>Generuję podsumowanie dnia... To może zająć do 30 sekund.</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* News of the day */}
         {newsOfDay && (
