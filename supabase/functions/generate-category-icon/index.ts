@@ -3,8 +3,83 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// ============= SECURITY: Authentication & Authorization =============
+
+async function authenticateRequest(
+  req: Request,
+  requiredRoles: string[] = ["admin"]
+): Promise<{ user: any; error?: Response }> {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.error("Missing or invalid authorization header");
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Brak autoryzacji" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data, error: authError } = await supabase.auth.getClaims(token);
+
+  if (authError || !data?.claims) {
+    console.error("Invalid JWT token:", authError?.message);
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Nieprawidłowy token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  const userId = data.claims.sub;
+
+  // Check user roles
+  const { data: roles, error: rolesError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+
+  if (rolesError) {
+    console.error("Error fetching user roles:", rolesError.message);
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Błąd weryfikacji uprawnień" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  const userRoles = roles?.map((r) => r.role) || [];
+  const hasAccess = userRoles.some((role) => requiredRoles.includes(role));
+
+  if (!hasAccess) {
+    console.error(`User ${userId} lacks required roles: ${requiredRoles.join(", ")}`);
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Brak wymaganych uprawnień (wymagana rola: admin)" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  console.log(`User ${userId} authenticated with roles: ${userRoles.join(", ")}`);
+  return { user: { id: userId, roles: userRoles } };
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -13,6 +88,10 @@ serve(async (req) => {
   }
 
   try {
+    // ============= SECURITY: Authenticate user (admin only) =============
+    const { user, error: authError } = await authenticateRequest(req, ["admin"]);
+    if (authError) return authError;
+
     const { categoryName } = await req.json();
 
     if (!categoryName || typeof categoryName !== "string") {
@@ -65,7 +144,7 @@ EXAMPLES OF CORRECT STYLE:
 
 OUTPUT: PNG image with transparent background and white stroke-based icon.`;
 
-    console.log(`Generating icon for category: ${categoryName}`);
+    console.log(`User ${user.id} generating icon for category: ${categoryName}`);
 
     // Call Lovable AI Gateway with image generation model
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

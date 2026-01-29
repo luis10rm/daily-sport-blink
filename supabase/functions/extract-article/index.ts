@@ -3,62 +3,187 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Simple HTML text extraction - removes tags and gets text content
+// ============= SECURITY: Authentication & Authorization =============
+
+async function authenticateRequest(
+  req: Request,
+  requiredRoles: string[] = ["admin", "editor"]
+): Promise<{ user: any; error?: Response }> {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.error("Missing or invalid authorization header");
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Brak autoryzacji" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const token = authHeader.replace("Bearer ", "");
+  const { data, error: authError } = await supabase.auth.getClaims(token);
+  
+  if (authError || !data?.claims) {
+    console.error("Invalid JWT token:", authError?.message);
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Nieprawidłowy token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  const userId = data.claims.sub;
+
+  // Check user roles
+  const { data: roles, error: rolesError } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId);
+
+  if (rolesError) {
+    console.error("Error fetching user roles:", rolesError.message);
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Błąd weryfikacji uprawnień" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  const userRoles = roles?.map((r) => r.role) || [];
+  const hasAccess = userRoles.some((role) => requiredRoles.includes(role));
+
+  if (!hasAccess) {
+    console.error(`User ${userId} lacks required roles: ${requiredRoles.join(", ")}`);
+    return {
+      user: null,
+      error: new Response(
+        JSON.stringify({ error: "Brak wymaganych uprawnień (wymagana rola: admin lub editor)" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      ),
+    };
+  }
+
+  console.log(`User ${userId} authenticated with roles: ${userRoles.join(", ")}`);
+  return { user: { id: userId, roles: userRoles } };
+}
+
+// ============= SECURITY: SSRF Protection =============
+
+function validateUrl(urlString: string): { valid: boolean; reason?: string } {
+  try {
+    const url = new URL(urlString);
+
+    // Only allow HTTP and HTTPS
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return { valid: false, reason: "Dozwolone tylko protokoły HTTP i HTTPS" };
+    }
+
+    const hostname = url.hostname.toLowerCase();
+
+    // Block localhost and loopback
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "0.0.0.0") {
+      return { valid: false, reason: "Adresy lokalne są zablokowane" };
+    }
+
+    // Block private IP ranges
+    const privateIpPatterns = [
+      /^10\./,                          // 10.0.0.0/8
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.0.0/12
+      /^192\.168\./,                    // 192.168.0.0/16
+      /^169\.254\./,                    // Link-local
+      /^fe80:/i,                        // IPv6 link-local
+      /^fd[0-9a-f]{2}:/i,               // IPv6 unique local
+      /^fc[0-9a-f]{2}:/i,               // IPv6 unique local
+    ];
+
+    for (const pattern of privateIpPatterns) {
+      if (pattern.test(hostname)) {
+        return { valid: false, reason: "Prywatne zakresy IP są zablokowane" };
+      }
+    }
+
+    // Block cloud metadata endpoints
+    const blockedHostnames = [
+      "metadata.google.internal",
+      "metadata.google.com",
+      "169.254.169.254",
+      "instance-data",
+    ];
+
+    for (const blocked of blockedHostnames) {
+      if (hostname === blocked || hostname.endsWith("." + blocked)) {
+        return { valid: false, reason: "Adresy metadanych chmury są zablokowane" };
+      }
+    }
+
+    // Block internal/local domains
+    if (hostname.endsWith(".internal") || hostname.endsWith(".local") || hostname.endsWith(".localhost")) {
+      return { valid: false, reason: "Domeny wewnętrzne są zablokowane" };
+    }
+
+    return { valid: true };
+  } catch {
+    return { valid: false, reason: "Nieprawidłowy format URL" };
+  }
+}
+
+// ============= Article Processing Functions =============
+
 function extractTextFromHtml(html: string): string {
-  // Remove script and style elements
   let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
   text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
   text = text.replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "");
   text = text.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "");
   text = text.replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "");
   text = text.replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, "");
-  
-  // Try to extract article content if available
+
   const articleMatch = text.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
   if (articleMatch) {
     text = articleMatch[1];
   } else {
-    // Try main content
     const mainMatch = text.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
     if (mainMatch) {
       text = mainMatch[1];
     }
   }
-  
-  // Remove all HTML tags
+
   text = text.replace(/<[^>]+>/g, " ");
-  
-  // Decode HTML entities
   text = text.replace(/&nbsp;/g, " ");
   text = text.replace(/&amp;/g, "&");
   text = text.replace(/&lt;/g, "<");
   text = text.replace(/&gt;/g, ">");
   text = text.replace(/&quot;/g, '"');
   text = text.replace(/&#39;/g, "'");
-  
-  // Clean up whitespace
   text = text.replace(/\s+/g, " ").trim();
-  
-  // Limit to first ~6000 characters to allow for content generation
+
   return text.slice(0, 6000);
 }
 
-// Extract Open Graph image from HTML
 function extractOgImage(html: string): string | null {
   const ogImageMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
   if (ogImageMatch) {
     return ogImageMatch[1];
   }
-  
-  // Try alternative format
+
   const altMatch = html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
   if (altMatch) {
     return altMatch[1];
   }
-  
+
   return null;
 }
 
@@ -97,6 +222,10 @@ serve(async (req) => {
   }
 
   try {
+    // ============= SECURITY: Authenticate user =============
+    const { user, error: authError } = await authenticateRequest(req, ["admin", "editor"]);
+    if (authError) return authError;
+
     const { url } = await req.json();
 
     if (!url) {
@@ -106,7 +235,17 @@ serve(async (req) => {
       );
     }
 
-    console.log("Extracting article from URL:", url);
+    // ============= SECURITY: Validate URL (SSRF protection) =============
+    const urlCheck = validateUrl(url);
+    if (!urlCheck.valid) {
+      console.error(`SSRF protection blocked URL: ${url} - Reason: ${urlCheck.reason}`);
+      return new Response(
+        JSON.stringify({ error: urlCheck.reason }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`User ${user.id} extracting article from URL: ${url}`);
 
     // Fetch the article HTML
     const response = await fetch(url, {
@@ -136,23 +275,20 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch both prompts in parallel
     const [extractionPromptResult, contentPromptResult] = await Promise.all([
       supabase.from("settings").select("value").eq("key", "article_extraction_prompt").single(),
       supabase.from("settings").select("value").eq("key", "article_content_prompt").single(),
     ]);
 
     const extractionPrompt = extractionPromptResult.data?.value || DEFAULT_EXTRACTION_PROMPT;
-    
-    // For content prompt, always enforce HTML formatting rules
+
     let contentPrompt = contentPromptResult.data?.value || DEFAULT_CONTENT_PROMPT;
-    
-    // If custom prompt doesn't mention HTML formatting rules, append them
-    const hasHtmlRules = contentPrompt.includes("<strong>") || 
-                         contentPrompt.includes("NIE używaj Markdown") ||
-                         contentPrompt.includes("NIE składni Markdown") ||
-                         contentPrompt.includes("TYLKO tagów HTML");
-    
+
+    const hasHtmlRules = contentPrompt.includes("<strong>") ||
+      contentPrompt.includes("NIE używaj Markdown") ||
+      contentPrompt.includes("NIE składni Markdown") ||
+      contentPrompt.includes("TYLKO tagów HTML");
+
     if (!hasHtmlRules) {
       const htmlFormattingRules = `
 
@@ -161,7 +297,7 @@ FORMATOWANIE (OBOWIĄZKOWE):
 - <strong>tekst</strong> dla pogrubienia (NIE ** **)
 - <em>tekst</em> dla kursywy (NIE * *)
 - Każdy akapit otocz tagiem <p>...</p>`;
-      
+
       contentPrompt = contentPrompt + htmlFormattingRules;
       console.log("Appended HTML formatting rules to content prompt");
     }
@@ -195,21 +331,21 @@ FORMATOWANIE (OBOWIĄZKOWE):
               parameters: {
                 type: "object",
                 properties: {
-                  title: { 
-                    type: "string", 
-                    description: "Tytuł artykułu (max 80 znaków, po polsku)" 
+                  title: {
+                    type: "string",
+                    description: "Tytuł artykułu (max 80 znaków, po polsku)"
                   },
-                  excerpt: { 
-                    type: "string", 
-                    description: "Krótki opis (max 200 znaków, zachęcający)" 
+                  excerpt: {
+                    type: "string",
+                    description: "Krótki opis (max 200 znaków, zachęcający)"
                   },
-                  category: { 
-                    type: "string", 
+                  category: {
+                    type: "string",
                     enum: ["football", "basketball", "tennis", "f1", "mma", "other"],
                     description: "Kategoria sportowa"
                   },
-                  tags: { 
-                    type: "array", 
+                  tags: {
+                    type: "array",
                     items: { type: "string" },
                     description: "3-5 tagów (krótkie słowa kluczowe)"
                   },
@@ -262,9 +398,9 @@ FORMATOWANIE (OBOWIĄZKOWE):
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: contentPrompt },
-          { 
-            role: "user", 
-            content: `Tytuł: ${extractedMetadata.title}\n\nOryginalny artykuł:\n${articleText}` 
+          {
+            role: "user",
+            content: `Tytuł: ${extractedMetadata.title}\n\nOryginalny artykuł:\n${articleText}`
           },
         ],
         tools: [
@@ -276,9 +412,9 @@ FORMATOWANIE (OBOWIĄZKOWE):
               parameters: {
                 type: "object",
                 properties: {
-                  content: { 
-                    type: "string", 
-                    description: "Pełna treść artykułu (300-500 słów, po polsku, podzielona na akapity)" 
+                  content: {
+                    type: "string",
+                    description: "Pełna treść artykułu (300-500 słów, po polsku, podzielona na akapity)"
                   },
                 },
                 required: ["content"],
@@ -292,7 +428,7 @@ FORMATOWANIE (OBOWIĄZKOWE):
     });
 
     let generatedContent = "";
-    
+
     if (contentResponse.ok) {
       const contentData = await contentResponse.json();
       const contentToolCall = contentData.choices?.[0]?.message?.tool_calls?.[0];
@@ -300,11 +436,9 @@ FORMATOWANIE (OBOWIĄZKOWE):
         const contentResult = JSON.parse(contentToolCall.function.arguments);
         generatedContent = contentResult.content || "";
         console.log("Generated content length:", generatedContent.length);
-        
-        // Safety check: if AI still used Markdown despite instructions, convert it
+
         if (generatedContent.includes("**")) {
           console.warn("AI used Markdown despite HTML instructions, converting...");
-          // Convert **text** to <strong>text</strong>
           generatedContent = generatedContent.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
           generatedContent = generatedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
           generatedContent = generatedContent.replace(/(?<![a-zA-Z0-9])\*([^*]+)\*(?![a-zA-Z0-9])/g, '<em>$1</em>');
@@ -314,7 +448,6 @@ FORMATOWANIE (OBOWIĄZKOWE):
       console.error("Content generation failed, continuing without content");
     }
 
-    // Combine results
     const result = {
       ...extractedMetadata,
       content: generatedContent,
