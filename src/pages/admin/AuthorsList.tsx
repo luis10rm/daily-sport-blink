@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Pencil, ExternalLink, Globe, GlobeLock, Plus, Trash2, Mail, Link2 } from "lucide-react";
+import { Pencil, ExternalLink, Globe, GlobeLock, Plus, Trash2, Link2 } from "lucide-react";
 
 const AuthorsList = () => {
   const { data: authors, isLoading } = useAuthors();
@@ -121,18 +121,13 @@ const AuthorsList = () => {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {author.linked_email ? (
-                        <div className="flex items-center gap-1.5 text-sm">
-                          <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-muted-foreground">{author.linked_email}</span>
-                        </div>
-                      ) : author.linked_user_id ? (
+                      {author.linked_user_id ? (
                         <div className="flex items-center gap-1.5 text-sm">
                           <Link2 className="h-3.5 w-3.5 text-green-600" />
                           <span className="text-green-600">Powiązane z kontem</span>
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground">Brak powiązania</span>
                       )}
                     </TableCell>
                     <TableCell>

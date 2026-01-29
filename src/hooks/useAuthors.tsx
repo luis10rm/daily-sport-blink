@@ -18,10 +18,14 @@ export interface PublicAuthor {
   updated_at: string;
 }
 
-// Full author interface (for admin - includes sensitive fields)
+// Full author interface (for admin - includes linked_user_id but NOT email)
 export interface Author extends PublicAuthor {
   linked_user_id: string | null;
-  linked_email: string | null;
+}
+
+// Author with email (fetched separately from author_emails table)
+export interface AuthorWithEmail extends Author {
+  email?: string | null;
 }
 
 export interface AuthorCreateInput {
@@ -35,7 +39,6 @@ export interface AuthorCreateInput {
   social_twitter?: string | null;
   social_instagram?: string | null;
   linked_user_id?: string | null;
-  linked_email?: string | null;
 }
 
 export interface AuthorUpdateInput {
@@ -49,7 +52,6 @@ export interface AuthorUpdateInput {
   social_twitter?: string | null;
   social_instagram?: string | null;
   linked_user_id?: string | null;
-  linked_email?: string | null;
 }
 
 // Fetch all PUBLIC authors for public page (uses secure view without sensitive fields)
@@ -106,19 +108,35 @@ export const useAuthors = () => {
   });
 };
 
-// Fetch author by ID for editing
+// Fetch author by ID for editing (includes email from separate table)
 export const useAuthorById = (id: string) => {
   return useQuery({
     queryKey: ["author-by-id", id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch author data
+      const { data: authorData, error: authorError } = await supabase
         .from("authors")
         .select("*")
         .eq("id", id)
         .maybeSingle();
 
-      if (error) throw error;
-      return data as Author | null;
+      if (authorError) throw authorError;
+      if (!authorData) return null;
+
+      // Fetch email from separate secure table
+      const { data: emailData, error: emailError } = await supabase
+        .from("author_emails")
+        .select("email")
+        .eq("author_id", id)
+        .maybeSingle();
+
+      // Email fetch might fail for non-admins, that's ok
+      const email = emailError ? null : emailData?.email;
+
+      return {
+        ...authorData,
+        email,
+      } as AuthorWithEmail;
     },
     enabled: !!id && id !== "new",
   });
@@ -217,20 +235,35 @@ export const useAuthorStats = (authorId: string) => {
   });
 };
 
-// Create new author
+// Create new author (with optional email in separate table)
 export const useCreateAuthor = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (data: AuthorCreateInput) => {
+    mutationFn: async (data: AuthorCreateInput & { email?: string | null }) => {
+      const { email, ...authorData } = data;
+      
+      // Create author
       const { data: author, error } = await supabase
         .from("authors")
-        .insert([data])
+        .insert([authorData])
         .select()
         .single();
 
       if (error) throw error;
+
+      // If email provided, insert into author_emails table
+      if (email && author) {
+        const { error: emailError } = await supabase
+          .from("author_emails")
+          .insert([{ author_id: author.id, email }]);
+        
+        if (emailError) {
+          console.error("Failed to save author email:", emailError);
+        }
+      }
+
       return author as Author;
     },
     onSuccess: () => {
@@ -251,7 +284,7 @@ export const useCreateAuthor = () => {
   });
 };
 
-// Update author profile
+// Update author profile (with optional email in separate table)
 export const useUpdateAuthor = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -262,14 +295,48 @@ export const useUpdateAuthor = () => {
       data,
     }: {
       id: string;
-      data: AuthorUpdateInput;
+      data: AuthorUpdateInput & { email?: string | null };
     }) => {
+      const { email, ...authorData } = data;
+      
+      // Update author
       const { error } = await supabase
         .from("authors")
-        .update(data)
+        .update(authorData)
         .eq("id", id);
 
       if (error) throw error;
+
+      // Handle email update in separate table
+      if (email !== undefined) {
+        // Check if email record exists
+        const { data: existingEmail } = await supabase
+          .from("author_emails")
+          .select("id")
+          .eq("author_id", id)
+          .maybeSingle();
+
+        if (email && email.trim()) {
+          if (existingEmail) {
+            // Update existing email
+            await supabase
+              .from("author_emails")
+              .update({ email })
+              .eq("author_id", id);
+          } else {
+            // Insert new email
+            await supabase
+              .from("author_emails")
+              .insert([{ author_id: id, email }]);
+          }
+        } else if (existingEmail) {
+          // Delete email if empty
+          await supabase
+            .from("author_emails")
+            .delete()
+            .eq("author_id", id);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["authors"] });
