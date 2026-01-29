@@ -13,23 +13,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Content format detection and parsing
-const isHtml = (text: string) => /<[^>]+>/.test(text);
-const isMarkdown = (text: string) => /\*\*[^*]+\*\*|\*[^*]+\*|^#{1,6}\s|^[-*]\s/m.test(text);
-
+// Parse content - handles HTML, Markdown, and mixed formats
 const parseContent = (content: string): string => {
-  if (isHtml(content)) {
-    return content; // Already HTML from WYSIWYG editor
-  }
-  if (isMarkdown(content)) {
-    return marked.parse(content, { async: false }) as string; // Convert Markdown to HTML
-  }
-  // Fallback - plain text, wrap in paragraphs
-  return content
-    .split(/\n+/)
-    .filter(p => p.trim())
-    .map(p => `<p>${p}</p>`)
-    .join("");
+  if (!content) return "";
+  // marked.parse() handles all formats correctly:
+  // - Pure HTML: preserved as-is
+  // - Pure Markdown: converted to HTML
+  // - Mixed (e.g. <p>**bold**</p>): HTML preserved, Markdown converted
+  return marked.parse(content, { async: false }) as string;
 };
 
 const SITE_URL = "https://daily-sport-blink.lovable.app";

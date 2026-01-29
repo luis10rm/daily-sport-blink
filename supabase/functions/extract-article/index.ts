@@ -73,16 +73,22 @@ ZASADY:
 
 Odpowiedz w formacie JSON zgodnym ze schematem.`;
 
-const DEFAULT_CONTENT_PROMPT = `Na podstawie oryginalnego artykułu napisz unikatową, skróconą wersję newsa sportowego w języku polskim. Treść musi być:
+const DEFAULT_CONTENT_PROMPT = `Na podstawie oryginalnego artykułu napisz unikatową, skróconą wersję newsa sportowego w języku polskim.
+
+ZASADY TREŚCI:
 - 300-500 słów
-- Napisana prostym, angażującym językiem
-- Zawierać wszystkie kluczowe fakty z oryginału
-- Mieć dynamiczny, dziennikarski ton
-- Podzielona na 3-5 akapitów oddzielonych PUSTYMI LINIAMI (\\n\\n)
-- Każdy akapit powinien mieć 2-4 zdania
+- Prosty, angażujący język
+- Wszystkie kluczowe fakty z oryginału
+- Dynamiczny, dziennikarski ton
+- 3-5 akapitów (każdy 2-4 zdania)
 - Bez powtarzania tytułu na początku
 
-WAŻNE: Każdy akapit MUSI być oddzielony pustą linią dla czytelności!`;
+FORMATOWANIE (OBOWIĄZKOWE):
+- Używaj TYLKO tagów HTML, NIE składni Markdown!
+- <strong>tekst</strong> dla pogrubienia (NIE ** **)
+- <em>tekst</em> dla kursywy (NIE * *)
+- Każdy akapit otocz tagiem <p>...</p>
+- Oddzielaj akapity pustą linią dla czytelności`;
 
 serve(async (req) => {
   // Handle CORS preflight
