@@ -1,99 +1,224 @@
 
-Cel: usunąć widoczne `**...**` (gwiazdki) zarówno na stronie artykułu (/blink/:id), jak i w edytorze WYSIWYG w panelu admina – także dla już zapisanych postów.
+# Moduł: AI Podsumowanie Dnia Sportowego
 
-## Dlaczego nadal widać gwiazdki (prawdziwa przyczyna)
-1) **Markdown w środku HTML nie jest parsowany tak, jak zakładaliśmy.**  
-Twoja treść ma postać mieszaną, np.:
-```html
-<p>... **Liverpool FC** ...</p>
+## Cel
+Stworzenie funkcji w panelu admina, która jednym kliknięciem generuje profesjonalny, długi artykuł SEO podsumowujący wszystkie newsy opublikowane danego dnia.
+
+---
+
+## Architektura rozwiązania
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    PANEL ADMINA (Dashboard)                      │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │  📊 Statystyki dnia   │   🔄 Generuj podsumowanie dnia      │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              EDGE FUNCTION: generate-daily-summary               │
+│  1. Pobierz wszystkie posty z wybranego dnia                    │
+│  2. Pogrupuj po kategoriach                                     │
+│  3. Wyślij do Lovable AI (Gemini Pro) z promptem SEO            │
+│  4. Zwróć: title, excerpt, content (1500-2500 słów)            │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   NOWY POST (typ: summary)                       │
+│  - Automatyczny tytuł: "Sportowe podsumowanie dnia - DD.MM.YYYY"│
+│  - Długa treść SEO z odnośnikami do oryginalnych newsów         │
+│  - Kategoria: "other" (lub nowa "podsumowania")                 │
+│  - Tagi: dyscypliny + "podsumowanie dnia"                       │
+└─────────────────────────────────────────────────────────────────┘
 ```
-Markdown parsers (w tym `marked`) traktują blok HTML jako “surowy HTML” i **nie interpretują** `**...**` wewnątrz tagów HTML. Dlatego gwiazdki zostają.
-
-2) **Prompt w backendzie jest nadpisany przez ustawienia w bazie (`settings`).**  
-Funkcja generowania treści bierze `article_content_prompt` z bazy (jeśli istnieje), więc zmiana “DEFAULT_CONTENT_PROMPT” w kodzie nie zadziała, dopóki w ustawieniach jest stara wersja promptu.  
-Potwierdziłem to: `article_content_prompt` istnieje i ma długi tekst (len ~1329), więc domyślny prompt z kodu nie jest używany.
-
-3) Dane dla przykładowego posta faktycznie zawierają `**` w HTML.  
-Dla posta `6f8133c3-ecf1-4010-bd25-d5a7da291314` w bazie wykryłem `**` (pozycja ~323), więc problem jest w treści, nie w samym CSS.
-
-## Co robimy (naprawa “raz a dobrze”)
-Wprowadzimy 2 poprawki: (A) renderowanie dla istniejących treści + (B) źródło generowania, żeby nowe treści już nie miały gwiazdek.
 
 ---
 
-# A) Naprawa wyświetlania istniejących artykułów (frontend)
-## A1. Zastępujemy obecną logikę `parseContent` w `src/pages/BlinkPage.tsx`
-Zamiast `marked.parse(content)` dla wszystkiego, robimy:
-- jeśli to **czysty Markdown** → `marked.parse(...)` (ok)
-- jeśli to **HTML lub miks HTML+Markdown** → parsujemy HTML przez `DOMParser`, przechodzimy po **tekstowych węzłach** i na nich stosujemy `marked.parseInline(...)` (czyli Markdown inline zamieniamy na `<strong>`, `<em>` itp.) i podmieniamy te text-node’y na HTML
+## Funkcjonalności
 
-Efekt: nawet gdy masz `<p>**Liverpool**</p>`, wynik stanie się `<p><strong>Liverpool</strong></p>`.
+### 1. Przycisk w Dashboardzie
+- Nowy przycisk "Generuj podsumowanie dnia" na głównym dashboardzie admina
+- Możliwość wyboru daty (domyślnie: dzisiaj)
+- Podgląd liczby dostępnych artykułów przed generowaniem
+- Loading state podczas generowania
 
-## A2. Użyjemy tej samej normalizacji w edytorze admina
-Problem “w edytorze też widać gwiazdki” wynika z tego, że Tiptap dostaje HTML z tekstem `**...**` jako zwykły tekst.  
-Dlatego przed wstawieniem treści do edytora:
-- przy ładowaniu posta do formularza (useEffect w `src/pages/admin/PostEditor.tsx`) normalizujemy `post.content`
-- przy wypełnianiu treści z AI (w `handleAIExtract`) normalizujemy `extractedData.content` zanim `setValue("content", ...)`
+### 2. Edge Function `generate-daily-summary`
+Nowa funkcja backendowa która:
+- Pobiera wszystkie posty z wybranej daty z bazy
+- Grupuje je wg kategorii sportowej
+- Tworzy rozbudowany prompt dla AI z kontekstem SEO
+- Generuje artykuł 1500-2500 słów w formacie HTML
+- Opcjonalnie: dodaje wewnętrzne linki do oryginalnych artykułów
 
-To sprawi, że w panelu administracyjnym gwiazdki znikną “od razu” (a przy zapisie edytor zapisze już czysty HTML).
+### 3. Konfigurowalny prompt (Ustawienia)
+Nowy wpis w ustawieniach: `daily_summary_prompt`
+- Edytowalny przez admina
+- Domyślny prompt zoptymalizowany pod SEO
+- Zasady stylistyczne, długość, struktura
 
----
-
-# B) Naprawa źródła (backend), żeby nowe artykuły już nie miały Markdown
-## B1. Zmieniamy funkcję backendową `supabase/functions/extract-article/index.ts` tak, aby wymuszała HTML nawet przy promptach z ustawień
-Dziś jest tak:
-- pobiera `article_content_prompt` z bazy
-- jeśli istnieje → używa go wprost (bez Twoich nowych zasad “nie używaj Markdown”)
-
-Zrobimy funkcję typu `enforceHtmlFormattingRules(promptFromDb)`:
-- jeśli prompt nie zawiera jasnych reguł HTML (np. brak `<strong>` / brak “NIE używaj Markdown”) → automatycznie **doklei** nasz blok “FORMATOWANIE (OBOWIĄZKOWE)” na końcu promptu
-- dzięki temu nawet jeśli w ustawieniach jest rozbudowany prompt SEO/Discover, to zawsze dojdzie twarda instrukcja “tylko HTML, bez **”.
-
-Opcjonalnie (ale polecam): po wygenerowaniu treści, jeśli nadal wykryjemy `**` / `*` → zalogujemy ostrzeżenie i (w razie potrzeby) dołożymy prostą korektę “ostatniej szansy” po stronie backendu (np. minimalna zamiana inline w tekście). To zabezpieczenie na wypadek “nieposłuszeństwa” modelu.
-
-## B2. (Opcjonalnie) Uaktualniamy wpis w `settings.article_content_prompt`
-Możemy:
-- albo zostawić go (bo B1 i tak wymusi HTML),
-- albo dodać w panelu admina przycisk “Wstaw rekomendowane FORMATOWANIE HTML do promptu”, który automatycznie dopisze sekcję – bez ręcznego grzebania.
+### 4. Automatyczne tworzenie posta
+Po wygenerowaniu:
+- Otwiera PostEditor z wypełnionymi danymi
+- Admin może przejrzeć, zedytować i opublikować
+- Lub: automatycznie zapisuje jako "draft" do późniejszej edycji
 
 ---
 
-# Test plan (konkretnie, żeby zakończyć temat)
-1) Test istniejącego posta (ten problematyczny):
-   - Otwórz w podglądzie/test: `/blink/6f8133c3-ecf1-4010-bd25-d5a7da291314`
-   - Sprawdź, czy fragment “Liverpool FC” jest już pogrubiony i nie ma `**`.
+## Struktura generowanego artykułu
 
-2) Test w panelu admina:
-   - Otwórz edycję tego posta.
-   - W polu edytora “Pełna treść artykułu” sprawdź, czy gwiazdki zniknęły.
-   - Kliknij “Pogrubienie” na fragmencie – upewnij się, że edytor działa normalnie (generuje `<strong>`).
+```text
+# [Tytuł SEO - np. "Piłka, F1 i MMA - Sportowe podsumowanie 29 stycznia 2026"]
 
-3) Test generowania z linku WP:
-   - Wklej URL i kliknij “Generuj AI”.
-   - Sprawdź, czy wygenerowana treść w edytorze już od razu jest HTML (pogrubienia jako `<strong>`, bez `**`).
-   - Zapisz post i sprawdź jego publiczny widok.
+## Wprowadzenie (1 akapit)
+Krótkie powitanie i zapowiedź najważniejszych wydarzeń dnia.
 
-4) Jeśli testujesz na domenie publicznej `daily-sport-blink.lovable.app`, upewnij się, że zmiany zostały opublikowane (inaczej zobaczysz stary kod).
+## Piłka nożna (sekcja per kategoria)
+Streszczenie 2-5 najważniejszych newsów z tej kategorii.
+Wewnętrzne linki do oryginalnych artykułów.
+
+## Formuła 1
+...
+
+## MMA
+...
+
+## Podsumowanie
+Krótka refleksja, zapowiedź kolejnego dnia.
+
+---
+*Artykuł wygenerowany automatycznie na podstawie [X] newsów z dnia DD.MM.YYYY*
+```
 
 ---
 
-# Zakres zmian w plikach (do wdrożenia)
-- `src/pages/BlinkPage.tsx`
-  - zamiana `parseContent` na wersję “DOMParser + marked.parseInline dla text nodes”, z fallbackiem dla czystego Markdown
-- `src/pages/admin/PostEditor.tsx`
-  - normalizacja `post.content` przy `form.reset(...)`
-  - normalizacja `extractedData.content` przy `form.setValue("content", ...)`
-- `supabase/functions/extract-article/index.ts`
-  - dodanie “enforceHtmlFormattingRules” i używanie jej dla promptu z bazy
-  - (opcjonalnie) logika ostrzegania, jeśli model zwraca `**` mimo zakazu
+## Zmiany w plikach
+
+| Plik | Zmiana |
+|------|--------|
+| `supabase/functions/generate-daily-summary/index.ts` | **NOWY** - edge function do generowania podsumowania |
+| `src/hooks/useSettings.ts` | Dodanie `useGenerateDailySummary` mutation |
+| `src/pages/admin/Dashboard.tsx` | Dodanie przycisku i logiki generowania |
+| `src/pages/admin/Settings.tsx` | Sekcja konfiguracji promptu podsumowania |
+| `supabase/config.toml` | Rejestracja nowej funkcji |
 
 ---
 
-# Ryzyka / uwagi
-- To jest treść renderowana przez `dangerouslySetInnerHTML`. Ponieważ treść jest tworzona przez redakcję/AI, ryzyko XSS jest głównie “wewnętrzne”, ale nadal warto pilnować, żeby nie dopuszczać niechcianych tagów (jeśli będziesz chciał, kolejnym krokiem może być sanitizacja HTML).
-- Normalizacja w edytorze zmienia wygląd treści “na wejściu”; faktyczna zmiana w bazie nastąpi po zapisaniu posta (co jest pożądane).
+## Szczegóły techniczne
 
-Po wdrożeniu powyższego gwiazdki znikną:
-- natychmiast na stronie /blink (nawet dla starych postów),
-- w edytorze dla starych postów (a zapis utrwali czysty HTML),
-- oraz nowe generacje AI przestaną produkować Markdown (nawet jeśli prompt w ustawieniach był stary).
+### Edge Function - główna logika
+
+```typescript
+// supabase/functions/generate-daily-summary/index.ts
+
+// 1. Pobierz posty z wybranej daty
+const { data: posts } = await supabase
+  .from("posts")
+  .select("id, title, excerpt, content, sport_category(name)")
+  .gte("published_at", startOfDay)
+  .lte("published_at", endOfDay);
+
+// 2. Przygotuj kontekst dla AI
+const postsContext = posts.map(p => ({
+  title: p.title,
+  excerpt: p.excerpt,
+  category: p.sport_category?.name,
+  id: p.id // do linków wewnętrznych
+}));
+
+// 3. Wywołaj Lovable AI z rozbudowanym promptem
+const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  body: JSON.stringify({
+    model: "google/gemini-2.5-pro", // mocniejszy model dla długiej treści
+    messages: [
+      { role: "system", content: summaryPrompt },
+      { role: "user", content: JSON.stringify(postsContext) }
+    ]
+  })
+});
+
+// 4. Zwróć wygenerowany artykuł
+return { title, excerpt, content, suggested_tags };
+```
+
+### Domyślny prompt SEO
+
+```text
+Jesteś redaktorem sportowym Daily Sport Blink. Napisz profesjonalne podsumowanie dnia sportowego.
+
+DANE WEJŚCIOWE:
+Lista newsów opublikowanych dziś (JSON z: title, excerpt, category, id).
+
+WYMAGANIA TREŚCI:
+- 1500-2500 słów
+- Podziel na sekcje wg kategorii sportowych (H2)
+- Każda sekcja: 2-4 akapity streszczające newsy
+- Dodaj kontekst, analizę i opinie eksperta
+- Ton: profesjonalny, angażujący, dziennikarski
+- Na końcu: krótkie podsumowanie i zapowiedź
+
+SEO:
+- Tytuł: max 60 znaków, zawiera datę i sport
+- Meta description (excerpt): max 155 znaków
+- Naturalne użycie słów kluczowych
+- Wewnętrzne linki: /blink/{id} dla każdego wspomnianego newsa
+
+FORMATOWANIE:
+- HTML: <h2>, <p>, <strong>, <a href="/blink/ID">
+- NIE używaj Markdown!
+```
+
+### Dashboard UI
+
+```tsx
+// W Dashboard.tsx
+const [isGenerating, setIsGenerating] = useState(false);
+const [selectedDate, setSelectedDate] = useState(new Date());
+const generateSummary = useGenerateDailySummary();
+
+const handleGenerate = async () => {
+  setIsGenerating(true);
+  const result = await generateSummary.mutateAsync(selectedDate);
+  // Przekieruj do /admin/posts/new z wypełnionymi danymi
+  navigate("/admin/posts/new", { 
+    state: { 
+      prefill: result,
+      isSummary: true 
+    }
+  });
+};
+```
+
+---
+
+## Korzyści SEO
+
+1. **Długa forma** - Google preferuje treści 1500+ słów
+2. **Wewnętrzne linkowanie** - wzmacnia strukturę serwisu
+3. **Regularna publikacja** - sygnał aktywności
+4. **Słowa kluczowe** - naturalne pokrycie wielu fraz
+5. **Unikalność** - każdy dzień = unikatowa treść
+
+---
+
+## Opcjonalne rozszerzenia (na przyszłość)
+
+1. **Automatyczne planowanie** - CRON o 23:00 generuje draft
+2. **Podsumowanie tygodniowe** - większy artykuł raz w tygodniu
+3. **Statystyki w artykule** - ile newsów, najpopularniejsze kategorie
+4. **Obrazek tytułowy** - kolaż z obrazków dnia (AI/Canvas)
+5. **Newsletter** - wysyłka podsumowania do subskrybentów
+
+---
+
+## Estymowany czas wdrożenia
+
+| Etap | Czas |
+|------|------|
+| Edge function | ~20 min |
+| Hook + Dashboard UI | ~15 min |
+| Ustawienia promptu | ~10 min |
+| Testy i poprawki | ~15 min |
+| **Razem** | ~1 godzina |
