@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageSourceSection } from "@/components/admin/ImageSourceSection";
 import { usePost, useCreatePost, useUpdatePost } from "@/hooks/usePosts";
@@ -290,15 +291,15 @@ const PostEditor = () => {
                         <FormItem>
                           <FormLabel>Pełna treść artykułu</FormLabel>
                           <FormControl>
-                            <Textarea
+                            <RichTextEditor
+                              content={field.value || ""}
+                              onChange={field.onChange}
                               placeholder="Pełna treść artykułu (generowana automatycznie przez AI)..."
-                              rows={10}
-                              {...field}
                             />
                           </FormControl>
                           <FormDescription>
                             Ta treść będzie wyświetlana na dedykowanej stronie artykułu (/blink/:id).
-                            Kliknij "Generuj AI" przy URL źródła, aby wypełnić automatycznie.
+                            Użyj paska narzędzi do formatowania tekstu.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
