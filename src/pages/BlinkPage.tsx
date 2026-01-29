@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { ExternalLink, Calendar, Tag, ArrowLeft } from "lucide-react";
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 import { Header } from "@/components/Header";
 import { SEO } from "@/components/SEO";
 import { AuthorCard } from "@/components/AuthorCard";
@@ -14,15 +15,27 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 
-// Parse content - handles HTML, Markdown, and mixed formats
+// Sanitize HTML to prevent XSS attacks
+const sanitizeHtml = (html: string): string => {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'h2', 'h3', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'br', 'blockquote', 'u', 's'],
+    ALLOWED_ATTR: ['href', 'target', 'rel'],
+    ALLOW_DATA_ATTR: false,
+  });
+};
+
+// Parse content - handles HTML, Markdown, and mixed formats with XSS protection
 const parseContent = (content: string): string => {
   if (!content) return "";
   
   // First normalize any Markdown patterns inside HTML (e.g. <p>**bold**</p>)
   const normalized = normalizeMarkdownInHtml(content);
   
-  // Then parse through marked for any remaining pure Markdown
-  return marked.parse(normalized, { async: false }) as string;
+  // Parse through marked for any remaining pure Markdown
+  const html = marked.parse(normalized, { async: false }) as string;
+  
+  // Sanitize to prevent XSS attacks
+  return sanitizeHtml(html);
 };
 
 const SITE_URL = "https://daily-sport-blink.lovable.app";
