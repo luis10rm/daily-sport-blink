@@ -36,6 +36,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, Save, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 
 // Categories are now fetched dynamically from sport_categories table
 
@@ -119,10 +120,13 @@ const PostEditor = () => {
 
   useEffect(() => {
     if (post) {
+      // Normalize content to convert any **text** to <strong>text</strong>
+      const normalizedContent = normalizeMarkdownInHtml(post.content || "");
+      
       form.reset({
         title: post.title,
         excerpt: post.excerpt,
-        content: post.content || "",
+        content: normalizedContent,
         category_id: post.category_id || "",
         author_id: post.author_id || "",
         image_url: post.image_url || "",
@@ -183,9 +187,10 @@ const PostEditor = () => {
     form.setValue("title", extractedData.title);
     form.setValue("excerpt", extractedData.excerpt);
     
-    // Set AI-generated content if available
+    // Set AI-generated content if available - normalize to remove any ** patterns
     if (extractedData.content) {
-      form.setValue("content", extractedData.content);
+      const normalizedContent = normalizeMarkdownInHtml(extractedData.content);
+      form.setValue("content", normalizedContent);
     }
     
     // Try to match extracted category slug to a category_id
