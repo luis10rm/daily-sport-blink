@@ -1,91 +1,100 @@
 
-
-# Plan: Konwersja Markdown do HTML przy wyświetlaniu artykułów
+# Plan: Naprawa renderowania mieszanego formatu HTML + Markdown
 
 ## Zidentyfikowany problem
 
-Treści generowane przez AI używają składni Markdown (`**pogrubienie**`, `*kursywa*`), ale strona BlinkPage nie rozpoznaje tego formatu i wyświetla gwiazdki dosłownie.
-
-```text
-OBECNY STAN:
-┌─────────────────────────────────────────────────────────────┐
-│ AI generuje: **Liverpool FC** wygrał mecz                   │
-│                                                             │
-│ Strona wyświetla: **Liverpool FC** wygrał mecz              │
-│                   ↑↑ gwiazdki widoczne ↑↑                   │
-└─────────────────────────────────────────────────────────────┘
-
-PO NAPRAWIE:
-┌─────────────────────────────────────────────────────────────┐
-│ AI generuje: **Liverpool FC** wygrał mecz                   │
-│                                                             │
-│ Strona wyświetla: Liverpool FC wygrał mecz                  │
-│                   ↑↑ pogrubienie ↑↑                         │
-└─────────────────────────────────────────────────────────────┘
+Treść artykułu w bazie danych zawiera **mieszany format**:
+```html
+<p>Poznaliśmy pełny zestaw drużyn... **Liverpool FC**, **Bayern Monachium**...</p>
 ```
 
-## Rozwiązanie
+AI generuje tag `<p>` ale używa wewnątrz składni Markdown (`**bold**`).
 
-Dodanie konwersji Markdown do HTML przy użyciu biblioteki `marked` (lekka, popularny parser Markdown).
+Obecna logika wykrywa tag `<p>` → traktuje całość jako HTML → nie konwertuje gwiazdek.
 
-## Zmiany w plikach
+## Rozwiązanie dwutorowe
 
-### 1. Nowa zależność
+### Opcja A: Naprawić renderowanie (szybkie, natychmiastowe)
 
-```bash
-npm install marked
-```
+Zmienić logikę `parseContent` tak, aby **zawsze** konwertowała Markdown wewnątrz HTML:
 
-### 2. Aktualizacja BlinkPage.tsx
-
-Dodanie funkcji konwertującej Markdown do HTML:
-
-```tsx
-import { marked } from 'marked';
-
-// Funkcja wykrywająca format treści
-const isHtml = (text: string) => /<[^>]+>/.test(text);
-const isMarkdown = (text: string) => /\*\*[^*]+\*\*|\*[^*]+\*|^#{1,6}\s|^[-*]\s|\n\n/.test(text);
-
-// Konwersja Markdown do HTML
+```typescript
 const parseContent = (content: string): string => {
-  if (isHtml(content)) {
-    return content; // Już HTML
-  }
-  if (isMarkdown(content)) {
-    return marked.parse(content); // Konwertuj Markdown
-  }
-  // Fallback - plain text, wrap w <p>
-  return content.split(/\n+/)
-    .filter(p => p.trim())
-    .map(p => `<p>${p}</p>`)
-    .join('');
+  // Zawsze przetwórz przez marked - obsługuje zarówno czysty Markdown,
+  // jak i mieszany HTML+Markdown
+  return marked.parse(content, { async: false }) as string;
 };
 ```
 
-## Logika wykrywania formatu
+Biblioteka `marked` jest w stanie przetwarzać HTML z Markdownem w środku - pozostawi tagi HTML bez zmian, ale skonwertuje `**bold**` na `<strong>`.
 
-| Format | Wzorzec | Obsługa |
-|--------|---------|---------|
-| HTML | `<p>`, `<strong>`, etc. | Renderuj bezpośrednio |
-| Markdown | `**bold**`, `*italic*`, `##` | Konwertuj przez `marked` |
-| Plain text | Brak formatowania | Dziel na akapity, wrap w `<p>` |
+### Opcja B: Naprawić źródło (trwałe rozwiązanie)
 
-## Korzyści
-
-- Stare artykuły z Markdown będą wyświetlane poprawnie
-- Nowe artykuły z edytora WYSIWYG (HTML) nadal działają
-- Przyszłe artykuły generowane przez AI będą automatycznie konwertowane
-
-## Alternatywna opcja (bez nowej biblioteki)
-
-Możemy też zaktualizować prompt AI, aby generował HTML zamiast Markdown:
+Zaktualizować prompt w edge function, aby AI generował **czysty HTML**:
 
 ```text
-WAŻNE: Używaj tagów HTML do formatowania:
-- <strong>tekst</strong> dla pogrubienia (nie **)
-- <em>tekst</em> dla kursywy (nie *)
+FORMATOWANIE:
+- Używaj tagów HTML do formatowania tekstu
+- <strong>tekst</strong> dla pogrubienia (NIE **)
+- <em>tekst</em> dla kursywy (NIE *)
+- <p>...</p> dla akapitów
+- NIE używaj składni Markdown!
 ```
 
-Jednak biblioteka `marked` jest bardziej elastyczna i obsłuży wszystkie istniejące artykuły.
+## Rekomendacja
 
+**Wykonać obie opcje**:
+1. Najpierw naprawić renderowanie - natychmiast naprawia istniejące artykuły
+2. Potem zaktualizować prompt - nowe artykuły będą w czystym HTML
+
+## Zmiany w plikach
+
+| Plik | Zmiana |
+|------|--------|
+| `src/pages/BlinkPage.tsx` | Uproszczenie `parseContent` - zawsze przez `marked` |
+| `supabase/functions/extract-article/index.ts` | Dodanie instrukcji formatowania HTML do promptu |
+
+## Szczegóły techniczne
+
+### BlinkPage.tsx - nowa logika
+
+```typescript
+const parseContent = (content: string): string => {
+  if (!content) return "";
+  
+  // marked.parse() obsługuje:
+  // - Czysty Markdown: **bold** → <strong>bold</strong>
+  // - Czysty HTML: <p>text</p> → <p>text</p> (bez zmian)
+  // - Mieszany: <p>**bold**</p> → <p><strong>bold</strong></p>
+  return marked.parse(content, { async: false }) as string;
+};
+```
+
+### extract-article/index.ts - zaktualizowany prompt
+
+```typescript
+const DEFAULT_CONTENT_PROMPT = `Na podstawie oryginalnego artykułu napisz unikatową, skróconą wersję newsa sportowego w języku polskim.
+
+ZASADY TREŚCI:
+- 300-500 słów
+- Prosty, angażujący język
+- Wszystkie kluczowe fakty z oryginału
+- Dynamiczny, dziennikarski ton
+- 3-5 akapitów (każdy 2-4 zdania)
+- Bez powtarzania tytułu na początku
+
+FORMATOWANIE (OBOWIĄZKOWE):
+- Używaj TYLKO tagów HTML, NIE składni Markdown!
+- <strong>tekst</strong> dla pogrubienia (NIE ** **)
+- <em>tekst</em> dla kursywy (NIE * *)
+- Każdy akapit otocz tagiem <p>...</p>
+- Oddzielaj akapity pustą linią dla czytelności`;
+```
+
+## Efekt po naprawie
+
+| Sytuacja | Przed | Po |
+|----------|-------|-----|
+| Istniejące artykuły z `<p>**bold**</p>` | Gwiazdki widoczne | Tekst pogrubiony |
+| Nowe artykuły z edytora WYSIWYG | Działa | Działa (bez zmian) |
+| Nowe artykuły z AI | Mieszany format | Czysty HTML |
