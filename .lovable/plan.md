@@ -1,127 +1,86 @@
 
-# Unikalna grafika dla artykułów "Podsumowanie Dnia"
 
-## Cel
-Artykuły z podsumowaniem dnia powinny mieć charakterystyczną, wyróżniającą się grafikę - inną niż standardowe grafiki kategorii sportowych.
+# Plan: Naprawa promptu article_content_prompt
 
----
+## Problem
+
+Aktualny prompt `article_content_prompt` zawiera sekcję **"3. Optymalizacja techniczna"**, która instruuje AI, aby generowała:
+- Meta Description
+- Encje (Keywords)  
+- Alt Text dla grafiki
+
+Te dane są wyświetlane na żywo w treści artykułu na stronie `/blink/:id`, co wygląda nieprofesjonalnie i myli czytelników.
+
+## Dlaczego to jest bezpieczne do usunięcia
+
+| Pole | Skąd pochodzi obecnie | Gdzie jest używane w SEO |
+|------|----------------------|-------------------------|
+| Meta Description | Generowane w treści (błąd) | Pole `excerpt` → meta tag + JSON-LD |
+| Keywords/Encje | Generowane w treści (błąd) | Pole `tags[]` → JSON-LD keywords |
+| Alt Text | Generowane w treści (błąd) | `post.title` → atrybut alt obrazka |
+
+Wszystkie te dane są już automatycznie pobierane z dedykowanych pól bazy danych i wstrzykiwane do meta tagów oraz JSON-LD przez komponent `BlinkPage.tsx`. Usunięcie ich z treści **nie wpłynie na SEO**.
 
 ## Rozwiązanie
 
-### 1. Nowa grafika w projekcie
-Dodamy nową grafikę `/images/categories/daily-summary.webp` (lub podobną) - wyróżniającą się wizualnie, np.:
-- Kolaż sportowy / mozaika
-- Gradient z ikoną kalendarza/zegara
-- Stylizowany napis "Podsumowanie dnia"
+Zaktualizować wartość `article_content_prompt` w tabeli `settings`, usuwając sekcję 3 ("Optymalizacja techniczna") i modyfikując instrukcje formatowania.
 
-**Opcja A**: Użyjesz własnej grafiki (prześlij plik, a ja go dodam do projektu)  
-**Opcja B**: Wygeneruję grafikę za pomocą AI (Gemini Image)
+## Nowa treść promptu
 
-### 2. Wykrywanie artykułu "podsumowanie dnia"
-Posty z podsumowaniem mają charakterystyczną cechę:
-- `source_url` = `https://daily-sport-blink.lovable.app/podsumowanie`
-- lub tag `"podsumowanie dnia"` w tablicy `tags`
+```text
+1. Generowanie Nagłówków (Stwórz 2 wersje):
 
-Wykorzystamy to do automatycznego przypisania unikalnej grafiki.
+SEO Title: Max 60 znaków, musi zawierać główną encję (nazwisko/klub) na początku. Format: [Kategoria] Encja: Akcja | Daily Sport.
 
-### 3. Aktualizacja logiki obrazków
+Discover Headline: Agresywny (ale nie kłamliwy), budujący ciekawość, dynamiczny. Użyj emocjonalnych czasowników (np. "szokuje", "uderza", "przełom").
 
-#### Plik: `src/config/categoryImages.ts`
-```typescript
-export const categoryDefaultImages: Record<string, string> = {
-  football: "/images/categories/football.webp",
-  basketball: "/images/categories/basketball.webp",
-  // ... inne kategorie
-  "daily-summary": "/images/categories/daily-summary.webp", // NOWA
-  other: "/images/categories/other.webp",
-  default: "/images/categories/other.webp",
-};
+2. Treść artykułu (300-500 słów):
 
-// Nowa funkcja lub rozszerzenie istniejącej
-export const getPostImage = (
-  post: {
-    image_url?: string | null;
-    source_url?: string;
-    tags?: string[] | null;
-    sport_category?: { slug: string } | null;
-  }
-): string => {
-  // 1. Jeśli ma własny obrazek - użyj go
-  if (post.image_url) return post.image_url;
-  
-  // 2. Sprawdź czy to podsumowanie dnia
-  const isSummary = 
-    post.source_url?.includes("/podsumowanie") ||
-    post.tags?.includes("podsumowanie dnia");
-  
-  if (isSummary) {
-    return categoryDefaultImages["daily-summary"];
-  }
-  
-  // 3. Domyślna grafika kategorii
-  const slug = post.sport_category?.slug || "other";
-  return categoryDefaultImages[slug] || categoryDefaultImages.other;
-};
+Lead (Akapit 1): Najważniejsza informacja ("co, kto, gdzie, kiedy"). Musi być unikatowy względem źródła.
+
+Rozwinięcie (2-3 akapity): Wyciągnij esencję faktów, ale dodaj szerszy kontekst (np. przypomnij poprzedni wynik drużyny lub pozycję w tabeli).
+
+Wzbogacenie (Sekcja "Warto wiedzieć"): Dodaj 2-3 zdania dodatkowego kontekstu, których NIE MA w oryginale (wykorzystaj swoją wiedzę ogólną o sporcie), aby uniknąć kary za "duplicate content".
+
+Na końcu dodaj informację: "Opracowano na podstawie: [Nazwa Źródła]".
+
+Wytyczne stylu:
+
+Używaj pogrubień (<strong>) dla nazwisk sportowców i nazw klubów (bardzo ważne dla botów Google).
+
+Ton: pilny, ekspercki, ale przystępny.
+
+Język: polski, naturalny, unikaj "korpomowy" AI.
+
+FORMATOWANIE (OBOWIĄZKOWE):
+- Używaj TYLKO tagów HTML, NIE składni Markdown!
+- <strong>tekst</strong> dla pogrubienia (NIE ** **)
+- <em>tekst</em> dla kursywy (NIE * *)
+- Każdy akapit otocz tagiem <p>...</p>
 ```
 
-### 4. Aktualizacja komponentów używających obrazków
+## Co zostanie zmienione
 
-#### `src/components/NewsCard.tsx`
-Zmiana z:
-```tsx
-src={getCategoryImage(categorySlug, imageUrl, sportCategory?.slug)}
-```
-Na:
-```tsx
-src={getPostImage({ 
-  image_url: imageUrl, 
-  source_url: sourceUrl,
-  tags,
-  sport_category: sportCategory 
-})}
-```
+1. **Usunięta sekcja 3** - "Optymalizacja techniczna" z Meta Description, Encjami i Alt Text
+2. **Przeniesione wytyczne stylu** - teraz są na końcu, zamiast być osobną sekcją
+3. **Dodane jasne instrukcje HTML** - aby zapobiec używaniu Markdown przez AI
 
-Trzeba dodać `sourceUrl` i `tags` do wywołania.
+## Kroki implementacji
 
-#### `src/components/NewsOfTheDay.tsx` (jeśli istnieje)
-Analogiczna zmiana.
+1. Zaktualizować rekord w tabeli `settings` z kluczem `article_content_prompt`
+2. Unieważnić cache React Query dla ustawień (automatyczne przy zapisie)
+3. Przetestować generowanie nowego artykułu - upewnić się, że nie pojawiają się już meta dane w treści
 
-### 5. Automatyczne ustawienie grafiki w PostEditor
-Przy generowaniu podsumowania (prefill) możemy od razu ustawić `image_url` na grafikę podsumowania:
+## Sekcja techniczna
 
-```typescript
-// W useEffect dla prefillData
-if (prefillData) {
-  // ... existing code
-  form.setValue("image_url", "/images/categories/daily-summary.webp");
-}
+Zmiana zostanie wykonana poprzez aktualizację rekordu w bazie danych:
+
+```sql
+UPDATE settings 
+SET value = '[nowa treść promptu]', 
+    updated_at = NOW() 
+WHERE key = 'article_content_prompt';
 ```
 
----
+Alternatywnie, administrator może zaktualizować prompt bezpośrednio w panelu admina w zakładce "Ustawienia" (Settings), jeśli taka opcja jest dostępna.
 
-## Zakres zmian
-
-| Plik | Zmiana |
-|------|--------|
-| `public/images/categories/daily-summary.webp` | **NOWY** - unikalna grafika |
-| `src/config/categoryImages.ts` | Dodanie `daily-summary` + funkcja `getPostImage()` |
-| `src/components/NewsCard.tsx` | Użycie `getPostImage()` zamiast `getCategoryImage()` |
-| `src/pages/admin/PostEditor.tsx` | Auto-ustawienie grafiki przy prefill podsumowania |
-
----
-
-## Pytanie do Ciebie
-
-Wolisz:
-1. **Własna grafika** - prześlij plik, a ja go dodam
-2. **Wygenerowana przez AI** - opiszesz styl, a ja wygeneruję grafikę przez Gemini Image
-3. **Placeholder** - na razie użyjemy prostego gradientu/placeholder, a grafikę dodasz później
-
----
-
-## Efekt końcowy
-
-- Artykuły "Podsumowanie dnia" automatycznie wyświetlają unikalną grafikę
-- Wyróżniają się wizualnie na liście newsów
-- Redaktor może nadal nadpisać grafikę własnym obrazkiem w edytorze
-- System działa automatycznie - bez dodatkowej pracy przy każdym podsumowaniu
