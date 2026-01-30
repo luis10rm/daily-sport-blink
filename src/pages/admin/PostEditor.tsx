@@ -284,6 +284,60 @@ const PostEditor = () => {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* AI Extract section - at the top */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Generuj AI
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="source_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL źródła</FormLabel>
+                      <div className="flex gap-2">
+                        <FormControl>
+                          <Input
+                            placeholder="https://..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={handleAIExtract}
+                          disabled={extractArticle.isPending}
+                          className="shrink-0"
+                        >
+                          {extractArticle.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                          <span className="ml-2 hidden sm:inline">Generuj AI</span>
+                        </Button>
+                      </div>
+                      <FormDescription>
+                        Wklej link i kliknij "Generuj AI" aby automatycznie wypełnić formularz
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {extractArticle.isPending && (
+                  <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Analizuję artykuł i wypełniam formularz...</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="grid gap-6 lg:grid-cols-3">
               {/* Main content */}
               <div className="space-y-6 lg:col-span-2">
@@ -356,56 +410,6 @@ const PostEditor = () => {
                   form={form} 
                   category={currentCategory?.slug as any} 
                 />
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Linki</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="source_url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>URL źródła</FormLabel>
-                          <div className="flex gap-2">
-                            <FormControl>
-                              <Input
-                                placeholder="https://..."
-                                {...field}
-                              />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              onClick={handleAIExtract}
-                              disabled={extractArticle.isPending}
-                              className="shrink-0"
-                            >
-                              {extractArticle.isPending ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Sparkles className="h-4 w-4" />
-                              )}
-                              <span className="ml-2 hidden sm:inline">Generuj AI</span>
-                            </Button>
-                          </div>
-                          <FormDescription>
-                            Wklej link i kliknij "Generuj AI" aby automatycznie wypełnić formularz
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    {extractArticle.isPending && (
-                      <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-primary">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Analizuję artykuł i wypełniam formularz...</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
               </div>
 
               {/* Sidebar */}
