@@ -1,86 +1,158 @@
 
 
-# Plan: Naprawa promptu article_content_prompt
+# Propozycja Dark Mode dla Szortsy
 
-## Problem
+## Obecny stan
 
-Aktualny prompt `article_content_prompt` zawiera sekcję **"3. Optymalizacja techniczna"**, która instruuje AI, aby generowała:
-- Meta Description
-- Encje (Keywords)  
-- Alt Text dla grafiki
+Serwis posiada już **zdefiniowane zmienne CSS dla dark mode** w `index.css` (linie 65-102), ale nie ma jeszcze:
+- Przełącznika do zmiany motywu
+- Persistencji wyboru użytkownika
+- Integracji z preferencjami systemowymi
 
-Te dane są wyświetlane na żywo w treści artykułu na stronie `/blink/:id`, co wygląda nieprofesjonalnie i myli czytelników.
+## Wizualna koncepcja Dark Mode
 
-## Dlaczego to jest bezpieczne do usunięcia
+### Paleta kolorów
 
-| Pole | Skąd pochodzi obecnie | Gdzie jest używane w SEO |
-|------|----------------------|-------------------------|
-| Meta Description | Generowane w treści (błąd) | Pole `excerpt` → meta tag + JSON-LD |
-| Keywords/Encje | Generowane w treści (błąd) | Pole `tags[]` → JSON-LD keywords |
-| Alt Text | Generowane w treści (błąd) | `post.title` → atrybut alt obrazka |
+| Element | Light Mode | Dark Mode |
+|---------|-----------|-----------|
+| Tło strony | `#FFFEF8` (kremowy) | `#141A1F` (głęboki granat) |
+| Karty | `#FFFFFF` (biały) | `#1C252D` (ciemny szary-niebieski) |
+| Tekst główny | `#1A2027` (prawie czarny) | `#FAFBF8` (kremowa biel) |
+| Tekst pomocniczy | `#6B7280` (szary) | `#8B9299` (jaśniejszy szary) |
+| Akcent (primary) | `#10B981` (szmaragd) | `#22D3A0` (jaśniejszy szmaragd) |
+| Ramki | `#E5E7EB` (jasny szary) | `#2D3742` (ciemny szary) |
 
-Wszystkie te dane są już automatycznie pobierane z dedykowanych pól bazy danych i wstrzykiwane do meta tagów oraz JSON-LD przez komponent `BlinkPage.tsx`. Usunięcie ich z treści **nie wpłynie na SEO**.
-
-## Rozwiązanie
-
-Zaktualizować wartość `article_content_prompt` w tabeli `settings`, usuwając sekcję 3 ("Optymalizacja techniczna") i modyfikując instrukcje formatowania.
-
-## Nowa treść promptu
+### Mockup komponentów
 
 ```text
-1. Generowanie Nagłówków (Stwórz 2 wersje):
+┌─────────────────────────────────────────────────────────────────┐
+│  HEADER (Dark Mode)                                             │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ [🟢] Szortsy   O sporcie: krótko...   Kategorie ▾  🌙/☀️ │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│  Tło: #1C252D z subtelną przezroczystością                      │
+│  Logo: szmaragdowy kwadrat świeci intensywniej                  │
+│  Przełącznik: ikona słońca/księżyca w prawym rogu               │
+└─────────────────────────────────────────────────────────────────┘
 
-SEO Title: Max 60 znaków, musi zawierać główną encję (nazwisko/klub) na początku. Format: [Kategoria] Encja: Akcja | Daily Sport.
+┌─────────────────────────────────────────────────────────────────┐
+│  NEWS CARD (Dark Mode)                                          │
+│  ┌───────────────────────────┐                                  │
+│  │  [Obraz artykułu]         │                                  │
+│  │                           │  - Obrazy pozostają bez zmian    │
+│  ├───────────────────────────┤  - Subtelna poświata na hover    │
+│  │  🟢 PIŁKA NOŻNA  3 sty    │                                  │
+│  │                           │                                  │
+│  │  Lewandowski z hat-      │  Tekst: kremowa biel #FAFBF8     │
+│  │  trickiem w El Clasico   │                                  │
+│  │                           │                                  │
+│  │  Barcelona pokonała...   │  Excerpt: #8B9299                │
+│  │                           │                                  │
+│  │  ┌─────────────────────┐ │                                  │
+│  │  │  Przeczytaj więcej  │ │  Przycisk: szmaragd na ciemnym   │
+│  │  └─────────────────────┘ │                                  │
+│  └───────────────────────────┘                                  │
+│  Tło karty: #1C252D | Ramka: #2D3742                            │
+└─────────────────────────────────────────────────────────────────┘
 
-Discover Headline: Agresywny (ale nie kłamliwy), budujący ciekawość, dynamiczny. Użyj emocjonalnych czasowników (np. "szokuje", "uderza", "przełom").
+┌─────────────────────────────────────────────────────────────────┐
+│  NEWS OF THE DAY (Dark Mode)                                    │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  🏆 Wiadomość dnia  ← złoty badge pozostaje                │ │
+│  │                                                            │ │
+│  │  [Duży obraz]         │  Tytuł: #FAFBF8                   │ │
+│  │                       │  Excerpt: #8B9299                  │ │
+│  │                       │                                    │ │
+│  │                       │  ┌────────────────────┐           │ │
+│  │                       │  │ Przeczytaj więcej │           │ │
+│  │                       │  └────────────────────┘           │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│  Ramka: złota #F59E0B | Tło: #1C252D                            │
+└─────────────────────────────────────────────────────────────────┘
 
-2. Treść artykułu (300-500 słów):
+┌─────────────────────────────────────────────────────────────────┐
+│  STORIES ROW (Dark Mode)                                        │
+│                                                                  │
+│   (○)      (○)      (○)      (○)      (○)                       │
+│   ⚽️      🏀       🎾       🏎️       🥊                        │
+│  Piłka   Koszyk   Tenis    F1      MMA                         │
+│                                                                  │
+│  Kółka: gradient szmaragdowy świeci jaśniej                     │
+│  Ikony: zachowują swoje kolory kategorii                        │
+│  Podpisy: #8B9299                                               │
+└─────────────────────────────────────────────────────────────────┘
 
-Lead (Akapit 1): Najważniejsza informacja ("co, kto, gdzie, kiedy"). Musi być unikatowy względem źródła.
-
-Rozwinięcie (2-3 akapity): Wyciągnij esencję faktów, ale dodaj szerszy kontekst (np. przypomnij poprzedni wynik drużyny lub pozycję w tabeli).
-
-Wzbogacenie (Sekcja "Warto wiedzieć"): Dodaj 2-3 zdania dodatkowego kontekstu, których NIE MA w oryginale (wykorzystaj swoją wiedzę ogólną o sporcie), aby uniknąć kary za "duplicate content".
-
-Na końcu dodaj informację: "Opracowano na podstawie: [Nazwa Źródła]".
-
-Wytyczne stylu:
-
-Używaj pogrubień (<strong>) dla nazwisk sportowców i nazw klubów (bardzo ważne dla botów Google).
-
-Ton: pilny, ekspercki, ale przystępny.
-
-Język: polski, naturalny, unikaj "korpomowy" AI.
-
-FORMATOWANIE (OBOWIĄZKOWE):
-- Używaj TYLKO tagów HTML, NIE składni Markdown!
-- <strong>tekst</strong> dla pogrubienia (NIE ** **)
-- <em>tekst</em> dla kursywy (NIE * *)
-- Każdy akapit otocz tagiem <p>...</p>
+┌─────────────────────────────────────────────────────────────────┐
+│  SCROLL PROGRESS (Dark Mode)                                    │
+│                                                                  │
+│              ┌─────────────────────────────────┐                │
+│              │ 📰 12 newsów z dzisiaj  Scrolluj ▼│              │
+│              └─────────────────────────────────┘                │
+│                                                                  │
+│  Tło: #1C252D z backdrop-blur                                   │
+│  Tekst: kremowa biel                                            │
+│  Ikona: szmaragd                                                │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Co zostanie zmienione
+### Specjalne efekty Dark Mode
 
-1. **Usunięta sekcja 3** - "Optymalizacja techniczna" z Meta Description, Encjami i Alt Text
-2. **Przeniesione wytyczne stylu** - teraz są na końcu, zamiast być osobną sekcją
-3. **Dodane jasne instrukcje HTML** - aby zapobiec używaniu Markdown przez AI
+1. **Świecące akcenty** - szmaragdowy kolor primary będzie miał subtelną poświatę (`box-shadow: 0 0 20px rgba(16, 185, 129, 0.3)`)
 
-## Kroki implementacji
+2. **Glassmorphism na Header** - `backdrop-blur-md` z `bg-card/80` tworzy efekt "matowego szkła"
 
-1. Zaktualizować rekord w tabeli `settings` z kluczem `article_content_prompt`
-2. Unieważnić cache React Query dla ustawień (automatyczne przy zapisie)
-3. Przetestować generowanie nowego artykułu - upewnić się, że nie pojawiają się już meta dane w treści
+3. **Karty z głębią** - subtelny cień na kartach: `shadow-lg shadow-black/30`
+
+4. **Hover glow** - przy najechaniu na kartę, delikatna szmaragdowa obwódka
+
+5. **Obrazy bez zmian** - zdjęcia sportowców i grafiki pozostają w oryginalnych kolorach
+
+## Implementacja
+
+### Przełącznik motywu
+
+Przełącznik zostanie umieszczony w **prawym górnym rogu Headera** jako ikona słońca (light) lub księżyca (dark):
+
+```text
+Header: [Logo] Szortsy   [Kategorie ▾] [Archiwum] [Autorzy] [🌙]
+```
+
+### Zachowanie
+
+| Scenariusz | Działanie |
+|------------|-----------|
+| Pierwsza wizyta | Użyj preferencji systemowych (prefers-color-scheme) |
+| Kliknięcie przełącznika | Zmiana motywu + zapis do localStorage |
+| Kolejna wizyta | Odczytaj z localStorage, fallback do systemu |
+
+### Animacja przejścia
+
+Płynna tranzycja 200ms przy zmianie między trybami - wszystkie kolory zmienią się jednocześnie.
+
+---
 
 ## Sekcja techniczna
 
-Zmiana zostanie wykonana poprzez aktualizację rekordu w bazie danych:
+### Pliki do modyfikacji
 
-```sql
-UPDATE settings 
-SET value = '[nowa treść promptu]', 
-    updated_at = NOW() 
-WHERE key = 'article_content_prompt';
-```
+1. **`src/index.css`** - drobne poprawki istniejących zmiennych dark (np. jaśniejszy primary)
 
-Alternatywnie, administrator może zaktualizować prompt bezpośrednio w panelu admina w zakładce "Ustawienia" (Settings), jeśli taka opcja jest dostępna.
+2. **`src/components/Header.tsx`** - dodanie przycisku przełącznika motywu
+
+3. **`src/components/ThemeToggle.tsx`** (nowy) - komponent przełącznika z ikoną
+
+4. **`src/hooks/useTheme.ts`** (nowy) - hook do zarządzania motywem z localStorage
+
+5. **`src/App.tsx`** - wrapper ThemeProvider z next-themes (już zainstalowane)
+
+### Biblioteka next-themes
+
+Projekt już ma zainstalowany pakiet `next-themes`, który obsłuży:
+- Persistencję wyboru w localStorage
+- Wykrywanie preferencji systemowych
+- Unikanie "flash of unstyled content"
+
+### Zmiany w komponentach
+
+Wszystkie komponenty już używają zmiennych CSS (`bg-card`, `text-foreground`, `border-border`), więc **automatycznie** dostosują się do dark mode po dodaniu klasy `.dark` do `<html>`.
 
