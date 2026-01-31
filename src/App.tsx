@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { WallpaperProvider } from "@/contexts/WallpaperContext";
 import { ConditionalWallpaper } from "@/components/ConditionalWallpaper";
 import { ProtectedRoute } from "@/components/admin/ProtectedRoute";
+import { Analytics } from "@/components/Analytics";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/admin/Dashboard";
@@ -45,6 +46,7 @@ function App() {
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <Analytics />
               <ConditionalWallpaper />
               <Routes>
               <Route path="/" element={<Index />} />
