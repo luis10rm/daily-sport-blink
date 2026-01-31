@@ -1,4 +1,5 @@
 import { ExternalLink, Trophy } from "lucide-react";
+import { Link } from "react-router-dom";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { getPostImage } from "@/config/categoryImages";
@@ -83,15 +84,24 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
 
           {post.author && <AuthorCard author={post.author} />}
 
-          <a
-            href={post.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md transition-all hover:shadow-lg hover:brightness-110"
-          >
-            Przeczytaj więcej
-            <ExternalLink className="h-5 w-5" />
-          </a>
+          {post.content ? (
+            <Link
+              to={`/blink/${post.id}`}
+              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md transition-all hover:shadow-lg hover:brightness-110"
+            >
+              Przeczytaj więcej
+            </Link>
+          ) : (
+            <a
+              href={post.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md transition-all hover:shadow-lg hover:brightness-110"
+            >
+              Przeczytaj więcej
+              <ExternalLink className="h-5 w-5" />
+            </a>
+          )}
           <span className="text-sm text-muted-foreground mt-2">
             Źródło: {getSourceName(post.source_url)}
           </span>

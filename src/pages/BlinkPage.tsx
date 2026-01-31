@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
+import { Footer } from "@/components/Footer";
 
 // Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string): string => {
@@ -38,7 +39,15 @@ const parseContent = (content: string): string => {
   return sanitizeHtml(html);
 };
 
-const SITE_URL = "https://daily-sport-blink.lovable.app";
+// Dynamic base URL for SEO canonical
+const getBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return import.meta.env.VITE_SITE_URL || "https://daily-sport-blink.lovable.app";
+};
+
+const SITE_URL = getBaseUrl();
 
 const BlinkPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -235,6 +244,8 @@ const BlinkPage = () => {
           )}
         </article>
       </main>
+
+      <Footer />
     </div>
   );
 };

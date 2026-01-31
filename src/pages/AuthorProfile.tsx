@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { AuthorHero } from "@/components/AuthorHero";
 import { AuthorStats } from "@/components/AuthorStats";
 import { NewsCard } from "@/components/NewsCard";
@@ -123,6 +124,8 @@ const AuthorProfile = () => {
           </div>
         )}
       </section>
+
+      <Footer />
     </div>
   );
 };
