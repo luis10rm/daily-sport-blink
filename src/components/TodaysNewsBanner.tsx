@@ -20,6 +20,14 @@ const variants = [
   { before: "Specjalnie dla Ciebie:", after: "najciekawszych wydarzeń sportowych" },
 ];
 
+const mobileVariants = [
+  { prefix: "Wyselekcjonowane dla Ciebie", suffix: "newsów" },
+  { prefix: "Tylko najważniejsze", suffix: "sportowych hitów" },
+  { prefix: "Twój briefing", suffix: "kluczowych newsów" },
+  { prefix: "Starannie wybrane", suffix: "informacji dnia" },
+  { prefix: "Esencja sportu", suffix: "must-read" },
+];
+
 // Polish plural forms
 const getNewsLabel = (count: number) => {
   if (count === 1) return "news";
@@ -32,6 +40,7 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
   const { isTakeoverActive } = useWallpaperContext();
   const [displayCount, setDisplayCount] = useState(0);
   const [variant] = useState(() => variants[Math.floor(Math.random() * variants.length)]);
+  const [mobileVariant] = useState(() => mobileVariants[Math.floor(Math.random() * mobileVariants.length)]);
 
   const formattedDate = format(new Date(), "EEEE, d MMMM", { locale: pl });
   // Capitalize first letter
@@ -100,15 +109,16 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
           className
         )}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Newspaper className="h-5 w-5 text-primary" />
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                Dzisiaj: <span className="text-primary font-bold">{displayCount}</span> {getNewsLabel(displayCount)}
-              </p>
-              <p className="text-xs text-muted-foreground">{capitalizedDate}</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <Newspaper className="h-5 w-5 text-primary flex-shrink-0" />
+          <div>
+            <p className="text-sm text-foreground">
+              <span className="font-semibold">{mobileVariant.prefix}</span>
+              <span className="mx-1.5 text-muted-foreground">·</span>
+              <span className="text-primary font-bold text-lg">{displayCount}</span>
+              <span className="text-muted-foreground ml-1">{mobileVariant.suffix}</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">{capitalizedDate}</p>
           </div>
         </div>
       </section>
