@@ -9,6 +9,7 @@ import { PostCategory } from "@/hooks/usePosts";
 
 interface NewsCardProps {
   id: string;
+  slug: string;
   title: string;
   excerpt: string;
   content?: string | null;
@@ -40,6 +41,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
   (
     {
       id,
+      slug,
       title,
       excerpt,
       content,
@@ -59,9 +61,9 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
     },
     ref
   ) => {
-    // Determine if this post has AI-generated content (link to /blink/:id)
+    // Determine if this post has AI-generated content (link to /blink/:slug)
     const hasContent = Boolean(content);
-    const blinkUrl = `/blink/${id}`;
+    const blinkUrl = `/blink/${slug}`;
     
     const formattedDate = new Date(publishedAt).toLocaleDateString("pl-PL", {
       day: "numeric",

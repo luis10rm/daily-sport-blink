@@ -137,6 +137,7 @@ const Index = () => {
                 key={post.id}
                 ref={index === lastTodayIndex ? lastTodayRef : undefined}
                 id={post.id}
+                slug={post.slug}
                 title={post.title}
                 excerpt={post.excerpt}
                 content={post.content}

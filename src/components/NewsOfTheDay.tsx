@@ -87,7 +87,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
 
           {post.content ? (
             <Link
-              to={`/blink/${post.id}`}
+              to={`/blink/${post.slug}`}
               className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md transition-all hover:shadow-lg hover:brightness-110"
             >
               Przeczytaj więcej

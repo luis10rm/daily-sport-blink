@@ -104,7 +104,7 @@ export const getNewsArticleSEO = (post: Post) => {
       // mainEntityOfPage pointing to dedicated blink URL
       mainEntityOfPage: {
         "@type": "WebPage",
-        "@id": `${SITE_URL}/blink/${post.id}`,
+        "@id": `${SITE_URL}/blink/${post.slug}`,
       },
       headline: post.title,
       description: post.excerpt,
@@ -193,7 +193,7 @@ export const getRichItemListSEO = (name: string, posts: Post[]) => ({
         // Each article links to its dedicated blink page
         mainEntityOfPage: {
           "@type": "WebPage",
-          "@id": `${SITE_URL}/blink/${post.id}`,
+          "@id": `${SITE_URL}/blink/${post.slug}`,
         },
         headline: post.title,
         description: post.excerpt,

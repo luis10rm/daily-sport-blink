@@ -50,7 +50,7 @@ function App() {
               <ConditionalWallpaper />
               <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/blink/:id" element={<BlinkPage />} />
+              <Route path="/blink/:slug" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
               <Route path="/kategoria/:slug" element={<CategoryPage />} />
               <Route path="/tagi" element={<TagsListPage />} />
