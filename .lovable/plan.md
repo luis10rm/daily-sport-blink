@@ -1,103 +1,68 @@
 
 
-# Plan: Naprawa ekstrakcji artykułów dla stron z ochroną anti-bot
+# Plan: Angażujące copy dla mobile TodaysNewsBanner
 
 ## Problem
-Strona fcbarca.com (i inne z ochroną anti-bot) zwraca błąd **403 Forbidden** ponieważ rozpoznaje nasz User-Agent jako bota.
+Obecna wersja mobilna pokazuje suchy, mało angażujący tekst:
+- "Dzisiaj: 5 newsów"
+
+Podczas gdy desktop używa personalizowanych wariantów podkreślających wartość dla użytkownika:
+- "Dzisiaj mamy dla Ciebie 5 starannie wybranych newsów sportowych"
 
 ## Rozwiązanie
-Dodać **Firecrawl** jako alternatywny fallback gdy prosty `fetch` zawiedzie.
+Stworzymy dedykowane warianty tekstowe dla mobile - krótsze, ale równie angażujące i podkreślające ekskluzywność i personalizację treści.
 
-## Implementacja
+## Proponowane warianty mobile
 
-| Element | Zmiana |
-|---------|--------|
-| Edge function `extract-article` | Dodanie fallbacku do Firecrawl przy błędzie 403/503 |
-| Konektor Firecrawl | Wymagane podłączenie konektora |
+| Wariant | Tekst |
+|---------|-------|
+| 1 | **Wyselekcjonowane dla Ciebie** · 5 newsów |
+| 2 | **Tylko najważniejsze** · 5 sportowych hitów |
+| 3 | **Twój briefing** · 5 kluczowych newsów |
+| 4 | **Starannie wybrane** · 5 informacji dnia |
+| 5 | **Esencja sportu** · 5 must-read newsów |
+
+## Zmiany wizualne
+
+- Pogrubienie pierwszej części tekstu (wartość dla użytkownika)
+- Większy, wyróżniony numerek z gradientem
+- Subtelny separator (·) między elementami
+- Data pozostaje jako element drugorzędny
+
+## Zmieniony layout
+
+```
+┌─────────────────────────────────────────┐
+│ 📰  Wyselekcjonowane dla Ciebie · 5     │
+│     Piątek, 31 stycznia                 │
+└─────────────────────────────────────────┘
+```
 
 ---
 
 ## Szczegóły techniczne
 
-### 1. Logika fallback w edge function
-
-```text
-+-----------------------+
-|   fetch(url)          |
-+-----------+-----------+
-            |
-     sukces? |
-            v
-  +----+----+----+
-  | tak         | nie (403/503)
-  v             v
-  kontynuuj   +------------------+
-              | Firecrawl.scrape |
-              +---------+--------+
-                        |
-                        v
-                  kontynuuj z HTML
-```
-
-### 2. Zmiany w kodzie
-
-**Krok 1**: Ulepszyć User-Agent na bardziej realistyczny:
+### Nowe warianty mobile
 ```typescript
-headers: {
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-  "Accept-Language": "pl,en-US;q=0.9,en;q=0.8",
-}
+const mobileVariants = [
+  { prefix: "Wyselekcjonowane dla Ciebie", suffix: "newsów" },
+  { prefix: "Tylko najważniejsze", suffix: "sportowych hitów" },
+  { prefix: "Twój briefing", suffix: "kluczowych newsów" },
+  { prefix: "Starannie wybrane", suffix: "informacji dnia" },
+  { prefix: "Esencja sportu", suffix: "must-read" },
+];
 ```
 
-**Krok 2**: Dodać fallback do Firecrawl:
-```typescript
-// Pierwsze pobieranie - standardowy fetch
-let html: string;
-const response = await fetch(url, { headers: browserHeaders });
+### Plik do edycji
+- `src/components/TodaysNewsBanner.tsx` - sekcja mobile (linie 92-116)
 
-if (!response.ok && [403, 503].includes(response.status)) {
-  // Fallback do Firecrawl
-  const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
-  if (firecrawlKey) {
-    console.log("Fallback to Firecrawl for anti-bot bypass");
-    const fcResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${firecrawlKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        url,
-        formats: ["html"],
-        onlyMainContent: false,
-      }),
-    });
-    const fcData = await fcResponse.json();
-    html = fcData.data?.html || "";
-  } else {
-    throw new Error("Strona blokuje boty (403). Skonfiguruj Firecrawl aby ominąć zabezpieczenia.");
-  }
-} else if (!response.ok) {
-  throw new Error(`Failed to fetch URL: ${response.status}`);
-} else {
-  html = await response.text();
-}
+### Zmiany w strukturze JSX mobile
+```tsx
+<p className="text-sm text-foreground">
+  <span className="font-semibold">{mobileVariant.prefix}</span>
+  <span className="mx-1.5 text-muted-foreground">·</span>
+  <span className="text-primary font-bold text-lg">{displayCount}</span>
+  <span className="text-muted-foreground ml-1">{mobileVariant.suffix}</span>
+</p>
 ```
-
-### 3. Wymagane kroki
-
-1. **Podłączyć konektor Firecrawl** w ustawieniach projektu
-2. **Zaktualizować edge function** z nową logiką fallback
-3. **Przetestować** z problematycznym URL
-
-### 4. Alternatywa bez Firecrawl
-
-Jeśli nie chcesz używać Firecrawl, możemy tylko ulepszyć User-Agent - to pomoże z niektórymi stronami, ale nie ze wszystkimi.
-
-## Bezpieczeństwo
-
-- Firecrawl API key będzie przechowywany jako secret w Supabase
-- Nie zmienia to istniejących zabezpieczeń SSRF
-- Rate limiting pozostaje bez zmian
 
