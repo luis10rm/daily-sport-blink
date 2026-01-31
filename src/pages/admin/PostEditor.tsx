@@ -11,6 +11,7 @@ import { useExtractArticle } from "@/hooks/useSettings";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthors, useAuthorByUserId } from "@/hooks/useAuthors";
+import { supabase } from "@/integrations/supabase/client";
 import { QuickCategoryDialog } from "@/components/admin/QuickCategoryDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -186,6 +187,52 @@ const PostEditor = () => {
     }
   }, [post, form]);
 
+  // Notify Google Indexing API about new/updated post
+  const notifyGoogleIndex = async (slug: string) => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      
+      if (!token) {
+        console.warn("No auth token for Google Indexing notification");
+        return;
+      }
+
+      const postUrl = `https://szortsy.pl/blink/${slug}`;
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify-google-index`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            url: postUrl,
+            type: "URL_UPDATED",
+          }),
+        }
+      );
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        toast.success("Google zostało powiadomione o nowym artykule", {
+          description: `URL: ${postUrl}`,
+        });
+      } else {
+        console.error("Google Indexing notification failed:", result);
+        toast.warning("Nie udało się powiadomić Google o nowym artykule", {
+          description: result.error || "Spróbuj ponownie później",
+        });
+      }
+    } catch (error) {
+      console.error("Google Indexing notification error:", error);
+      // Don't show error toast - this is a non-critical feature
+    }
+  };
+
   const onSubmit = async (data: PostFormData) => {
     const postData = {
       title: data.title,
@@ -204,7 +251,12 @@ const PostEditor = () => {
     if (isEditing && id) {
       await updatePost.mutateAsync({ id, ...postData });
     } else {
-      await createPost.mutateAsync({ ...postData, created_by: user?.id });
+      const newPost = await createPost.mutateAsync({ ...postData, created_by: user?.id });
+      
+      // Notify Google about the new post (only for new posts, not edits)
+      if (newPost?.slug) {
+        notifyGoogleIndex(newPost.slug);
+      }
     }
     navigate("/admin/posts");
   };
