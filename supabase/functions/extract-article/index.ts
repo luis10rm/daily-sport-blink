@@ -247,23 +247,72 @@ serve(async (req) => {
 
     console.log(`User ${user.id} extracting article from URL: ${url}`);
 
-    // Fetch the article HTML
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; DailySportBot/1.0)",
-        "Accept": "text/html,application/xhtml+xml",
-      },
-    });
+    // Browser-like headers to avoid bot detection
+    const browserHeaders = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "Accept-Language": "pl,en-US;q=0.9,en;q=0.8",
+    };
 
-    if (!response.ok) {
+    // Fetch the article HTML
+    let html: string;
+    const response = await fetch(url, { headers: browserHeaders });
+
+    if (!response.ok && [403, 503].includes(response.status)) {
+      // Fallback to Firecrawl for anti-bot protected sites
+      const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+      if (firecrawlKey) {
+        console.log(`Fallback to Firecrawl for anti-bot bypass (status: ${response.status})`);
+        const fcResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${firecrawlKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url,
+            formats: ["html"],
+            onlyMainContent: false,
+          }),
+        });
+
+        if (!fcResponse.ok) {
+          const fcError = await fcResponse.text();
+          console.error("Firecrawl API error:", fcResponse.status, fcError);
+          return new Response(
+            JSON.stringify({ error: `Firecrawl error: ${fcResponse.status}` }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const fcData = await fcResponse.json();
+        html = fcData.data?.html || "";
+        
+        if (!html) {
+          console.error("Firecrawl returned empty HTML");
+          return new Response(
+            JSON.stringify({ error: "Firecrawl nie zwrócił treści strony" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        console.log("Successfully fetched via Firecrawl, HTML length:", html.length);
+      } else {
+        console.error("Site blocked request (403/503) and Firecrawl not configured");
+        return new Response(
+          JSON.stringify({ error: "Strona blokuje boty (403). Skonfiguruj Firecrawl aby ominąć zabezpieczenia." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else if (!response.ok) {
       console.error("Failed to fetch URL:", response.status);
       return new Response(
         JSON.stringify({ error: `Failed to fetch URL: ${response.status}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    } else {
+      html = await response.text();
     }
-
-    const html = await response.text();
     const articleText = extractTextFromHtml(html);
     const ogImage = extractOgImage(html);
 
