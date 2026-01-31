@@ -1,128 +1,204 @@
 
-# Plan: Naprawa publikacji podsumowania dnia
+
+# Plan: Naprawa błędu duplikacji slugów tagów
 
 ## Zidentyfikowany problem
 
-Gdy użytkownik generuje "Podsumowanie dnia" i próbuje je opublikować, przycisk "Zapisz" nie reaguje. To dlatego, że:
+Przy publikacji podsumowania dnia (lub dowolnego posta z tagami) trigger `sync_tags_on_post_change` wywołuje funkcję `sync_tags()`, która:
 
-1. **Wyścig warunków (race condition)** - `useEffect` wypełniający formularz uruchamia się zanim kategorie sportowe (`sportCategories`) załadują się z bazy danych
-2. **`category_id` pozostaje puste** - warunek `if (otherCategory)` nie ustawia kategorii, bo `sportCategories` jest jeszcze `undefined`
-3. **Cicha walidacja** - formularz nie przechodzi walidacji Zod (pole `category_id` wymaga min. 1 znaku), ale nie ma widocznego komunikatu błędu
+1. Próbuje wstawić tagi z postów do tabeli `tags`
+2. Używa `ON CONFLICT (name)` aby obsłużyć duplikaty nazw
+3. **ALE** tabela ma też constraint `UNIQUE (slug)` - `tags_slug_key`
+4. Gdy dwa różne tagi generują ten sam slug (np. "Widzew Łódź" już istnieje → slug "widzew-lodz"), funkcja rzuca błąd
 
-## Dowody
+**Przykład z logów:**
+```
+Key (slug)=(widzew-lodz) already exists.
+```
 
-- Schema wymaga: `category_id: z.string().min(1, "Wybierz kategorię")`
-- Default value to: `category_id: ""`
-- UseEffect sprawdza `if (otherCategory)` ale nie obsługuje przypadku gdy `sportCategories` jest niezaładowane
-- Toast pokazuje "Formularz wypełniony..." nawet gdy kategoria NIE została ustawiona
+Tag "Widzew Łódź" już istnieje w tabeli `tags`. Gdy próbujesz opublikować post z tym tagiem, trigger próbuje go wstawić ponownie, ale slug "widzew-lodz" już istnieje.
 
 ## Rozwiązanie
 
-### 1. Poczekaj na załadowanie kategorii przed wypełnieniem formularza
+Zmienić klauzulę `ON CONFLICT` w funkcji `sync_tags()` aby obsługiwała też konflikty slugów.
 
-Dodać warunek sprawdzający czy kategorie są załadowane:
+**Opcja A (zalecana):** Obsługa obu conflictów przez dodanie `ON CONFLICT ON CONSTRAINT` lub użycie `WHERE NOT EXISTS`:
 
-```typescript
-useEffect(() => {
-  // Poczekaj aż kategorie się załadują
-  if (!sportCategories || isLoadingCategories) return;
-  
-  if (prefillData && !isEditing) {
-    // ... wypełnianie pól ...
-    
-    const otherCategory = sportCategories.find((cat) => cat.slug === "other");
-    if (otherCategory) {
-      form.setValue("category_id", otherCategory.id);
-    } else {
-      // Fallback - użyj pierwszej dostępnej kategorii
-      if (sportCategories.length > 0) {
-        form.setValue("category_id", sportCategories[0].id);
-      }
-    }
-    
-    toast.info("Formularz wypełniony danymi z generatora podsumowania");
-  }
-}, [prefillData, isEditing, sportCategories, isLoadingCategories, form]);
+```sql
+INSERT INTO tags (name, slug, post_count)
+SELECT 
+  tag,
+  generate_tag_slug(tag),
+  count(*)::integer
+FROM posts, unnest(tags) AS tag
+WHERE tags IS NOT NULL 
+  AND published_at <= now()
+  AND NOT EXISTS (
+    SELECT 1 FROM tags t 
+    WHERE t.name = tag OR t.slug = generate_tag_slug(tag)
+  )
+GROUP BY tag;
+
+-- Następnie zaktualizuj post_count dla istniejących tagów
+UPDATE tags t SET
+  post_count = (
+    SELECT count(*)::integer 
+    FROM posts p 
+    WHERE t.name = ANY(p.tags) AND p.published_at <= now()
+  ),
+  updated_at = now()
+WHERE EXISTS (
+  SELECT 1 FROM posts p 
+  WHERE t.name = ANY(p.tags) AND p.published_at <= now()
+);
 ```
 
-### 2. Dodaj debugowanie błędów formularza
+**Opcja B:** Użycie `ON CONFLICT (slug)` zamiast `ON CONFLICT (name)`:
 
-Dodać wyświetlanie błędów walidacji przy przycisku submit:
-
-```typescript
-{Object.keys(form.formState.errors).length > 0 && (
-  <div className="text-sm text-destructive space-y-1">
-    {Object.entries(form.formState.errors).map(([key, error]) => (
-      <p key={key}>• {error?.message || `Błąd w polu ${key}`}</p>
-    ))}
-  </div>
-)}
+```sql
+ON CONFLICT (slug) DO UPDATE SET
+  post_count = EXCLUDED.post_count,
+  updated_at = now()
+WHERE tags.name = EXCLUDED.name;
 ```
 
-### 3. Zmienić zależności useEffect
+## Implementacja
 
-Dodać `isLoadingCategories` do dependencies aby ponownie uruchomić effect gdy kategorie się załadują.
+Wykonam migrację bazy danych która zaktualizuje funkcję `sync_tags()`:
 
-## Pliki do modyfikacji
-
-| Plik | Zmiana |
-|------|--------|
-| `src/pages/admin/PostEditor.tsx` | Naprawić useEffect + dodać debugowanie błędów |
+| Element | Zmiana |
+|---------|--------|
+| Funkcja `sync_tags()` | Zmiana logiki INSERT na bezpieczną dla obu constraintów |
 
 ## Sekcja techniczna
 
-### Kod przed zmianą (linie 118-143)
-```typescript
-useEffect(() => {
-  if (prefillData && !isEditing) {
-    // ...
-    const otherCategory = sportCategories?.find((cat) => cat.slug === "other");
-    if (otherCategory) {
-      form.setValue("category_id", otherCategory.id);
-    }
-    toast.info("Formularz wypełniony...");
-  }
-}, [prefillData, isEditing, sportCategories, form]);
-```
+### Nowa wersja funkcji sync_tags()
 
-### Kod po zmianie
-```typescript
-useEffect(() => {
-  // Poczekaj aż kategorie się załadują
-  if (!sportCategories || sportCategories.length === 0) return;
+```sql
+CREATE OR REPLACE FUNCTION public.sync_tags()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+BEGIN
+  -- Insert only truly new tags (not existing by name OR slug)
+  INSERT INTO tags (name, slug, post_count)
+  SELECT 
+    tag,
+    generate_tag_slug(tag),
+    count(*)::integer
+  FROM posts, unnest(tags) AS tag
+  WHERE tags IS NOT NULL 
+    AND published_at <= now()
+  GROUP BY tag
+  ON CONFLICT (name) DO UPDATE SET
+    post_count = EXCLUDED.post_count,
+    updated_at = now();
+    
+  -- Handle potential slug conflicts by updating existing tags
+  -- (This catches cases where name is different but slug is the same)
   
-  if (prefillData && !isEditing) {
-    if (prefillData.title) form.setValue("title", prefillData.title);
-    if (prefillData.excerpt) form.setValue("excerpt", prefillData.excerpt);
-    if (prefillData.content) {
-      const normalizedContent = normalizeMarkdownInHtml(prefillData.content);
-      form.setValue("content", normalizedContent);
-    }
-    if (prefillData.tags) form.setValue("tags", prefillData.tags);
-    
-    form.setValue("source_url", "https://daily-sport-blink.lovable.app/podsumowanie");
-    form.setValue("image_url", "/images/categories/daily-summary.webp");
-    
-    // Znajdź kategorię "other" lub użyj pierwszej dostępnej
-    const otherCategory = sportCategories.find((cat) => cat.slug === "other");
-    const categoryToUse = otherCategory || sportCategories[0];
-    if (categoryToUse) {
-      form.setValue("category_id", categoryToUse.id);
-    }
-    
-    toast.info("Formularz wypełniony danymi z generatora podsumowania");
-  }
-}, [prefillData, isEditing, sportCategories, form]);
+  -- Update counts for all existing tags
+  UPDATE tags t SET 
+    post_count = COALESCE((
+      SELECT count(*)::integer 
+      FROM posts p 
+      WHERE t.name = ANY(p.tags) AND p.published_at <= now()
+    ), 0),
+    updated_at = now();
+END;
+$function$;
 ```
 
-### Dodanie sekcji błędów (przed przyciskiem submit)
-```tsx
-{Object.keys(form.formState.errors).length > 0 && (
-  <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive space-y-1 mb-4">
-    <p className="font-medium">Popraw błędy przed zapisaniem:</p>
-    {Object.entries(form.formState.errors).map(([key, error]) => (
-      <p key={key}>• {String(error?.message) || `Błąd w polu ${key}`}</p>
-    ))}
-  </div>
-)}
+**Alternatywnie** - bardziej bezpieczna wersja z pominięciem duplikatów slugów:
+
+```sql
+CREATE OR REPLACE FUNCTION public.sync_tags()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+BEGIN
+  -- Insert new tags, ignoring any that would cause conflicts
+  INSERT INTO tags (name, slug, post_count)
+  SELECT 
+    tag,
+    generate_tag_slug(tag),
+    count(*)::integer
+  FROM posts, unnest(tags) AS tag
+  WHERE tags IS NOT NULL 
+    AND published_at <= now()
+  GROUP BY tag
+  ON CONFLICT (name) DO UPDATE SET
+    post_count = EXCLUDED.post_count,
+    updated_at = now()
+  ON CONFLICT (slug) DO NOTHING;
+    
+  -- Update counts for all existing tags
+  UPDATE tags t SET 
+    post_count = COALESCE((
+      SELECT count(*)::integer 
+      FROM posts p 
+      WHERE t.name = ANY(p.tags) AND p.published_at <= now()
+    ), 0),
+    updated_at = now();
+END;
+$function$;
 ```
+
+**Uwaga:** PostgreSQL nie obsługuje wielu klauzul `ON CONFLICT` w jednym INSERT. Dlatego użyjemy podejścia z `WHERE NOT EXISTS`:
+
+### Finalna wersja (rekomendowana)
+
+```sql
+CREATE OR REPLACE FUNCTION public.sync_tags()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  tag_record RECORD;
+BEGIN
+  -- Process each unique tag from posts
+  FOR tag_record IN 
+    SELECT 
+      tag as name,
+      generate_tag_slug(tag) as slug,
+      count(*)::integer as post_count
+    FROM posts, unnest(tags) AS tag
+    WHERE tags IS NOT NULL AND published_at <= now()
+    GROUP BY tag
+  LOOP
+    -- Try to insert, on name conflict update, on slug conflict skip
+    INSERT INTO tags (name, slug, post_count)
+    VALUES (tag_record.name, tag_record.slug, tag_record.post_count)
+    ON CONFLICT (name) DO UPDATE SET
+      post_count = EXCLUDED.post_count,
+      updated_at = now();
+  EXCEPTION WHEN unique_violation THEN
+    -- Slug already exists with different name - just update the post_count
+    UPDATE tags SET 
+      post_count = tag_record.post_count,
+      updated_at = now()
+    WHERE slug = tag_record.slug;
+  END LOOP;
+    
+  -- Update counts for tags that might have decreased
+  UPDATE tags t SET 
+    post_count = COALESCE((
+      SELECT count(*)::integer 
+      FROM posts p 
+      WHERE t.name = ANY(p.tags) AND p.published_at <= now()
+    ), 0),
+    updated_at = now()
+  WHERE NOT EXISTS (
+    SELECT 1 FROM posts, unnest(tags) AS tag 
+    WHERE tag = t.name AND published_at <= now()
+  );
+END;
+$function$;
+```
+
