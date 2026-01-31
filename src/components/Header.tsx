@@ -2,6 +2,7 @@ import { Archive, ChevronDown, Newspaper, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { DynamicSportIcon } from "./DynamicSportIcon";
+import { ThemeToggle } from "./ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,6 +68,7 @@ export const Header = () => {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Autorzy</span>
           </Link>
+          <ThemeToggle />
         </nav>
       </div>
     </header>

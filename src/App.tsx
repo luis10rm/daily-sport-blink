@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { WallpaperProvider } from "@/contexts/WallpaperContext";
 import { ConditionalWallpaper } from "@/components/ConditionalWallpaper";
@@ -37,14 +38,15 @@ const queryClient = new QueryClient();
 function App() {
   return (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <WallpaperProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ConditionalWallpaper />
-            <Routes>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
+      <AuthProvider>
+        <WallpaperProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ConditionalWallpaper />
+              <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/blink/:id" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
@@ -198,12 +200,13 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </WallpaperProvider>
-  </AuthProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </WallpaperProvider>
+    </AuthProvider>
+  </ThemeProvider>
 </QueryClientProvider>
   );
 }
