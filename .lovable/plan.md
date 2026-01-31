@@ -1,158 +1,128 @@
 
+# Plan: Naprawa publikacji podsumowania dnia
 
-# Propozycja Dark Mode dla Szortsy
+## Zidentyfikowany problem
 
-## Obecny stan
+Gdy użytkownik generuje "Podsumowanie dnia" i próbuje je opublikować, przycisk "Zapisz" nie reaguje. To dlatego, że:
 
-Serwis posiada już **zdefiniowane zmienne CSS dla dark mode** w `index.css` (linie 65-102), ale nie ma jeszcze:
-- Przełącznika do zmiany motywu
-- Persistencji wyboru użytkownika
-- Integracji z preferencjami systemowymi
+1. **Wyścig warunków (race condition)** - `useEffect` wypełniający formularz uruchamia się zanim kategorie sportowe (`sportCategories`) załadują się z bazy danych
+2. **`category_id` pozostaje puste** - warunek `if (otherCategory)` nie ustawia kategorii, bo `sportCategories` jest jeszcze `undefined`
+3. **Cicha walidacja** - formularz nie przechodzi walidacji Zod (pole `category_id` wymaga min. 1 znaku), ale nie ma widocznego komunikatu błędu
 
-## Wizualna koncepcja Dark Mode
+## Dowody
 
-### Paleta kolorów
+- Schema wymaga: `category_id: z.string().min(1, "Wybierz kategorię")`
+- Default value to: `category_id: ""`
+- UseEffect sprawdza `if (otherCategory)` ale nie obsługuje przypadku gdy `sportCategories` jest niezaładowane
+- Toast pokazuje "Formularz wypełniony..." nawet gdy kategoria NIE została ustawiona
 
-| Element | Light Mode | Dark Mode |
-|---------|-----------|-----------|
-| Tło strony | `#FFFEF8` (kremowy) | `#141A1F` (głęboki granat) |
-| Karty | `#FFFFFF` (biały) | `#1C252D` (ciemny szary-niebieski) |
-| Tekst główny | `#1A2027` (prawie czarny) | `#FAFBF8` (kremowa biel) |
-| Tekst pomocniczy | `#6B7280` (szary) | `#8B9299` (jaśniejszy szary) |
-| Akcent (primary) | `#10B981` (szmaragd) | `#22D3A0` (jaśniejszy szmaragd) |
-| Ramki | `#E5E7EB` (jasny szary) | `#2D3742` (ciemny szary) |
+## Rozwiązanie
 
-### Mockup komponentów
+### 1. Poczekaj na załadowanie kategorii przed wypełnieniem formularza
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  HEADER (Dark Mode)                                             │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ [🟢] Szortsy   O sporcie: krótko...   Kategorie ▾  🌙/☀️ │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│  Tło: #1C252D z subtelną przezroczystością                      │
-│  Logo: szmaragdowy kwadrat świeci intensywniej                  │
-│  Przełącznik: ikona słońca/księżyca w prawym rogu               │
-└─────────────────────────────────────────────────────────────────┘
+Dodać warunek sprawdzający czy kategorie są załadowane:
 
-┌─────────────────────────────────────────────────────────────────┐
-│  NEWS CARD (Dark Mode)                                          │
-│  ┌───────────────────────────┐                                  │
-│  │  [Obraz artykułu]         │                                  │
-│  │                           │  - Obrazy pozostają bez zmian    │
-│  ├───────────────────────────┤  - Subtelna poświata na hover    │
-│  │  🟢 PIŁKA NOŻNA  3 sty    │                                  │
-│  │                           │                                  │
-│  │  Lewandowski z hat-      │  Tekst: kremowa biel #FAFBF8     │
-│  │  trickiem w El Clasico   │                                  │
-│  │                           │                                  │
-│  │  Barcelona pokonała...   │  Excerpt: #8B9299                │
-│  │                           │                                  │
-│  │  ┌─────────────────────┐ │                                  │
-│  │  │  Przeczytaj więcej  │ │  Przycisk: szmaragd na ciemnym   │
-│  │  └─────────────────────┘ │                                  │
-│  └───────────────────────────┘                                  │
-│  Tło karty: #1C252D | Ramka: #2D3742                            │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│  NEWS OF THE DAY (Dark Mode)                                    │
-│  ┌───────────────────────────────────────────────────────────┐ │
-│  │  🏆 Wiadomość dnia  ← złoty badge pozostaje                │ │
-│  │                                                            │ │
-│  │  [Duży obraz]         │  Tytuł: #FAFBF8                   │ │
-│  │                       │  Excerpt: #8B9299                  │ │
-│  │                       │                                    │ │
-│  │                       │  ┌────────────────────┐           │ │
-│  │                       │  │ Przeczytaj więcej │           │ │
-│  │                       │  └────────────────────┘           │ │
-│  └───────────────────────────────────────────────────────────┘ │
-│  Ramka: złota #F59E0B | Tło: #1C252D                            │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│  STORIES ROW (Dark Mode)                                        │
-│                                                                  │
-│   (○)      (○)      (○)      (○)      (○)                       │
-│   ⚽️      🏀       🎾       🏎️       🥊                        │
-│  Piłka   Koszyk   Tenis    F1      MMA                         │
-│                                                                  │
-│  Kółka: gradient szmaragdowy świeci jaśniej                     │
-│  Ikony: zachowują swoje kolory kategorii                        │
-│  Podpisy: #8B9299                                               │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│  SCROLL PROGRESS (Dark Mode)                                    │
-│                                                                  │
-│              ┌─────────────────────────────────┐                │
-│              │ 📰 12 newsów z dzisiaj  Scrolluj ▼│              │
-│              └─────────────────────────────────┘                │
-│                                                                  │
-│  Tło: #1C252D z backdrop-blur                                   │
-│  Tekst: kremowa biel                                            │
-│  Ikona: szmaragd                                                │
-└─────────────────────────────────────────────────────────────────┘
+```typescript
+useEffect(() => {
+  // Poczekaj aż kategorie się załadują
+  if (!sportCategories || isLoadingCategories) return;
+  
+  if (prefillData && !isEditing) {
+    // ... wypełnianie pól ...
+    
+    const otherCategory = sportCategories.find((cat) => cat.slug === "other");
+    if (otherCategory) {
+      form.setValue("category_id", otherCategory.id);
+    } else {
+      // Fallback - użyj pierwszej dostępnej kategorii
+      if (sportCategories.length > 0) {
+        form.setValue("category_id", sportCategories[0].id);
+      }
+    }
+    
+    toast.info("Formularz wypełniony danymi z generatora podsumowania");
+  }
+}, [prefillData, isEditing, sportCategories, isLoadingCategories, form]);
 ```
 
-### Specjalne efekty Dark Mode
+### 2. Dodaj debugowanie błędów formularza
 
-1. **Świecące akcenty** - szmaragdowy kolor primary będzie miał subtelną poświatę (`box-shadow: 0 0 20px rgba(16, 185, 129, 0.3)`)
+Dodać wyświetlanie błędów walidacji przy przycisku submit:
 
-2. **Glassmorphism na Header** - `backdrop-blur-md` z `bg-card/80` tworzy efekt "matowego szkła"
-
-3. **Karty z głębią** - subtelny cień na kartach: `shadow-lg shadow-black/30`
-
-4. **Hover glow** - przy najechaniu na kartę, delikatna szmaragdowa obwódka
-
-5. **Obrazy bez zmian** - zdjęcia sportowców i grafiki pozostają w oryginalnych kolorach
-
-## Implementacja
-
-### Przełącznik motywu
-
-Przełącznik zostanie umieszczony w **prawym górnym rogu Headera** jako ikona słońca (light) lub księżyca (dark):
-
-```text
-Header: [Logo] Szortsy   [Kategorie ▾] [Archiwum] [Autorzy] [🌙]
+```typescript
+{Object.keys(form.formState.errors).length > 0 && (
+  <div className="text-sm text-destructive space-y-1">
+    {Object.entries(form.formState.errors).map(([key, error]) => (
+      <p key={key}>• {error?.message || `Błąd w polu ${key}`}</p>
+    ))}
+  </div>
+)}
 ```
 
-### Zachowanie
+### 3. Zmienić zależności useEffect
 
-| Scenariusz | Działanie |
-|------------|-----------|
-| Pierwsza wizyta | Użyj preferencji systemowych (prefers-color-scheme) |
-| Kliknięcie przełącznika | Zmiana motywu + zapis do localStorage |
-| Kolejna wizyta | Odczytaj z localStorage, fallback do systemu |
+Dodać `isLoadingCategories` do dependencies aby ponownie uruchomić effect gdy kategorie się załadują.
 
-### Animacja przejścia
+## Pliki do modyfikacji
 
-Płynna tranzycja 200ms przy zmianie między trybami - wszystkie kolory zmienią się jednocześnie.
-
----
+| Plik | Zmiana |
+|------|--------|
+| `src/pages/admin/PostEditor.tsx` | Naprawić useEffect + dodać debugowanie błędów |
 
 ## Sekcja techniczna
 
-### Pliki do modyfikacji
+### Kod przed zmianą (linie 118-143)
+```typescript
+useEffect(() => {
+  if (prefillData && !isEditing) {
+    // ...
+    const otherCategory = sportCategories?.find((cat) => cat.slug === "other");
+    if (otherCategory) {
+      form.setValue("category_id", otherCategory.id);
+    }
+    toast.info("Formularz wypełniony...");
+  }
+}, [prefillData, isEditing, sportCategories, form]);
+```
 
-1. **`src/index.css`** - drobne poprawki istniejących zmiennych dark (np. jaśniejszy primary)
+### Kod po zmianie
+```typescript
+useEffect(() => {
+  // Poczekaj aż kategorie się załadują
+  if (!sportCategories || sportCategories.length === 0) return;
+  
+  if (prefillData && !isEditing) {
+    if (prefillData.title) form.setValue("title", prefillData.title);
+    if (prefillData.excerpt) form.setValue("excerpt", prefillData.excerpt);
+    if (prefillData.content) {
+      const normalizedContent = normalizeMarkdownInHtml(prefillData.content);
+      form.setValue("content", normalizedContent);
+    }
+    if (prefillData.tags) form.setValue("tags", prefillData.tags);
+    
+    form.setValue("source_url", "https://daily-sport-blink.lovable.app/podsumowanie");
+    form.setValue("image_url", "/images/categories/daily-summary.webp");
+    
+    // Znajdź kategorię "other" lub użyj pierwszej dostępnej
+    const otherCategory = sportCategories.find((cat) => cat.slug === "other");
+    const categoryToUse = otherCategory || sportCategories[0];
+    if (categoryToUse) {
+      form.setValue("category_id", categoryToUse.id);
+    }
+    
+    toast.info("Formularz wypełniony danymi z generatora podsumowania");
+  }
+}, [prefillData, isEditing, sportCategories, form]);
+```
 
-2. **`src/components/Header.tsx`** - dodanie przycisku przełącznika motywu
-
-3. **`src/components/ThemeToggle.tsx`** (nowy) - komponent przełącznika z ikoną
-
-4. **`src/hooks/useTheme.ts`** (nowy) - hook do zarządzania motywem z localStorage
-
-5. **`src/App.tsx`** - wrapper ThemeProvider z next-themes (już zainstalowane)
-
-### Biblioteka next-themes
-
-Projekt już ma zainstalowany pakiet `next-themes`, który obsłuży:
-- Persistencję wyboru w localStorage
-- Wykrywanie preferencji systemowych
-- Unikanie "flash of unstyled content"
-
-### Zmiany w komponentach
-
-Wszystkie komponenty już używają zmiennych CSS (`bg-card`, `text-foreground`, `border-border`), więc **automatycznie** dostosują się do dark mode po dodaniu klasy `.dark` do `<html>`.
-
+### Dodanie sekcji błędów (przed przyciskiem submit)
+```tsx
+{Object.keys(form.formState.errors).length > 0 && (
+  <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive space-y-1 mb-4">
+    <p className="font-medium">Popraw błędy przed zapisaniem:</p>
+    {Object.entries(form.formState.errors).map(([key, error]) => (
+      <p key={key}>• {String(error?.message) || `Błąd w polu ${key}`}</p>
+    ))}
+  </div>
+)}
+```
