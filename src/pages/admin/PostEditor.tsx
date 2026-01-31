@@ -40,8 +40,12 @@ import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 
 // Categories are now fetched dynamically from sport_categories table
 
-// Custom URL validation that's more permissive for tracking URLs
+// Custom URL validation that's more permissive for tracking URLs and relative paths
 const isValidUrl = (url: string) => {
+  // Allow relative paths starting with /
+  if (url.startsWith('/')) {
+    return true;
+  }
   try {
     new URL(url);
     return true;
