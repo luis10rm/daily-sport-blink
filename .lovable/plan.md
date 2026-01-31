@@ -1,11 +1,18 @@
 
-# Plan: Wdrożenie Google Analytics 4
+# Plan: Wdrożenie Google Indexing API
 
-## Wymagania wstępne
+## Cel
+Automatyczne powiadamianie Google o nowych artykułach po publikacji, przyspieszając ich indeksowanie w wynikach wyszukiwania.
 
-Przed wdrożeniem będziesz potrzebować:
-1. **Konto Google Analytics** - jeśli nie masz, załóż na [analytics.google.com](https://analytics.google.com)
-2. **Measurement ID** - identyfikator w formacie `G-XXXXXXXXXX`, który otrzymasz po utworzeniu "strumienia danych" (Data Stream) dla strony web
+---
+
+## Przesłany plik Service Account
+
+Otrzymałem plik `szortsy-new-1c6cb1ab50c3.json` z danymi:
+- **Email Service Account:** `web-indexing-szortsy-new@szortsy-new.iam.gserviceaccount.com`
+- **Projekt Google Cloud:** `szortsy-new`
+
+Ten email musisz dodać jako **Właściciela** w Google Search Console (jeśli jeszcze nie zrobiłeś).
 
 ---
 
@@ -13,107 +20,145 @@ Przed wdrożeniem będziesz potrzebować:
 
 | Element | Opis |
 |---------|------|
-| Skrypt GA4 | Dodanie gtag.js do `index.html` |
-| Page view tracking | Automatyczne śledzenie zmian tras w React Router |
-| Komponent Analytics | Hook do śledzenia nawigacji w SPA |
+| Sekret | `GOOGLE_SERVICE_ACCOUNT_JSON` - klucz JSON z Google Cloud |
+| Edge Function | `notify-google-index` - wywołuje Indexing API |
+| Hook | Wywołanie w `PostEditor.tsx` po udanej publikacji |
+| Domena | `https://szortsy.pl` |
 
 ---
 
-## 1. Dodanie skryptu GA4 do index.html
+## Szczegóły techniczne
 
-Skrypt Google Analytics zostanie dodany do sekcji `<head>`:
+### 1. Dodanie sekretu
 
-```html
-<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
-</script>
+Poproszę o zapisanie zawartości pliku JSON jako sekret `GOOGLE_SERVICE_ACCOUNT_JSON`.
+
+### 2. Edge Function: `notify-google-index`
+
+Struktura:
+```text
+supabase/functions/notify-google-index/index.ts
 ```
 
-## 2. Komponent do śledzenia nawigacji SPA
+Funkcja będzie:
+1. Przyjmować URL artykułu do zaindeksowania
+2. Walidować uprawnienia użytkownika (admin/editor)
+3. Parsować Service Account JSON z sekretu
+4. Generować JWT token z odpowiednimi claims dla Google API
+5. Wymieniać JWT na Access Token przez Google OAuth
+6. Wysyłać żądanie `URL_UPDATED` do Google Indexing API
+7. Logować rezultat operacji
 
-Ponieważ aplikacja używa React Router (SPA), standardowy skrypt GA4 zarejestruje tylko pierwsze załadowanie strony. Aby śledzić nawigację między podstronami, utworzę hook `useAnalytics`:
+Endpoint: `POST /notify-google-index`
 
-**Nowy plik: `src/hooks/useAnalytics.ts`**
-```tsx
-import { useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-
-declare global {
-  interface Window {
-    gtag: (...args: any[]) => void;
-  }
+Payload:
+```json
+{
+  "url": "https://szortsy.pl/blink/artykul-slug",
+  "type": "URL_UPDATED"
 }
-
-export const useAnalytics = () => {
-  const location = useLocation();
-
-  useEffect(() => {
-    if (typeof window.gtag === 'function') {
-      window.gtag('event', 'page_view', {
-        page_path: location.pathname + location.search,
-        page_title: document.title,
-      });
-    }
-  }, [location]);
-};
 ```
 
-## 3. Integracja z aplikacją
+Obsługiwane typy:
+- `URL_UPDATED` - nowy/zaktualizowany artykuł
+- `URL_DELETED` - usunięty artykuł
 
-**Nowy komponent: `src/components/Analytics.tsx`**
-```tsx
-import { useAnalytics } from '@/hooks/useAnalytics';
+### 3. Integracja z edytorem postów
 
-export const Analytics = () => {
-  useAnalytics();
-  return null;
-};
-```
+W `PostEditor.tsx` - po udanej publikacji nowego posta:
 
-**Aktualizacja `src/App.tsx`**:
-```tsx
-import { Analytics } from "@/components/Analytics";
+1. Pobierz slug utworzonego posta
+2. Zbuduj pełny URL: `https://szortsy.pl/blink/{slug}`
+3. Wywołaj Edge Function `notify-google-index`
+4. Wyświetl toast z informacją o statusie indeksowania
 
-// Wewnątrz BrowserRouter:
-<BrowserRouter>
-  <Analytics />
-  <ConditionalWallpaper />
-  <Routes>
-    ...
-  </Routes>
-</BrowserRouter>
+Wywołanie będzie **automatyczne** przy tworzeniu nowych postów, ale **nie** przy edycji (aby nie wyczerpać limitu).
+
+### 4. Aktualizacja config.toml
+
+```toml
+[functions.notify-google-index]
+verify_jwt = false
 ```
 
 ---
 
 ## Pliki do utworzenia
-- `src/hooks/useAnalytics.ts` - hook do śledzenia page views
-- `src/components/Analytics.tsx` - komponent integrujący hook
+
+| Plik | Opis |
+|------|------|
+| `supabase/functions/notify-google-index/index.ts` | Edge Function z logiką JWT i wywołaniem Google API |
 
 ## Pliki do edycji
-- `index.html` - dodanie skryptu GA4
-- `src/App.tsx` - dodanie komponentu Analytics
+
+| Plik | Zmiana |
+|------|--------|
+| `supabase/config.toml` | Dodanie konfiguracji nowej funkcji |
+| `src/pages/admin/PostEditor.tsx` | Hook wywołujący indeksowanie po publikacji |
 
 ---
 
-## Uwagi dotyczące RODO/GDPR
+## Flow działania
 
-Google Analytics wymaga zgody użytkownika na śledzenie (cookie consent). Możliwe podejścia:
-
-1. **Bez consent banner** - GA4 będzie działać, ale może naruszać GDPR dla użytkowników z UE
-2. **Z consent banner** (zalecane) - dodanie bannera do wyrażenia zgody przed załadowaniem GA
-
-Jeśli chcesz, mogę również przygotować prosty baner cookie consent.
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│                         PUBLIKACJA POSTA                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  PostEditor.tsx                                                     │
+│       │                                                             │
+│       ▼                                                             │
+│  createPost.mutateAsync()                                           │
+│       │                                                             │
+│       ▼                                                             │
+│  ┌─────────────────────────────────────┐                            │
+│  │ Post zapisany w bazie               │                            │
+│  │ (slug wygenerowany automatycznie)   │                            │
+│  └─────────────────────────────────────┘                            │
+│       │                                                             │
+│       ▼                                                             │
+│  Wywołanie notify-google-index                                      │
+│  z URL: https://szortsy.pl/blink/{slug}                             │
+│       │                                                             │
+│       ▼                                                             │
+│  ┌─────────────────────────────────────┐                            │
+│  │ Edge Function:                      │                            │
+│  │ 1. Parsuj Service Account JSON      │                            │
+│  │ 2. Generuj JWT                      │                            │
+│  │ 3. Wymień na Access Token           │                            │
+│  │ 4. Wywołaj Indexing API             │                            │
+│  └─────────────────────────────────────┘                            │
+│       │                                                             │
+│       ▼                                                             │
+│  Toast: "Google zostało powiadomione o nowym artykule"              │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Co musisz zrobić
+## Limity Google Indexing API
 
-1. Utwórz konto Google Analytics 4 (jeśli nie masz)
-2. Skopiuj Measurement ID (`G-XXXXXXXXXX`)
-3. Po zatwierdzeniu planu podam Ci miejsce gdzie wkleić ID
+- **200 żądań dziennie** (darmowy limit)
+- Dla typowej redakcji sportowej to wystarczające
+- Przy większej skali: wniosek do Google o zwiększenie limitu
+
+---
+
+## Kolejne kroki po zatwierdzeniu
+
+1. Poproszę o zapisanie klucza JSON jako sekret
+2. Utworzę Edge Function `notify-google-index`
+3. Zaktualizuję `config.toml`
+4. Zintegruję wywołanie w `PostEditor.tsx`
+
+---
+
+## Weryfikacja w Google Search Console
+
+Upewnij się, że email Service Account:
+```
+web-indexing-szortsy-new@szortsy-new.iam.gserviceaccount.com
+```
+
+jest dodany jako **Właściciel** w Google Search Console dla domeny `szortsy.pl`.
