@@ -1,68 +1,137 @@
 
+# Plan: Kompleksowa poprawa UX, spójności i SEO
 
-# Plan: Angażujące copy dla mobile TodaysNewsBanner
+## Zakres zmian
 
-## Problem
-Obecna wersja mobilna pokazuje suchy, mało angażujący tekst:
-- "Dzisiaj: 5 newsów"
+| Obszar | Problem | Rozwiązanie |
+|--------|---------|-------------|
+| Strona 404 | Angielski tekst, brak branding | Polski copy + Header + sugestie nawigacji |
+| Footer | Rok 2024 hardcoded, brak na podstronach | Dynamiczny rok + wspólny komponent Footer |
+| NewsOfTheDay | Zawsze link zewnętrzny | Logika jak w NewsCard (internal/external) |
+| BlinkPage SEO | Hardcoded canonical URL | Dynamiczny URL bazujący na VITE_SITE_URL |
+| Accessibility | Brak skip-link | Dodanie "Przejdź do treści" dla klawiatury |
 
-Podczas gdy desktop używa personalizowanych wariantów podkreślających wartość dla użytkownika:
-- "Dzisiaj mamy dla Ciebie 5 starannie wybranych newsów sportowych"
+---
 
-## Rozwiązanie
-Stworzymy dedykowane warianty tekstowe dla mobile - krótsze, ale równie angażujące i podkreślające ekskluzywność i personalizację treści.
+## 1. Nowa strona 404
 
-## Proponowane warianty mobile
-
-| Wariant | Tekst |
-|---------|-------|
-| 1 | **Wyselekcjonowane dla Ciebie** · 5 newsów |
-| 2 | **Tylko najważniejsze** · 5 sportowych hitów |
-| 3 | **Twój briefing** · 5 kluczowych newsów |
-| 4 | **Starannie wybrane** · 5 informacji dnia |
-| 5 | **Esencja sportu** · 5 must-read newsów |
-
-## Zmiany wizualne
-
-- Pogrubienie pierwszej części tekstu (wartość dla użytkownika)
-- Większy, wyróżniony numerek z gradientem
-- Subtelny separator (·) między elementami
-- Data pozostaje jako element drugorzędny
-
-## Zmieniony layout
+Przebudowa `NotFound.tsx`:
+- Dodanie Header z logo i nawigacją
+- Polski, przyjazny tekst ("Ups! Tej strony nie znaleźliśmy")
+- Sugestie: link do strony głównej, archiwum, kategorii
+- Spójny design z resztą serwisu
 
 ```
-┌─────────────────────────────────────────┐
-│ 📰  Wyselekcjonowane dla Ciebie · 5     │
-│     Piątek, 31 stycznia                 │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│ [Header z logo i nawigacją]              │
+├──────────────────────────────────────────┤
+│                                          │
+│           🔍                             │
+│     Ups! Strona nie istnieje             │
+│     Może szukasz czegoś innego?          │
+│                                          │
+│   [Strona główna]  [Archiwum]  [Tagi]    │
+│                                          │
+├──────────────────────────────────────────┤
+│ [Footer]                                 │
+└──────────────────────────────────────────┘
 ```
+
+## 2. Wspólny komponent Footer
+
+Wydzielenie footera do `src/components/Footer.tsx`:
+- Dynamiczny rok: `new Date().getFullYear()`
+- Dodanie na wszystkie strony: CategoryPage, BlinkPage, AuthorsPage, AuthorProfile, TagPage, TagsListPage, Archive
+- Zachowanie disclaimera prawnego
+
+## 3. NewsOfTheDay - inteligentne linkowanie
+
+Aktualizacja `NewsOfTheDay.tsx`:
+- Sprawdzenie czy post ma `content` (wygenerowany przez AI)
+- Jeśli tak → link do `/blink/${post.id}` (strona wewnętrzna)
+- Jeśli nie → link do `source_url` (zewnętrzne źródło)
+- Logika identyczna jak w `NewsCard.tsx`
+
+## 4. BlinkPage - dynamiczny canonical
+
+Zmiana w `BlinkPage.tsx`:
+- Pobranie base URL z `window.location.origin` lub env variable
+- Dynamiczne generowanie canonical URL
+- Poprawne meta tagi dla SEO
+
+## 5. Skip-link dla accessibility
+
+Dodanie w `Header.tsx`:
+- Ukryty link "Przejdź do treści" widoczny po Tab
+- Target do `#main-content`
+- Dodanie `id="main-content"` do głównych sekcji
 
 ---
 
 ## Szczegóły techniczne
 
-### Nowe warianty mobile
-```typescript
-const mobileVariants = [
-  { prefix: "Wyselekcjonowane dla Ciebie", suffix: "newsów" },
-  { prefix: "Tylko najważniejsze", suffix: "sportowych hitów" },
-  { prefix: "Twój briefing", suffix: "kluczowych newsów" },
-  { prefix: "Starannie wybrane", suffix: "informacji dnia" },
-  { prefix: "Esencja sportu", suffix: "must-read" },
-];
-```
+### Pliki do utworzenia
+- `src/components/Footer.tsx` - nowy wspólny komponent
 
-### Plik do edycji
-- `src/components/TodaysNewsBanner.tsx` - sekcja mobile (linie 92-116)
+### Pliki do edycji
+- `src/pages/NotFound.tsx` - pełna przebudowa
+- `src/pages/Index.tsx` - użycie Footer + id main
+- `src/pages/CategoryPage.tsx` - dodanie Footer
+- `src/pages/BlinkPage.tsx` - Footer + dynamiczny canonical
+- `src/pages/AuthorsPage.tsx` - dodanie Footer
+- `src/pages/AuthorProfile.tsx` - dodanie Footer
+- `src/pages/TagPage.tsx` - dodanie Footer
+- `src/pages/TagsListPage.tsx` - dodanie Footer
+- `src/pages/Archive.tsx` - sprawdzenie Footer
+- `src/components/NewsOfTheDay.tsx` - logika linkowania
+- `src/components/Header.tsx` - skip-link
 
-### Zmiany w strukturze JSX mobile
+### Nowy komponent Footer
 ```tsx
-<p className="text-sm text-foreground">
-  <span className="font-semibold">{mobileVariant.prefix}</span>
-  <span className="mx-1.5 text-muted-foreground">·</span>
-  <span className="text-primary font-bold text-lg">{displayCount}</span>
-  <span className="text-muted-foreground ml-1">{mobileVariant.suffix}</span>
-</p>
+export const Footer = () => {
+  const currentYear = new Date().getFullYear();
+  
+  return (
+    <footer className="border-t border-border py-8">
+      <div className="container text-center text-sm text-muted-foreground space-y-2">
+        <p>Serwis agreguje nagłówki i odsyła do źródeł. Prawa do treści należą do wydawców.</p>
+        <p>© {currentYear} Szortsy. Wszystkie prawa zastrzeżone.</p>
+      </div>
+    </footer>
+  );
+};
 ```
 
+### Skip-link CSS (do index.css)
+```css
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  padding: 8px 16px;
+  z-index: 100;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.skip-link:focus {
+  top: 0;
+}
+```
+
+## Kolejność implementacji
+
+1. Utworzenie `Footer.tsx`
+2. Dodanie skip-link do `Header.tsx` i CSS
+3. Przebudowa `NotFound.tsx`
+4. Aktualizacja `NewsOfTheDay.tsx`
+5. Poprawka canonical w `BlinkPage.tsx`
+6. Dodanie Footer do wszystkich stron
+
+## Rezultat
+
+- Spójna, polska strona 404 z pomocną nawigacją
+- Footer na każdej stronie z dynamicznym rokiem
+- Inteligentne linkowanie w "Wiadomość dnia"
+- Poprawne SEO canonical URLs
+- Lepsza dostępność dla użytkowników klawiatury
