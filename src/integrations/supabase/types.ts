@@ -171,6 +171,7 @@ export type Database = {
           is_news_of_day: boolean
           is_sponsored: boolean
           published_at: string
+          slug: string
           source_url: string
           tags: string[] | null
           title: string
@@ -188,6 +189,7 @@ export type Database = {
           is_news_of_day?: boolean
           is_sponsored?: boolean
           published_at?: string
+          slug: string
           source_url: string
           tags?: string[] | null
           title: string
@@ -205,6 +207,7 @@ export type Database = {
           is_news_of_day?: boolean
           is_sponsored?: boolean
           published_at?: string
+          slug?: string
           source_url?: string
           tags?: string[] | null
           title?: string
@@ -504,6 +507,7 @@ export type Database = {
       }
     }
     Functions: {
+      generate_post_slug: { Args: { title: string }; Returns: string }
       generate_tag_slug: { Args: { tag_name: string }; Returns: string }
       has_role: {
         Args: {

@@ -95,6 +95,7 @@ const Archive = () => {
               <NewsCard
                 key={post.id}
                 id={post.id}
+                slug={post.slug}
                 title={post.title}
                 excerpt={post.excerpt}
                 content={post.content}

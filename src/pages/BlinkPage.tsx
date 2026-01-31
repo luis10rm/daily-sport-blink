@@ -7,7 +7,7 @@ import { SEO } from "@/components/SEO";
 import { AuthorCard } from "@/components/AuthorCard";
 import { DynamicSportIcon } from "@/components/DynamicSportIcon";
 import { getCategoryImage } from "@/config/categoryImages";
-import { usePostById } from "@/hooks/usePosts";
+import { usePostBySlug } from "@/hooks/usePosts";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { getSourceName, generateSlug } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,8 +50,8 @@ const getBaseUrl = () => {
 const SITE_URL = getBaseUrl();
 
 const BlinkPage = () => {
-  const { id } = useParams<{ id: string }>();
-  const { data: post, isLoading, error } = usePostById(id || "");
+  const { slug } = useParams<{ slug: string }>();
+  const { data: post, isLoading, error } = usePostBySlug(slug || "");
 
   useDocumentTitle(post?.title ? `${post.title} | Daily Sport Blink` : "Daily Sport Blink");
 
@@ -106,7 +106,7 @@ const BlinkPage = () => {
     data: {
       mainEntityOfPage: {
         "@type": "WebPage",
-        "@id": `${SITE_URL}/blink/${post.id}`,
+        "@id": `${SITE_URL}/blink/${post.slug}`,
       },
       headline: post.title,
       description: post.excerpt,
