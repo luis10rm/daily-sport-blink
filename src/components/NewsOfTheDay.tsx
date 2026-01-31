@@ -4,7 +4,7 @@ import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { getPostImage } from "@/config/categoryImages";
 import { Post } from "@/hooks/usePosts";
-import { cn, getSourceName } from "@/lib/utils";
+import { cn, getSourceName, generateSlug } from "@/lib/utils";
 
 interface NewsOfTheDayProps {
   post: Post;
@@ -62,12 +62,13 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
             {post.tags && post.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {post.tags.map((tag) => (
-                  <span
+                  <Link
                     key={tag}
-                    className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
+                    to={`/tag/${generateSlug(tag)}`}
+                    className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                   >
                     {tag}
-                  </span>
+                  </Link>
                 ))}
               </div>
             )}
