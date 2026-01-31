@@ -1,43 +1,103 @@
 
-# Plan: Naprawa widoczności paska Patrona dla użytkowników publicznych
+
+# Plan: Naprawa ekstrakcji artykułów dla stron z ochroną anti-bot
 
 ## Problem
-Pasek patrona (PatronBar) nie wyświetla się dla niezalogowanych użytkowników, ponieważ tabela `settings` ma restrykcyjną politykę RLS - tylko administratorzy i edytorzy mogą odczytywać dane.
-
-**Dowód z logów sieciowych:**
-- Zapytanie: `GET /settings?key=eq.site_patron`
-- Odpowiedź: `[]` (pusta tablica)
-- Powód: brak uprawnień SELECT dla anonimowych użytkowników
+Strona fcbarca.com (i inne z ochroną anti-bot) zwraca błąd **403 Forbidden** ponieważ rozpoznaje nasz User-Agent jako bota.
 
 ## Rozwiązanie
-Dodać politykę RLS która pozwala na **publiczny odczyt** ustawienia `site_patron` - to jedyne ustawienie które powinno być widoczne publicznie.
+Dodać **Firecrawl** jako alternatywny fallback gdy prosty `fetch` zawiedzie.
 
 ## Implementacja
 
 | Element | Zmiana |
 |---------|--------|
-| Tabela `settings` | Nowa polityka RLS dla publicznego odczytu `site_patron` |
+| Edge function `extract-article` | Dodanie fallbacku do Firecrawl przy błędzie 403/503 |
+| Konektor Firecrawl | Wymagane podłączenie konektora |
 
 ---
 
 ## Szczegóły techniczne
 
-### Nowa polityka RLS
+### 1. Logika fallback w edge function
 
-```sql
-CREATE POLICY "Public can read site_patron setting"
-  ON public.settings
-  FOR SELECT
-  TO public
-  USING (key = 'site_patron');
+```text
++-----------------------+
+|   fetch(url)          |
++-----------+-----------+
+            |
+     sukces? |
+            v
+  +----+----+----+
+  | tak         | nie (403/503)
+  v             v
+  kontynuuj   +------------------+
+              | Firecrawl.scrape |
+              +---------+--------+
+                        |
+                        v
+                  kontynuuj z HTML
 ```
 
-Ta polityka:
-- Pozwala **każdemu** (włącznie z niezalogowanymi) na odczyt
-- Ogranicza dostęp **tylko** do wiersza z `key = 'site_patron'`
-- Nie wpływa na inne ustawienia (prompty AI, konfiguracja) - te pozostają chronione
+### 2. Zmiany w kodzie
 
-### Dlaczego to bezpieczne?
-- Ustawienie `site_patron` zawiera tylko publiczne dane marketingowe (nazwa partnera, kolor, URL)
-- Nie zawiera żadnych wrażliwych informacji
-- Inne ustawienia (np. prompty AI) pozostają niedostępne publicznie
+**Krok 1**: Ulepszyć User-Agent na bardziej realistyczny:
+```typescript
+headers: {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+  "Accept-Language": "pl,en-US;q=0.9,en;q=0.8",
+}
+```
+
+**Krok 2**: Dodać fallback do Firecrawl:
+```typescript
+// Pierwsze pobieranie - standardowy fetch
+let html: string;
+const response = await fetch(url, { headers: browserHeaders });
+
+if (!response.ok && [403, 503].includes(response.status)) {
+  // Fallback do Firecrawl
+  const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+  if (firecrawlKey) {
+    console.log("Fallback to Firecrawl for anti-bot bypass");
+    const fcResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${firecrawlKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url,
+        formats: ["html"],
+        onlyMainContent: false,
+      }),
+    });
+    const fcData = await fcResponse.json();
+    html = fcData.data?.html || "";
+  } else {
+    throw new Error("Strona blokuje boty (403). Skonfiguruj Firecrawl aby ominąć zabezpieczenia.");
+  }
+} else if (!response.ok) {
+  throw new Error(`Failed to fetch URL: ${response.status}`);
+} else {
+  html = await response.text();
+}
+```
+
+### 3. Wymagane kroki
+
+1. **Podłączyć konektor Firecrawl** w ustawieniach projektu
+2. **Zaktualizować edge function** z nową logiką fallback
+3. **Przetestować** z problematycznym URL
+
+### 4. Alternatywa bez Firecrawl
+
+Jeśli nie chcesz używać Firecrawl, możemy tylko ulepszyć User-Agent - to pomoże z niektórymi stronami, ale nie ze wszystkimi.
+
+## Bezpieczeństwo
+
+- Firecrawl API key będzie przechowywany jako secret w Supabase
+- Nie zmienia to istniejących zabezpieczeń SSRF
+- Rate limiting pozostaje bez zmian
+
