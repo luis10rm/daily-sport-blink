@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -112,11 +113,7 @@ const Archive = () => {
         )}
       </main>
 
-      <footer className="border-t border-border py-8">
-        <div className="container text-center text-sm text-muted-foreground">
-          © 2024 Szortsy. Wszystkie prawa zastrzeżone.
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

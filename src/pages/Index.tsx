@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Archive } from "lucide-react";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
 import { NewsOfTheDay } from "@/components/NewsOfTheDay";
@@ -60,7 +61,7 @@ const Index = () => {
       <Header />
       <PatronBar />
       
-      <main className="container py-6 md:py-10">
+      <main id="main-content" className="container py-6 md:py-10">
         {/* Stories Row */}
         <section className="mb-8">
           <StoriesRow />
@@ -187,12 +188,7 @@ const Index = () => {
       {/* Scroll Progress Indicator */}
       <ScrollProgress todaysCount={todaysPosts.length} lastTodayRef={lastTodayRef} />
 
-      <footer className="border-t border-border py-8">
-        <div className="container text-center text-sm text-muted-foreground space-y-2">
-          <p>Serwis agreguje nagłówki i odsyła do źródeł. Prawa do treści należą do wydawców.</p>
-          <p>© 2024 Szortsy. Wszystkie prawa zastrzeżone.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

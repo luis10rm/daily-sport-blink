@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -187,6 +188,8 @@ const TagPage = () => {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 };

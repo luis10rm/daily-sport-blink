@@ -1,4 +1,5 @@
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { usePublicAuthors } from "@/hooks/useAuthors";
@@ -98,6 +99,8 @@ const AuthorsPage = () => {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 };
