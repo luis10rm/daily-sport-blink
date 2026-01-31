@@ -116,7 +116,11 @@ const PostEditor = () => {
   });
 
   // Apply prefill data when component mounts with prefill state
+  // Wait for sportCategories to load before applying prefill to avoid race condition
   useEffect(() => {
+    // Poczekaj aż kategorie się załadują
+    if (!sportCategories || sportCategories.length === 0) return;
+    
     if (prefillData && !isEditing) {
       if (prefillData.title) form.setValue("title", prefillData.title);
       if (prefillData.excerpt) form.setValue("excerpt", prefillData.excerpt);
@@ -132,10 +136,11 @@ const PostEditor = () => {
       // Set unique daily summary image
       form.setValue("image_url", "/images/categories/daily-summary.webp");
       
-      // Find "other" category for summary posts
-      const otherCategory = sportCategories?.find((cat) => cat.slug === "other");
-      if (otherCategory) {
-        form.setValue("category_id", otherCategory.id);
+      // Find "other" category for summary posts, fallback to first available
+      const otherCategory = sportCategories.find((cat) => cat.slug === "other");
+      const categoryToUse = otherCategory || sportCategories[0];
+      if (categoryToUse) {
+        form.setValue("category_id", categoryToUse.id);
       }
       
       toast.info("Formularz wypełniony danymi z generatora podsumowania");
@@ -569,6 +574,15 @@ const PostEditor = () => {
                     />
                   </CardContent>
                 </Card>
+
+                {Object.keys(form.formState.errors).length > 0 && (
+                  <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive space-y-1 mb-4">
+                    <p className="font-medium">Popraw błędy przed zapisaniem:</p>
+                    {Object.entries(form.formState.errors).map(([key, error]) => (
+                      <p key={key}>• {String(error?.message) || `Błąd w polu ${key}`}</p>
+                    ))}
+                  </div>
+                )}
 
                 <Button
                   type="submit"
