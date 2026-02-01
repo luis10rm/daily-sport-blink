@@ -315,6 +315,10 @@ serve(async (req) => {
     }
     let articleText = extractTextFromHtml(html);
     const ogImage = extractOgImage(html);
+    
+    // Track extraction metadata for quality warnings
+    const originalTextLength = articleText.length;
+    let usedFirecrawl = false;
 
     console.log("Extracted text length:", articleText.length);
     console.log("Found OG image:", ogImage);
@@ -345,6 +349,7 @@ serve(async (req) => {
           
           if (firecrawlHtml) {
             articleText = extractTextFromHtml(firecrawlHtml);
+            usedFirecrawl = true;
             console.log("Firecrawl rendered text length:", articleText.length);
           } else {
             console.warn("Firecrawl returned empty HTML, continuing with original");
@@ -356,6 +361,21 @@ serve(async (req) => {
       } else {
         console.warn(`Text too short (${articleText.length} chars) but Firecrawl not configured`);
       }
+    }
+
+    // Block AI generation if text is too short (would cause hallucinations)
+    const ABSOLUTE_MIN_TEXT = 200;
+    if (articleText.length < ABSOLUTE_MIN_TEXT) {
+      console.error(`Text too short for AI generation: ${articleText.length} chars (minimum: ${ABSOLUTE_MIN_TEXT})`);
+      return new Response(
+        JSON.stringify({ 
+          error: `Strona zwróciła tylko ${articleText.length} znaków - za mało do wygenerowania artykułu. Spróbuj wkleić treść ręcznie.`,
+          extraction_failed: true,
+          text_length: articleText.length,
+          used_firecrawl: usedFirecrawl
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get prompts from database
@@ -536,15 +556,25 @@ FORMATOWANIE (OBOWIĄZKOWE):
       console.error("Content generation failed, continuing without content");
     }
 
+    // Add extraction quality metadata for frontend warnings
+    const QUALITY_WARNING_THRESHOLD = 500;
+    
     const result = {
       ...extractedMetadata,
       content: generatedContent,
       og_image: ogImage,
+      extraction_info: {
+        original_text_length: originalTextLength,
+        final_text_length: articleText.length,
+        used_firecrawl: usedFirecrawl,
+        quality_warning: articleText.length < QUALITY_WARNING_THRESHOLD,
+      },
     };
 
     console.log("Extraction complete:", {
       ...result,
       content: result.content ? `${result.content.substring(0, 100)}...` : null,
+      extraction_info: result.extraction_info,
     });
 
     return new Response(
