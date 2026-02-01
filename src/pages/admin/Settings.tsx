@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useSetting, useUpdateSetting } from "@/hooks/useSettings";
 import { usePatronSettings, useUpdatePatronSettings, PatronSettings } from "@/hooks/usePatronSettings";
-import { Loader2, Save, RotateCcw, Star, X } from "lucide-react";
+import { Loader2, Save, RotateCcw, Star, X, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +31,43 @@ const DEFAULT_CONTENT_PROMPT = `Na podstawie oryginalnego artykułu napisz unika
 - Mieć dynamiczny, dziennikarski ton
 - Podzielona na 2-3 akapity
 - Bez powtarzania tytułu na początku`;
+
+const DEFAULT_SUMMARY_PROMPT = `Jesteś redaktorem sportowym Daily Sport Blink. Napisz profesjonalne podsumowanie dnia sportowego w języku polskim.
+
+DANE WEJŚCIOWE:
+Otrzymasz listę newsów opublikowanych danego dnia w formacie JSON (title, excerpt, category, id).
+
+WYMAGANIA TREŚCI:
+- Napisz artykuł o długości 1500-2500 słów
+- Podziel na sekcje według kategorii sportowych (każda kategoria to osobny nagłówek H2)
+- Każda sekcja: 2-4 akapity streszczające i analizujące newsy z tej kategorii
+- Dodaj kontekst, analizę i opinie eksperta sportowego
+- Ton: profesjonalny, angażujący, dziennikarski
+- Rozpocznij od krótkiego wprowadzenia witającego czytelników
+- Zakończ krótkim podsumowaniem i zapowiedzią kolejnego dnia
+
+SEO:
+- Tytuł: max 60 znaków, musi zawierać datę i główne sporty dnia
+- Meta description (excerpt): max 155 znaków, zachęcający do przeczytania
+- Naturalne użycie słów kluczowych sportowych
+- Dla każdego wspomnianego newsa dodaj wewnętrzny link w formacie: <a href="/blink/ID">tekst linku</a>
+
+FORMATOWANIE (OBOWIĄZKOWE):
+- Używaj TYLKO tagów HTML: <h2>, <p>, <strong>, <em>, <a href="/blink/ID">
+- NIE używaj składni Markdown (**, *, #, ## itp.)
+- Pogrubienia: <strong>tekst</strong>
+- Kursywa: <em>tekst</em>
+- Nagłówki sekcji: <h2>Nazwa kategorii</h2>
+- Akapity: <p>treść</p>
+
+STRUKTURA ODPOWIEDZI:
+Odpowiedz w formacie JSON:
+{
+  "title": "Tytuł SEO (max 60 znaków)",
+  "excerpt": "Meta description (max 155 znaków)",
+  "content": "<p>Wprowadzenie...</p><h2>Piłka nożna</h2><p>Treść...</p>...",
+  "suggested_tags": ["tag1", "tag2", "podsumowanie dnia"]
+}`;
 
 const DEFAULT_PATRON: PatronSettings = {
   enabled: false,
@@ -109,6 +146,7 @@ const Settings = () => {
   const { user, isAdmin } = useAuth();
   const { data: promptValue, isLoading: isLoadingPrompt } = useSetting("article_extraction_prompt");
   const { data: contentPromptValue, isLoading: isLoadingContentPrompt } = useSetting("article_content_prompt");
+  const { data: summaryPromptValue, isLoading: isLoadingSummaryPrompt } = useSetting("daily_summary_prompt");
   const { data: patronData, isLoading: isLoadingPatron } = usePatronSettings();
   const updateSetting = useUpdateSetting();
   const updatePatron = useUpdatePatronSettings();
@@ -120,6 +158,10 @@ const Settings = () => {
   // Content prompt state
   const [localContentPrompt, setLocalContentPrompt] = useState("");
   const [hasContentPromptChanges, setHasContentPromptChanges] = useState(false);
+  
+  // Summary prompt state
+  const [localSummaryPrompt, setLocalSummaryPrompt] = useState("");
+  const [hasSummaryPromptChanges, setHasSummaryPromptChanges] = useState(false);
   
   const [patronSettings, setPatronSettings] = useState<PatronSettings>(DEFAULT_PATRON);
   const [hasPatronChanges, setHasPatronChanges] = useState(false);
@@ -137,6 +179,12 @@ const Settings = () => {
   }, [contentPromptValue]);
 
   useEffect(() => {
+    if (summaryPromptValue) {
+      setLocalSummaryPrompt(summaryPromptValue);
+    }
+  }, [summaryPromptValue]);
+
+  useEffect(() => {
     if (patronData) {
       setPatronSettings(patronData);
     }
@@ -149,6 +197,10 @@ const Settings = () => {
   useEffect(() => {
     setHasContentPromptChanges(localContentPrompt !== contentPromptValue && localContentPrompt !== "");
   }, [localContentPrompt, contentPromptValue]);
+
+  useEffect(() => {
+    setHasSummaryPromptChanges(localSummaryPrompt !== summaryPromptValue && localSummaryPrompt !== "");
+  }, [localSummaryPrompt, summaryPromptValue]);
 
   useEffect(() => {
     if (patronData) {
@@ -178,6 +230,18 @@ const Settings = () => {
 
   const handleResetContentPrompt = () => {
     setLocalContentPrompt(DEFAULT_CONTENT_PROMPT);
+  };
+
+  const handleSaveSummaryPrompt = async () => {
+    await updateSetting.mutateAsync({
+      key: "daily_summary_prompt",
+      value: localSummaryPrompt,
+    });
+    setHasSummaryPromptChanges(false);
+  };
+
+  const handleResetSummaryPrompt = () => {
+    setLocalSummaryPrompt(DEFAULT_SUMMARY_PROMPT);
   };
 
   const handleSavePatron = async () => {
@@ -480,6 +544,53 @@ const Settings = () => {
                   <Button 
                     variant="outline" 
                     onClick={handleResetContentPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
+              </div>
+
+              {/* Daily Summary Prompt */}
+              <div className="space-y-2 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="summary-prompt">Prompt podsumowania dnia</Label>
+                </div>
+                {isLoadingSummaryPrompt ? (
+                  <Skeleton className="h-48 w-full" />
+                ) : (
+                  <Textarea
+                    id="summary-prompt"
+                    value={localSummaryPrompt}
+                    onChange={(e) => setLocalSummaryPrompt(e.target.value)}
+                    rows={12}
+                    className="font-mono text-sm"
+                    placeholder="Wprowadź prompt do generowania podsumowań dnia..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Ten prompt określa jak AI generuje podsumowania dnia sportowego (1500-2500 słów).
+                  Używany w module "AI Podsumowanie Dnia" na dashboardzie.
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSaveSummaryPrompt} 
+                    disabled={!hasSummaryPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleResetSummaryPrompt}
                     disabled={updateSetting.isPending}
                     size="sm"
                   >
