@@ -1,25 +1,30 @@
 
-# Statyczna sitemap - ZREALIZOWANO ✅
 
-## Wdrożone rozwiązanie
+# Usunięcie statycznej sitemapy
 
-### 1. Statyczny plik `public/sitemap.xml`
-- Zawiera wszystkie posty, kategorie, tagi i autorów z bazy
-- Dostępny pod `https://szortsy.pl/sitemap.xml`
-- Google Search Console zaakceptuje ten URL
+## Cel
 
-### 2. Edge Function `regenerate-sitemap`
-- Wywołaj gdy dodasz nowe posty: `POST /functions/v1/regenerate-sitemap`
-- Zwraca aktualny XML sitemapy - skopiuj i zastąp `public/sitemap.xml`
-- Alternatywnie: mogę dodać automatyczną aktualizację przy publikacji posta
+Usunięcie pliku `public/sitemap.xml` i przejście na dynamiczną sitemapę z Edge Function.
 
-### 3. Zaktualizowany `robots.txt`
+## Zmiany do wprowadzenia
+
+### 1. Usunięcie pliku
+- **Plik**: `public/sitemap.xml`
+- **Akcja**: Usunięcie
+
+### 2. Aktualizacja `robots.txt`
+Zmiana wskazania sitemapy z obecnego URL Edge Function na ten sam (bez zmian, już wskazuje na dynamiczną):
 ```
-Sitemap: https://szortsy.pl/sitemap.xml
+Sitemap: https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap
 ```
 
-## Kolejne kroki
+### 3. Aktualizacja dokumentacji
+Usunięcie lub aktualizacja pliku `.lovable/plan.md` który opisuje poprzednie rozwiązanie ze statyczną sitemapą.
 
-1. **Opublikuj zmiany** → sitemap będzie dostępna pod `szortsy.pl/sitemap.xml`
-2. **Zgłoś w GSC** → Sitemaps → Dodaj `/sitemap.xml`
-3. **Regeneruj sitemapę** → po dodaniu nowych postów wywołaj Edge Function i zaktualizuj plik
+## Rezultat
+
+Po tej zmianie:
+- Google Search Console będzie pobierać sitemapę bezpośrednio z Edge Function
+- Sitemap będzie zawsze aktualna (generowana dynamicznie z bazy danych)
+- Brak potrzeby ręcznej regeneracji po dodaniu nowych postów
+
