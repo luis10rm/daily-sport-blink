@@ -1,8 +1,15 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   LayoutDashboard,
   FileText,
@@ -15,6 +22,7 @@ import {
   FolderKanban,
   Wallpaper,
   UserPen,
+  Menu,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -36,6 +44,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -46,6 +56,119 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     (item) => !item.adminOnly || isAdmin
   );
 
+  const handleNavClick = () => {
+    if (isMobile) {
+      setMobileMenuOpen(false);
+    }
+  };
+
+  const SidebarContent = () => (
+    <>
+      {/* Navigation */}
+      <nav className="flex-1 space-y-1 p-4">
+        {filteredNavItems.map((item) => {
+          const isActive = location.pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              to={item.href}
+              onClick={handleNavClick}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* User section */}
+      <div className="border-t border-border p-4">
+        <div className="mb-3 text-sm">
+          <p className="font-medium text-foreground truncate">
+            {user?.email}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {isAdmin ? "Administrator" : "Redaktor"}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="default"
+            className="flex-1"
+            onClick={() => {
+              navigate("/");
+              handleNavClick();
+            }}
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            Strona
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Mobile header */}
+        <header className="sticky top-0 z-40 flex h-14 items-center gap-3 border-b border-border bg-card px-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Newspaper className="h-4 w-4" />
+            </div>
+            <span className="font-heading text-lg font-bold">Szortsy</span>
+          </div>
+        </header>
+
+        {/* Mobile drawer */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="w-72 p-0">
+            <SheetHeader className="border-b border-border px-6 py-4">
+              <SheetTitle className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <Newspaper className="h-5 w-5" />
+                </div>
+                <span className="font-heading text-lg font-bold">Szortsy</span>
+              </SheetTitle>
+            </SheetHeader>
+            <div className="flex h-[calc(100vh-73px)] flex-col">
+              <SidebarContent />
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Main content */}
+        <main className="min-h-[calc(100vh-56px)]">
+          <div className="p-4">{children}</div>
+        </main>
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
@@ -59,57 +182,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
             <span className="font-heading text-lg font-bold">Szortsy</span>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 space-y-1 p-4">
-            {filteredNavItems.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* User section */}
-          <div className="border-t border-border p-4">
-            <div className="mb-3 text-sm">
-              <p className="font-medium text-foreground truncate">
-                {user?.email}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {isAdmin ? "Administrator" : "Redaktor"}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => navigate("/")}
-              >
-                <ChevronLeft className="mr-1 h-4 w-4" />
-                Strona
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          <SidebarContent />
         </div>
       </aside>
 
