@@ -61,6 +61,12 @@ export const PatronBar = () => {
         color: patron.text_color,
       };
 
+  const handleClick = () => {
+    if (patron.cta_url) {
+      window.open(patron.cta_url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -70,7 +76,17 @@ export const PatronBar = () => {
       )}
       style={backgroundStyle}
     >
-      <div className="container flex items-center justify-center gap-2 sm:gap-3 px-4 text-sm sm:text-base">
+      {/* Mobile: entire bar is clickable */}
+      <div
+        role={patron.cta_url ? "link" : undefined}
+        tabIndex={patron.cta_url ? 0 : undefined}
+        onClick={handleClick}
+        onKeyDown={(e) => e.key === "Enter" && handleClick()}
+        className={cn(
+          "container flex items-center justify-center gap-2 sm:gap-3 px-4 text-sm sm:text-base",
+          patron.cta_url && "cursor-pointer sm:cursor-default"
+        )}
+      >
         <Star className="h-4 w-4 flex-shrink-0 fill-current" />
         
         <span className="font-medium truncate">
@@ -90,10 +106,11 @@ export const PatronBar = () => {
         </span>
         
         {patron.cta_text && patron.cta_url && (
-          <a
-            href={patron.cta_url}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(patron.cta_url, "_blank", "noopener,noreferrer");
+            }}
             className="hidden sm:inline-flex ml-2 px-3 py-1 rounded-full text-xs font-semibold transition-all hover:scale-105"
             style={{
               backgroundColor: patron.text_color,
@@ -101,13 +118,16 @@ export const PatronBar = () => {
             }}
           >
             {patron.cta_text}
-          </a>
+          </button>
         )}
       </div>
 
       {patron.dismissible && (
         <button
-          onClick={handleDismiss}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDismiss();
+          }}
           className="absolute right-2 sm:right-4 p-1 rounded-full transition-opacity hover:opacity-70"
           aria-label="Zamknij pasek patrona"
           style={{ color: patron.text_color }}
