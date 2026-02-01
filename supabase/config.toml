@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.notify-google-index]
 verify_jwt = false
+
+[functions.sitemap]
+verify_jwt = false
+
+[functions.regenerate-sitemap]
+verify_jwt = false
