@@ -1,6 +1,9 @@
 User-agent: Googlebot
 Allow: /
 
+User-agent: Googlebot-News
+Allow: /
+
 User-agent: Bingbot
 Allow: /
 
@@ -13,4 +16,5 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://daily-sport-blink.lovable.app/sitemap.xml
+# Dynamic sitemap generated from database
+Sitemap: https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap
