@@ -313,11 +313,50 @@ serve(async (req) => {
     } else {
       html = await response.text();
     }
-    const articleText = extractTextFromHtml(html);
+    let articleText = extractTextFromHtml(html);
     const ogImage = extractOgImage(html);
 
     console.log("Extracted text length:", articleText.length);
     console.log("Found OG image:", ogImage);
+
+    // Fallback to Firecrawl when extracted text is too short (JS-rendered pages)
+    const MIN_TEXT_LENGTH = 100;
+    if (articleText.length < MIN_TEXT_LENGTH) {
+      const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
+      if (firecrawlKey) {
+        console.log(`Text too short (${articleText.length} chars), falling back to Firecrawl for JS rendering`);
+        
+        const fcResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${firecrawlKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            url,
+            formats: ["html"],
+            onlyMainContent: true,
+          }),
+        });
+
+        if (fcResponse.ok) {
+          const fcData = await fcResponse.json();
+          const firecrawlHtml = fcData.data?.html || "";
+          
+          if (firecrawlHtml) {
+            articleText = extractTextFromHtml(firecrawlHtml);
+            console.log("Firecrawl rendered text length:", articleText.length);
+          } else {
+            console.warn("Firecrawl returned empty HTML, continuing with original");
+          }
+        } else {
+          const fcError = await fcResponse.text();
+          console.warn("Firecrawl fallback failed:", fcResponse.status, fcError);
+        }
+      } else {
+        console.warn(`Text too short (${articleText.length} chars) but Firecrawl not configured`);
+      }
+    }
 
     // Get prompts from database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
