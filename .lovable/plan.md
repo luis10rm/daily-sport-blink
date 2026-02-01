@@ -1,35 +1,103 @@
 
 
-# Aktualizacja pliku og-image.png
+# Dodanie prompta podsumowania dnia do ustawień
 
 ## Cel
 
-Zamiana obecnego pliku `public/og-image.png` na właściwą grafikę brandingową Szortsy, aby podglądy w mediach społecznościowych wyświetlały się poprawnie.
+Umożliwienie edycji prompta generującego podsumowania dnia bezpośrednio z panelu ustawień administracyjnych.
 
-## Problem
+## Aktualny stan
 
-Obecny plik `og-image.png` jest nieaktualny lub pusty, co powoduje nieprawidłowe wyświetlanie podglądów przy udostępnianiu linków do serwisu.
+- Edge function `generate-daily-summary` już obsługuje klucz `daily_summary_prompt` z tabeli settings
+- Jeśli klucz nie istnieje, funkcja używa domyślnego prompta wbudowanego w kod
+- Strona Settings.tsx zawiera dwa prompty: ekstrakcji metadanych i generowania treści artykułu
+- Brak wpisu `daily_summary_prompt` w tabeli `settings`
 
-## Rozwiązanie
+## Zmiany do wprowadzenia
 
-### Krok 1: Przygotowanie obrazu
+### 1. Dodanie wpisu do bazy danych
 
-Potrzebuję od Ciebie oryginalnego pliku graficznego `og-image.png` w odpowiednim formacie:
-- **Wymiary**: 1200x630 px (standard Open Graph)
-- **Format**: PNG
-- **Zawartość**: Grafika z piłkami sportowymi i logo "Szortsy" (widoczna na screenshocie)
+Utworzenie rekordu w tabeli `settings` z kluczem `daily_summary_prompt` i domyślną wartością (taką samą jak w edge function).
 
-### Krok 2: Wgranie pliku
+### 2. Aktualizacja strony Settings.tsx
 
-Po otrzymaniu pliku, zastąpię obecny `public/og-image.png` nową grafiką.
+Dodanie trzeciej sekcji w karcie "Ustawienia AI" z:
+- Pole Textarea dla prompta podsumowania dnia
+- Przycisk "Zapisz" i "Przywróć domyślny"
+- Opis funkcjonalności
 
----
+### 3. Aktualizacja hooka useSettings
 
-## Wymagane działanie z Twojej strony
+Dodanie stanu i logiki dla nowego prompta (wzorowane na istniejących promptach).
 
-**Prześlij oryginalny plik `og-image.png`** (nie screenshot) bezpośrednio w czacie - wystarczy przeciągnąć plik lub użyć przycisku "+" → "Attach".
+## Szczegóły techniczne
 
-Jeśli nie masz oryginalnego pliku, mogę pomóc:
-1. Wygenerować nowy obraz OG na podstawie aktualnego designu strony
-2. Użyć screenshota jako tymczasowe rozwiązanie (jakość może być niższa)
+### Nowy prompt domyślny (z edge function):
+
+```
+Jesteś redaktorem sportowym Daily Sport Blink. Napisz profesjonalne podsumowanie dnia sportowego w języku polskim.
+
+DANE WEJŚCIOWE:
+Otrzymasz listę newsów opublikowanych danego dnia w formacie JSON (title, excerpt, category, id).
+
+WYMAGANIA TREŚCI:
+- Napisz artykuł o długości 1500-2500 słów
+- Podziel na sekcje według kategorii sportowych (każda kategoria to osobny nagłówek H2)
+- Każda sekcja: 2-4 akapity streszczające i analizujące newsy z tej kategorii
+- Dodaj kontekst, analizę i opinie eksperta sportowego
+- Ton: profesjonalny, angażujący, dziennikarski
+- Rozpocznij od krótkiego wprowadzenia witającego czytelników
+- Zakończ krótkim podsumowaniem i zapowiedzią kolejnego dnia
+
+SEO:
+- Tytuł: max 60 znaków, musi zawierać datę i główne sporty dnia
+- Meta description (excerpt): max 155 znaków, zachęcający do przeczytania
+- Naturalne użycie słów kluczowych sportowych
+- Dla każdego wspomnianego newsa dodaj wewnętrzny link w formacie: <a href="/blink/ID">tekst linku</a>
+
+FORMATOWANIE (OBOWIĄZKOWE):
+- Używaj TYLKO tagów HTML: <h2>, <p>, <strong>, <em>, <a href="/blink/ID">
+- NIE używaj składni Markdown (**, *, #, ## itp.)
+- Pogrubienia: <strong>tekst</strong>
+- Kursywa: <em>tekst</em>
+- Nagłówki sekcji: <h2>Nazwa kategorii</h2>
+- Akapity: <p>treść</p>
+
+STRUKTURA ODPOWIEDZI:
+Odpowiedz w formacie JSON:
+{
+  "title": "Tytuł SEO (max 60 znaków)",
+  "excerpt": "Meta description (max 155 znaków)",
+  "content": "<p>Wprowadzenie...</p><h2>Piłka nożna</h2><p>Treść...</p>...",
+  "suggested_tags": ["tag1", "tag2", "podsumowanie dnia"]
+}
+```
+
+### Struktura UI
+
+Nowa sekcja zostanie dodana pod istniejącymi promptami w karcie "Ustawienia AI":
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Ustawienia AI                                                   │
+├─────────────────────────────────────────────────────────────────┤
+│ [📝 Prompt ekstrakcji metadanych]                               │
+│ [Textarea]                                                      │
+│ [Zapisz] [Przywróć domyślny]                                   │
+├─────────────────────────────────────────────────────────────────┤
+│ [✨ Prompt generowania treści artykułu]                         │
+│ [Textarea]                                                      │
+│ [Zapisz] [Przywróć domyślny]                                   │
+├─────────────────────────────────────────────────────────────────┤
+│ [📅 Prompt podsumowania dnia] ← NOWY                            │
+│ [Textarea]                                                      │
+│ Ten prompt określa jak AI generuje podsumowania dnia sportowego │
+│ [Zapisz] [Przywróć domyślny]                                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Pliki do modyfikacji
+
+1. `src/pages/admin/Settings.tsx` - dodanie nowej sekcji UI
+2. Migracja bazy danych - dodanie rekordu `daily_summary_prompt`
 
