@@ -3,6 +3,13 @@ import { DynamicStoriesCircle, StoryCategoryData } from "@/components/DynamicSto
 import { StoriesViewer } from "@/components/StoriesViewer";
 import { useRecentPosts, Post } from "@/hooks/usePosts";
 import { useSportCategories } from "@/hooks/useSportCategories";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 
 // Story post format for the viewer
 export interface StoryPost {
@@ -98,18 +105,38 @@ export const StoriesRow = () => {
 
   return (
     <>
-      {/* Stories row */}
-      <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="flex gap-4 pb-2">
-          {availableCategories.map((category) => (
-            <DynamicStoriesCircle
-              key={category.id}
-              category={category}
-              hasUnread={postsByCategory[category.id].length > 0}
-              onClick={() => handleOpenStory(category)}
-            />
-          ))}
-        </div>
+      {/* Stories row with Carousel */}
+      <div className="relative group">
+        <Carousel
+          opts={{
+            align: "start",
+            dragFree: true,
+            containScroll: "trimSnaps",
+          }}
+          className="w-full"
+        >
+          <CarouselContent className="-ml-2 md:-ml-3">
+            {availableCategories.map((category) => (
+              <CarouselItem
+                key={category.id}
+                className="basis-auto pl-2 md:pl-3"
+              >
+                <DynamicStoriesCircle
+                  category={category}
+                  hasUnread={postsByCategory[category.id].length > 0}
+                  onClick={() => handleOpenStory(category)}
+                />
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+
+          {/* Navigation arrows - desktop only */}
+          <CarouselPrevious className="hidden md:flex -left-3 h-8 w-8 bg-background/80 backdrop-blur-sm border-border hover:bg-background" />
+          <CarouselNext className="hidden md:flex -right-3 h-8 w-8 bg-background/80 backdrop-blur-sm border-border hover:bg-background" />
+        </Carousel>
+
+        {/* Gradient fade on right edge */}
+        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
       </div>
 
       {/* Story viewer modal */}
