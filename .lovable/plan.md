@@ -1,102 +1,95 @@
 
-# Plan: Ulepszenie przewijania Stories Row
+# Plan: Aktualizacja domeny na szortsy.pl
 
-## Problem
-Po zwiększeniu liczby kategorii sportowych, w sekcji Stories pojawia się brzydki systemowy scrollbar. Klasa `scrollbar-hide` nie jest zdefiniowana, więc scrollbar jest widoczny.
+## Zakres zmian
 
-## Proponowane rozwiązanie
-
-Wykorzystanie istniejącego komponentu **Carousel (Embla)** zamiast natywnego `overflow-x-auto`:
-- Płynne, dotykowe przewijanie (drag & swipe)
-- Brak widocznego scrollbara
-- Delikatne strzałki nawigacji po bokach (tylko desktop, gdy jest więcej kategorii)
-- Gradient "fade" na krawędziach sygnalizujący możliwość przewijania
-
-## Wizualizacja
-
-```text
-Przed:
-[●] [●] [●] [●] [●] [●] [●] [●] [●] [●] [●] [●]
-▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  <- brzydki scrollbar
-
-Po:
-    ◀  [●] [●] [●] [●] [●] [●] [●] [●] ...fade  ▶
-         płynne przewijanie dotykiem/myszką
-```
-
-## Zmiany do wprowadzenia
-
-### 1. StoriesRow.tsx - Zamiana na Carousel
-
-```typescript
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext 
-} from "@/components/ui/carousel";
-
-// W render:
-<div className="relative group">
-  <Carousel
-    opts={{
-      align: "start",
-      dragFree: true,
-      containScroll: "trimSnaps",
-    }}
-    className="w-full"
-  >
-    <CarouselContent className="-ml-2 md:-ml-3">
-      {availableCategories.map((category) => (
-        <CarouselItem 
-          key={category.id} 
-          className="basis-auto pl-2 md:pl-3"
-        >
-          <DynamicStoriesCircle ... />
-        </CarouselItem>
-      ))}
-    </CarouselContent>
-    
-    {/* Strzałki nawigacji - tylko desktop */}
-    <CarouselPrevious className="hidden md:flex -left-4 ..." />
-    <CarouselNext className="hidden md:flex -right-4 ..." />
-  </Carousel>
-  
-  {/* Gradient fade na prawej krawędzi */}
-  <div className="absolute right-0 top-0 bottom-0 w-12 
-    bg-gradient-to-l from-background to-transparent 
-    pointer-events-none" />
-</div>
-```
-
-### 2. Opcjonalnie: index.css - Dodanie scrollbar-hide jako backup
-
-```css
-@layer utilities {
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-}
-```
-
-## Zalety rozwiązania
-
-| Aspekt | Korzyść |
-|--------|---------|
-| UX | Płynne przewijanie dotykiem i myszką (drag) |
-| Wizualne | Brak brzydkiego scrollbara |
-| Nawigacja | Strzałki dla użytkowników desktop |
-| Feedback | Gradient sugeruje więcej treści |
-| Spójność | Wykorzystanie istniejącego komponentu Carousel |
+Nowa domena **szortsy.pl** została podpięta. Trzeba zaktualizować wszystkie miejsca z hardcoded URL-em starej domeny, aby zapewnić poprawne indeksowanie przez wyszukiwarki.
 
 ## Pliki do modyfikacji
 
-| Plik | Zmiana |
+| Plik | Zmiany |
 |------|--------|
-| `src/components/StoriesRow.tsx` | Zamiana div z overflow na Carousel |
-| `src/index.css` | Dodanie utility `scrollbar-hide` (backup) |
+| `index.html` | Meta tagi OG, Twitter Card, canonical URL |
+| `src/components/SEO.tsx` | Stałe SITE_URL i SITE_NAME |
+| `src/pages/BlinkPage.tsx` | Fallback URL i document title |
+| `supabase/functions/sitemap/index.ts` | SITE_URL w generatorze sitemapy |
+| `src/pages/admin/PostEditor.tsx` | URL dla postów z podsumowaniem |
+| `public/sitemap.xml` | Usunięcie - plik statyczny jest zbędny (mamy dynamiczną sitemapę) |
+
+## Szczegóły zmian
+
+### 1. index.html
+```html
+<!-- PRZED -->
+<meta property="og:url" content="https://daily-sport-blink.lovable.app" />
+<meta property="og:image" content="https://daily-sport-blink.lovable.app/og-image.png" />
+<meta name="twitter:image" content="https://daily-sport-blink.lovable.app/og-image.png" />
+<link rel="canonical" href="https://daily-sport-blink.lovable.app" />
+
+<!-- PO -->
+<meta property="og:url" content="https://szortsy.pl" />
+<meta property="og:image" content="https://szortsy.pl/og-image.png" />
+<meta name="twitter:image" content="https://szortsy.pl/og-image.png" />
+<link rel="canonical" href="https://szortsy.pl" />
+```
+
+### 2. src/components/SEO.tsx
+```typescript
+// PRZED
+const SITE_URL = "https://daily-sport-blink.lovable.app";
+const SITE_NAME = "Daily Sport Blink";
+
+// PO
+const SITE_URL = "https://szortsy.pl";
+const SITE_NAME = "Szortsy";
+```
+
+### 3. src/pages/BlinkPage.tsx
+```typescript
+// PRZED
+return import.meta.env.VITE_SITE_URL || "https://daily-sport-blink.lovable.app";
+// ...
+useDocumentTitle(post?.title ? `${post.title} | Daily Sport Blink` : "Daily Sport Blink");
+
+// PO
+return import.meta.env.VITE_SITE_URL || "https://szortsy.pl";
+// ...
+useDocumentTitle(post?.title ? `${post.title} | Szortsy` : "Szortsy");
+```
+
+### 4. supabase/functions/sitemap/index.ts
+```typescript
+// PRZED
+const SITE_URL = "https://daily-sport-blink.lovable.app";
+
+// PO
+const SITE_URL = "https://szortsy.pl";
+```
+
+### 5. src/pages/admin/PostEditor.tsx
+```typescript
+// PRZED
+form.setValue("source_url", "https://daily-sport-blink.lovable.app/podsumowanie");
+
+// PO
+form.setValue("source_url", "https://szortsy.pl/podsumowanie");
+```
+
+### 6. public/sitemap.xml
+Ten plik statyczny jest niepotrzebny - mamy dynamiczną sitemapę generowaną przez Edge Function. Usunięcie zapobiegnie konfliktom i nieaktualnym danym.
+
+## Wpływ na SEO
+
+| Element | Korzyść |
+|---------|---------|
+| Canonical URLs | Prawidłowe wskazanie głównej wersji strony |
+| Open Graph | Poprawne podglądy w social media |
+| JSON-LD Schema | Spójny branding "Szortsy" w wynikach wyszukiwania |
+| Sitemap | Wszystkie URL-e wskazują na nową domenę |
+| Google News | Prawidłowa identyfikacja wydawcy |
+
+## Po wdrożeniu
+
+1. **Google Search Console** - dodaj nową właściwość dla szortsy.pl
+2. **Przekierowanie 301** - skonfiguruj w ustawieniach domeny przekierowanie z daily-sport-blink.lovable.app na szortsy.pl (jeśli jeszcze nie zrobione)
+3. **Zgłoś sitemapę** - w GSC dodaj adres dynamicznej sitemapy
