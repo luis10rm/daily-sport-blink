@@ -136,7 +136,7 @@ const PostEditor = () => {
       if (prefillData.tags) form.setValue("tags", prefillData.tags);
       
       // Set internal source URL for AI-generated summary posts
-      form.setValue("source_url", "https://daily-sport-blink.lovable.app/podsumowanie");
+      form.setValue("source_url", "https://szortsy.pl/podsumowanie");
       
       // Set unique daily summary image
       form.setValue("image_url", "/images/categories/daily-summary.webp");

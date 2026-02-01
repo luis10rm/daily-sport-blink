@@ -44,7 +44,7 @@ const getBaseUrl = () => {
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
-  return import.meta.env.VITE_SITE_URL || "https://daily-sport-blink.lovable.app";
+  return import.meta.env.VITE_SITE_URL || "https://szortsy.pl";
 };
 
 const SITE_URL = getBaseUrl();
@@ -53,7 +53,7 @@ const BlinkPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = usePostBySlug(slug || "");
 
-  useDocumentTitle(post?.title ? `${post.title} | Daily Sport Blink` : "Daily Sport Blink");
+  useDocumentTitle(post?.title ? `${post.title} | Szortsy` : "Szortsy");
 
   if (isLoading) {
     return (
@@ -124,11 +124,11 @@ const BlinkPage = () => {
         ...(authorUrl && { url: authorUrl }),
       } : {
         "@type": "Organization",
-        name: "Daily Sport Blink",
+        name: "Szortsy",
       },
       publisher: {
         "@type": "Organization",
-        name: "Daily Sport Blink",
+        name: "Szortsy",
         logo: {
           "@type": "ImageObject",
           url: `${SITE_URL}/logo-seo.png`,
