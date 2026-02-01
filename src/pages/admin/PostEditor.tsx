@@ -266,6 +266,8 @@ const PostEditor = () => {
   const handleAIExtract = async () => {
     const sourceUrl = form.getValues("source_url");
     
+    console.log("[AI Extract] Starting extraction for URL:", sourceUrl);
+    
     if (!sourceUrl) {
       toast.error("Wprowadź URL źródła przed użyciem AI");
       return;
@@ -279,34 +281,48 @@ const PostEditor = () => {
     }
 
     toast.info("Analizuję artykuł...");
+    console.log("[AI Extract] Calling extractArticle.mutateAsync...");
 
-    const extractedData = await extractArticle.mutateAsync(sourceUrl);
-    
-    // Fill form with extracted data
-    form.setValue("title", extractedData.title);
-    form.setValue("excerpt", extractedData.excerpt);
-    
-    // Set AI-generated content if available - normalize to remove any ** patterns
-    if (extractedData.content) {
-      const normalizedContent = normalizeMarkdownInHtml(extractedData.content);
-      form.setValue("content", normalizedContent);
+    try {
+      const extractedData = await extractArticle.mutateAsync(sourceUrl);
+      
+      console.log("[AI Extract] Received data:", {
+        title: extractedData.title,
+        category: extractedData.category,
+        tagsCount: extractedData.tags?.length,
+        hasContent: !!extractedData.content,
+        contentPreview: extractedData.content?.substring(0, 100),
+      });
+      
+      // Fill form with extracted data
+      form.setValue("title", extractedData.title);
+      form.setValue("excerpt", extractedData.excerpt);
+      
+      // Set AI-generated content if available - normalize to remove any ** patterns
+      if (extractedData.content) {
+        const normalizedContent = normalizeMarkdownInHtml(extractedData.content);
+        form.setValue("content", normalizedContent);
+      }
+      
+      // Try to match extracted category slug to a category_id
+      const matchedCategory = sportCategories?.find(
+        (cat) => cat.slug === extractedData.category
+      );
+      if (matchedCategory) {
+        form.setValue("category_id", matchedCategory.id);
+      }
+      form.setValue("tags", extractedData.tags.join(", "));
+      
+      // If OG image found and no image set yet, offer to use it
+      if (extractedData.og_image && !form.getValues("image_url")) {
+        form.setValue("image_url", extractedData.og_image);
+      }
+      
+      toast.success("Formularz wypełniony przez AI!");
+    } catch (error) {
+      console.error("[AI Extract] Error:", error);
+      // Error toast is already handled by useExtractArticle hook
     }
-    
-    // Try to match extracted category slug to a category_id
-    const matchedCategory = sportCategories?.find(
-      (cat) => cat.slug === extractedData.category
-    );
-    if (matchedCategory) {
-      form.setValue("category_id", matchedCategory.id);
-    }
-    form.setValue("tags", extractedData.tags.join(", "));
-    
-    // If OG image found and no image set yet, offer to use it
-    if (extractedData.og_image && !form.getValues("image_url")) {
-      form.setValue("image_url", extractedData.og_image);
-    }
-    
-    toast.success("Formularz wypełniony przez AI!");
   };
 
   if ((isEditing && isLoadingPost) || isLoadingCategories) {
