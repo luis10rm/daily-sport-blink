@@ -292,6 +292,7 @@ const PostEditor = () => {
         tagsCount: extractedData.tags?.length,
         hasContent: !!extractedData.content,
         contentPreview: extractedData.content?.substring(0, 100),
+        extraction_info: extractedData.extraction_info,
       });
       
       // Fill form with extracted data
@@ -318,7 +319,18 @@ const PostEditor = () => {
         form.setValue("image_url", extractedData.og_image);
       }
       
-      toast.success("Formularz wypełniony przez AI!");
+      // Check extraction quality and show appropriate toast
+      const extractionInfo = extractedData.extraction_info;
+      if (extractionInfo?.quality_warning) {
+        toast.warning(
+          `Strona zwróciła mało treści (${extractionInfo.final_text_length} znaków).` +
+          (extractionInfo.used_firecrawl ? " Użyto renderowania JavaScript." : "") +
+          " Sprawdź wygenerowaną treść przed publikacją!",
+          { duration: 8000 }
+        );
+      } else {
+        toast.success("Formularz wypełniony przez AI!");
+      }
     } catch (error) {
       console.error("[AI Extract] Error:", error);
       // Error toast is already handled by useExtractArticle hook
