@@ -1,164 +1,49 @@
 
-# Plan: Wdrożenie Google Indexing API
 
-## Cel
-Automatyczne powiadamianie Google o nowych artykułach po publikacji, przyspieszając ich indeksowanie w wynikach wyszukiwania.
+# Naprawa ekstrakcji dla stron z JavaScript (weszlo.com)
 
----
+## Problem
 
-## Przesłany plik Service Account
+Weszło.com (i podobne strony) używa renderowania JavaScript. Standardowy `fetch()` zwraca pustą stronę (35 znaków), ale z kodem HTTP 200 OK - więc obecny fallback do Firecrawl się nie uruchamia.
 
-Otrzymałem plik `szortsy-new-1c6cb1ab50c3.json` z danymi:
-- **Email Service Account:** `web-indexing-szortsy-new@szortsy-new.iam.gserviceaccount.com`
-- **Projekt Google Cloud:** `szortsy-new`
+AI próbuje wygenerować artykuł z prawie pustego tekstu i "halucynuje" zupełnie inną treść.
 
-Ten email musisz dodać jako **Właściciela** w Google Search Console (jeśli jeszcze nie zrobiłeś).
+## Rozwiązanie
 
----
+Dodać sprawdzenie długości tekstu po ekstrakcji. Jeśli tekst ma mniej niż 100 znaków, automatycznie użyć Firecrawl (który renderuje JavaScript).
 
-## Zakres wdrożenia
+```text
+AKTUALNIE:
+fetch(url) → 200 OK → pusty tekst → AI halucynuje
 
-| Element | Opis |
-|---------|------|
-| Sekret | `GOOGLE_SERVICE_ACCOUNT_JSON` - klucz JSON z Google Cloud |
-| Edge Function | `notify-google-index` - wywołuje Indexing API |
-| Hook | Wywołanie w `PostEditor.tsx` po udanej publikacji |
-| Domena | `https://szortsy.pl` |
-
----
+PO ZMIANIE:  
+fetch(url) → 200 OK → pusty tekst → wykrycie problemu → Firecrawl → pełna treść → poprawny artykuł
+```
 
 ## Szczegóły techniczne
 
-### 1. Dodanie sekretu
+### Plik do edycji
 
-Poproszę o zapisanie zawartości pliku JSON jako sekret `GOOGLE_SERVICE_ACCOUNT_JSON`.
+`supabase/functions/extract-article/index.ts`
 
-### 2. Edge Function: `notify-google-index`
+### Zmiany
 
-Struktura:
-```text
-supabase/functions/notify-google-index/index.ts
-```
+1. Dodać stałą `MIN_TEXT_LENGTH = 100`
+2. Po ekstrakcji tekstu sprawdzić jego długość
+3. Jeśli tekst za krótki i Firecrawl skonfigurowany → pobrać stronę przez Firecrawl
+4. Użyć treści z Firecrawl do generowania artykułu
 
-Funkcja będzie:
-1. Przyjmować URL artykułu do zaindeksowania
-2. Walidować uprawnienia użytkownika (admin/editor)
-3. Parsować Service Account JSON z sekretu
-4. Generować JWT token z odpowiednimi claims dla Google API
-5. Wymieniać JWT na Access Token przez Google OAuth
-6. Wysyłać żądanie `URL_UPDATED` do Google Indexing API
-7. Logować rezultat operacji
+### Wynik
 
-Endpoint: `POST /notify-google-index`
+| Strona | Tekst z fetch | Firecrawl? | Rezultat |
+|--------|---------------|------------|----------|
+| thesport.pl | 2227 znaków | Nie | OK |
+| weszlo.com | 35 znaków | Tak | Naprawione |
+| sport.fakt.pl | 6000 znaków | Nie | OK |
 
-Payload:
-```json
-{
-  "url": "https://szortsy.pl/blink/artykul-slug",
-  "type": "URL_UPDATED"
-}
-```
-
-Obsługiwane typy:
-- `URL_UPDATED` - nowy/zaktualizowany artykuł
-- `URL_DELETED` - usunięty artykuł
-
-### 3. Integracja z edytorem postów
-
-W `PostEditor.tsx` - po udanej publikacji nowego posta:
-
-1. Pobierz slug utworzonego posta
-2. Zbuduj pełny URL: `https://szortsy.pl/blink/{slug}`
-3. Wywołaj Edge Function `notify-google-index`
-4. Wyświetl toast z informacją o statusie indeksowania
-
-Wywołanie będzie **automatyczne** przy tworzeniu nowych postów, ale **nie** przy edycji (aby nie wyczerpać limitu).
-
-### 4. Aktualizacja config.toml
-
-```toml
-[functions.notify-google-index]
-verify_jwt = false
-```
-
----
-
-## Pliki do utworzenia
-
-| Plik | Opis |
-|------|------|
-| `supabase/functions/notify-google-index/index.ts` | Edge Function z logiką JWT i wywołaniem Google API |
-
-## Pliki do edycji
+## Podsumowanie
 
 | Plik | Zmiana |
 |------|--------|
-| `supabase/config.toml` | Dodanie konfiguracji nowej funkcji |
-| `src/pages/admin/PostEditor.tsx` | Hook wywołujący indeksowanie po publikacji |
+| `supabase/functions/extract-article/index.ts` | Fallback do Firecrawl gdy tekst < 100 znaków |
 
----
-
-## Flow działania
-
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                         PUBLIKACJA POSTA                            │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  PostEditor.tsx                                                     │
-│       │                                                             │
-│       ▼                                                             │
-│  createPost.mutateAsync()                                           │
-│       │                                                             │
-│       ▼                                                             │
-│  ┌─────────────────────────────────────┐                            │
-│  │ Post zapisany w bazie               │                            │
-│  │ (slug wygenerowany automatycznie)   │                            │
-│  └─────────────────────────────────────┘                            │
-│       │                                                             │
-│       ▼                                                             │
-│  Wywołanie notify-google-index                                      │
-│  z URL: https://szortsy.pl/blink/{slug}                             │
-│       │                                                             │
-│       ▼                                                             │
-│  ┌─────────────────────────────────────┐                            │
-│  │ Edge Function:                      │                            │
-│  │ 1. Parsuj Service Account JSON      │                            │
-│  │ 2. Generuj JWT                      │                            │
-│  │ 3. Wymień na Access Token           │                            │
-│  │ 4. Wywołaj Indexing API             │                            │
-│  └─────────────────────────────────────┘                            │
-│       │                                                             │
-│       ▼                                                             │
-│  Toast: "Google zostało powiadomione o nowym artykule"              │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Limity Google Indexing API
-
-- **200 żądań dziennie** (darmowy limit)
-- Dla typowej redakcji sportowej to wystarczające
-- Przy większej skali: wniosek do Google o zwiększenie limitu
-
----
-
-## Kolejne kroki po zatwierdzeniu
-
-1. Poproszę o zapisanie klucza JSON jako sekret
-2. Utworzę Edge Function `notify-google-index`
-3. Zaktualizuję `config.toml`
-4. Zintegruję wywołanie w `PostEditor.tsx`
-
----
-
-## Weryfikacja w Google Search Console
-
-Upewnij się, że email Service Account:
-```
-web-indexing-szortsy-new@szortsy-new.iam.gserviceaccount.com
-```
-
-jest dodany jako **Właściciel** w Google Search Console dla domeny `szortsy.pl`.
