@@ -1,95 +1,54 @@
 
-# Plan: Aktualizacja domeny na szortsy.pl
+# Plan: Sitemap dostępna pod szortsy.pl/sitemap.xml
 
-## Zakres zmian
+## Problem
+Google Search Console odrzuca adres sitemapy z innej domeny (supabase.co). Sitemap musi być dostępna bezpośrednio pod `https://szortsy.pl/sitemap.xml`.
 
-Nowa domena **szortsy.pl** została podpięta. Trzeba zaktualizować wszystkie miejsca z hardcoded URL-em starej domeny, aby zapewnić poprawne indeksowanie przez wyszukiwarki.
+## Rozwiązanie: Przekierowanie na poziomie hostingu
 
-## Pliki do modyfikacji
+Ponieważ Lovable hostuje aplikację, **najczystszym rozwiązaniem** jest skonfigurowanie przekierowania URL na poziomie dostawcy domeny lub CDN:
 
-| Plik | Zmiany |
-|------|--------|
-| `index.html` | Meta tagi OG, Twitter Card, canonical URL |
-| `src/components/SEO.tsx` | Stałe SITE_URL i SITE_NAME |
-| `src/pages/BlinkPage.tsx` | Fallback URL i document title |
-| `supabase/functions/sitemap/index.ts` | SITE_URL w generatorze sitemapy |
-| `src/pages/admin/PostEditor.tsx` | URL dla postów z podsumowaniem |
-| `public/sitemap.xml` | Usunięcie - plik statyczny jest zbędny (mamy dynamiczną sitemapę) |
-
-## Szczegóły zmian
-
-### 1. index.html
-```html
-<!-- PRZED -->
-<meta property="og:url" content="https://daily-sport-blink.lovable.app" />
-<meta property="og:image" content="https://daily-sport-blink.lovable.app/og-image.png" />
-<meta name="twitter:image" content="https://daily-sport-blink.lovable.app/og-image.png" />
-<link rel="canonical" href="https://daily-sport-blink.lovable.app" />
-
-<!-- PO -->
-<meta property="og:url" content="https://szortsy.pl" />
-<meta property="og:image" content="https://szortsy.pl/og-image.png" />
-<meta name="twitter:image" content="https://szortsy.pl/og-image.png" />
-<link rel="canonical" href="https://szortsy.pl" />
+```
+szortsy.pl/sitemap.xml → https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap
 ```
 
-### 2. src/components/SEO.tsx
-```typescript
-// PRZED
-const SITE_URL = "https://daily-sport-blink.lovable.app";
-const SITE_NAME = "Daily Sport Blink";
+### Jak to zrobić
 
-// PO
-const SITE_URL = "https://szortsy.pl";
-const SITE_NAME = "Szortsy";
+Zależy od tego, gdzie zarządzasz domeną:
+
+**Jeśli używasz Cloudflare:**
+1. Przejdź do **Rules** → **Page Rules** lub **Redirect Rules**
+2. Dodaj regułę:
+   - URL: `szortsy.pl/sitemap.xml`
+   - Przekierowanie 301 do: `https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap`
+
+**Jeśli używasz innego dostawcy DNS:**
+Sprawdź opcje "URL Redirect" lub "Forwarding" w panelu administracyjnym domeny.
+
+## Alternatywa: Statyczna sitemap (jeśli przekierowanie niemożliwe)
+
+Jeśli nie masz możliwości ustawienia przekierowania, mogę stworzyć:
+1. Statyczny plik `public/sitemap.xml` 
+2. Edge Function `regenerate-sitemap` wywoływaną ręcznie lub przez cron
+
+**Wada:** Sitemap nie będzie aktualizowana w czasie rzeczywistym - tylko przy regeneracji.
+
+## Aktualizacja robots.txt
+
+Po skonfigurowaniu przekierowania, zaktualizuję `robots.txt`:
+
+```text
+Sitemap: https://szortsy.pl/sitemap.xml
 ```
 
-### 3. src/pages/BlinkPage.tsx
-```typescript
-// PRZED
-return import.meta.env.VITE_SITE_URL || "https://daily-sport-blink.lovable.app";
-// ...
-useDocumentTitle(post?.title ? `${post.title} | Daily Sport Blink` : "Daily Sport Blink");
+## Kolejne kroki
 
-// PO
-return import.meta.env.VITE_SITE_URL || "https://szortsy.pl";
-// ...
-useDocumentTitle(post?.title ? `${post.title} | Szortsy` : "Szortsy");
-```
+1. **Ty:** Skonfiguruj przekierowanie u dostawcy domeny (lub powiedz mi, że to niemożliwe)
+2. **Ja:** Zaktualizuję robots.txt na nowy adres sitemapy
+3. **Ty:** Zgłoś `/sitemap.xml` w Google Search Console
 
-### 4. supabase/functions/sitemap/index.ts
-```typescript
-// PRZED
-const SITE_URL = "https://daily-sport-blink.lovable.app";
+---
 
-// PO
-const SITE_URL = "https://szortsy.pl";
-```
-
-### 5. src/pages/admin/PostEditor.tsx
-```typescript
-// PRZED
-form.setValue("source_url", "https://daily-sport-blink.lovable.app/podsumowanie");
-
-// PO
-form.setValue("source_url", "https://szortsy.pl/podsumowanie");
-```
-
-### 6. public/sitemap.xml
-Ten plik statyczny jest niepotrzebny - mamy dynamiczną sitemapę generowaną przez Edge Function. Usunięcie zapobiegnie konfliktom i nieaktualnym danym.
-
-## Wpływ na SEO
-
-| Element | Korzyść |
-|---------|---------|
-| Canonical URLs | Prawidłowe wskazanie głównej wersji strony |
-| Open Graph | Poprawne podglądy w social media |
-| JSON-LD Schema | Spójny branding "Szortsy" w wynikach wyszukiwania |
-| Sitemap | Wszystkie URL-e wskazują na nową domenę |
-| Google News | Prawidłowa identyfikacja wydawcy |
-
-## Po wdrożeniu
-
-1. **Google Search Console** - dodaj nową właściwość dla szortsy.pl
-2. **Przekierowanie 301** - skonfiguruj w ustawieniach domeny przekierowanie z daily-sport-blink.lovable.app na szortsy.pl (jeśli jeszcze nie zrobione)
-3. **Zgłoś sitemapę** - w GSC dodaj adres dynamicznej sitemapy
+**Którą opcję wybierasz?**
+- Masz dostęp do konfiguracji przekierowań domeny (Cloudflare, etc.)?
+- Czy wolisz statyczną sitemapę z ręczną regeneracją?
