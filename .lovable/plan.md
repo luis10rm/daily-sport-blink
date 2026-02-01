@@ -1,92 +1,132 @@
 
-# Plan: Ostrzeżenie o niewystarczającej treści do ekstrakcji
+# Plan: Dokończenie implementacji ostrzeżeń o niewystarczającej treści
 
 ## Zidentyfikowany problem
 
-Firecrawl działa poprawnie (fallback się uruchamia), ale weszło.com zwraca zbyt mało treści nawet po renderowaniu JavaScript (301 znaków zamiast potrzebnych kilku tysięcy). 
+Poprzednie zmiany były **niekompletne**. Fallback do Firecrawl działa, ale:
+1. Edge function **NIE zwraca** `extraction_info` z metadanymi o ekstrakcji
+2. Edge function **NIE blokuje** generowania przy za krótkiej treści (< 200 znaków)
+3. Frontend **NIE sprawdza** ostrzeżeń i zawsze pokazuje `toast.success`
 
-AI nie ma wystarczających danych i "halucynuje" - generuje artykuł o zupełnie innym temacie (Rashford zamiast Lewandowski) na podstawie fragmentów innych artykułów widocznych na stronie.
-
-## Rozwiązanie
-
-Dodać walidację jakości ekstrakcji z informacją zwrotną dla użytkownika:
-
-```text
-AKTUALNIE:
-Firecrawl → 301 znaków → AI halucynuje → zły artykuł
-
-PO ZMIANIE:
-Firecrawl → 301 znaków → wykrycie problemu → ostrzeżenie dla użytkownika + opcjonalnie kontynuacja
-```
+Logi potwierdzają: Firecrawl zwraca tylko 301 znaków dla weszło.com - za mało do poprawnej ekstrakcji.
 
 ---
 
-## Szczegóły techniczne
+## Zmiany do wprowadzenia
 
-### 1. Edge Function - zwracanie metadanych o ekstrakcji
+### 1. Edge Function (`supabase/functions/extract-article/index.ts`)
 
-**Plik:** `supabase/functions/extract-article/index.ts`
-
-Dodać do odpowiedzi informacje o jakości ekstrakcji:
-
+**A) Dodać śledzenie zmiennych:**
 ```typescript
+// Na początku przetwarzania (przed linią 316)
+const originalTextLength = articleText.length;
+let usedFirecrawl = false;
+```
+
+**B) Ustawić flagę przy użyciu Firecrawl:**
+```typescript
+// W bloku Firecrawl (linia ~347)
+usedFirecrawl = true;
+```
+
+**C) Dodać blokadę dla minimalnej długości:**
+```typescript
+// Po bloku Firecrawl (przed linią 361)
+const ABSOLUTE_MIN_TEXT = 200;
+if (articleText.length < ABSOLUTE_MIN_TEXT) {
+  console.error(`Text too short for AI generation: ${articleText.length} chars`);
+  return new Response(
+    JSON.stringify({ 
+      error: `Strona zwróciła tylko ${articleText.length} znaków - za mało do wygenerowania artykułu.`,
+      extraction_failed: true,
+      text_length: articleText.length,
+      used_firecrawl: usedFirecrawl
+    }),
+    { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+```
+
+**D) Dodać `extraction_info` do odpowiedzi:**
+```typescript
+// Zmienić result (linia 539-543)
 const result = {
   ...extractedMetadata,
   content: generatedContent,
   og_image: ogImage,
-  // NOWE: metadane o ekstrakcji
   extraction_info: {
-    original_text_length: originalTextLength,   // przed Firecrawl
-    final_text_length: articleText.length,      // po Firecrawl (lub bez)
-    used_firecrawl: usedFirecrawl,              // czy użyto fallback
-    quality_warning: articleText.length < 500,  // ostrzeżenie o niskiej jakości
+    original_text_length: originalTextLength,
+    final_text_length: articleText.length,
+    used_firecrawl: usedFirecrawl,
+    quality_warning: articleText.length < 500,
   }
 };
 ```
 
-### 2. Frontend - wyświetlanie ostrzeżenia
+### 2. Frontend (`src/pages/admin/PostEditor.tsx`)
 
-**Plik:** `src/pages/admin/PostEditor.tsx`
-
-Zmienić `handleAIExtract` aby pokazywał ostrzeżenie:
-
+**Zmienić `handleAIExtract` (linie 286-325):**
 ```typescript
-const extractedData = await extractArticle.mutateAsync(sourceUrl);
-
-// Sprawdź jakość ekstrakcji
-if (extractedData.extraction_info?.quality_warning) {
-  const textLength = extractedData.extraction_info.final_text_length;
-  const usedFirecrawl = extractedData.extraction_info.used_firecrawl;
+try {
+  const extractedData = await extractArticle.mutateAsync(sourceUrl);
   
-  toast.warning(
-    `Strona zwróciła mało treści (${textLength} znaków).
-     ${usedFirecrawl ? 'Użyto Firecrawl do renderowania JS.' : ''}
-     Wygenerowana treść może być niedokładna - sprawdź przed publikacją!`,
-    { duration: 8000 }
-  );
-} else {
-  toast.success("Formularz wypełniony przez AI!");
+  // Sprawdź jakość ekstrakcji
+  const extractionInfo = extractedData.extraction_info;
+  
+  if (extractionInfo?.quality_warning) {
+    toast.warning(
+      `Strona zwróciła mało treści (${extractionInfo.final_text_length} znaków).` +
+      (extractionInfo.used_firecrawl ? ' Użyto renderowania JavaScript.' : '') +
+      ' Sprawdź wygenerowaną treść przed publikacją!',
+      { duration: 8000 }
+    );
+  } else {
+    toast.success("Formularz wypełniony przez AI!");
+  }
+  
+  // ... reszta kodu wypełniania formularza
+} catch (error) {
+  // Błędy są obsługiwane przez hook useExtractArticle
 }
 ```
 
-### 3. Dodatkowa opcja - próg minimalnej jakości
+---
 
-Można też całkowicie zablokować generowanie gdy tekst jest za krótki:
+## Diagram przepływu po zmianach
 
-```typescript
-const ABSOLUTE_MIN_TEXT = 200;
-
-if (articleText.length < ABSOLUTE_MIN_TEXT) {
-  return new Response(
-    JSON.stringify({ 
-      error: `Strona zwróciła tylko ${articleText.length} znaków - za mało do wygenerowania artykułu. Spróbuj wkleić treść ręcznie.`,
-      extraction_failed: true,
-      text_length: articleText.length
-    }),
-    { status: 400, headers: corsHeaders }
-  );
-}
+```text
+URL źródłowy
+    ↓
+fetch(url) → HTML
+    ↓
+extractTextFromHtml() → tekst (np. 32 znaki)
+    ↓
+[SPRAWDZENIE] tekst < 100 znaków?
+    ↓ TAK
+Firecrawl scrape → tekst (np. 301 znaków)
+    ↓
+[SPRAWDZENIE] tekst < 200 znaków?
+    ↓ TAK → BLOKADA + error response "Za mało znaków"
+    ↓ NIE
+[SPRAWDZENIE] tekst < 500 znaków?
+    ↓ TAK → quality_warning = true
+    ↓
+Generuj AI + zwróć extraction_info
+    ↓
+Frontend: 
+  - quality_warning? → toast.warning
+  - nie? → toast.success
 ```
+
+---
+
+## Oczekiwane zachowanie
+
+| Tekst | Firecrawl | Blokada? | Toast |
+|-------|-----------|----------|-------|
+| 32 znaki → 301 znaków | Tak | **TAK (< 200)** | `error: Za mało znaków` |
+| 50 znaków → 450 znaków | Tak | Nie | `warning: Mało treści` |
+| 2000+ znaków | Nie | Nie | `success: Wypełniono` |
 
 ---
 
@@ -94,13 +134,5 @@ if (articleText.length < ABSOLUTE_MIN_TEXT) {
 
 | Plik | Zmiana |
 |------|--------|
-| `supabase/functions/extract-article/index.ts` | Dodanie `extraction_info` do odpowiedzi + opcjonalnie blokada przy zbyt krótkiej treści |
-| `src/pages/admin/PostEditor.tsx` | Wyświetlanie ostrzeżenia toast gdy jakość ekstrakcji jest niska |
-
-## Rekomendacja
-
-Sugeruję implementację **obu mechanizmów**:
-1. **Ostrzeżenie** gdy tekst ma 200-500 znaków (pozwala kontynuować, ale ostrzega)
-2. **Blokada** gdy tekst ma < 200 znaków (zbyt mało danych, lepiej nie generować)
-
-Dzięki temu użytkownik będzie wiedział o problemie zamiast otrzymywać halucynujące treści.
+| `supabase/functions/extract-article/index.ts` | Blokada < 200 znaków, dodanie `extraction_info` do odpowiedzi |
+| `src/pages/admin/PostEditor.tsx` | Wyświetlanie ostrzeżenia/błędu na podstawie `extraction_info` |
