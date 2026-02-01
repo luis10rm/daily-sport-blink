@@ -9,8 +9,8 @@ interface SEOProps {
 }
 
 // Base URL for the site
-const SITE_URL = "https://daily-sport-blink.lovable.app";
-const SITE_NAME = "Daily Sport Blink";
+const SITE_URL = "https://szortsy.pl";
+const SITE_NAME = "Szortsy";
 const LOGO_URL = `${SITE_URL}/logo-seo.png`;
 
 // Publisher object (reused across NewsArticle schemas)
