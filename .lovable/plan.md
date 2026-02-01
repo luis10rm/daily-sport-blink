@@ -1,138 +1,102 @@
 
-# Plan: Dokończenie implementacji ostrzeżeń o niewystarczającej treści
+# Plan: Ulepszenie przewijania Stories Row
 
-## Zidentyfikowany problem
+## Problem
+Po zwiększeniu liczby kategorii sportowych, w sekcji Stories pojawia się brzydki systemowy scrollbar. Klasa `scrollbar-hide` nie jest zdefiniowana, więc scrollbar jest widoczny.
 
-Poprzednie zmiany były **niekompletne**. Fallback do Firecrawl działa, ale:
-1. Edge function **NIE zwraca** `extraction_info` z metadanymi o ekstrakcji
-2. Edge function **NIE blokuje** generowania przy za krótkiej treści (< 200 znaków)
-3. Frontend **NIE sprawdza** ostrzeżeń i zawsze pokazuje `toast.success`
+## Proponowane rozwiązanie
 
-Logi potwierdzają: Firecrawl zwraca tylko 301 znaków dla weszło.com - za mało do poprawnej ekstrakcji.
+Wykorzystanie istniejącego komponentu **Carousel (Embla)** zamiast natywnego `overflow-x-auto`:
+- Płynne, dotykowe przewijanie (drag & swipe)
+- Brak widocznego scrollbara
+- Delikatne strzałki nawigacji po bokach (tylko desktop, gdy jest więcej kategorii)
+- Gradient "fade" na krawędziach sygnalizujący możliwość przewijania
 
----
+## Wizualizacja
+
+```text
+Przed:
+[●] [●] [●] [●] [●] [●] [●] [●] [●] [●] [●] [●]
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  <- brzydki scrollbar
+
+Po:
+    ◀  [●] [●] [●] [●] [●] [●] [●] [●] ...fade  ▶
+         płynne przewijanie dotykiem/myszką
+```
 
 ## Zmiany do wprowadzenia
 
-### 1. Edge Function (`supabase/functions/extract-article/index.ts`)
+### 1. StoriesRow.tsx - Zamiana na Carousel
 
-**A) Dodać śledzenie zmiennych:**
 ```typescript
-// Na początku przetwarzania (przed linią 316)
-const originalTextLength = articleText.length;
-let usedFirecrawl = false;
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext 
+} from "@/components/ui/carousel";
+
+// W render:
+<div className="relative group">
+  <Carousel
+    opts={{
+      align: "start",
+      dragFree: true,
+      containScroll: "trimSnaps",
+    }}
+    className="w-full"
+  >
+    <CarouselContent className="-ml-2 md:-ml-3">
+      {availableCategories.map((category) => (
+        <CarouselItem 
+          key={category.id} 
+          className="basis-auto pl-2 md:pl-3"
+        >
+          <DynamicStoriesCircle ... />
+        </CarouselItem>
+      ))}
+    </CarouselContent>
+    
+    {/* Strzałki nawigacji - tylko desktop */}
+    <CarouselPrevious className="hidden md:flex -left-4 ..." />
+    <CarouselNext className="hidden md:flex -right-4 ..." />
+  </Carousel>
+  
+  {/* Gradient fade na prawej krawędzi */}
+  <div className="absolute right-0 top-0 bottom-0 w-12 
+    bg-gradient-to-l from-background to-transparent 
+    pointer-events-none" />
+</div>
 ```
 
-**B) Ustawić flagę przy użyciu Firecrawl:**
-```typescript
-// W bloku Firecrawl (linia ~347)
-usedFirecrawl = true;
-```
+### 2. Opcjonalnie: index.css - Dodanie scrollbar-hide jako backup
 
-**C) Dodać blokadę dla minimalnej długości:**
-```typescript
-// Po bloku Firecrawl (przed linią 361)
-const ABSOLUTE_MIN_TEXT = 200;
-if (articleText.length < ABSOLUTE_MIN_TEXT) {
-  console.error(`Text too short for AI generation: ${articleText.length} chars`);
-  return new Response(
-    JSON.stringify({ 
-      error: `Strona zwróciła tylko ${articleText.length} znaków - za mało do wygenerowania artykułu.`,
-      extraction_failed: true,
-      text_length: articleText.length,
-      used_firecrawl: usedFirecrawl
-    }),
-    { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+```css
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 ```
 
-**D) Dodać `extraction_info` do odpowiedzi:**
-```typescript
-// Zmienić result (linia 539-543)
-const result = {
-  ...extractedMetadata,
-  content: generatedContent,
-  og_image: ogImage,
-  extraction_info: {
-    original_text_length: originalTextLength,
-    final_text_length: articleText.length,
-    used_firecrawl: usedFirecrawl,
-    quality_warning: articleText.length < 500,
-  }
-};
-```
+## Zalety rozwiązania
 
-### 2. Frontend (`src/pages/admin/PostEditor.tsx`)
+| Aspekt | Korzyść |
+|--------|---------|
+| UX | Płynne przewijanie dotykiem i myszką (drag) |
+| Wizualne | Brak brzydkiego scrollbara |
+| Nawigacja | Strzałki dla użytkowników desktop |
+| Feedback | Gradient sugeruje więcej treści |
+| Spójność | Wykorzystanie istniejącego komponentu Carousel |
 
-**Zmienić `handleAIExtract` (linie 286-325):**
-```typescript
-try {
-  const extractedData = await extractArticle.mutateAsync(sourceUrl);
-  
-  // Sprawdź jakość ekstrakcji
-  const extractionInfo = extractedData.extraction_info;
-  
-  if (extractionInfo?.quality_warning) {
-    toast.warning(
-      `Strona zwróciła mało treści (${extractionInfo.final_text_length} znaków).` +
-      (extractionInfo.used_firecrawl ? ' Użyto renderowania JavaScript.' : '') +
-      ' Sprawdź wygenerowaną treść przed publikacją!',
-      { duration: 8000 }
-    );
-  } else {
-    toast.success("Formularz wypełniony przez AI!");
-  }
-  
-  // ... reszta kodu wypełniania formularza
-} catch (error) {
-  // Błędy są obsługiwane przez hook useExtractArticle
-}
-```
-
----
-
-## Diagram przepływu po zmianach
-
-```text
-URL źródłowy
-    ↓
-fetch(url) → HTML
-    ↓
-extractTextFromHtml() → tekst (np. 32 znaki)
-    ↓
-[SPRAWDZENIE] tekst < 100 znaków?
-    ↓ TAK
-Firecrawl scrape → tekst (np. 301 znaków)
-    ↓
-[SPRAWDZENIE] tekst < 200 znaków?
-    ↓ TAK → BLOKADA + error response "Za mało znaków"
-    ↓ NIE
-[SPRAWDZENIE] tekst < 500 znaków?
-    ↓ TAK → quality_warning = true
-    ↓
-Generuj AI + zwróć extraction_info
-    ↓
-Frontend: 
-  - quality_warning? → toast.warning
-  - nie? → toast.success
-```
-
----
-
-## Oczekiwane zachowanie
-
-| Tekst | Firecrawl | Blokada? | Toast |
-|-------|-----------|----------|-------|
-| 32 znaki → 301 znaków | Tak | **TAK (< 200)** | `error: Za mało znaków` |
-| 50 znaków → 450 znaków | Tak | Nie | `warning: Mało treści` |
-| 2000+ znaków | Nie | Nie | `success: Wypełniono` |
-
----
-
-## Podsumowanie zmian
+## Pliki do modyfikacji
 
 | Plik | Zmiana |
 |------|--------|
-| `supabase/functions/extract-article/index.ts` | Blokada < 200 znaków, dodanie `extraction_info` do odpowiedzi |
-| `src/pages/admin/PostEditor.tsx` | Wyświetlanie ostrzeżenia/błędu na podstawie `extraction_info` |
+| `src/components/StoriesRow.tsx` | Zamiana div z overflow na Carousel |
+| `src/index.css` | Dodanie utility `scrollbar-hide` (backup) |
