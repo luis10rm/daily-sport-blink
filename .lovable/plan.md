@@ -1,26 +1,31 @@
-# Dynamiczna Sitemap
 
-## Status: ✅ Zaimplementowane
 
-Serwis używa dynamicznej sitemapy generowanej przez Edge Function.
+# Dodanie statycznej sitemapy do katalogu public
 
-## Architektura
+## Cel
 
-- **Edge Function**: `supabase/functions/sitemap/index.ts`
-- **URL**: `https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap`
-- **robots.txt**: wskazuje na dynamiczną sitemapę
+Utworzenie pliku `public/sitemap.xml` z aktualną zawartością, który będzie dostępny pod adresem `https://szortsy.pl/sitemap.xml`.
 
-## Jak to działa
+## Zmiany do wprowadzenia
 
-1. Google/roboty pobierają sitemapę z Edge Function
-2. Funkcja odpytuje bazę danych w czasie rzeczywistym
-3. Zwraca aktualny XML z postami, kategoriami, tagami i autorami
-4. Cache: 1 godzina (nagłówek `max-age=3600`)
+### 1. Utworzenie pliku `public/sitemap.xml`
 
-## Zawartość sitemapy
+Plik będzie zawierał:
+- **Strony statyczne**: `/`, `/archiwum`, `/autorzy`, `/tagi`
+- **18 kategorii sportowych**: lyzwiarstwo, pilka-reczna, f1, mma, tenis, i inne
+- **4 autorów publicznych**: redakcja główna i redaktorzy
+- **55+ tagów**: najpopularniejsze tagi z postami
+- **30 najnowszych artykułów**: z priorytetem 0.9 i częstotliwością hourly
 
-- Strony statyczne (/, /archiwum, /autorzy, /tagi)
-- Kategorie sportowe
-- Profile autorów (publiczni)
-- Tagi z postami
-- Artykuły (z rozszerzeniem Google News dla ostatnich 48h)
+### 2. Link po wdrożeniu
+
+Po zatwierdzeniu planu i opublikowaniu zmian, sitemap będzie dostępna pod:
+
+```
+https://szortsy.pl/sitemap.xml
+```
+
+## Uwaga
+
+Ta statyczna sitemap wymaga ręcznej aktualizacji przy dodawaniu nowych postów. Dynamiczna sitemap z Edge Function (`/functions/v1/sitemap`) jest nadal aktywna i automatycznie aktualna.
+
