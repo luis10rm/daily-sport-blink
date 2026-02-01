@@ -1,30 +1,26 @@
+# Dynamiczna Sitemap
 
+## Status: ✅ Zaimplementowane
 
-# Usunięcie statycznej sitemapy
+Serwis używa dynamicznej sitemapy generowanej przez Edge Function.
 
-## Cel
+## Architektura
 
-Usunięcie pliku `public/sitemap.xml` i przejście na dynamiczną sitemapę z Edge Function.
+- **Edge Function**: `supabase/functions/sitemap/index.ts`
+- **URL**: `https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap`
+- **robots.txt**: wskazuje na dynamiczną sitemapę
 
-## Zmiany do wprowadzenia
+## Jak to działa
 
-### 1. Usunięcie pliku
-- **Plik**: `public/sitemap.xml`
-- **Akcja**: Usunięcie
+1. Google/roboty pobierają sitemapę z Edge Function
+2. Funkcja odpytuje bazę danych w czasie rzeczywistym
+3. Zwraca aktualny XML z postami, kategoriami, tagami i autorami
+4. Cache: 1 godzina (nagłówek `max-age=3600`)
 
-### 2. Aktualizacja `robots.txt`
-Zmiana wskazania sitemapy z obecnego URL Edge Function na ten sam (bez zmian, już wskazuje na dynamiczną):
-```
-Sitemap: https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap
-```
+## Zawartość sitemapy
 
-### 3. Aktualizacja dokumentacji
-Usunięcie lub aktualizacja pliku `.lovable/plan.md` który opisuje poprzednie rozwiązanie ze statyczną sitemapą.
-
-## Rezultat
-
-Po tej zmianie:
-- Google Search Console będzie pobierać sitemapę bezpośrednio z Edge Function
-- Sitemap będzie zawsze aktualna (generowana dynamicznie z bazy danych)
-- Brak potrzeby ręcznej regeneracji po dodaniu nowych postów
-
+- Strony statyczne (/, /archiwum, /autorzy, /tagi)
+- Kategorie sportowe
+- Profile autorów (publiczni)
+- Tagi z postami
+- Artykuły (z rozszerzeniem Google News dla ostatnich 48h)
