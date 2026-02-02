@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StoryPost } from "@/components/StoriesRow";
@@ -197,16 +198,26 @@ export const StoriesViewer = ({
           )}
 
           {/* Read more link */}
-          <a
-            href={currentPost.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-colors"
-          >
-            Czytaj więcej
-            <ExternalLink className="w-4 h-4" />
-          </a>
+          {currentPost.hasContent ? (
+            <Link
+              to={`/blink/${currentPost.slug}`}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-colors"
+            >
+              Czytaj więcej
+            </Link>
+          ) : (
+            <a
+              href={currentPost.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-colors"
+            >
+              Czytaj więcej
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
         </div>
 
         {/* Navigation hints */}

@@ -14,6 +14,7 @@ import {
 // Story post format for the viewer
 export interface StoryPost {
   id: string;
+  slug: string;
   title: string;
   excerpt: string;
   categoryId: string;
@@ -21,11 +22,13 @@ export interface StoryPost {
   sourceUrl: string;
   imageUrl?: string;
   tags?: string[];
+  hasContent?: boolean;
 }
 
 // Map database post to story format
 const mapPostToStory = (post: Post): StoryPost => ({
   id: post.id,
+  slug: post.slug,
   title: post.title,
   excerpt: post.excerpt,
   categoryId: post.sport_category?.id || "",
@@ -33,6 +36,7 @@ const mapPostToStory = (post: Post): StoryPost => ({
   sourceUrl: post.source_url,
   imageUrl: post.image_url || undefined,
   tags: post.tags || [],
+  hasContent: Boolean(post.content),
 });
 
 // Map database category to StoryCategoryData
