@@ -58,10 +58,10 @@ export const ScrollProgress = ({ todaysCount, lastTodayRef, className }: ScrollP
         </span>
       </div>
 
-      {/* Scroll hint with animation */}
+      {/* Scroll hint with optimized animation */}
       <div className="flex items-center gap-1 text-muted-foreground">
         <span className="text-xs">Scrolluj</span>
-        <ChevronDown className="h-4 w-4 animate-bounce" />
+        <ChevronDown className="h-4 w-4 animate-bounce will-change-transform" />
       </div>
     </div>
   );

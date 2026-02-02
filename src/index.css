@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
-
+/* Font loaded via index.html with preload + async for better LCP */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

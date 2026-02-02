@@ -97,12 +97,12 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
     );
   }
 
-  // Mobile compact version
+  // Mobile compact version - min-height prevents CLS
   if (isMobile) {
     return (
       <section
         className={cn(
-          "mb-8 rounded-xl p-4 animate-fade-in",
+          "mb-8 rounded-xl p-4 animate-fade-in min-h-[60px]",
           isTakeoverActive
             ? "bg-card border border-border shadow-lg"
             : "border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10",
@@ -125,11 +125,11 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
     );
   }
 
-  // Desktop compact version
+  // Desktop compact version - min-height prevents CLS
   return (
     <section
       className={cn(
-        "mb-6 rounded-xl py-4 px-6 animate-fade-in",
+        "mb-6 rounded-xl py-4 px-6 animate-fade-in min-h-[80px]",
         isTakeoverActive
           ? "bg-card border border-border shadow-lg"
           : "border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10",
