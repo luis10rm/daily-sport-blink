@@ -1,4 +1,21 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, useMemo } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +44,7 @@ import { Link } from "react-router-dom";
 import {
   useSportCategories,
   useDeleteSportCategory,
+  useReorderSportCategories,
   SportCategory,
 } from "@/hooks/useSportCategories";
 import dynamicIconImports from "lucide-react/dynamicIconImports";
@@ -39,15 +57,17 @@ interface DynamicIconProps extends Omit<LucideProps, "ref"> {
 
 const DynamicIcon = ({ name, ...props }: DynamicIconProps) => {
   const iconName = name.toLowerCase() as keyof typeof dynamicIconImports;
-  
+
   if (!dynamicIconImports[iconName]) {
     return <ImageIcon {...props} />;
   }
-  
+
   const IconComponent = lazy(dynamicIconImports[iconName]);
-  
+
   return (
-    <Suspense fallback={<div className="h-4 w-4 bg-muted rounded animate-pulse" />}>
+    <Suspense
+      fallback={<div className="h-4 w-4 bg-muted rounded animate-pulse" />}
+    >
       <IconComponent {...props} />
     </Suspense>
   );
@@ -78,11 +98,122 @@ const CategoryIcon = ({ category }: { category: SportCategory }) => {
   );
 };
 
+// Sortable row component
+interface SortableRowProps {
+  category: SportCategory;
+  onDeleteClick: (category: SportCategory) => void;
+}
+
+const SortableRow = ({ category, onDeleteClick }: SortableRowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={isDragging ? "opacity-50 bg-muted" : ""}
+    >
+      <TableCell>
+        <button
+          className="cursor-grab active:cursor-grabbing touch-none p-1 hover:bg-muted rounded"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </TableCell>
+      <TableCell>
+        <CategoryIcon category={category} />
+      </TableCell>
+      <TableCell className="font-medium">
+        {category.name}
+        {category.is_default && (
+          <Badge variant="secondary" className="ml-2">
+            Domyślna
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell>
+        <code className="text-sm bg-muted px-2 py-1 rounded">
+          {category.slug}
+        </code>
+      </TableCell>
+      <TableCell>{category.sort_order}</TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to={`/admin/categories/${category.id}/edit`}>
+              <Pencil className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDeleteClick(category)}
+            disabled={category.is_default}
+            title={
+              category.is_default
+                ? "Nie można usunąć domyślnej kategorii"
+                : "Usuń kategorię"
+            }
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
+
 export default function CategoriesList() {
   const { data: categories, isLoading } = useSportCategories();
   const deleteCategory = useDeleteSportCategory();
+  const reorderCategories = useReorderSportCategories();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<SportCategory | null>(null);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<SportCategory | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const categoryIds = useMemo(
+    () => categories?.map((c) => c.id) ?? [],
+    [categories]
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id && categories) {
+      const oldIndex = categories.findIndex((c) => c.id === active.id);
+      const newIndex = categories.findIndex((c) => c.id === over.id);
+
+      const newOrder = arrayMove(categories, oldIndex, newIndex);
+      const orderedIds = newOrder.map((c) => c.id);
+
+      reorderCategories.mutate(orderedIds);
+    }
+  };
 
   const handleDeleteClick = (category: SportCategory) => {
     setCategoryToDelete(category);
@@ -105,7 +236,8 @@ export default function CategoriesList() {
           <div>
             <h1 className="text-2xl font-bold">Kategorie sportowe</h1>
             <p className="text-muted-foreground">
-              Zarządzaj kategoriami sportowymi i ich ikonami
+              Zarządzaj kategoriami sportowymi i ich ikonami. Przeciągnij, aby
+              zmienić kolejność.
             </p>
           </div>
           <Button asChild>
@@ -129,66 +261,38 @@ export default function CategoriesList() {
                 ))}
               </div>
             ) : categories && categories.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12"></TableHead>
-                    <TableHead className="w-16">Ikona</TableHead>
-                    <TableHead>Nazwa</TableHead>
-                    <TableHead>Slug</TableHead>
-                    <TableHead>Kolejność</TableHead>
-                    <TableHead className="w-24"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {categories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell>
-                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                      </TableCell>
-                      <TableCell>
-                        <CategoryIcon category={category} />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {category.name}
-                        {category.is_default && (
-                          <Badge variant="secondary" className="ml-2">
-                            Domyślna
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-sm bg-muted px-2 py-1 rounded">
-                          {category.slug}
-                        </code>
-                      </TableCell>
-                      <TableCell>{category.sort_order}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" asChild>
-                            <Link to={`/admin/categories/${category.id}/edit`}>
-                              <Pencil className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteClick(category)}
-                            disabled={category.is_default}
-                            title={
-                              category.is_default
-                                ? "Nie można usunąć domyślnej kategorii"
-                                : "Usuń kategorię"
-                            }
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12"></TableHead>
+                      <TableHead className="w-16">Ikona</TableHead>
+                      <TableHead>Nazwa</TableHead>
+                      <TableHead>Slug</TableHead>
+                      <TableHead>Kolejność</TableHead>
+                      <TableHead className="w-24"></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <SortableContext
+                    items={categoryIds}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <TableBody>
+                      {categories.map((category) => (
+                        <SortableRow
+                          key={category.id}
+                          category={category}
+                          onDeleteClick={handleDeleteClick}
+                        />
+                      ))}
+                    </TableBody>
+                  </SortableContext>
+                </Table>
+              </DndContext>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <p>Brak kategorii. Dodaj pierwszą!</p>
@@ -204,8 +308,8 @@ export default function CategoriesList() {
           <AlertDialogHeader>
             <AlertDialogTitle>Czy na pewno chcesz usunąć?</AlertDialogTitle>
             <AlertDialogDescription>
-              Kategoria "{categoryToDelete?.name}" zostanie trwale usunięta.
-              Ta akcja jest nieodwracalna.
+              Kategoria "{categoryToDelete?.name}" zostanie trwale usunięta. Ta
+              akcja jest nieodwracalna.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
