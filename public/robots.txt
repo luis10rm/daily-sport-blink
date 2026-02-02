@@ -16,5 +16,5 @@ Allow: /
 User-agent: *
 Allow: /
 
-# Static sitemap served from the same domain
-Sitemap: https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap
+# Dynamic sitemap
+Sitemap: https://sitemap.szortsy.pl/
