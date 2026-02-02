@@ -1,100 +1,78 @@
 
-# Plan optymalizacji Core Web Vitals na mobile
+# Implementacja Drag & Drop dla kategorii sportowych
 
-## Zidentyfikowane problemy
+## Problem
+W panelu admina (`/admin/categories`) wyświetlana jest ikona "grip" sugerująca możliwość przeciągania, ale:
+- Brak biblioteki do obsługi drag and drop
+- Brak event handlerów do obsługi przeciągania
+- Brak funkcji do aktualizacji kolejności w bazie danych
 
-### 1. LCP (Largest Contentful Paint)
-- **Font Outfit** ładowany przez Google Fonts CSS bez `font-display: swap` - powoduje FOIT (Flash of Invisible Text)
-- **NewsOfTheDay** - obraz "wiadomości dnia" nie ma `loading="eager"` ani `fetchPriority="high"`
-- **Animacja `opacity-0 animate-fade-in`** na NewsOfTheDay opóźnia widoczność LCP elementu o ~500ms
+## Rozwiązanie
 
-### 2. CLS (Cumulative Layout Shift)
-- **Stories Row** - brak zdefiniowanej wysokości kontenera powoduje przeskok layoutu po załadowaniu
-- **TodaysNewsBanner** - brak placeholder z ustaloną wysokością w czasie ładowania
-- **NewsOfTheDay** - aspect-ratio może powodować shift przy wolnym połączeniu
+### Etap 1: Instalacja biblioteki
+Dodam bibliotekę `@dnd-kit/core` i `@dnd-kit/sortable` - lekką, nowoczesną bibliotekę DnD zoptymalizowaną pod React:
 
-### 3. INP (Interaction to Next Paint)
-- **Lucide Icons** - dynamiczny import całej biblioteki w `DynamicStoriesCircle.tsx` (import * as LucideIcons)
-- **Animacja `animate-bounce`** w ScrollProgress działa ciągle - zużywa zasoby CPU
-- **Backdrop blur** na Header sticky (`backdrop-blur-sm`) - kosztowny efekt na słabszych urządzeniach
+```text
+@dnd-kit/core - główna logika DnD
+@dnd-kit/sortable - sortowanie list
+@dnd-kit/utilities - helpery CSS
+```
+
+### Etap 2: Hook do aktualizacji kolejności
+Dodam nową funkcję `useReorderSportCategories` w `useSportCategories.tsx`:
+- Przyjmuje nową kolejność kategorii
+- Aktualizuje `sort_order` dla każdej zmienionej kategorii
+- Używa optymistycznych aktualizacji (instant feedback)
+
+### Etap 3: Implementacja DnD w CategoriesList.tsx
+- Owinięcie tabeli w `DndContext` i `SortableContext`
+- Zamiana `TableRow` na komponent `SortableRow` z obsługą przeciągania
+- Dodanie sensorów (pointer + keyboard dla dostępności)
+- Handler `onDragEnd` aktualizujący kolejność
+
+### Etap 4: Wizualny feedback
+- Podświetlenie przeciąganego elementu
+- Animacja "placeholder" w miejscu docelowym
+- Zmiana kursora podczas przeciągania
 
 ---
 
-## Proponowane optymalizacje
+## Zmiany w plikach
 
-### Etap 1: Font Loading (LCP)
-Zmiana sposobu ładowania fontu Outfit:
-- Preload fontu w `index.html` z `font-display: swap`
-- Dodanie lokalnego fallback fontu systemowego
-
-```html
-<!-- Preload najczęściej używanych wag fontu -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
-```
-
-### Etap 2: LCP Element Optimization
-**NewsOfTheDay.tsx:**
-- Dodać `loading="eager"` i `fetchPriority="high"` dla obrazu
-- Usunąć `opacity-0 animate-fade-in` - LCP element musi być od razu widoczny
-- Dodać `decoding="async"` dla obrazu
-
-### Etap 3: CLS Fixes
-**StoriesRow.tsx:**
-- Dodać minimalną wysokość `min-h-[88px] md:min-h-[96px]` do kontenera
-
-**TodaysNewsBanner.tsx:**
-- Skeleton ma już dobrą wysokość - ok
-- Dodać `min-h` do sekcji głównej
-
-### Etap 4: INP / Performance
-**DynamicStoriesCircle.tsx:**
-- Zmienić z `import * as LucideIcons` na jawny import potrzebnych ikon
-- Użyć lazy loading dla dynamicznych ikon
-
-**ScrollProgress.tsx:**
-- Zmienić `animate-bounce` na CSS animation z `will-change: transform`
-- Dodać `animation-play-state: paused` gdy element nie jest widoczny
-
-**Header.tsx:**
-- Zamienić `backdrop-blur-sm` na lżejszy efekt lub tylko solid bg na mobile
-- Opcjonalnie: użyć `@supports` dla urządzeń z prefers-reduced-motion
-
-### Etap 5: Image Optimization
-**NewsCard.tsx - już zoptymalizowany:**
-- Pierwszy element ma `loading="eager"` i `fetchPriority="high"` ✓
-- Pozostałe mają `loading="lazy"` ✓
-
-**Dodatkowe:**
-- Rozważyć srcset dla obrazów kategorii (różne rozmiary na mobile/desktop)
+| Plik | Zmiana |
+|------|--------|
+| `package.json` | Dodanie `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` |
+| `src/hooks/useSportCategories.tsx` | Nowa funkcja `useReorderSportCategories` |
+| `src/pages/admin/CategoriesList.tsx` | Implementacja DnD z DndContext, SortableContext, SortableRow |
 
 ---
 
 ## Szczegóły techniczne
 
-### Zmiany w plikach:
+### Nowy hook: useReorderSportCategories
+```text
+mutationFn:
+  1. Przyjmuje tablicę ID kategorii w nowej kolejności
+  2. Mapuje każde ID na {id, sort_order: index}
+  3. Wykonuje batch update w bazie
+  4. Invaliduje query cache
 
-| Plik | Typ zmiany |
-|------|-----------|
-| `index.html` | Preload fontu, async loading |
-| `src/components/NewsOfTheDay.tsx` | LCP optymalizacja obrazu, usunięcie animacji |
-| `src/components/StoriesRow.tsx` | Dodanie min-height |
-| `src/components/DynamicStoriesCircle.tsx` | Optymalizacja importu ikon |
-| `src/components/ScrollProgress.tsx` | Lepsza animacja |
-| `src/components/Header.tsx` | Lżejszy blur na mobile |
-| `src/index.css` | Font-display fallback |
+Optymistyczne update:
+  - Natychmiast aktualizuje lokalny stan
+  - W razie błędu przywraca poprzednią kolejność
+```
 
-### Szacowany wpływ:
-- **LCP**: -200-400ms (font swap + usunięcie animacji)
-- **CLS**: ~0 (stabilne layouty)
-- **INP**: -50-100ms (mniejszy bundle ikon, lżejsze efekty)
+### Struktura komponentu SortableRow
+```text
+- useSortable(id) - hook z @dnd-kit/sortable
+- attributes, listeners - do obsługi GripVertical
+- transform, transition - dla animacji
+- isDragging - do stylowania aktywnego elementu
+```
 
----
-
-## Kolejność implementacji
-1. Font loading (największy wpływ na LCP)
-2. NewsOfTheDay optymalizacja
-3. StoriesRow min-height
-4. Header blur reduction (mobile)
-5. Lucide Icons tree-shaking (opcjonalne - wymaga więcej zmian)
+### Sensory DnD
+```text
+- PointerSensor - obsługa myszy/dotyku
+- KeyboardSensor - obsługa klawiatury (Tab + Space/Enter)
+- activationConstraint: { distance: 5 } - zapobiega przypadkowemu przeciąganiu
+```
