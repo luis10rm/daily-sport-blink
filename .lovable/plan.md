@@ -1,87 +1,140 @@
 
-# Naprawa brakującego meta tagu robots
+# Wewnętrzne linkowanie AI w generowanych artykułach
 
-## Problem
+## Cel
 
-Tag `<meta name="robots" content="index, follow">` nie pojawia się na stronach artykułów z dwóch powodów:
+Gdy AI generuje treść artykułu, system automatycznie pobierze powiązane artykuły z tej samej kategorii i przekaże je do AI, które wstawi 1-2 naturalne linki wewnętrzne do treści.
 
-1. **Brak statycznego tagu w `index.html`** - hook `useSEOMeta` musi go tworzyć od zera
-2. **Błąd w funkcji `setMeta`** - niepoprawne parsowanie selektora CSS powoduje złe tworzenie atrybutu
+## Korzyści SEO
+
+- Poprawa link juice między stronami
+- Zwiększenie czasu spędzonego na stronie
+- Lepsza indeksacja przez roboty Google
+- Kontekstowe powiązania tematyczne
 
 ## Zmiany do wykonania
 
-### Plik 1: `index.html`
+### 1. Edge Function: `supabase/functions/extract-article/index.ts`
 
-Dodanie statycznego tagu robots zaraz po `<meta name="author">`:
+Po ekstrakcji metadanych (krok 1, linia ~496), ale przed generowaniem treści (krok 2, linia ~498), dodanie zapytania do bazy po powiązane artykuły:
+
+```text
+// Po linii 496 (po extractedMetadata):
+
+// Pobierz powiązane artykuły z tej samej kategorii
+const { data: relatedPosts } = await supabase
+  .from("posts")
+  .select("id, title, slug, sport_category:category_id(slug)")
+  .eq("sport_category.slug", extractedMetadata.category)
+  .order("published_at", { ascending: false })
+  .limit(10);
+
+// Przygotuj kontekst do linkowania
+const relatedContext = relatedPosts
+  ?.map(p => `- "${p.title}" → /blink/${p.slug}`)
+  .join("\n") || "";
+```
+
+Następnie zmodyfikowanie wiadomości do AI (linia ~509-511):
+
+```text
+// Było:
+content: `Tytuł: ${extractedMetadata.title}\n\nOryginalny artykuł:\n${articleText}`
+
+// Będzie:
+content: `Tytuł: ${extractedMetadata.title}
+
+POWIĄZANE ARTYKUŁY NA STRONIE (do linkowania wewnętrznego):
+${relatedContext || "Brak powiązanych artykułów."}
+
+Oryginalny artykuł:
+${articleText}`
+```
+
+### 2. Aktualizacja promptu treści
+
+W pliku `src/pages/admin/Settings.tsx` (lub bezpośrednio w edge function) rozszerzenie `DEFAULT_CONTENT_PROMPT` o instrukcje linkowania:
+
+```text
+LINKOWANIE WEWNĘTRZNE (SEO):
+- Na końcu artykułu dodaj sekcję "Przeczytaj również" z 1-2 linkami
+- Format linku: <a href="/blink/slug-artykulu">tekst kotwicy</a>
+- Linkuj TYLKO jeśli temat jest rzeczywiście powiązany
+- Jeśli brak powiązanych artykułów - nie dodawaj sekcji
+```
+
+### 3. Schemat narzędzia AI (tool)
+
+Rozszerzenie schematu funkcji `generate_article_content` o opcjonalne pole linków:
+
+```json
+{
+  "properties": {
+    "content": { "type": "string", "description": "..." },
+    "internal_links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string" },
+          "anchor_text": { "type": "string" }
+        }
+      },
+      "description": "1-2 linki wewnętrzne do powiązanych artykułów"
+    }
+  }
+}
+```
+
+AI zwróci linki strukturalnie, a edge function doda je na końcu treści w sekcji "Przeczytaj również".
+
+## Przepływ danych
+
+```text
+1. Użytkownik wkleja URL źródłowy
+2. Edge function ekstrahuję metadane (tytuł, kategoria, tagi)
+3. → NOWE: Zapytanie do bazy o 10 ostatnich artykułów z tej kategorii
+4. Edge function wysyła do AI: oryginalny tekst + lista powiązanych artykułów
+5. AI generuje treść z naturalnie wplecionymi linkami
+6. Rezultat wraca do formularza PostEditor
+```
+
+## Przykład wygenerowanej treści
 
 ```html
-<meta name="robots" content="index, follow" />
+<p>Robert Lewandowski zdobył kolejne dwa gole...</p>
+
+<p>Trener <strong>Hansi Flick</strong> był zadowolony z postawy...</p>
+
+<p><strong>Przeczytaj również:</strong></p>
+<ul>
+  <li><a href="/blink/fc-barcelona-liderem-la-liga-abc123">FC Barcelona liderem La Liga po zwycięstwie</a></li>
+  <li><a href="/blink/lewandowski-najlepszym-strzelcem-def456">Lewandowski najlepszym strzelcem sezonu</a></li>
+</ul>
 ```
 
-### Plik 2: `src/hooks/useSEOMeta.ts`
+## Alternatywne podejście: Linki w tekście
 
-Przepisanie funkcji `setMeta` z jawnym określeniem typu atrybutu zamiast parsowania selektora:
+Zamiast sekcji na końcu, AI może wplatać linki naturalnie w treść:
 
-**Przed:**
-```typescript
-const setMeta = (selector: string, content: string, attr = "content") => {
-  let meta = document.querySelector(selector) as HTMLMetaElement | null;
-  if (!meta) {
-    meta = document.createElement("meta");
-    const [type, value] = selector.replace(/[\[\]"]/g, "").split("=");
-    if (type.includes("property")) {
-      meta.setAttribute("property", value);
-    } else {
-      meta.setAttribute("name", value);
-    }
-    document.head.appendChild(meta);
-  }
-  meta.setAttribute(attr, content);
-};
-
-// Użycie:
-setMeta('meta[name="robots"]', robots);
+```html
+<p>To już trzeci mecz z rzędu, w którym Polak trafia do siatki. 
+Jak pisaliśmy wcześniej, <a href="/blink/lewandowski-forma-abc123">forma 
+Lewandowskiego w ostatnich tygodniach jest fenomenalna</a>.</p>
 ```
 
-**Po:**
-```typescript
-const setMeta = (type: 'name' | 'property', name: string, content: string) => {
-  const selector = `meta[${type}="${name}"]`;
-  let meta = document.querySelector(selector) as HTMLMetaElement | null;
-  if (!meta) {
-    meta = document.createElement("meta");
-    meta.setAttribute(type, name);
-    document.head.appendChild(meta);
-  }
-  meta.setAttribute("content", content);
-};
+## Szczegóły techniczne
 
-// Użycie:
-setMeta('name', 'robots', robots);
-setMeta('property', 'og:title', fullTitle);
-```
+| Element | Wartość |
+|---------|---------|
+| Liczba pobieranych artykułów | 10 (ostatnie z kategorii) |
+| Liczba linków do wstawienia | 1-2 |
+| Format linku | `/blink/:slug` |
+| Fallback gdy brak artykułów | Brak sekcji "Przeczytaj również" |
 
-## Aktualizacja wszystkich wywołań setMeta
-
-Zmiana składni we wszystkich miejscach:
-
-| Stara składnia | Nowa składnia |
-|----------------|---------------|
-| `setMeta('meta[name="description"]', description)` | `setMeta('name', 'description', description)` |
-| `setMeta('meta[name="robots"]', robots)` | `setMeta('name', 'robots', robots)` |
-| `setMeta('meta[property="og:title"]', fullTitle)` | `setMeta('property', 'og:title', fullTitle)` |
-| `setMeta('meta[property="og:description"]', description)` | `setMeta('property', 'og:description', description)` |
-| ... i pozostałe tagi OG, Twitter, article | ... analogicznie |
-
-## Podsumowanie zmian
+## Modyfikowane pliki
 
 | Plik | Zmiana |
 |------|--------|
-| `index.html` | Dodanie `<meta name="robots" content="index, follow" />` po linii 18 |
-| `src/hooks/useSEOMeta.ts` | Przepisanie funkcji `setMeta` (linie 68-81) i aktualizacja wszystkich jej wywołań (linie 101-145) |
-
-## Rezultat
-
-Po wdrożeniu tag `<meta name="robots" content="index, follow">` będzie:
-- Obecny statycznie w HTML (dla crawlerów bez JS)
-- Dynamicznie aktualizowany przez hook (np. `noindex` dla stron admina)
+| `supabase/functions/extract-article/index.ts` | Dodanie zapytania do bazy + rozszerzenie kontekstu AI |
+| `src/pages/admin/Settings.tsx` | Aktualizacja DEFAULT_CONTENT_PROMPT o instrukcje linkowania |
