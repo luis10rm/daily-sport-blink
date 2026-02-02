@@ -184,6 +184,70 @@ export const useUploadCategoryIcon = () => {
   });
 };
 
+// Reorder categories (batch update sort_order)
+export const useReorderSportCategories = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      // Create batch updates for each category
+      const updates = orderedIds.map((id, index) => ({
+        id,
+        sort_order: index,
+      }));
+
+      // Update each category's sort_order
+      for (const update of updates) {
+        const { error } = await supabase
+          .from("sport_categories")
+          .update({ sort_order: update.sort_order })
+          .eq("id", update.id);
+
+        if (error) throw error;
+      }
+    },
+    onMutate: async (orderedIds) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["sport-categories"] });
+
+      // Snapshot previous value
+      const previousCategories = queryClient.getQueryData<SportCategory[]>([
+        "sport-categories",
+      ]);
+
+      // Optimistically update
+      if (previousCategories) {
+        const reorderedCategories = orderedIds
+          .map((id, index) => {
+            const category = previousCategories.find((c) => c.id === id);
+            return category ? { ...category, sort_order: index } : null;
+          })
+          .filter(Boolean) as SportCategory[];
+
+        queryClient.setQueryData(["sport-categories"], reorderedCategories);
+      }
+
+      return { previousCategories };
+    },
+    onError: (error: Error, _, context) => {
+      // Rollback on error
+      if (context?.previousCategories) {
+        queryClient.setQueryData(
+          ["sport-categories"],
+          context.previousCategories
+        );
+      }
+      toast.error(`Błąd zmiany kolejności: ${error.message}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["sport-categories"] });
+    },
+    onSuccess: () => {
+      toast.success("Kolejność została zapisana");
+    },
+  });
+};
+
 // Get category by slug (for backwards compatibility)
 export const useSportCategoryBySlug = (slug: string | undefined) => {
   return useQuery({
