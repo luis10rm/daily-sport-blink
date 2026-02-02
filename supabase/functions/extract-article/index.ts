@@ -213,7 +213,15 @@ FORMATOWANIE (OBOWIĄZKOWE):
 - <strong>tekst</strong> dla pogrubienia (NIE ** **)
 - <em>tekst</em> dla kursywy (NIE * *)
 - Każdy akapit otocz tagiem <p>...</p>
-- Oddzielaj akapity pustą linią dla czytelności`;
+- Oddzielaj akapity pustą linią dla czytelności
+
+LINKOWANIE WEWNĘTRZNE (SEO - OBOWIĄZKOWE):
+- Jeśli otrzymasz listę powiązanych artykułów, MUSISZ dodać sekcję "Przeczytaj również" na końcu
+- Format sekcji: <p><strong>Przeczytaj również:</strong></p> a następnie lista <ul> z 1-2 linkami
+- Format linku: <a href="/blink/slug-artykulu">tekst kotwicy</a>
+- Linkuj TYLKO do artykułów tematycznie powiązanych z aktualnym newsem
+- Tekst kotwicy powinien być naturalny - skrócony tytuł lub kluczowa fraza
+- Jeśli brak powiązanych artykułów w kontekście - nie dodawaj sekcji`;
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -495,6 +503,36 @@ FORMATOWANIE (OBOWIĄZKOWE):
     const extractedMetadata = JSON.parse(metadataToolCall.function.arguments);
     console.log("Extracted metadata:", extractedMetadata);
 
+    // Step 1.5: Fetch related posts from the same category for internal linking
+    let relatedContext = "";
+    try {
+      // First, get category ID from slug
+      const { data: categoryData } = await supabase
+        .from("sport_categories")
+        .select("id")
+        .eq("slug", extractedMetadata.category)
+        .single();
+
+      if (categoryData?.id) {
+        const { data: relatedPosts } = await supabase
+          .from("posts")
+          .select("title, slug")
+          .eq("category_id", categoryData.id)
+          .order("published_at", { ascending: false })
+          .limit(10);
+
+        if (relatedPosts && relatedPosts.length > 0) {
+          relatedContext = relatedPosts
+            .map((p) => `- "${p.title}" → /blink/${p.slug}`)
+            .join("\n");
+          console.log(`Found ${relatedPosts.length} related posts for internal linking`);
+        }
+      }
+    } catch (relatedError) {
+      console.warn("Failed to fetch related posts for internal linking:", relatedError);
+      // Continue without related posts - not critical
+    }
+
     // Step 2: Generate full article content
     const contentResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -508,7 +546,13 @@ FORMATOWANIE (OBOWIĄZKOWE):
           { role: "system", content: contentPrompt },
           {
             role: "user",
-            content: `Tytuł: ${extractedMetadata.title}\n\nOryginalny artykuł:\n${articleText}`
+            content: `Tytuł: ${extractedMetadata.title}
+
+${relatedContext ? `POWIĄZANE ARTYKUŁY NA STRONIE (do linkowania wewnętrznego - wybierz 1-2 najbardziej pasujące):
+${relatedContext}` : "Brak powiązanych artykułów do linkowania."}
+
+Oryginalny artykuł:
+${articleText}`
           },
         ],
         tools: [
