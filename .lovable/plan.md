@@ -1,80 +1,87 @@
 
-# Naprawa linkowania w Stories dla postów z treścią wewnętrzną
+# Naprawa brakującego meta tagu robots
 
 ## Problem
 
-Gdy użytkownik klika "Czytaj więcej" w Stories dla kategorii "Podsumowanie", przycisk kieruje do technicznego URL `https://szortsy.pl/podsumowanie/` zamiast do właściwej strony artykułu `/blink/:slug`.
+Tag `<meta name="robots" content="index, follow">` nie pojawia się na stronach artykułów z dwóch powodów:
 
-## Przyczyna
+1. **Brak statycznego tagu w `index.html`** - hook `useSEOMeta` musi go tworzyć od zera
+2. **Błąd w funkcji `setMeta`** - niepoprawne parsowanie selektora CSS powoduje złe tworzenie atrybutu
 
-1. Interfejs `StoryPost` w `StoriesRow.tsx` nie zawiera pól `slug` ani `content`
-2. Funkcja `mapPostToStory` nie przekazuje tych danych z bazy
-3. Komponent `StoriesViewer` zawsze używa `sourceUrl` jako linku zewnętrznego (z `target="_blank"`)
+## Zmiany do wykonania
 
-Dla porównania - `NewsCard` i `NewsOfTheDay` poprawnie sprawdzają czy post ma `content` i odpowiednio wybierają między linkiem wewnętrznym `/blink/:slug` a zewnętrznym `sourceUrl`.
+### Plik 1: `index.html`
 
-## Rozwiązanie
+Dodanie statycznego tagu robots zaraz po `<meta name="author">`:
 
-### Krok 1: Rozszerzenie interfejsu StoryPost
+```html
+<meta name="robots" content="index, follow" />
+```
 
-Dodanie pól `slug` i `hasContent` do interfejsu `StoryPost`:
+### Plik 2: `src/hooks/useSEOMeta.ts`
 
+Przepisanie funkcji `setMeta` z jawnym określeniem typu atrybutu zamiast parsowania selektora:
+
+**Przed:**
 ```typescript
-export interface StoryPost {
-  id: string;
-  slug: string;           // ← NOWE
-  title: string;
-  excerpt: string;
-  categoryId: string;
-  publishedAt: string;
-  sourceUrl: string;
-  imageUrl?: string;
-  tags?: string[];
-  hasContent?: boolean;   // ← NOWE
-}
+const setMeta = (selector: string, content: string, attr = "content") => {
+  let meta = document.querySelector(selector) as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement("meta");
+    const [type, value] = selector.replace(/[\[\]"]/g, "").split("=");
+    if (type.includes("property")) {
+      meta.setAttribute("property", value);
+    } else {
+      meta.setAttribute("name", value);
+    }
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute(attr, content);
+};
+
+// Użycie:
+setMeta('meta[name="robots"]', robots);
 ```
 
-### Krok 2: Aktualizacja mapowania postów
-
-Funkcja `mapPostToStory` będzie przekazywać nowe pola:
-
+**Po:**
 ```typescript
-const mapPostToStory = (post: Post): StoryPost => ({
-  id: post.id,
-  slug: post.slug,                        // ← NOWE
-  title: post.title,
-  excerpt: post.excerpt,
-  categoryId: post.sport_category?.id || "",
-  publishedAt: post.published_at,
-  sourceUrl: post.source_url,
-  imageUrl: post.image_url || undefined,
-  tags: post.tags || [],
-  hasContent: Boolean(post.content),      // ← NOWE
-});
+const setMeta = (type: 'name' | 'property', name: string, content: string) => {
+  const selector = `meta[${type}="${name}"]`;
+  let meta = document.querySelector(selector) as HTMLMetaElement | null;
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute(type, name);
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", content);
+};
+
+// Użycie:
+setMeta('name', 'robots', robots);
+setMeta('property', 'og:title', fullTitle);
 ```
 
-### Krok 3: Aktualizacja StoriesViewer
+## Aktualizacja wszystkich wywołań setMeta
 
-Zmiana logiki przycisku "Czytaj więcej" - analogicznie do NewsCard:
+Zmiana składni we wszystkich miejscach:
 
-```
-Jeśli post ma content:
-  → Link wewnętrzny do /blink/:slug (bez ikony ExternalLink)
-  
-W przeciwnym razie:
-  → Link zewnętrzny do sourceUrl (z ikoną ExternalLink, target="_blank")
-```
+| Stara składnia | Nowa składnia |
+|----------------|---------------|
+| `setMeta('meta[name="description"]', description)` | `setMeta('name', 'description', description)` |
+| `setMeta('meta[name="robots"]', robots)` | `setMeta('name', 'robots', robots)` |
+| `setMeta('meta[property="og:title"]', fullTitle)` | `setMeta('property', 'og:title', fullTitle)` |
+| `setMeta('meta[property="og:description"]', description)` | `setMeta('property', 'og:description', description)` |
+| ... i pozostałe tagi OG, Twitter, article | ... analogicznie |
 
-## Pliki do modyfikacji
+## Podsumowanie zmian
 
-1. **`src/components/StoriesRow.tsx`**
-   - Rozszerzenie interfejsu `StoryPost` o `slug` i `hasContent`
-   - Aktualizacja funkcji `mapPostToStory`
+| Plik | Zmiana |
+|------|--------|
+| `index.html` | Dodanie `<meta name="robots" content="index, follow" />` po linii 18 |
+| `src/hooks/useSEOMeta.ts` | Przepisanie funkcji `setMeta` (linie 68-81) i aktualizacja wszystkich jej wywołań (linie 101-145) |
 
-2. **`src/components/StoriesViewer.tsx`**
-   - Import `Link` z `react-router-dom`
-   - Warunkowe renderowanie przycisku (wewnętrzny vs zewnętrzny link)
+## Rezultat
 
-## Efekt końcowy
-
-Po wdrożeniu zmian, kliknięcie "Czytaj więcej" w Stories dla podsumowania dnia przekieruje użytkownika do strony `/blink/podsumowanie-102-alcaraz-krolem-ao-horror-legii-dramat-realu-8cf20d11` zamiast do pustego URL `/podsumowanie/`.
+Po wdrożeniu tag `<meta name="robots" content="index, follow">` będzie:
+- Obecny statycznie w HTML (dla crawlerów bez JS)
+- Dynamicznie aktualizowany przez hook (np. `noindex` dla stron admina)
