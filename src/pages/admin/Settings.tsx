@@ -30,7 +30,15 @@ const DEFAULT_CONTENT_PROMPT = `Na podstawie oryginalnego artykułu napisz unika
 - Zawierać wszystkie kluczowe fakty z oryginału
 - Mieć dynamiczny, dziennikarski ton
 - Podzielona na 2-3 akapity
-- Bez powtarzania tytułu na początku`;
+- Bez powtarzania tytułu na początku
+
+LINKOWANIE WEWNĘTRZNE (SEO - OBOWIĄZKOWE):
+- Jeśli otrzymasz listę powiązanych artykułów, MUSISZ dodać sekcję "Przeczytaj również" na końcu
+- Format sekcji: <p><strong>Przeczytaj również:</strong></p> a następnie lista <ul> z 1-2 linkami
+- Format linku: <a href="/blink/slug-artykulu">tekst kotwicy</a>
+- Linkuj TYLKO do artykułów tematycznie powiązanych z aktualnym newsem
+- Tekst kotwicy powinien być naturalny - skrócony tytuł lub kluczowa fraza
+- Jeśli brak powiązanych artykułów w kontekście - nie dodawaj sekcji`;
 
 const DEFAULT_SUMMARY_PROMPT = `Jesteś redaktorem sportowym Daily Sport Blink. Napisz profesjonalne podsumowanie dnia sportowego w języku polskim.
 
