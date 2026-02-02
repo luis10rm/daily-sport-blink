@@ -17,6 +17,129 @@ function base64UrlEncode(data: Uint8Array | string): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+function safeJsonParse(input: string): unknown {
+  return JSON.parse(input);
+}
+
+function stripOuterQuotes(value: string): string {
+  const v = value.trim();
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    return v.slice(1, -1);
+  }
+  return v;
+}
+
+function looksLikeBase64(value: string): boolean {
+  // very loose heuristic + length guard to avoid false positives
+  return (
+    value.length > 200 &&
+    /^[A-Za-z0-9+/=]+$/.test(value) &&
+    value.length % 4 === 0
+  );
+}
+
+function decodeBase64ToString(b64: string): string {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+function repairMultilinePrivateKeyJson(raw: string): string | null {
+  // Common mistake: pasting JSON where private_key contains real newlines instead of \n.
+  // Try to escape them so JSON.parse can succeed.
+  if (!raw.trim().startsWith("{")) return null;
+  if (!raw.includes('"private_key"')) return null;
+
+  const re = /"private_key"\s*:\s*"([\s\S]*?)"\s*,/m;
+  const match = raw.match(re);
+  if (!match) return null;
+  const pk = match[1];
+  if (!pk.includes("\n")) return null;
+
+  const escaped = pk.replace(/\r?\n/g, "\\n");
+  return raw.replace(re, `"private_key": "${escaped}",`);
+}
+
+function parseServiceAccountKeyValue(raw: string): Record<string, string> | null {
+  // Handles copy-pastes that look like TSV/lines: `type\t"service_account"` etc.
+  const text = raw.trim();
+  if (!text) return null;
+  if (text.startsWith("{") || text.startsWith("[")) return null;
+  if (!text.includes("service_account")) return null;
+
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const obj: Record<string, string> = {};
+  for (const line of lines) {
+    const idx = line.search(/\s/);
+    if (idx <= 0) continue;
+    const key = stripOuterQuotes(line.slice(0, idx).trim());
+    let value = stripOuterQuotes(line.slice(idx).trim());
+    // Normalize escaped newlines in private key if present
+    value = value.replace(/\\n/g, "\n");
+    obj[key] = value;
+  }
+
+  if (obj.type !== "service_account") return null;
+  return obj;
+}
+
+function parseServiceAccount(raw: string): { client_email: string; private_key: string } {
+  const trimmed = raw.trim();
+  const candidates: string[] = [];
+
+  // 1) as-is
+  candidates.push(trimmed);
+
+  // 2) repaired JSON with multiline private_key
+  const repaired = repairMultilinePrivateKeyJson(trimmed);
+  if (repaired) candidates.unshift(repaired);
+
+  // 3) base64 encoded JSON
+  const b64 = trimmed.replace(/\s/g, "");
+  if (looksLikeBase64(b64)) {
+    try {
+      candidates.unshift(decodeBase64ToString(b64));
+    } catch {
+      // ignore
+    }
+  }
+
+  // 4) JSON parse attempts (including JSON string containing JSON)
+  for (const cand of candidates) {
+    try {
+      const parsed = safeJsonParse(cand);
+      if (typeof parsed === "string") {
+        const nested = safeJsonParse(parsed);
+        if (nested && typeof nested === "object") {
+          const sa = nested as any;
+          if (sa.client_email && sa.private_key) return sa;
+        }
+      }
+      if (parsed && typeof parsed === "object") {
+        const sa = parsed as any;
+        if (sa.client_email && sa.private_key) return sa;
+      }
+    } catch {
+      // continue
+    }
+  }
+
+  // 5) key-value fallback
+  const kv = parseServiceAccountKeyValue(trimmed);
+  if (kv && kv.client_email && kv.private_key) {
+    return { client_email: kv.client_email, private_key: kv.private_key };
+  }
+
+  throw new Error(
+    "Invalid GOOGLE_SERVICE_ACCOUNT_JSON: expected the full Google service-account JSON key (with braces)."
+  );
+}
+
 // Convert PEM private key to CryptoKey for signing
 async function importPrivateKey(pemKey: string): Promise<CryptoKey> {
   // Remove PEM header/footer and newlines
@@ -223,11 +346,14 @@ serve(async (req) => {
 
     let serviceAccount;
     try {
-      serviceAccount = JSON.parse(serviceAccountJson);
+      serviceAccount = parseServiceAccount(serviceAccountJson);
     } catch (e) {
-      console.error("Failed to parse service account JSON:", e);
+      console.error("Invalid Google service account secret:", e);
       return new Response(
-        JSON.stringify({ error: "Invalid service account configuration" }),
+        JSON.stringify({
+          error:
+            "Invalid service account configuration. Please paste the full JSON key file into the GOOGLE_SERVICE_ACCOUNT_JSON secret (not a table/copy).",
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
