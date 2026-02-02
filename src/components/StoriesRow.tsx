@@ -109,8 +109,8 @@ export const StoriesRow = () => {
 
   return (
     <>
-      {/* Stories row with Carousel */}
-      <div className="relative group">
+      {/* Stories row with Carousel - min-height prevents CLS */}
+      <div className="relative group min-h-[88px] md:min-h-[96px]">
         <Carousel
           opts={{
             align: "start",

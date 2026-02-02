@@ -21,7 +21,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-2xl border-2 border-news-of-day bg-card opacity-0 animate-fade-in",
+        "group relative overflow-hidden rounded-2xl border-2 border-news-of-day bg-card",
         "ring-4 ring-news-of-day/20",
         className
       )}
@@ -33,7 +33,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
       </div>
 
       <div className="flex flex-col md:flex-row">
-        {/* Image area */}
+        {/* Image area - LCP optimized */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted md:aspect-auto md:w-1/2">
           <img
             src={getPostImage({
@@ -43,6 +43,9 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
               sport_category: post.sport_category,
             })}
             alt={post.title}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         </div>
