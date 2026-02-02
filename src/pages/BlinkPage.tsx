@@ -8,7 +8,7 @@ import { AuthorCard } from "@/components/AuthorCard";
 import { DynamicSportIcon } from "@/components/DynamicSportIcon";
 import { getCategoryImage } from "@/config/categoryImages";
 import { usePostBySlug } from "@/hooks/usePosts";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useArticleSEOMeta } from "@/hooks/useSEOMeta";
 import { getSourceName, generateSlug } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -39,21 +39,30 @@ const parseContent = (content: string): string => {
   return sanitizeHtml(html);
 };
 
-// Dynamic base URL for SEO canonical
-const getBaseUrl = () => {
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-  return import.meta.env.VITE_SITE_URL || "https://szortsy.pl";
-};
-
-const SITE_URL = getBaseUrl();
+const SITE_URL = "https://szortsy.pl";
 
 const BlinkPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = usePostBySlug(slug || "");
 
-  useDocumentTitle(post?.title ? `${post.title} | Szortsy` : "Szortsy");
+  // Use new SEO meta hook for all meta tags
+  useArticleSEOMeta(post ? {
+    title: post.title,
+    excerpt: post.excerpt,
+    slug: post.slug,
+    image_url: post.image_url,
+    published_at: post.published_at,
+    updated_at: post.updated_at,
+    author: post.author,
+    sport_category: post.sport_category,
+    tags: post.tags,
+  } : {
+    title: "Ładowanie...",
+    excerpt: "",
+    slug: slug || "",
+    published_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
 
   if (isLoading) {
     return (

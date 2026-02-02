@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { useArchivedPosts } from "@/hooks/usePosts";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import {
@@ -21,7 +21,12 @@ import { cn } from "@/lib/utils";
 const Archive = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   
-  useDocumentTitle("Archiwum");
+  // SEO meta tags
+  useSEOMeta({
+    title: "Archiwum",
+    description: "Przeglądaj archiwalne artykuły sportowe starsze niż 7 dni. Piłka nożna, tenis, F1, MMA i więcej na Szortsy.",
+    canonical: "https://szortsy.pl/archiwum",
+  });
   
   const { data: posts = [], isLoading } = useArchivedPosts({
     categoryId: categoryFilter === "all" ? undefined : categoryFilter,

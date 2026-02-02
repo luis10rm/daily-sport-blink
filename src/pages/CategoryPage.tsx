@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useCategorySEOMeta } from "@/hooks/useSEOMeta";
 import { SEO, getRichItemListSEO } from "@/components/SEO";
 import { useSportCategoryBySlug } from "@/hooks/useSportCategories";
 import { usePostsByCategory } from "@/hooks/usePostsByCategory";
@@ -24,8 +24,11 @@ const CategoryPage = () => {
   const { data: category, isLoading: categoryLoading } = useSportCategoryBySlug(slug);
   const { data: posts = [], isLoading: postsLoading } = usePostsByCategory(slug);
 
-  useDocumentTitle(category?.name || "Kategoria");
-
+  // SEO meta tags
+  useCategorySEOMeta({
+    name: category?.name || "Kategoria",
+    slug: slug || "",
+  });
   // Rich SEO with full NewsArticle schema including isBasedOn for E-E-A-T
   const seoData = getRichItemListSEO(
     `Wiadomości - ${category?.name || "Sport"}`,

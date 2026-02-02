@@ -11,7 +11,7 @@ import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
 import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
 import { MultiSEO, getWebsiteSEO, getRichItemListSEO } from "@/components/SEO";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts";
 import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,8 +24,10 @@ const Index = () => {
   const isMobile = useIsMobile();
   const device = isMobile ? "mobile" : "desktop";
   
-  useDocumentTitle("");
-  
+  // SEO meta tags
+  useSEOMeta({
+    canonical: "https://szortsy.pl",
+  });
   const { data: posts = [], isLoading: postsLoading } = usePostsFeed();
   const { data: newsOfTheDay, isLoading: newsLoading } = useNewsOfTheDay();
   const { data: todaysPosts = [] } = useTodaysPosts();
