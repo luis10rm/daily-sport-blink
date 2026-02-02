@@ -65,19 +65,15 @@ export const useSEOMeta = (options: SEOMetaOptions = {}) => {
     document.title = fullTitle;
 
     // Helper to set or create meta tag
-    const setMeta = (selector: string, content: string, attr = "content") => {
+    const setMeta = (type: 'name' | 'property', name: string, content: string) => {
+      const selector = `meta[${type}="${name}"]`;
       let meta = document.querySelector(selector) as HTMLMetaElement | null;
       if (!meta) {
         meta = document.createElement("meta");
-        const [type, value] = selector.replace(/[\[\]"]/g, "").split("=");
-        if (type.includes("property")) {
-          meta.setAttribute("property", value);
-        } else {
-          meta.setAttribute("name", value);
-        }
+        meta.setAttribute(type, name);
         document.head.appendChild(meta);
       }
-      meta.setAttribute(attr, content);
+      meta.setAttribute("content", content);
     };
 
     // Helper to set or create link tag
@@ -98,40 +94,40 @@ export const useSEOMeta = (options: SEOMetaOptions = {}) => {
     };
 
     // ===== Core Meta Tags =====
-    setMeta('meta[name="description"]', description);
-    setMeta('meta[name="robots"]', robots);
+    setMeta('name', 'description', description);
+    setMeta('name', 'robots', robots);
 
     // ===== Canonical =====
     setLink("canonical", canonicalUrl);
 
     // ===== Open Graph =====
-    setMeta('meta[property="og:title"]', fullTitle);
-    setMeta('meta[property="og:description"]', description);
-    setMeta('meta[property="og:url"]', canonicalUrl);
-    setMeta('meta[property="og:type"]', ogType);
-    setMeta('meta[property="og:image"]', ogImage);
-    setMeta('meta[property="og:site_name"]', SITE_NAME);
-    setMeta('meta[property="og:locale"]', "pl_PL");
+    setMeta('property', 'og:title', fullTitle);
+    setMeta('property', 'og:description', description);
+    setMeta('property', 'og:url', canonicalUrl);
+    setMeta('property', 'og:type', ogType);
+    setMeta('property', 'og:image', ogImage);
+    setMeta('property', 'og:site_name', SITE_NAME);
+    setMeta('property', 'og:locale', "pl_PL");
 
     // ===== Twitter Card =====
-    setMeta('meta[name="twitter:card"]', "summary_large_image");
-    setMeta('meta[name="twitter:title"]', fullTitle);
-    setMeta('meta[name="twitter:description"]', description);
-    setMeta('meta[name="twitter:image"]', ogImage);
+    setMeta('name', 'twitter:card', "summary_large_image");
+    setMeta('name', 'twitter:title', fullTitle);
+    setMeta('name', 'twitter:description', description);
+    setMeta('name', 'twitter:image', ogImage);
 
     // ===== Article-specific tags =====
     if (ogType === "article") {
       if (articlePublishedTime) {
-        setMeta('meta[property="article:published_time"]', articlePublishedTime);
+        setMeta('property', 'article:published_time', articlePublishedTime);
       }
       if (articleModifiedTime) {
-        setMeta('meta[property="article:modified_time"]', articleModifiedTime);
+        setMeta('property', 'article:modified_time', articleModifiedTime);
       }
       if (articleAuthor) {
-        setMeta('meta[property="article:author"]', articleAuthor);
+        setMeta('property', 'article:author', articleAuthor);
       }
       if (articleSection) {
-        setMeta('meta[property="article:section"]', articleSection);
+        setMeta('property', 'article:section', articleSection);
       }
       if (articleTags?.length) {
         // Remove old article:tag metas
