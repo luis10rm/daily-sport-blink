@@ -1,140 +1,100 @@
 
-# Wewnętrzne linkowanie AI w generowanych artykułach
+# Plan optymalizacji Core Web Vitals na mobile
 
-## Cel
+## Zidentyfikowane problemy
 
-Gdy AI generuje treść artykułu, system automatycznie pobierze powiązane artykuły z tej samej kategorii i przekaże je do AI, które wstawi 1-2 naturalne linki wewnętrzne do treści.
+### 1. LCP (Largest Contentful Paint)
+- **Font Outfit** ładowany przez Google Fonts CSS bez `font-display: swap` - powoduje FOIT (Flash of Invisible Text)
+- **NewsOfTheDay** - obraz "wiadomości dnia" nie ma `loading="eager"` ani `fetchPriority="high"`
+- **Animacja `opacity-0 animate-fade-in`** na NewsOfTheDay opóźnia widoczność LCP elementu o ~500ms
 
-## Korzyści SEO
+### 2. CLS (Cumulative Layout Shift)
+- **Stories Row** - brak zdefiniowanej wysokości kontenera powoduje przeskok layoutu po załadowaniu
+- **TodaysNewsBanner** - brak placeholder z ustaloną wysokością w czasie ładowania
+- **NewsOfTheDay** - aspect-ratio może powodować shift przy wolnym połączeniu
 
-- Poprawa link juice między stronami
-- Zwiększenie czasu spędzonego na stronie
-- Lepsza indeksacja przez roboty Google
-- Kontekstowe powiązania tematyczne
+### 3. INP (Interaction to Next Paint)
+- **Lucide Icons** - dynamiczny import całej biblioteki w `DynamicStoriesCircle.tsx` (import * as LucideIcons)
+- **Animacja `animate-bounce`** w ScrollProgress działa ciągle - zużywa zasoby CPU
+- **Backdrop blur** na Header sticky (`backdrop-blur-sm`) - kosztowny efekt na słabszych urządzeniach
 
-## Zmiany do wykonania
+---
 
-### 1. Edge Function: `supabase/functions/extract-article/index.ts`
+## Proponowane optymalizacje
 
-Po ekstrakcji metadanych (krok 1, linia ~496), ale przed generowaniem treści (krok 2, linia ~498), dodanie zapytania do bazy po powiązane artykuły:
-
-```text
-// Po linii 496 (po extractedMetadata):
-
-// Pobierz powiązane artykuły z tej samej kategorii
-const { data: relatedPosts } = await supabase
-  .from("posts")
-  .select("id, title, slug, sport_category:category_id(slug)")
-  .eq("sport_category.slug", extractedMetadata.category)
-  .order("published_at", { ascending: false })
-  .limit(10);
-
-// Przygotuj kontekst do linkowania
-const relatedContext = relatedPosts
-  ?.map(p => `- "${p.title}" → /blink/${p.slug}`)
-  .join("\n") || "";
-```
-
-Następnie zmodyfikowanie wiadomości do AI (linia ~509-511):
-
-```text
-// Było:
-content: `Tytuł: ${extractedMetadata.title}\n\nOryginalny artykuł:\n${articleText}`
-
-// Będzie:
-content: `Tytuł: ${extractedMetadata.title}
-
-POWIĄZANE ARTYKUŁY NA STRONIE (do linkowania wewnętrznego):
-${relatedContext || "Brak powiązanych artykułów."}
-
-Oryginalny artykuł:
-${articleText}`
-```
-
-### 2. Aktualizacja promptu treści
-
-W pliku `src/pages/admin/Settings.tsx` (lub bezpośrednio w edge function) rozszerzenie `DEFAULT_CONTENT_PROMPT` o instrukcje linkowania:
-
-```text
-LINKOWANIE WEWNĘTRZNE (SEO):
-- Na końcu artykułu dodaj sekcję "Przeczytaj również" z 1-2 linkami
-- Format linku: <a href="/blink/slug-artykulu">tekst kotwicy</a>
-- Linkuj TYLKO jeśli temat jest rzeczywiście powiązany
-- Jeśli brak powiązanych artykułów - nie dodawaj sekcji
-```
-
-### 3. Schemat narzędzia AI (tool)
-
-Rozszerzenie schematu funkcji `generate_article_content` o opcjonalne pole linków:
-
-```json
-{
-  "properties": {
-    "content": { "type": "string", "description": "..." },
-    "internal_links": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "url": { "type": "string" },
-          "anchor_text": { "type": "string" }
-        }
-      },
-      "description": "1-2 linki wewnętrzne do powiązanych artykułów"
-    }
-  }
-}
-```
-
-AI zwróci linki strukturalnie, a edge function doda je na końcu treści w sekcji "Przeczytaj również".
-
-## Przepływ danych
-
-```text
-1. Użytkownik wkleja URL źródłowy
-2. Edge function ekstrahuję metadane (tytuł, kategoria, tagi)
-3. → NOWE: Zapytanie do bazy o 10 ostatnich artykułów z tej kategorii
-4. Edge function wysyła do AI: oryginalny tekst + lista powiązanych artykułów
-5. AI generuje treść z naturalnie wplecionymi linkami
-6. Rezultat wraca do formularza PostEditor
-```
-
-## Przykład wygenerowanej treści
+### Etap 1: Font Loading (LCP)
+Zmiana sposobu ładowania fontu Outfit:
+- Preload fontu w `index.html` z `font-display: swap`
+- Dodanie lokalnego fallback fontu systemowego
 
 ```html
-<p>Robert Lewandowski zdobył kolejne dwa gole...</p>
-
-<p>Trener <strong>Hansi Flick</strong> był zadowolony z postawy...</p>
-
-<p><strong>Przeczytaj również:</strong></p>
-<ul>
-  <li><a href="/blink/fc-barcelona-liderem-la-liga-abc123">FC Barcelona liderem La Liga po zwycięstwie</a></li>
-  <li><a href="/blink/lewandowski-najlepszym-strzelcem-def456">Lewandowski najlepszym strzelcem sezonu</a></li>
-</ul>
+<!-- Preload najczęściej używanych wag fontu -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
 ```
 
-## Alternatywne podejście: Linki w tekście
+### Etap 2: LCP Element Optimization
+**NewsOfTheDay.tsx:**
+- Dodać `loading="eager"` i `fetchPriority="high"` dla obrazu
+- Usunąć `opacity-0 animate-fade-in` - LCP element musi być od razu widoczny
+- Dodać `decoding="async"` dla obrazu
 
-Zamiast sekcji na końcu, AI może wplatać linki naturalnie w treść:
+### Etap 3: CLS Fixes
+**StoriesRow.tsx:**
+- Dodać minimalną wysokość `min-h-[88px] md:min-h-[96px]` do kontenera
 
-```html
-<p>To już trzeci mecz z rzędu, w którym Polak trafia do siatki. 
-Jak pisaliśmy wcześniej, <a href="/blink/lewandowski-forma-abc123">forma 
-Lewandowskiego w ostatnich tygodniach jest fenomenalna</a>.</p>
-```
+**TodaysNewsBanner.tsx:**
+- Skeleton ma już dobrą wysokość - ok
+- Dodać `min-h` do sekcji głównej
+
+### Etap 4: INP / Performance
+**DynamicStoriesCircle.tsx:**
+- Zmienić z `import * as LucideIcons` na jawny import potrzebnych ikon
+- Użyć lazy loading dla dynamicznych ikon
+
+**ScrollProgress.tsx:**
+- Zmienić `animate-bounce` na CSS animation z `will-change: transform`
+- Dodać `animation-play-state: paused` gdy element nie jest widoczny
+
+**Header.tsx:**
+- Zamienić `backdrop-blur-sm` na lżejszy efekt lub tylko solid bg na mobile
+- Opcjonalnie: użyć `@supports` dla urządzeń z prefers-reduced-motion
+
+### Etap 5: Image Optimization
+**NewsCard.tsx - już zoptymalizowany:**
+- Pierwszy element ma `loading="eager"` i `fetchPriority="high"` ✓
+- Pozostałe mają `loading="lazy"` ✓
+
+**Dodatkowe:**
+- Rozważyć srcset dla obrazów kategorii (różne rozmiary na mobile/desktop)
+
+---
 
 ## Szczegóły techniczne
 
-| Element | Wartość |
-|---------|---------|
-| Liczba pobieranych artykułów | 10 (ostatnie z kategorii) |
-| Liczba linków do wstawienia | 1-2 |
-| Format linku | `/blink/:slug` |
-| Fallback gdy brak artykułów | Brak sekcji "Przeczytaj również" |
+### Zmiany w plikach:
 
-## Modyfikowane pliki
+| Plik | Typ zmiany |
+|------|-----------|
+| `index.html` | Preload fontu, async loading |
+| `src/components/NewsOfTheDay.tsx` | LCP optymalizacja obrazu, usunięcie animacji |
+| `src/components/StoriesRow.tsx` | Dodanie min-height |
+| `src/components/DynamicStoriesCircle.tsx` | Optymalizacja importu ikon |
+| `src/components/ScrollProgress.tsx` | Lepsza animacja |
+| `src/components/Header.tsx` | Lżejszy blur na mobile |
+| `src/index.css` | Font-display fallback |
 
-| Plik | Zmiana |
-|------|--------|
-| `supabase/functions/extract-article/index.ts` | Dodanie zapytania do bazy + rozszerzenie kontekstu AI |
-| `src/pages/admin/Settings.tsx` | Aktualizacja DEFAULT_CONTENT_PROMPT o instrukcje linkowania |
+### Szacowany wpływ:
+- **LCP**: -200-400ms (font swap + usunięcie animacji)
+- **CLS**: ~0 (stabilne layouty)
+- **INP**: -50-100ms (mniejszy bundle ikon, lżejsze efekty)
+
+---
+
+## Kolejność implementacji
+1. Font loading (największy wpływ na LCP)
+2. NewsOfTheDay optymalizacja
+3. StoriesRow min-height
+4. Header blur reduction (mobile)
+5. Lucide Icons tree-shaking (opcjonalne - wymaga więcej zmian)
