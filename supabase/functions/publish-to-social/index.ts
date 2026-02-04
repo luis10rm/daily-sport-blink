@@ -78,7 +78,7 @@ serve(async (req) => {
       );
     }
 
-    // Fetch post data with category
+    // Fetch post data with category and content
     const { data: post, error: postError } = await supabase
       .from("posts")
       .select(`
@@ -89,6 +89,7 @@ serve(async (req) => {
         image_url,
         tags,
         category_id,
+        content,
         sport_categories (
           name,
           slug
@@ -105,7 +106,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("[publish-to-social] Post found:", { title: post.title, slug: post.slug });
+    console.log("[publish-to-social] Post found:", { title: post.title, slug: post.slug, hasContent: !!post.content });
 
     // Fetch webhook URL from settings
     const { data: webhookSetting, error: webhookError } = await supabase
@@ -124,6 +125,16 @@ serve(async (req) => {
 
     const webhookUrl = webhookSetting.value;
     console.log("[publish-to-social] Webhook URL configured");
+
+    // Fetch custom prompt from settings
+    const { data: promptSetting } = await supabase
+      .from("settings")
+      .select("value")
+      .eq("key", "facebook_post_prompt")
+      .maybeSingle();
+
+    const customPrompt = promptSetting?.value;
+    console.log("[publish-to-social] Custom prompt:", customPrompt ? "loaded from DB" : "using default");
 
     // Generate caption (AI or custom)
     let caption = custom_caption;
@@ -148,6 +159,27 @@ serve(async (req) => {
         try {
           console.log("[publish-to-social] Generating AI caption...");
           
+          // Prepare content snippet (first 1000 chars for context)
+          const contentSnippet = post.content 
+            ? post.content.replace(/<[^>]*>/g, '').substring(0, 1000) 
+            : '';
+          
+          // Use custom prompt from settings or default
+          const systemPrompt = customPrompt || `Jesteś copywriterem sportowym Szortsy.pl. Tworzysz angażujące posty na Facebooka.
+
+STRUKTURA:
+1. HOOK - mocne otwarcie z emoji ${emoji}, zaskakujący fakt lub pytanie retoryczne
+2. KONTEKST - 2-3 krótkie, dynamiczne zdania rozwijające temat, użyj 1-2 emoji w tekście
+3. CTA - zakończ pytaniem zachęcającym do dyskusji w komentarzach
+
+ZASADY:
+- Max 250 znaków (link i hashtagi zostaną dodane automatycznie)
+- Pisz krótko, dynamicznie, z energią
+- Unikaj clickbaitu, ale buduj ciekawość
+- NIE kopiuj tytułu artykułu dosłownie - przeformułuj
+- Używaj dynamicznych czasowników i emocjonalnego języka
+- Zakończ angażującym pytaniem typu "A Wy co sądzicie?", "Kto wygra?"`;
+
           const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -159,14 +191,7 @@ serve(async (req) => {
               messages: [
                 {
                   role: "system",
-                  content: `Jesteś copywriterem sportowym. Napisz krótki, angażujący post na Facebooka (max 280 znaków bez linku i hashtagów). 
-                  
-Zasady:
-- Zaczynaj od emoji ${emoji}
-- Ton: dynamiczny, ekscytujący, profesjonalny
-- Unikaj clickbaitu
-- NIE dodawaj linków ani hashtagów - zostaną dodane automatycznie
-- Tylko treść posta`,
+                  content: systemPrompt,
                 },
                 {
                   role: "user",
@@ -174,7 +199,11 @@ Zasady:
 
 Tytuł: ${post.title}
 Opis: ${post.excerpt}
-Kategoria: ${categoryName}`,
+Kategoria: ${categoryName}
+Emoji kategorii: ${emoji}
+${contentSnippet ? `\nTreść artykułu (fragment):\n${contentSnippet}` : ''}
+
+Napisz TYLKO treść posta (bez linku, bez hashtagów - zostaną dodane automatycznie).`,
                 },
               ],
             }),

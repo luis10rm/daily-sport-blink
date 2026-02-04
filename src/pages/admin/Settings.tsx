@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useSetting, useUpdateSetting } from "@/hooks/useSettings";
 import { usePatronSettings, useUpdatePatronSettings, PatronSettings } from "@/hooks/usePatronSettings";
-import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2 } from "lucide-react";
+import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2, Facebook } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +76,29 @@ Odpowiedz w formacie JSON:
   "content": "<p>Wprowadzenie...</p><h2>Piłka nożna</h2><p>Treść...</p>...",
   "suggested_tags": ["tag1", "tag2", "podsumowanie dnia"]
 }`;
+
+const DEFAULT_FACEBOOK_PROMPT = `Jesteś copywriterem sportowym Szortsy.pl. Tworzysz angażujące posty na Facebooka.
+
+STRUKTURA:
+1. HOOK - mocne otwarcie z emoji kategorii, zaskakujący fakt lub pytanie retoryczne
+2. KONTEKST - 2-3 krótkie, dynamiczne zdania rozwijające temat, użyj 1-2 emoji w tekście
+3. CTA - zakończ pytaniem zachęcającym do dyskusji w komentarzach
+
+ZASADY:
+- Max 250 znaków (link i hashtagi zostaną dodane automatycznie)
+- Pisz krótko, dynamicznie, z energią
+- Unikaj clickbaitu, ale buduj ciekawość
+- NIE kopiuj tytułu artykułu dosłownie - przeformułuj
+- Używaj dynamicznych czasowników i emocjonalnego języka
+- Zakończ angażującym pytaniem typu "A Wy co sądzicie?", "Kto wygra?"
+
+EMOJI KATEGORII:
+- football: ⚽
+- basketball: 🏀
+- tennis: 🎾
+- f1: 🏎️
+- mma: 🥊
+- other: 🏆`;
 
 const DEFAULT_PATRON: PatronSettings = {
   enabled: false,
@@ -155,6 +178,7 @@ const Settings = () => {
   const { data: promptValue, isLoading: isLoadingPrompt } = useSetting("article_extraction_prompt");
   const { data: contentPromptValue, isLoading: isLoadingContentPrompt } = useSetting("article_content_prompt");
   const { data: summaryPromptValue, isLoading: isLoadingSummaryPrompt } = useSetting("daily_summary_prompt");
+  const { data: facebookPromptValue, isLoading: isLoadingFacebookPrompt } = useSetting("facebook_post_prompt");
   const { data: makeWebhookValue, isLoading: isLoadingMakeWebhook } = useSetting("make_webhook_url");
   const { data: patronData, isLoading: isLoadingPatron } = usePatronSettings();
   const updateSetting = useUpdateSetting();
@@ -171,6 +195,10 @@ const Settings = () => {
   // Summary prompt state
   const [localSummaryPrompt, setLocalSummaryPrompt] = useState("");
   const [hasSummaryPromptChanges, setHasSummaryPromptChanges] = useState(false);
+  
+  // Facebook prompt state
+  const [localFacebookPrompt, setLocalFacebookPrompt] = useState("");
+  const [hasFacebookPromptChanges, setHasFacebookPromptChanges] = useState(false);
   
   // Make webhook state
   const [localMakeWebhook, setLocalMakeWebhook] = useState("");
@@ -198,6 +226,12 @@ const Settings = () => {
   }, [summaryPromptValue]);
 
   useEffect(() => {
+    if (facebookPromptValue) {
+      setLocalFacebookPrompt(facebookPromptValue);
+    }
+  }, [facebookPromptValue]);
+
+  useEffect(() => {
     if (makeWebhookValue !== undefined) {
       setLocalMakeWebhook(makeWebhookValue || "");
     }
@@ -220,6 +254,10 @@ const Settings = () => {
   useEffect(() => {
     setHasSummaryPromptChanges(localSummaryPrompt !== summaryPromptValue && localSummaryPrompt !== "");
   }, [localSummaryPrompt, summaryPromptValue]);
+
+  useEffect(() => {
+    setHasFacebookPromptChanges(localFacebookPrompt !== facebookPromptValue && localFacebookPrompt !== "");
+  }, [localFacebookPrompt, facebookPromptValue]);
 
   useEffect(() => {
     const currentValue = makeWebhookValue || "";
@@ -266,6 +304,18 @@ const Settings = () => {
 
   const handleResetSummaryPrompt = () => {
     setLocalSummaryPrompt(DEFAULT_SUMMARY_PROMPT);
+  };
+
+  const handleSaveFacebookPrompt = async () => {
+    await updateSetting.mutateAsync({
+      key: "facebook_post_prompt",
+      value: localFacebookPrompt,
+    });
+    setHasFacebookPromptChanges(false);
+  };
+
+  const handleResetFacebookPrompt = () => {
+    setLocalFacebookPrompt(DEFAULT_FACEBOOK_PROMPT);
   };
 
   const handleSaveMakeWebhook = async () => {
@@ -672,6 +722,53 @@ const Settings = () => {
                   <Button 
                     variant="outline" 
                     onClick={handleResetSummaryPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
+              </div>
+
+              {/* Facebook Post Prompt */}
+              <div className="space-y-2 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Facebook className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="facebook-prompt">Prompt postów na Facebook</Label>
+                </div>
+                {isLoadingFacebookPrompt ? (
+                  <Skeleton className="h-48 w-full" />
+                ) : (
+                  <Textarea
+                    id="facebook-prompt"
+                    value={localFacebookPrompt}
+                    onChange={(e) => setLocalFacebookPrompt(e.target.value)}
+                    rows={12}
+                    className="font-mono text-sm"
+                    placeholder="Wprowadź prompt do generowania postów na Facebook..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Ten prompt określa jak AI generuje opisy postów na Facebooka.
+                  Używany przy automatycznej publikacji przez Make.
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSaveFacebookPrompt} 
+                    disabled={!hasFacebookPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleResetFacebookPrompt}
                     disabled={updateSetting.isPending}
                     size="sm"
                   >
