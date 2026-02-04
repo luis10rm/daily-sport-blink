@@ -67,7 +67,7 @@ export const FeedbackBox = ({ className }: FeedbackBoxProps) => {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Podziel się opinią o serwisie..."
+        placeholder="Czego Ci brakuje? Daj znać w kilku słowach..."
         className="flex-1 resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none min-h-[24px]"
         rows={1}
         disabled={isPending}
