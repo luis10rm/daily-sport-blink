@@ -17,6 +17,17 @@ const categoryEmojis: Record<string, string> = {
   other: "🏆",
 };
 
+// Category default images (full URLs for external services)
+const categoryDefaultImages: Record<string, string> = {
+  football: "https://daily-sport-blink.lovable.app/images/categories/football.webp",
+  basketball: "https://daily-sport-blink.lovable.app/images/categories/basketball.webp",
+  tennis: "https://daily-sport-blink.lovable.app/images/categories/tennis.webp",
+  f1: "https://daily-sport-blink.lovable.app/images/categories/f1.webp",
+  mma: "https://daily-sport-blink.lovable.app/images/categories/mma.webp",
+  "daily-summary": "https://daily-sport-blink.lovable.app/images/categories/daily-summary.webp",
+  other: "https://daily-sport-blink.lovable.app/images/categories/other.webp",
+};
+
 interface PublishRequest {
   post_id: string;
   platform?: "facebook" | "twitter" | "instagram";
@@ -257,12 +268,17 @@ Napisz TYLKO treść posta (bez linku, bez hashtagów - zostaną dodane automaty
 
     // Prepare payload for Make webhook
     const categoryInfo = post.sport_categories as any;
+    const categorySlugForImage = categoryInfo?.slug || "other";
+    
+    // Use post image or fallback to category default image
+    const postImage = post.image_url || categoryDefaultImages[categorySlugForImage] || categoryDefaultImages.other;
+    
     const payload = {
       post_id: post.id,
       post_title: post.title,
       post_excerpt: post.excerpt,
       post_url: `https://szortsy.pl/blink/${post.slug}`,
-      post_image: post.image_url || "",
+      post_image: postImage,
       caption,
       category: categoryInfo?.name || "Sport",
       category_slug: categoryInfo?.slug || "other",
