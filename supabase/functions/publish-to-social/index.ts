@@ -103,7 +103,8 @@ serve(async (req) => {
         content,
         sport_categories (
           name,
-          slug
+          slug,
+          social_image_url
         )
       `)
       .eq("id", post_id)
@@ -270,8 +271,14 @@ Napisz TYLKO treść posta (bez linku, bez hashtagów - zostaną dodane automaty
     const categoryInfo = post.sport_categories as any;
     const categorySlugForImage = categoryInfo?.slug || "other";
     
-    // Use post image or fallback to category default image
-    const postImage = post.image_url || categoryDefaultImages[categorySlugForImage] || categoryDefaultImages.other;
+    // Image priority: 1. post.image_url, 2. category.social_image_url, 3. static fallback
+    let postImage = post.image_url;
+    if (!postImage && categoryInfo?.social_image_url) {
+      postImage = categoryInfo.social_image_url;
+    }
+    if (!postImage) {
+      postImage = categoryDefaultImages[categorySlugForImage] || categoryDefaultImages.other;
+    }
     
     const payload = {
       post_id: post.id,
