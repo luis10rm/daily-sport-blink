@@ -25,6 +25,7 @@ const categoryDefaultImages: Record<string, string> = {
   f1: "https://daily-sport-blink.lovable.app/images/categories/f1.webp",
   mma: "https://daily-sport-blink.lovable.app/images/categories/mma.webp",
   "daily-summary": "https://daily-sport-blink.lovable.app/images/categories/daily-summary.webp",
+  "podsumowanie-dnia": "https://daily-sport-blink.lovable.app/images/categories/daily-summary.webp",
   other: "https://daily-sport-blink.lovable.app/images/categories/other.webp",
 };
 
@@ -273,6 +274,12 @@ Napisz TYLKO treść posta (bez linku, bez hashtagów - zostaną dodane automaty
     
     // Image priority: 1. post.image_url, 2. category.social_image_url, 3. static fallback
     let postImage = post.image_url;
+    
+    // Convert relative URLs to absolute (Facebook requires full URLs)
+    if (postImage && postImage.startsWith("/")) {
+      postImage = `https://daily-sport-blink.lovable.app${postImage}`;
+    }
+    
     if (!postImage && categoryInfo?.social_image_url) {
       postImage = categoryInfo.social_image_url;
     }
