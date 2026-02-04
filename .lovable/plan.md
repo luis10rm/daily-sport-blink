@@ -1,78 +1,51 @@
 
-# Implementacja Drag & Drop dla kategorii sportowych
 
-## Problem
-W panelu admina (`/admin/categories`) wyświetlana jest ikona "grip" sugerująca możliwość przeciągania, ale:
-- Brak biblioteki do obsługi drag and drop
-- Brak event handlerów do obsługi przeciągania
-- Brak funkcji do aktualizacji kolejności w bazie danych
+# Aktualizacja meta description SEO
 
-## Rozwiązanie
-
-### Etap 1: Instalacja biblioteki
-Dodam bibliotekę `@dnd-kit/core` i `@dnd-kit/sortable` - lekką, nowoczesną bibliotekę DnD zoptymalizowaną pod React:
-
-```text
-@dnd-kit/core - główna logika DnD
-@dnd-kit/sortable - sortowanie list
-@dnd-kit/utilities - helpery CSS
+## Wybrany opis
+```
+Szortsy – najważniejsze wiadomości sportowe w 60 sekund. Piłka nożna, F1, tenis, MMA i więcej. Krótko, konkretnie, codziennie. Bądź na bieżąco!
 ```
 
-### Etap 2: Hook do aktualizacji kolejności
-Dodam nową funkcję `useReorderSportCategories` w `useSportCategories.tsx`:
-- Przyjmuje nową kolejność kategorii
-- Aktualizuje `sort_order` dla każdej zmienionej kategorii
-- Używa optymistycznych aktualizacji (instant feedback)
+**Długość:** 156 znaków - idealna dla Google
 
-### Etap 3: Implementacja DnD w CategoriesList.tsx
-- Owinięcie tabeli w `DndContext` i `SortableContext`
-- Zamiana `TableRow` na komponent `SortableRow` z obsługą przeciągania
-- Dodanie sensorów (pointer + keyboard dla dostępności)
-- Handler `onDragEnd` aktualizujący kolejność
-
-### Etap 4: Wizualny feedback
-- Podświetlenie przeciąganego elementu
-- Animacja "placeholder" w miejscu docelowym
-- Zmiana kursora podczas przeciągania
+**Uwaga:** Zmiana z "60 słów" na "60 sekund" - świetna decyzja! Podkreśla czas konsumpcji treści, co jest bardziej intuicyjne dla użytkownika.
 
 ---
 
 ## Zmiany w plikach
 
-| Plik | Zmiana |
-|------|--------|
-| `package.json` | Dodanie `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities` |
-| `src/hooks/useSportCategories.tsx` | Nowa funkcja `useReorderSportCategories` |
-| `src/pages/admin/CategoriesList.tsx` | Implementacja DnD z DndContext, SortableContext, SortableRow |
+### 1. index.html
+Aktualizacja trzech meta tagów:
+- `<meta name="description">` - główny opis dla Google
+- `<meta property="og:description">` - podgląd na Facebooku/LinkedIn
+- `<meta name="twitter:description">` - podgląd na X/Twitter
+
+### 2. src/hooks/useSEOMeta.ts
+Aktualizacja stałej `DEFAULT_DESCRIPTION` używanej dynamicznie przez SPA dla wszystkich podstron bez własnego opisu.
 
 ---
 
 ## Szczegóły techniczne
 
-### Nowy hook: useReorderSportCategories
-```text
-mutationFn:
-  1. Przyjmuje tablicę ID kategorii w nowej kolejności
-  2. Mapuje każde ID na {id, sort_order: index}
-  3. Wykonuje batch update w bazie
-  4. Invaliduje query cache
+| Plik | Linia | Zmiana |
+|------|-------|--------|
+| `index.html` | meta description | Nowy opis |
+| `index.html` | og:description | Nowy opis |
+| `index.html` | twitter:description | Skrócona wersja (max ~120 znaków) |
+| `src/hooks/useSEOMeta.ts` | DEFAULT_DESCRIPTION | Nowy opis |
 
-Optymistyczne update:
-  - Natychmiast aktualizuje lokalny stan
-  - W razie błędu przywraca poprzednią kolejność
+### Twitter description (skrócona)
+```
+Szortsy – wiadomości sportowe w 60 sekund. Piłka nożna, F1, MMA i więcej. Krótko, codziennie.
 ```
 
-### Struktura komponentu SortableRow
-```text
-- useSortable(id) - hook z @dnd-kit/sortable
-- attributes, listeners - do obsługi GripVertical
-- transform, transition - dla animacji
-- isDragging - do stylowania aktywnego elementu
-```
+---
 
-### Sensory DnD
-```text
-- PointerSensor - obsługa myszy/dotyku
-- KeyboardSensor - obsługa klawiatury (Tab + Space/Enter)
-- activationConstraint: { distance: 5 } - zapobiega przypadkowemu przeciąganiu
-```
+## Po wdrożeniu
+
+Opis będzie widoczny:
+- W wynikach wyszukiwania Google (po reindeksacji)
+- Przy udostępnianiu linku na social media
+- W podglądach linków w komunikatorach
+
