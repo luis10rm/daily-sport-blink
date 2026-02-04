@@ -1,62 +1,38 @@
 
 
-# Minimalistyczny Formularz Feedbacku
+# Zmiana copy w formularzu feedbacku
 
-## Koncept
+## Aktualny tekst
 
-Prosty, dyskretny formularz w jednej linii - tylko textarea i przycisk. Bez zbędnych elementów, pasujący do minimalistycznego stylu serwisu.
+Obecny placeholder:
+> "Podziel się opinią o serwisie..."
 
-## Wizualizacja
+## Propozycje bardziej atrakcyjnego copy
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  💬  Podziel się opinią o serwisie...          [ Wyślij ]      │
-└─────────────────────────────────────────────────────────────────┘
+| Wariant | Tekst |
+|---------|-------|
+| 1 | "Co byś zmienił? Twoja opinia ma znaczenie 💬" |
+| 2 | "Masz pomysł jak możemy być lepsi? Napisz!" |
+| 3 | "Czego Ci brakuje? Daj znać w kilku słowach..." |
+| 4 | "Pomóż nam ulepszyć Szortsy - pisz śmiało!" |
+| 5 | "Co myślisz? Każda opinia się liczy ✨" |
+
+## Rekomendacja
+
+**Wariant 3**: "Czego Ci brakuje? Daj znać w kilku słowach..."
+
+Dlaczego ten:
+- Zadaje konkretne pytanie (angażuje czytelnika)
+- Sugeruje że odpowiedź może być krótka (niski próg wejścia)
+- Bezpośredni, przyjazny ton
+- Pasuje do minimalistycznego stylu
+
+## Zmiana w pliku
+
+**Plik:** `src/components/FeedbackBox.tsx`
+
+Linia 70 - zmiana placeholdera:
 ```
-
-Po wysłaniu:
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  ✓  Dziękujemy za opinię!                                       │
-└─────────────────────────────────────────────────────────────────┘
+placeholder="Czego Ci brakuje? Daj znać w kilku słowach..."
 ```
-
-## Co zostanie zrobione
-
-### 1. Tabela w bazie danych
-
-Prosta tabela `feedback`:
-- `id`, `message`, `created_at`, `is_read`
-- Bez pola email (minimalizm)
-- RLS: publiczny INSERT, reszta tylko dla adminów
-
-### 2. Komponent `FeedbackBox.tsx`
-
-Maksymalnie uproszczony:
-- Jedna linia: ikona + textarea + przycisk
-- Textarea rozszerza się podczas pisania
-- Po wysłaniu: krótki komunikat "Dziękujemy!"
-- Subtelne obramowanie i tło `bg-muted/50`
-- Walidacja: min 5 znaków
-
-### 3. Strona główna
-
-Dodanie pod NewsOfTheDay - przed środkowym banerem.
-
-### 4. Panel admina
-
-Prosta lista feedbacku w `/admin/feedback`:
-- Data + treść + status (przeczytane/nie)
-- Możliwość oznaczenia jako przeczytane
-
-## Pliki do utworzenia/edycji
-
-| Plik | Akcja |
-|------|-------|
-| Migracja SQL | Nowa tabela `feedback` |
-| `src/hooks/useFeedback.tsx` | Nowy hook |
-| `src/components/FeedbackBox.tsx` | Nowy komponent |
-| `src/pages/Index.tsx` | Dodanie FeedbackBox |
-| `src/pages/admin/FeedbackList.tsx` | Nowa strona admina |
-| `src/components/admin/AdminLayout.tsx` | Link w nawigacji |
 
