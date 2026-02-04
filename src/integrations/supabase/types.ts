@@ -363,6 +363,7 @@ export type Database = {
           is_default: boolean
           name: string
           slug: string
+          social_image_url: string | null
           sort_order: number
           updated_at: string
         }
@@ -375,6 +376,7 @@ export type Database = {
           is_default?: boolean
           name: string
           slug: string
+          social_image_url?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -387,6 +389,7 @@ export type Database = {
           is_default?: boolean
           name?: string
           slug?: string
+          social_image_url?: string | null
           sort_order?: number
           updated_at?: string
         }

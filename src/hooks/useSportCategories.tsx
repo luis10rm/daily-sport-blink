@@ -11,6 +11,7 @@ export interface SportCategory {
   bg_color: string;
   sort_order: number;
   is_default: boolean;
+  social_image_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +24,7 @@ export interface SportCategoryInsert {
   bg_color: string;
   sort_order?: number;
   is_default?: boolean;
+  social_image_url?: string | null;
 }
 
 export interface SportCategoryUpdate extends Partial<SportCategoryInsert> {

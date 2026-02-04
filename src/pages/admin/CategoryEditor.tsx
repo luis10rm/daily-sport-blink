@@ -7,7 +7,6 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,14 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, Upload, Save, ImageIcon } from "lucide-react";
+import { ArrowLeft, Save, ImageIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   useSportCategory,
@@ -37,6 +29,7 @@ import {
 } from "@/hooks/useSportCategories";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { AIIconGenerator } from "@/components/admin/AIIconGenerator";
+import { SocialImageGenerator } from "@/components/admin/SocialImageGenerator";
 import dynamicIconImports from "lucide-react/dynamicIconImports";
 import { LucideProps } from "lucide-react";
 
@@ -108,6 +101,7 @@ const categorySchema = z.object({
   bg_color: z.string().min(1, "Kolor jest wymagany"),
   sort_order: z.coerce.number().int().min(0),
   is_default: z.boolean().default(false),
+  social_image_url: z.string().optional().nullable(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -135,6 +129,7 @@ export default function CategoryEditor() {
       bg_color: "220 14% 46%",
       sort_order: 0,
       is_default: false,
+      social_image_url: null,
     },
   });
 
@@ -149,6 +144,7 @@ export default function CategoryEditor() {
         bg_color: category.bg_color,
         sort_order: category.sort_order,
         is_default: category.is_default,
+        social_image_url: category.social_image_url,
       });
       setPreviewColor(category.bg_color);
       setIconSource(category.icon_url ? "upload" : "lucide");
@@ -188,6 +184,7 @@ export default function CategoryEditor() {
           bg_color: data.bg_color,
           sort_order: data.sort_order,
           is_default: data.is_default,
+          social_image_url: data.social_image_url,
         });
       }
       navigate("/admin/categories");
@@ -445,6 +442,15 @@ export default function CategoryEditor() {
                     />
                   </CardContent>
                 </Card>
+
+                {/* Social Image Section */}
+                <SocialImageGenerator
+                  categoryName={form.watch("name")}
+                  categorySlug={form.watch("slug")}
+                  currentImageUrl={form.watch("social_image_url") || null}
+                  onImageChange={(url) => form.setValue("social_image_url", url)}
+                  disabled={!form.watch("name")}
+                />
               </div>
 
               {/* Sidebar - Preview */}
