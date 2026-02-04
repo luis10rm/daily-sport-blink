@@ -58,10 +58,17 @@ export const FeedbackBox = ({ className }: FeedbackBoxProps) => {
 
   return (
     <div className={cn(
-      "flex items-start gap-3 rounded-lg border border-border bg-muted/50 px-4 py-3",
+      "relative flex items-start gap-3 rounded-lg px-4 py-3",
+      "bg-muted/50",
+      "opacity-0 animate-delayed-fade-in",
+      // Gradient border effect
+      "before:absolute before:inset-0 before:rounded-lg before:p-[1px]",
+      "before:bg-gradient-to-r before:from-transparent before:via-primary/40 before:to-transparent",
+      "before:bg-[length:200%_100%] before:animate-shimmer-border",
+      "before:-z-10",
       className
     )}>
-      <MessageSquare className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+      <MessageSquare className="h-5 w-5 text-primary shrink-0 mt-0.5" />
       <textarea
         ref={textareaRef}
         value={message}
