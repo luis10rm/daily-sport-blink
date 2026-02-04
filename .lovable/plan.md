@@ -1,113 +1,84 @@
 
 
-# Automatyzacja publikacji na Facebook przez Make
+# Poprawa jakości postów na Facebooka
 
-## Architektura rozwiązania
+## Obecny stan
 
-```text
-┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
-│  Panel Admin    │         │   Edge Function  │         │      Make       │
-│  (PostEditor)   │────────▶│ publish-to-social│────────▶│    Webhook      │
-│                 │         │                  │         │                 │
-│ [✓] Opublikuj   │         │ - Generuje       │         │ - Formatuje     │
-│     na FB       │         │   caption AI     │         │   post FB       │
-│                 │         │ - Wysyła payload │         │ - Publikuje     │
-└─────────────────┘         └─────────────────┘         └─────────────────┘
+Na podstawie screena widzę post:
+```
+⚽ Endrick kontra Gonzalo! Dwóch młodych geniuszy w walce o przyszłość Realu Madryt. 
+Kto stanie się zmiennikiem Mbappe? Ten pojedynek elektryzuje!
+👉 Czytaj więcej: https://szortsy.pl/.../pojedynek-o-przyszlosc-w-realu...
+#szortsy #RealMadryt #Endrick #GonzaloGarcia
 ```
 
-## Co zbudujemy
-
-### 1. Tabela `social_posts` - śledzenie publikacji
-Przechowuje historię publikacji na social media:
-- `post_id` - powiązanie z postem
-- `platform` - np. "facebook"  
-- `status` - pending/published/failed
-- `caption` - wygenerowana treść
-- `webhook_response` - odpowiedź z Make
-
-### 2. Edge Function `publish-to-social`
-Obsługuje logikę wysyłania:
-- Przyjmuje `post_id` i opcjonalny `custom_caption`
-- Generuje caption AI (jeśli nie podano własnego)
-- Wysyła dane do webhooka Make
-- Zapisuje wynik w `social_posts`
-
-### 3. UI w PostEditor
-- Checkbox/switch "Opublikuj na Facebook"
-- Opcjonalne pole na własny caption
-- Przycisk "Wyślij na FB" dla istniejących postów
-
-### 4. Ustawienia w Settings
-- Pole na URL webhooka Make
-- Zapisywane w tabeli `settings`
+**Problemy:**
+- Tekst jest poprawny, ale dość generyczny
+- Brak kontekstu sportowego (wyniku, statystyk)
+- Emoji tylko na początku - mało dynamiczne
+- Format hashtagów podstawowy
 
 ---
 
-## Szczegóły techniczne
+## Propozycje ulepszeń
 
-### Tabela `social_posts`
+### 1. Lepszy prompt AI (najważniejsze)
 
-| Kolumna | Typ | Opis |
-|---------|-----|------|
-| id | uuid | Primary key |
-| post_id | uuid | FK → posts |
-| platform | text | "facebook" |
-| status | text | pending/published/failed |
-| caption | text | Treść posta FB |
-| scheduled_at | timestamptz | Opcjonalne planowanie |
-| published_at | timestamptz | Faktyczna publikacja |
-| webhook_response | jsonb | Odpowiedź z Make |
-| created_at | timestamptz | Timestamp |
-
-### Edge Function `publish-to-social`
+Obecny prompt jest bardzo prosty (5 linijek). Stworzymy bardziej rozbudowany, z konkretnymi wytycznymi:
 
 ```text
-Input:
-{
-  post_id: string,
-  platform: "facebook",
-  custom_caption?: string
-}
+Jesteś doświadczonym copywriterem sportowym Szortsy.pl. 
+Tworzysz angażujące posty na Facebooka, które zatrzymują scroll.
 
-Process:
-1. Pobierz post z bazy (tytuł, excerpt, slug, image_url, kategoria)
-2. Jeśli brak custom_caption → wygeneruj AI (Lovable AI)
-3. Pobierz webhook URL z settings
-4. Wyślij POST do Make z:
-   - title
-   - excerpt  
-   - url (https://szortsy.pl/blink/{slug})
-   - image_url
-   - caption
-   - category
-   - tags
-5. Zapisz wynik w social_posts
+STRUKTURA POSTA (3 części):
+
+1. HOOK (1 linia) - Mocne otwarcie
+   - Zaskakująca statystyka lub fakt
+   - Prowokujące pytanie
+   - Emocjonalne stwierdzenie
+   - Emoji na początku pasujące do kategorii
+
+2. KONTEKST (2-3 linie)
+   - Rozwiń główną informację
+   - Dodaj szczegóły, które budują napięcie
+   - Użyj 1-2 dodatkowych emoji w tekście
+   - Pisz krótkimi zdaniami
+
+3. CTA (call-to-action)
+   - Zakończ pytaniem lub wezwaniem do dyskusji
+   - Przykłady: "A Wy co sądzicie?", "Kto wygra?"
+
+ZASADY:
+- Max 200 znaków (bez linku i hashtagów)
+- Unikaj clickbaitu, ale buduj ciekawość
+- Nie zaczynaj od tytułu artykułu
+- Używaj dynamicznych czasowników
 ```
 
-### Payload do Make
+### 2. Konfigurowalny prompt w Ustawieniach
 
-```json
-{
-  "post_title": "Lewandowski z dubletem!",
-  "post_url": "https://szortsy.pl/blink/lewandowski-z-dubletem",
-  "post_image": "https://...",
-  "caption": "⚽ Lewandowski z dubletem! Polak znów błyszczy w La Liga...",
-  "category": "Piłka nożna",
-  "tags": ["lewandowski", "barcelona", "la-liga"]
-}
-```
+Analogicznie do innych promptów AI, dodamy możliwość edycji prompta dla postów FB w panelu Ustawienia.
 
-### Format caption AI
+### 3. Więcej danych dla AI
 
-Template dla generowania:
+Obecnie AI dostaje tylko `title` i `excerpt`. Możemy przekazać więcej:
+- Pełną treść artykułu (content) - więcej kontekstu
+- Kategorię z pełną nazwą
+- Tagi jako kontekst tematyczny
+
+### 4. Ulepszone formatowanie
+
 ```text
-{emoji dla kategorii} {Tytuł posta}
+⚽ 19-letni Endrick vs 18-letni Gonzalo Garcia.
 
-{Krótki opis (excerpt)}
+Wojna młodych talentów w Realu Madryt trwa! 💥 
+Obaj chcą być zmiennikiem Mbappe. Kto ma lepsze szanse?
 
-👉 Czytaj więcej: {URL}
+Co sądzicie - którego widzielibyście w pierwszej jedenastce? 🤔
 
-#szortsy #{tag1} #{tag2}
+👉 Czytaj więcej: [link]
+
+#szortsy #RealMadryt #Endrick
 ```
 
 ---
@@ -116,45 +87,38 @@ Template dla generowania:
 
 | Plik | Zmiana |
 |------|--------|
-| `supabase/functions/publish-to-social/index.ts` | NOWY - edge function |
-| `src/pages/admin/PostEditor.tsx` | Dodanie sekcji "Publikuj na Facebook" |
-| `src/pages/admin/Settings.tsx` | Pole na webhook URL Make |
-| `src/hooks/useSettings.ts` | Hook do pobierania webhook URL |
-| Migracja SQL | Tabela `social_posts` |
+| `src/pages/admin/Settings.tsx` | Dodanie sekcji "Prompt dla postów Facebook" |
+| `supabase/functions/publish-to-social/index.ts` | Pobieranie prompta z bazy + przekazywanie treści artykułu do AI |
+| Migracja SQL | Wstawienie domyślnego prompta do tabeli `settings` |
 
 ---
 
-## Flow użytkownika
+## Nowy prompt (propozycja)
 
-### Przy tworzeniu nowego posta:
-1. Wypełnia formularz jak zwykle
-2. Zaznacza "Opublikuj na Facebook"
-3. (Opcjonalnie) Wpisuje własny caption
-4. Kliknięcie "Zapisz" → post zapisany + webhook do Make
+```
+Jesteś copywriterem sportowym Szortsy.pl. Tworzysz angażujące posty na Facebooka.
 
-### Dla istniejącego posta:
-1. Otwiera edycję posta
-2. Kliknięcie "Wyślij na Facebook"
-3. Modal z podglądem caption (AI lub własny)
-4. Potwierdzenie → webhook do Make
+STRUKTURA:
+1. HOOK - mocne otwarcie z emoji {emoji_kategorii}, zaskakujący fakt lub pytanie
+2. KONTEKST - 2-3 krótkie zdania rozwijające temat, użyj 1-2 emoji
+3. CTA - zakończ pytaniem zachęcającym do dyskusji
 
----
+ZASADY:
+- Max 250 znaków (link i hashtagi zostaną dodane automatycznie)
+- Pisz krótko, dynamicznie, z energią
+- Unikaj clickbaitu, ale buduj ciekawość
+- Nie kopiuj tytułu dosłownie
+- Zakończ angażującym pytaniem
 
-## Konfiguracja Make
-
-Po stronie Make użytkownik musi:
-1. Utworzyć nowy Scenario
-2. Dodać trigger "Webhooks" → "Custom webhook"
-3. Skopiować URL webhooka do ustawień Szortsy
-4. Dodać moduł "Facebook Pages" → "Create a Post"
-5. Zmapować pola z payload
+Dane wejściowe: tytuł, opis, kategoria, treść artykułu
+```
 
 ---
 
-## Bezpieczeństwo
+## Korzyści
 
-- Webhook URL zapisany w bazie (nie w kodzie)
-- Edge function wymaga autoryzacji (admin only)
-- RLS na tabeli `social_posts`
-- Logowanie każdej próby publikacji
+- **Lepsza jakość** - rozbudowany prompt = bardziej przemyślane posty
+- **Elastyczność** - możesz modyfikować prompt bez zmian w kodzie
+- **Więcej kontekstu** - AI dostaje pełną treść, nie tylko tytuł
+- **Spójność** - taki sam wzorzec jak inne prompty AI w systemie
 
