@@ -1,82 +1,39 @@
 
 
-# Dedykowane obrazy kategorii dla Facebooka
+# Dodanie linku do fanpage'a Facebook w stopce
 
-## Cel
+## Co zostanie zrobione
 
-Zamiast używać statycznych grafik (football.webp, basketball.webp), każda kategoria sportowa będzie miała dedykowany, atrakcyjny obraz wygenerowany przez AI, który będzie używany jako miniaturka postów na Facebooku.
+Dodam ikonę Facebook z linkiem do fanpage'a Szortsy w stopce strony. Będzie to elegancko wkomponowane w istniejący design.
 
-## Zmiany w bazie danych
+## Wizualizacja
 
-Dodanie nowej kolumny do tabeli `sport_categories`:
+Stopka po zmianie będzie wyglądać tak:
 
-| Kolumna | Typ | Opis |
-|---------|-----|------|
-| `social_image_url` | text | URL dużego obrazu do mediów społecznościowych |
-
-## Zmiany w edytorze kategorii
-
-W `CategoryEditor.tsx` dodanie nowej sekcji:
-
-```text
-┌─────────────────────────────────────────────────┐
-│  🖼️ Obraz dla mediów społecznościowych         │
-├─────────────────────────────────────────────────┤
-│  [Podgląd aktualnego obrazu 1200x630]           │
-│                                                 │
-│  [ Generuj z AI ]  [ Prześlij własny ]          │
-│                                                 │
-│  Ten obraz będzie używany jako miniaturka       │
-│  postów na Facebooku bez własnego zdjęcia.      │
-└─────────────────────────────────────────────────┘
+```
+─────────────────────────────────────────────────
+Serwis agreguje nagłówki i odsyła do źródeł...
+         
+              [ikona FB]
+     Obserwuj nas na Facebooku
+         
+© 2026 Szortsy. Wszystkie prawa zastrzeżone.
+─────────────────────────────────────────────────
 ```
 
-## Generator AI dla obrazów społecznościowych
+## Szczegóły techniczne
 
-Nowy generator w `CategoryEditor.tsx` z promptem zoptymalizowanym pod duże grafiki:
+### Plik: `src/components/Footer.tsx`
 
-```text
-Wygeneruj dynamiczną, profesjonalną ilustrację sportową dla kategorii [nazwa].
+1. Import ikony `Facebook` z biblioteki `lucide-react` (już zainstalowana w projekcie)
+2. Dodanie sekcji z linkiem do fanpage'a między disclaimer a copyright:
+   - Ikona Facebook w okręgu z kolorem primary
+   - Tekst "Obserwuj nas na Facebooku"
+   - Link zewnętrzny z atrybutami `target="_blank"` i `rel="noopener noreferrer"` (bezpieczeństwo)
+   - Efekt hover dla interaktywności
 
-STYL:
-- Żywe, nasycone kolory
-- Dynamiczna kompozycja z ruchem
-- Rozmiar 1200x630px (format OG dla Facebooka)
-- Bez tekstu, bez logo
-- Fotorealistyczny lub high-quality 3D render
-
-TEMATYKA dla [kategoria]:
-- Football: piłka w ruchu, stadion, dynamiczne ujęcie
-- Basketball: wsad, piłka przy obręczy
-- F1: bolid w akcji, tor wyścigowy
-- Tennis: serwis, kort
-- MMA: oktagon, dynamiczna poza
-```
-
-## Aktualizacja Edge Function
-
-W `publish-to-social` zmiana priorytetu wyboru obrazu:
-
-```text
-1. post.image_url (własne zdjęcie posta)
-      ↓ jeśli brak
-2. category.social_image_url (obraz AI kategorii z bazy)
-      ↓ jeśli brak  
-3. categoryDefaultImages[slug] (statyczny fallback)
-```
-
-## Pliki do zmiany
-
-| Plik | Zmiana |
-|------|--------|
-| Migracja SQL | Dodanie kolumny `social_image_url` |
-| `src/pages/admin/CategoryEditor.tsx` | Nowa sekcja z generatorem obrazów społecznościowych |
-| `supabase/functions/publish-to-social/index.ts` | Pobieranie `social_image_url` z kategorii, nowy priorytet wyboru obrazu |
-
-## Korzyści
-
-- **Unikalne obrazy** - każda kategoria ma swój charakterystyczny, profesjonalny obraz
-- **Łatwa edycja** - możesz wygenerować nowy obraz lub przesłać własny
-- **Spójność wizualna** - wszystkie posty bez zdjęcia wyglądają profesjonalnie
-- **Optymalizacja pod FB** - rozmiar 1200x630px to idealny format dla Open Graph
+### Styl
+- Zachowany minimalistyczny design zgodny z resztą strony
+- Ikona w kolorze szmaragdowym (primary) dla spójności z brandingiem
+- Responsywny układ działający na wszystkich urządzeniach
 
