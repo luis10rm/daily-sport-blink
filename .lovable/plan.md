@@ -1,124 +1,82 @@
 
 
-# Poprawa jakości postów na Facebooka
+# Dedykowane obrazy kategorii dla Facebooka
 
-## Obecny stan
+## Cel
 
-Na podstawie screena widzę post:
-```
-⚽ Endrick kontra Gonzalo! Dwóch młodych geniuszy w walce o przyszłość Realu Madryt. 
-Kto stanie się zmiennikiem Mbappe? Ten pojedynek elektryzuje!
-👉 Czytaj więcej: https://szortsy.pl/.../pojedynek-o-przyszlosc-w-realu...
-#szortsy #RealMadryt #Endrick #GonzaloGarcia
-```
+Zamiast używać statycznych grafik (football.webp, basketball.webp), każda kategoria sportowa będzie miała dedykowany, atrakcyjny obraz wygenerowany przez AI, który będzie używany jako miniaturka postów na Facebooku.
 
-**Problemy:**
-- Tekst jest poprawny, ale dość generyczny
-- Brak kontekstu sportowego (wyniku, statystyk)
-- Emoji tylko na początku - mało dynamiczne
-- Format hashtagów podstawowy
+## Zmiany w bazie danych
 
----
+Dodanie nowej kolumny do tabeli `sport_categories`:
 
-## Propozycje ulepszeń
+| Kolumna | Typ | Opis |
+|---------|-----|------|
+| `social_image_url` | text | URL dużego obrazu do mediów społecznościowych |
 
-### 1. Lepszy prompt AI (najważniejsze)
+## Zmiany w edytorze kategorii
 
-Obecny prompt jest bardzo prosty (5 linijek). Stworzymy bardziej rozbudowany, z konkretnymi wytycznymi:
+W `CategoryEditor.tsx` dodanie nowej sekcji:
 
 ```text
-Jesteś doświadczonym copywriterem sportowym Szortsy.pl. 
-Tworzysz angażujące posty na Facebooka, które zatrzymują scroll.
-
-STRUKTURA POSTA (3 części):
-
-1. HOOK (1 linia) - Mocne otwarcie
-   - Zaskakująca statystyka lub fakt
-   - Prowokujące pytanie
-   - Emocjonalne stwierdzenie
-   - Emoji na początku pasujące do kategorii
-
-2. KONTEKST (2-3 linie)
-   - Rozwiń główną informację
-   - Dodaj szczegóły, które budują napięcie
-   - Użyj 1-2 dodatkowych emoji w tekście
-   - Pisz krótkimi zdaniami
-
-3. CTA (call-to-action)
-   - Zakończ pytaniem lub wezwaniem do dyskusji
-   - Przykłady: "A Wy co sądzicie?", "Kto wygra?"
-
-ZASADY:
-- Max 200 znaków (bez linku i hashtagów)
-- Unikaj clickbaitu, ale buduj ciekawość
-- Nie zaczynaj od tytułu artykułu
-- Używaj dynamicznych czasowników
+┌─────────────────────────────────────────────────┐
+│  🖼️ Obraz dla mediów społecznościowych         │
+├─────────────────────────────────────────────────┤
+│  [Podgląd aktualnego obrazu 1200x630]           │
+│                                                 │
+│  [ Generuj z AI ]  [ Prześlij własny ]          │
+│                                                 │
+│  Ten obraz będzie używany jako miniaturka       │
+│  postów na Facebooku bez własnego zdjęcia.      │
+└─────────────────────────────────────────────────┘
 ```
 
-### 2. Konfigurowalny prompt w Ustawieniach
+## Generator AI dla obrazów społecznościowych
 
-Analogicznie do innych promptów AI, dodamy możliwość edycji prompta dla postów FB w panelu Ustawienia.
-
-### 3. Więcej danych dla AI
-
-Obecnie AI dostaje tylko `title` i `excerpt`. Możemy przekazać więcej:
-- Pełną treść artykułu (content) - więcej kontekstu
-- Kategorię z pełną nazwą
-- Tagi jako kontekst tematyczny
-
-### 4. Ulepszone formatowanie
+Nowy generator w `CategoryEditor.tsx` z promptem zoptymalizowanym pod duże grafiki:
 
 ```text
-⚽ 19-letni Endrick vs 18-letni Gonzalo Garcia.
+Wygeneruj dynamiczną, profesjonalną ilustrację sportową dla kategorii [nazwa].
 
-Wojna młodych talentów w Realu Madryt trwa! 💥 
-Obaj chcą być zmiennikiem Mbappe. Kto ma lepsze szanse?
+STYL:
+- Żywe, nasycone kolory
+- Dynamiczna kompozycja z ruchem
+- Rozmiar 1200x630px (format OG dla Facebooka)
+- Bez tekstu, bez logo
+- Fotorealistyczny lub high-quality 3D render
 
-Co sądzicie - którego widzielibyście w pierwszej jedenastce? 🤔
-
-👉 Czytaj więcej: [link]
-
-#szortsy #RealMadryt #Endrick
+TEMATYKA dla [kategoria]:
+- Football: piłka w ruchu, stadion, dynamiczne ujęcie
+- Basketball: wsad, piłka przy obręczy
+- F1: bolid w akcji, tor wyścigowy
+- Tennis: serwis, kort
+- MMA: oktagon, dynamiczna poza
 ```
 
----
+## Aktualizacja Edge Function
 
-## Zmiany w plikach
+W `publish-to-social` zmiana priorytetu wyboru obrazu:
+
+```text
+1. post.image_url (własne zdjęcie posta)
+      ↓ jeśli brak
+2. category.social_image_url (obraz AI kategorii z bazy)
+      ↓ jeśli brak  
+3. categoryDefaultImages[slug] (statyczny fallback)
+```
+
+## Pliki do zmiany
 
 | Plik | Zmiana |
 |------|--------|
-| `src/pages/admin/Settings.tsx` | Dodanie sekcji "Prompt dla postów Facebook" |
-| `supabase/functions/publish-to-social/index.ts` | Pobieranie prompta z bazy + przekazywanie treści artykułu do AI |
-| Migracja SQL | Wstawienie domyślnego prompta do tabeli `settings` |
-
----
-
-## Nowy prompt (propozycja)
-
-```
-Jesteś copywriterem sportowym Szortsy.pl. Tworzysz angażujące posty na Facebooka.
-
-STRUKTURA:
-1. HOOK - mocne otwarcie z emoji {emoji_kategorii}, zaskakujący fakt lub pytanie
-2. KONTEKST - 2-3 krótkie zdania rozwijające temat, użyj 1-2 emoji
-3. CTA - zakończ pytaniem zachęcającym do dyskusji
-
-ZASADY:
-- Max 250 znaków (link i hashtagi zostaną dodane automatycznie)
-- Pisz krótko, dynamicznie, z energią
-- Unikaj clickbaitu, ale buduj ciekawość
-- Nie kopiuj tytułu dosłownie
-- Zakończ angażującym pytaniem
-
-Dane wejściowe: tytuł, opis, kategoria, treść artykułu
-```
-
----
+| Migracja SQL | Dodanie kolumny `social_image_url` |
+| `src/pages/admin/CategoryEditor.tsx` | Nowa sekcja z generatorem obrazów społecznościowych |
+| `supabase/functions/publish-to-social/index.ts` | Pobieranie `social_image_url` z kategorii, nowy priorytet wyboru obrazu |
 
 ## Korzyści
 
-- **Lepsza jakość** - rozbudowany prompt = bardziej przemyślane posty
-- **Elastyczność** - możesz modyfikować prompt bez zmian w kodzie
-- **Więcej kontekstu** - AI dostaje pełną treść, nie tylko tytuł
-- **Spójność** - taki sam wzorzec jak inne prompty AI w systemie
+- **Unikalne obrazy** - każda kategoria ma swój charakterystyczny, profesjonalny obraz
+- **Łatwa edycja** - możesz wygenerować nowy obraz lub przesłać własny
+- **Spójność wizualna** - wszystkie posty bez zdjęcia wyglądają profesjonalnie
+- **Optymalizacja pod FB** - rozmiar 1200x630px to idealny format dla Open Graph
 
