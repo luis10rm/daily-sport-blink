@@ -1,75 +1,101 @@
 
+# Animacja paska feedbacku
 
-# Naprawa problemu z obrazkiem dla "Podsumowania Dnia"
+## Cel
+Zwiększyć widoczność i zachęcić do interakcji, zachowując minimalistyczny, skandynawski styl serwisu.
 
-## Problem
+## Propozycje animacji
 
-Przy publikacji postów typu "Podsumowanie dnia" na Facebooka, Make.com zwraca błąd:
-> "Invalid URL in parameter 'url'"
+| Wariant | Opis | Zalety |
+|---------|------|--------|
+| **1. Pulse ikony** | Subtelne pulsowanie ikony MessageSquare | Delikatne, nie rozprasza |
+| **2. Shimmer bordera** | Delikatna "fala świetlna" przesuwająca się po ramce | Eleganckie, premium feel |
+| **3. Delayed fade-in** | Box pojawia się z opóźnieniem po załadowaniu strony | Przyciąga uwagę w odpowiednim momencie |
+| **4. Gradient border** | Animowany gradient na ramce (szmaragd → przezroczysty) | Nowoczesne, zgodne z brand |
 
-### Przyczyna
+## Rekomendacja
+
+**Wariant 4: Animowany gradient border** + **opóźniony fade-in**
+
+Kombinacja dwóch efektów:
+1. Box pojawia się z delikatnym opóźnieniem (~1.5s) po załadowaniu strony
+2. Ramka ma subtelny, animowany gradient szmaragdowy, który "przesuwa się" wzdłuż bordera
+
+Dlaczego ta kombinacja:
+- Opóźnienie sprawia, że użytkownik najpierw zobaczy treść, potem feedback box "pojawi się" przyciągając wzrok
+- Animowany gradient jest nowoczesny i pasuje do akcentu szmaragdowego
+- Efekt zatrzymuje się po kilku sekundach, by nie irytować
+
+---
+
+## Szczegóły techniczne
+
+### Zmiany w plikach
+
+**1. `tailwind.config.ts`** - dodanie nowych keyframes
+
+```typescript
+keyframes: {
+  // ... istniejące
+  "shimmer-border": {
+    "0%": { backgroundPosition: "200% 0" },
+    "100%": { backgroundPosition: "-200% 0" },
+  },
+  "delayed-fade-in": {
+    "0%, 50%": { opacity: "0", transform: "translateY(8px)" },
+    "100%": { opacity: "1", transform: "translateY(0)" },
+  },
+},
+animation: {
+  // ... istniejące
+  "shimmer-border": "shimmer-border 3s ease-in-out infinite",
+  "delayed-fade-in": "delayed-fade-in 2s ease-out forwards",
+}
+```
+
+**2. `src/components/FeedbackBox.tsx`** - zastosowanie animacji
+
+```tsx
+// Główny kontener z animacjami
+<div className={cn(
+  "relative flex items-start gap-3 rounded-lg px-4 py-3",
+  "bg-muted/50",
+  "animate-delayed-fade-in opacity-0",
+  // Gradient border effect
+  "before:absolute before:inset-0 before:rounded-lg before:p-[1px]",
+  "before:bg-gradient-to-r before:from-transparent before:via-primary/40 before:to-transparent",
+  "before:bg-[length:200%_100%] before:animate-shimmer-border",
+  "before:-z-10",
+  className
+)}>
+```
+
+### Alternatywna wersja (prostsza - tylko pulse ikony)
+
+Jeśli wolisz coś jeszcze subtelniejszego:
+
+```tsx
+<MessageSquare className="h-5 w-5 text-primary shrink-0 mt-0.5 animate-pulse" />
+```
+
+## Wizualizacja efektu
 
 ```text
-Post image_url:           /images/categories/daily-summary.webp  ← RELATYWNY!
-Kategoria slug:           podsumowanie-dnia
-Kategoria social_image_url: null
-Fallback mapa szuka:      categoryDefaultImages["podsumowanie-dnia"]  ← NIE ISTNIEJE
-
-Wynik wysłany do Make:    /images/categories/daily-summary.webp  ← NIEPRAWIDŁOWY URL
+┌─────────────────────────────────────────────────┐
+│  [po 1.5s] Box fade-in ↓                        │
+│                                                 │
+│  ╔═══════════════════════════════════════════╗  │
+│  ║ 💬  Czego Ci brakuje? Daj znać...  [Wyślij]║ │
+│  ╚═══════════════════════════════════════════╝  │
+│       ↑                                         │
+│  Szmaragdowy gradient przesuwa się → po ramce   │
+│  (3 sekundy pętla, subtelny efekt)              │
+└─────────────────────────────────────────────────┘
 ```
 
-Facebook wymaga pełnego URL zaczynającego się od `https://`.
+## Efekt końcowy
 
-## Rozwiązanie
-
-Naprawić logikę w funkcji Edge `publish-to-social`:
-
-1. **Dodać konwersję relatywnych URL na absolutne** - jeśli `post.image_url` zaczyna się od `/`, dodać domenę
-2. **Dodać klucz `podsumowanie-dnia`** do mapy `categoryDefaultImages` jako fallback
-
-## Zmiany w kodzie
-
-**Plik:** `supabase/functions/publish-to-social/index.ts`
-
-### Zmiana 1: Dodanie klucza do mapy fallbacków (linie 20-29)
-
-```typescript
-const categoryDefaultImages: Record<string, string> = {
-  football: "https://daily-sport-blink.lovable.app/images/categories/football.webp",
-  basketball: "https://daily-sport-blink.lovable.app/images/categories/basketball.webp",
-  tennis: "https://daily-sport-blink.lovable.app/images/categories/tennis.webp",
-  f1: "https://daily-sport-blink.lovable.app/images/categories/f1.webp",
-  mma: "https://daily-sport-blink.lovable.app/images/categories/mma.webp",
-  "daily-summary": "https://daily-sport-blink.lovable.app/images/categories/daily-summary.webp",
-  "podsumowanie-dnia": "https://daily-sport-blink.lovable.app/images/categories/daily-summary.webp",  // DODANE
-  other: "https://daily-sport-blink.lovable.app/images/categories/other.webp",
-};
-```
-
-### Zmiana 2: Konwersja relatywnych URL (linie 274-281)
-
-```typescript
-// Image priority: 1. post.image_url, 2. category.social_image_url, 3. static fallback
-let postImage = post.image_url;
-
-// Konwersja relatywnego URL na absolutny
-if (postImage && postImage.startsWith("/")) {
-  postImage = `https://daily-sport-blink.lovable.app${postImage}`;
-}
-
-if (!postImage && categoryInfo?.social_image_url) {
-  postImage = categoryInfo.social_image_url;
-}
-if (!postImage) {
-  postImage = categoryDefaultImages[categorySlugForImage] || categoryDefaultImages.other;
-}
-```
-
-## Efekt
-
-| Przed | Po |
-|-------|-----|
-| `/images/categories/daily-summary.webp` | `https://daily-sport-blink.lovable.app/images/categories/daily-summary.webp` |
-
-Make.com otrzyma prawidłowy, pełny URL który Facebook może pobrać.
-
+- Użytkownik scrolluje stronę
+- Po ~1.5s box feedbacku płynnie się pojawia
+- Ramka ma delikatny, pulsujący gradient szmaragdowy
+- Po kilku iteracjach animacja naturalnie się wycisza (lub można ją zatrzymać po X sekundach)
