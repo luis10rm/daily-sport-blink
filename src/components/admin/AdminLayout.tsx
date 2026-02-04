@@ -23,6 +23,7 @@ import {
   Wallpaper,
   UserPen,
   Menu,
+  MessageSquare,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -34,6 +35,7 @@ const navItems = [
   { href: "/admin/posts", label: "Posty", icon: FileText },
   { href: "/admin/banners", label: "Banery", icon: Megaphone },
   { href: "/admin/authors", label: "Autorzy", icon: UserPen },
+  { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },
   { href: "/admin/wallpapers", label: "Wallpapery", icon: Wallpaper, adminOnly: true },
   { href: "/admin/categories", label: "Kategorie", icon: FolderKanban, adminOnly: true },
   { href: "/admin/users", label: "Użytkownicy", icon: Users, adminOnly: true },

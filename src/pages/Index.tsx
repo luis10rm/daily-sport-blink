@@ -10,6 +10,7 @@ import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
 import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
+import { FeedbackBox } from "@/components/FeedbackBox";
 import { MultiSEO, getWebsiteSEO, getRichItemListSEO } from "@/components/SEO";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts";
@@ -94,9 +95,12 @@ const Index = () => {
         ) : newsOfTheDay && (
           <NewsOfTheDay 
             post={newsOfTheDay} 
-            className="mb-10" 
+            className="mb-8" 
           />
         )}
+
+        {/* Feedback Box */}
+        <FeedbackBox className="mb-10" />
 
         {/* Sponsor Banner - from database or placeholder */}
         {middleBanner ? (
