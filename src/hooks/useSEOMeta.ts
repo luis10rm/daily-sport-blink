@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 
 const SITE_URL = "https://szortsy.pl";
 const SITE_NAME = "Szortsy";
-const DEFAULT_DESCRIPTION = "Najważniejsze wiadomości ze świata sportu w 60 słowach. Piłka nożna, tenis, F1, MMA i więcej – krótko, codziennie.";
+const DEFAULT_DESCRIPTION = "Szortsy – najważniejsze wiadomości sportowe w 60 sekund. Piłka nożna, F1, tenis, MMA i więcej. Krótko, konkretnie, codziennie. Bądź na bieżąco!";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export interface SEOMetaOptions {
