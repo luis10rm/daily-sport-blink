@@ -25,6 +25,7 @@ import WallpapersList from "./pages/admin/WallpapersList";
 import WallpaperEditor from "./pages/admin/WallpaperEditor";
 import AuthorsList from "./pages/admin/AuthorsList";
 import AuthorEditor from "./pages/admin/AuthorEditor";
+import FeedbackList from "./pages/admin/FeedbackList";
 import AuthorProfile from "./pages/AuthorProfile";
 import AuthorsPage from "./pages/AuthorsPage";
 import Archive from "./pages/Archive";
@@ -199,6 +200,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AuthorEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/feedback"
+              element={
+                <ProtectedRoute>
+                  <FeedbackList />
                 </ProtectedRoute>
               }
             />
