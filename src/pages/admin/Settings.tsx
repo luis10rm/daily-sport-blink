@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useSetting, useUpdateSetting } from "@/hooks/useSettings";
 import { usePatronSettings, useUpdatePatronSettings, PatronSettings } from "@/hooks/usePatronSettings";
-import { Loader2, Save, RotateCcw, Star, X, Calendar } from "lucide-react";
+import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -155,6 +155,7 @@ const Settings = () => {
   const { data: promptValue, isLoading: isLoadingPrompt } = useSetting("article_extraction_prompt");
   const { data: contentPromptValue, isLoading: isLoadingContentPrompt } = useSetting("article_content_prompt");
   const { data: summaryPromptValue, isLoading: isLoadingSummaryPrompt } = useSetting("daily_summary_prompt");
+  const { data: makeWebhookValue, isLoading: isLoadingMakeWebhook } = useSetting("make_webhook_url");
   const { data: patronData, isLoading: isLoadingPatron } = usePatronSettings();
   const updateSetting = useUpdateSetting();
   const updatePatron = useUpdatePatronSettings();
@@ -170,6 +171,10 @@ const Settings = () => {
   // Summary prompt state
   const [localSummaryPrompt, setLocalSummaryPrompt] = useState("");
   const [hasSummaryPromptChanges, setHasSummaryPromptChanges] = useState(false);
+  
+  // Make webhook state
+  const [localMakeWebhook, setLocalMakeWebhook] = useState("");
+  const [hasMakeWebhookChanges, setHasMakeWebhookChanges] = useState(false);
   
   const [patronSettings, setPatronSettings] = useState<PatronSettings>(DEFAULT_PATRON);
   const [hasPatronChanges, setHasPatronChanges] = useState(false);
@@ -193,6 +198,12 @@ const Settings = () => {
   }, [summaryPromptValue]);
 
   useEffect(() => {
+    if (makeWebhookValue !== undefined) {
+      setLocalMakeWebhook(makeWebhookValue || "");
+    }
+  }, [makeWebhookValue]);
+
+  useEffect(() => {
     if (patronData) {
       setPatronSettings(patronData);
     }
@@ -209,6 +220,11 @@ const Settings = () => {
   useEffect(() => {
     setHasSummaryPromptChanges(localSummaryPrompt !== summaryPromptValue && localSummaryPrompt !== "");
   }, [localSummaryPrompt, summaryPromptValue]);
+
+  useEffect(() => {
+    const currentValue = makeWebhookValue || "";
+    setHasMakeWebhookChanges(localMakeWebhook !== currentValue);
+  }, [localMakeWebhook, makeWebhookValue]);
 
   useEffect(() => {
     if (patronData) {
@@ -250,6 +266,14 @@ const Settings = () => {
 
   const handleResetSummaryPrompt = () => {
     setLocalSummaryPrompt(DEFAULT_SUMMARY_PROMPT);
+  };
+
+  const handleSaveMakeWebhook = async () => {
+    await updateSetting.mutateAsync({
+      key: "make_webhook_url",
+      value: localMakeWebhook,
+    });
+    setHasMakeWebhookChanges(false);
   };
 
   const handleSavePatron = async () => {
@@ -458,6 +482,55 @@ const Settings = () => {
                       Przywróć domyślne
                     </Button>
                   </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Make Webhook Settings - Only for admins */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="h-5 w-5" />
+                Integracja z Make
+              </CardTitle>
+              <CardDescription>
+                Konfiguracja webhooka do automatycznej publikacji na social media
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isLoadingMakeWebhook ? (
+                <Skeleton className="h-10 w-full" />
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="make-webhook-url">URL Webhooka Make</Label>
+                    <Input
+                      id="make-webhook-url"
+                      type="url"
+                      value={localMakeWebhook}
+                      onChange={(e) => setLocalMakeWebhook(e.target.value)}
+                      placeholder="https://hook.eu1.make.com/..."
+                    />
+                    <p className="text-sm text-muted-foreground">
+                      Wklej URL webhooka z Make.com (Webhooks → Custom webhook)
+                    </p>
+                  </div>
+
+                  <Button
+                    onClick={handleSaveMakeWebhook}
+                    disabled={!hasMakeWebhookChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
                 </>
               )}
             </CardContent>

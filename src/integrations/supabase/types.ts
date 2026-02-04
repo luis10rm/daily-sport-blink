@@ -306,6 +306,53 @@ export type Database = {
         }
         Relationships: []
       }
+      social_posts: {
+        Row: {
+          caption: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          platform: string
+          post_id: string
+          published_at: string | null
+          scheduled_at: string | null
+          status: string
+          webhook_response: Json | null
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          platform?: string
+          post_id: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          webhook_response?: Json | null
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          platform?: string
+          post_id?: string
+          published_at?: string | null
+          scheduled_at?: string | null
+          status?: string
+          webhook_response?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sport_categories: {
         Row: {
           bg_color: string

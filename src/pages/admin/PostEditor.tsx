@@ -11,6 +11,7 @@ import { useExtractArticle } from "@/hooks/useSettings";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthors, useAuthorByUserId } from "@/hooks/useAuthors";
+import { useSocialPostsByPostId, usePublishToSocial } from "@/hooks/useSocialPosts";
 import { supabase } from "@/integrations/supabase/client";
 import { QuickCategoryDialog } from "@/components/admin/QuickCategoryDialog";
 import { Button } from "@/components/ui/button";
@@ -33,8 +34,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Save, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft, Save, Sparkles, Facebook, Send, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
@@ -96,9 +105,16 @@ const PostEditor = () => {
   const { data: sportCategories, isLoading: isLoadingCategories } = useSportCategories();
   const { data: authors } = useAuthors();
   const { data: currentUserAuthor } = useAuthorByUserId(user?.id || "");
+  const { data: socialPosts } = useSocialPostsByPostId(id || "");
   const createPost = useCreatePost();
   const updatePost = useUpdatePost();
   const extractArticle = useExtractArticle();
+  const publishToSocial = usePublishToSocial();
+
+  // Facebook publishing state
+  const [publishToFacebook, setPublishToFacebook] = useState(false);
+  const [customFacebookCaption, setCustomFacebookCaption] = useState("");
+  const [showFacebookDialog, setShowFacebookDialog] = useState(false);
 
   // Get current date/time formatted for datetime-local input
   const getCurrentDateTime = () => new Date().toISOString().slice(0, 16);
@@ -248,18 +264,57 @@ const PostEditor = () => {
       published_at: new Date(data.published_at).toISOString(),
     };
 
+    let savedPostId = id;
+
     if (isEditing && id) {
       await updatePost.mutateAsync({ id, ...postData });
     } else {
       const newPost = await createPost.mutateAsync({ ...postData, created_by: user?.id });
+      savedPostId = newPost?.id;
       
       // Notify Google about the new post (only for new posts, not edits)
       if (newPost?.slug) {
         notifyGoogleIndex(newPost.slug);
       }
     }
+
+    // Publish to Facebook if checkbox is checked
+    if (publishToFacebook && savedPostId) {
+      try {
+        await publishToSocial.mutateAsync({
+          post_id: savedPostId,
+          platform: "facebook",
+          custom_caption: customFacebookCaption || undefined,
+        });
+      } catch (error) {
+        // Error toast already shown by hook
+        console.error("Facebook publish failed:", error);
+      }
+    }
+
     navigate("/admin/posts");
   };
+
+  // Handle manual Facebook publish for existing posts
+  const handlePublishToFacebook = async () => {
+    if (!id) return;
+    
+    try {
+      await publishToSocial.mutateAsync({
+        post_id: id,
+        platform: "facebook",
+        custom_caption: customFacebookCaption || undefined,
+      });
+      setShowFacebookDialog(false);
+      setCustomFacebookCaption("");
+    } catch (error) {
+      console.error("Facebook publish failed:", error);
+    }
+  };
+
+  // Get latest Facebook publication status
+  const latestFacebookPost = socialPosts?.find(sp => sp.platform === "facebook");
+  const facebookPublishStatus = latestFacebookPost?.status;
 
   const isSubmitting = createPost.isPending || updatePost.isPending;
 
@@ -659,6 +714,88 @@ const PostEditor = () => {
                   </CardContent>
                 </Card>
 
+                {/* Facebook Publishing Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Facebook className="h-5 w-5 text-blue-600" />
+                      Publikuj na Facebook
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Show status for existing posts */}
+                    {isEditing && facebookPublishStatus && (
+                      <div className={`flex items-center gap-2 rounded-lg border p-3 text-sm ${
+                        facebookPublishStatus === "published" 
+                          ? "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400"
+                          : facebookPublishStatus === "failed"
+                          ? "border-destructive/30 bg-destructive/10 text-destructive"
+                          : "border-yellow-500/30 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+                      }`}>
+                        {facebookPublishStatus === "published" && <CheckCircle className="h-4 w-4" />}
+                        {facebookPublishStatus === "failed" && <XCircle className="h-4 w-4" />}
+                        {facebookPublishStatus === "pending" && <Clock className="h-4 w-4" />}
+                        <span>
+                          {facebookPublishStatus === "published" && "Opublikowano na Facebook"}
+                          {facebookPublishStatus === "failed" && "Publikacja nie powiodła się"}
+                          {facebookPublishStatus === "pending" && "Oczekuje na publikację"}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* New post: checkbox to publish with save */}
+                    {!isEditing && (
+                      <div className="flex items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-medium">Opublikuj przy zapisie</p>
+                          <p className="text-xs text-muted-foreground">
+                            Wyślij na Facebook po zapisaniu posta
+                          </p>
+                        </div>
+                        <Switch
+                          checked={publishToFacebook}
+                          onCheckedChange={setPublishToFacebook}
+                        />
+                      </div>
+                    )}
+
+                    {/* Caption input (shown when checkbox checked or for existing post) */}
+                    {(publishToFacebook || isEditing) && (
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Własny opis (opcjonalnie)</p>
+                        <Textarea
+                          value={customFacebookCaption}
+                          onChange={(e) => setCustomFacebookCaption(e.target.value)}
+                          placeholder="Zostaw puste, aby AI wygenerował opis automatycznie..."
+                          rows={3}
+                          className="text-sm"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Jeśli nie podasz własnego opisu, AI wygeneruje go automatycznie.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Manual publish button for existing posts */}
+                    {isEditing && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setShowFacebookDialog(true)}
+                        disabled={publishToSocial.isPending}
+                      >
+                        {publishToSocial.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="mr-2 h-4 w-4" />
+                        )}
+                        Wyślij na Facebook
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+
                 {Object.keys(form.formState.errors).length > 0 && (
                   <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive space-y-1 mb-4">
                     <p className="font-medium">Popraw błędy przed zapisaniem:</p>
@@ -684,6 +821,53 @@ const PostEditor = () => {
             </div>
           </form>
         </Form>
+
+        {/* Facebook Confirmation Dialog */}
+        <Dialog open={showFacebookDialog} onOpenChange={setShowFacebookDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Facebook className="h-5 w-5 text-blue-600" />
+                Wyślij na Facebook
+              </DialogTitle>
+              <DialogDescription>
+                {customFacebookCaption 
+                  ? "Post zostanie wysłany z Twoim własnym opisem."
+                  : "AI wygeneruje automatycznie angażujący opis posta."}
+              </DialogDescription>
+            </DialogHeader>
+            
+            {customFacebookCaption && (
+              <div className="rounded-lg border bg-muted/50 p-3">
+                <p className="text-sm font-medium mb-1">Twój opis:</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {customFacebookCaption}
+                </p>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowFacebookDialog(false)}
+              >
+                Anuluj
+              </Button>
+              <Button
+                onClick={handlePublishToFacebook}
+                disabled={publishToSocial.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {publishToSocial.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                Wyślij
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );

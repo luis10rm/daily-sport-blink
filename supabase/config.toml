@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.regenerate-sitemap]
 verify_jwt = false
+
+[functions.publish-to-social]
+verify_jwt = false
