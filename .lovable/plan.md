@@ -1,49 +1,57 @@
 
-# Naprawa Drag & Drop kategorii
 
-## Problem
-Niezgodność wersji bibliotek `@dnd-kit`:
-- `@dnd-kit/sortable`: `^10.0.0` (nowa architektura)
-- `@dnd-kit/core`: `^6.3.1` (stara architektura)
+# Generowanie logo Szortsy w wysokiej jakości
 
-Wersja 10.x `@dnd-kit/sortable` wymaga nowego pakietu `@dnd-kit/react` i ma całkowicie inne API. Obecny kod używa starego API, które nie działa z wersją 10.x.
+## Co zrobimy
 
-## Rozwiązanie (rekomendowane)
+Stworzymy backend function, która wygeneruje nowe logo Szortsy w wysokiej jakości przy użyciu modelu AI do generowania obrazów (`google/gemini-3-pro-image-preview` -- lepsza jakość). Wygenerowane logo zostanie zapisane w storage i podmienione w projekcie.
 
-**Downgrade `@dnd-kit/sortable` do wersji 9.x** - kompatybilnej z `@dnd-kit/core` 6.x.
+## Obecne logo
 
-To najprostsza opcja, ponieważ kod jest już napisany pod stare API.
+Aktualne `logo-seo.png` (512x512) przedstawia zielone "S" i napis "Szortsy" na białym tle. Wygląda na wygenerowane w niskiej jakości (rozmyte krawędzie, brak precyzji).
 
-## Zmiany
+## Plan
 
-### 1. Aktualizacja `package.json`
+### 1. Utworzenie edge function `generate-logo`
 
-Zmiana wersji:
-```json
-"@dnd-kit/sortable": "^9.0.0"
-```
+Funkcja wywoła model `google/gemini-3-pro-image-preview` z promptem opisującym logo Szortsy:
+- Duża, dynamiczna litera **"S"** w kolorze szmaragdowym (#10b981)
+- Pod nią tekst **"Szortsy"** w czystej, pogrubionej czcionce sans-serif
+- Białe tło, minimalistyczny styl
+- Rozdzielczość optymalizowana pod 512x512px
+- Styl profesjonalny, czysty, nowoczesny
 
-zamiast:
-```json
-"@dnd-kit/sortable": "^10.0.0"
-```
+Wygenerowany obraz zostanie zwrócony jako base64.
 
-### 2. Bez zmian w kodzie
+### 2. Tymczasowa strona admina do generowania
 
-Obecny kod w `CategoriesList.tsx` jest poprawny dla wersji 9.x:
-- `DndContext`, `useSortable`, `SortableContext` - wszystko zgodne
-- `CSS.Transform.toString()` - działa
-- `verticalListSortingStrategy` - działa
+Dodam przycisk w panelu admina (np. w Settings), który:
+- Wywołuje edge function
+- Wyświetla podgląd wygenerowanego logo
+- Pozwala wygenerować ponownie, jeśli efekt nie jest zadowalający
+- Po akceptacji zapisuje plik do storage
 
-## Efekt
+### 3. Zapisanie logo
 
-Po zmianie wersji drag & drop będzie działać prawidłowo - przeciąganie wierszy w tabeli kategorii będzie możliwe.
+Po akceptacji logo zostanie:
+- Przesłane do storage (bucket `post-images` lub dedykowany)
+- Można je pobrać i ręcznie podmienić plik `public/logo-seo.png`
 
-## Alternatywa (większy nakład pracy)
+## Szczegóły techniczne
 
-Migracja do nowego API `@dnd-kit/react` + `@dnd-kit/helpers`:
-- Wymiana wszystkich importów
-- Przepisanie komponentów na nowe hooki
-- Znacznie więcej zmian w kodzie
+### Edge function: `supabase/functions/generate-logo/index.ts`
+- Autoryzacja: tylko admin
+- Model: `google/gemini-3-pro-image-preview` (wyższa jakość)
+- Prompt zoptymalizowany pod profesjonalne logo sportowe
+- Zwraca base64 obrazu
 
-Nie rekomenduję tej opcji, chyba że potrzebujesz konkretnych funkcji z wersji 10.x.
+### Komponent w Settings
+- Przycisk "Generuj logo AI"
+- Podgląd wygenerowanego logo
+- Przyciski: "Użyj tego logo" / "Generuj ponownie"
+- Zapis do storage po akceptacji
+
+### Pliki do utworzenia/edycji
+1. `supabase/functions/generate-logo/index.ts` -- nowa edge function
+2. `src/pages/admin/Settings.tsx` -- dodanie sekcji generowania logo
+
