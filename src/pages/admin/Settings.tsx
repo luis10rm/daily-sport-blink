@@ -13,6 +13,7 @@ import { usePatronSettings, useUpdatePatronSettings, PatronSettings } from "@/ho
 import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2, Facebook } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { LogoGenerator } from "@/components/admin/LogoGenerator";
 
 const DEFAULT_EXTRACTION_PROMPT = `Jesteś asystentem redakcji sportowej Daily Sport Blink. Na podstawie podanego artykułu wygeneruj dane do publikacji.
 
@@ -351,6 +352,9 @@ const Settings = () => {
             Zarządzaj ustawieniami aplikacji
           </p>
         </div>
+
+        {/* Logo Generator - Only for admins */}
+        {isAdmin && <LogoGenerator />}
 
         {/* Patron Bar Settings - Only for admins */}
         {isAdmin && (
