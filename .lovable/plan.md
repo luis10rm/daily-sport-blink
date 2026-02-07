@@ -1,57 +1,65 @@
 
 
-# Generowanie logo Szortsy w wysokiej jakości
+# Audyt i naprawa śledzenia GA4
 
-## Co zrobimy
+## Problem
+GA4 przestał rejestrować ruch od ~2 lutego, mimo że realna liczba odwiedzin rośnie (potwierdzone przez wbudowaną analitykę: 239 visitors 6 lutego). To oznacza problem z implementacją trackingu, nie ze spadkiem ruchu.
 
-Stworzymy backend function, która wygeneruje nowe logo Szortsy w wysokiej jakości przy użyciu modelu AI do generowania obrazów (`google/gemini-3-pro-image-preview` -- lepsza jakość). Wygenerowane logo zostanie zapisane w storage i podmienione w projekcie.
+## Przyczyna (najprawdopodobniej)
+Podwójne wysyłanie zdarzeń `page_view`:
+1. `gtag('config', 'G-T27C4HS75K')` w `index.html` automatycznie wysyla page_view
+2. Hook `useAnalytics` wysyla DRUGI page_view przy kazdej nawigacji
 
-## Obecne logo
+GA4 moze to interpretowac jako anomalie i filtrowac dane.
 
-Aktualne `logo-seo.png` (512x512) przedstawia zielone "S" i napis "Szortsy" na białym tle. Wygląda na wygenerowane w niskiej jakości (rozmyte krawędzie, brak precyzji).
+## Zmiany
 
-## Plan
+### 1. Naprawa podwojnego page_view w `index.html`
 
-### 1. Utworzenie edge function `generate-logo`
+Dodanie `send_page_view: false` do konfiguracji GA4, aby wylaczyc automatyczny page_view (bo SPA hook go obsluguje):
 
-Funkcja wywoła model `google/gemini-3-pro-image-preview` z promptem opisującym logo Szortsy:
-- Duża, dynamiczna litera **"S"** w kolorze szmaragdowym (#10b981)
-- Pod nią tekst **"Szortsy"** w czystej, pogrubionej czcionce sans-serif
-- Białe tło, minimalistyczny styl
-- Rozdzielczość optymalizowana pod 512x512px
-- Styl profesjonalny, czysty, nowoczesny
+```javascript
+gtag('config', 'G-T27C4HS75K', { send_page_view: false });
+```
 
-Wygenerowany obraz zostanie zwrócony jako base64.
+### 2. Dodanie debugowania GA4 w `useAnalytics.ts`
 
-### 2. Tymczasowa strona admina do generowania
+Dodanie logowania w trybie development, aby mozna bylo potwierdzic, ze eventy sa wysylane:
 
-Dodam przycisk w panelu admina (np. w Settings), który:
-- Wywołuje edge function
-- Wyświetla podgląd wygenerowanego logo
-- Pozwala wygenerować ponownie, jeśli efekt nie jest zadowalający
-- Po akceptacji zapisuje plik do storage
+```typescript
+useEffect(() => {
+  if (typeof window.gtag === 'function') {
+    window.gtag('event', 'page_view', {
+      page_path: location.pathname + location.search,
+      page_title: document.title,
+    });
+    
+    if (import.meta.env.DEV) {
+      console.log('[GA4] page_view:', location.pathname);
+    }
+  } else if (import.meta.env.DEV) {
+    console.warn('[GA4] gtag not loaded');
+  }
+}, [location]);
+```
 
-### 3. Zapisanie logo
+### 3. Dodanie GA4 Debug panel w admin Dashboard
 
-Po akceptacji logo zostanie:
-- Przesłane do storage (bucket `post-images` lub dedykowany)
-- Można je pobrać i ręcznie podmienić plik `public/logo-seo.png`
+Mala sekcja w Dashboard, ktora pokazuje:
+- Czy `window.gtag` jest dostepny
+- Ile page_view eventow zostalo wyslanych w biezacej sesji
+- Ostatni wyslany event
 
-## Szczegóły techniczne
+To pozwoli adminowi szybko zweryfikowac, ze GA4 dziala poprawnie bez otwierania GA4 dashboardu.
 
-### Edge function: `supabase/functions/generate-logo/index.ts`
-- Autoryzacja: tylko admin
-- Model: `google/gemini-3-pro-image-preview` (wyższa jakość)
-- Prompt zoptymalizowany pod profesjonalne logo sportowe
-- Zwraca base64 obrazu
+## Pliki do zmiany
+1. `index.html` -- dodanie `send_page_view: false`
+2. `src/hooks/useAnalytics.ts` -- dodanie debug logowania
+3. `src/pages/admin/Dashboard.tsx` -- dodanie sekcji GA4 debug (opcjonalnie)
 
-### Komponent w Settings
-- Przycisk "Generuj logo AI"
-- Podgląd wygenerowanego logo
-- Przyciski: "Użyj tego logo" / "Generuj ponownie"
-- Zapis do storage po akceptacji
-
-### Pliki do utworzenia/edycji
-1. `supabase/functions/generate-logo/index.ts` -- nowa edge function
-2. `src/pages/admin/Settings.tsx` -- dodanie sekcji generowania logo
+## Po wdrozeniu - weryfikacja
+1. Otworz strone w trybie incognito
+2. Sprawdz w konsoli przegladarki czy `[GA4] page_view` sie loguje
+3. W GA4 Real-Time sprawdz czy uzytkownicy sa widoczni
+4. Porownaj dane Lovable Analytics vs GA4 przez nastepne 24h
 
