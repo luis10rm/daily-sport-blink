@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FileText, Eye, Star, TrendingUp, CalendarIcon, Sparkles, Loader2 } from "lucide-react";
+import { GA4DebugPanel } from "@/components/admin/GA4DebugPanel";
 import { format, isToday, isThisWeek, isThisMonth, isSameDay } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,6 +112,9 @@ const Dashboard = () => {
             </Card>
           ))}
         </div>
+
+        {/* GA4 Debug */}
+        <GA4DebugPanel />
 
         {/* Daily Summary Generator */}
         <Card>
