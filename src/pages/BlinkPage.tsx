@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ExternalLink, Calendar, Tag, ArrowLeft } from "lucide-react";
+import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { Header } from "@/components/Header";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 import { Footer } from "@/components/Footer";
+import { isOlympicCategory } from "@/lib/olympicTheme";
 
 // Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string): string => {
@@ -150,13 +151,15 @@ const BlinkPage = () => {
     },
   };
 
+  const isOlympic = isOlympicCategory(post.sport_category?.slug);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <SEO {...newsArticleSchema} />
       
       <main className="container mx-auto px-4 py-8">
-        <article className="max-w-3xl mx-auto">
+        <article className={cn("max-w-3xl mx-auto", isOlympic && "relative")}>
           {/* Back button */}
           <Link 
             to="/" 
@@ -165,6 +168,14 @@ const BlinkPage = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Powrót do strony głównej
           </Link>
+
+          {/* Olympic winter banner */}
+          {isOlympic && (
+            <div className="flex items-center gap-2 rounded-lg border border-sky-300/40 bg-sky-50/50 dark:border-sky-600/30 dark:bg-sky-900/20 px-4 py-2.5 mb-6">
+              <Snowflake className="h-4 w-4 text-sky-500 dark:text-sky-400" />
+              <span className="text-sm font-medium text-sky-700 dark:text-sky-300">Igrzyska Olimpijskie</span>
+            </div>
+          )}
 
           {/* Category and date */}
           <div className="flex items-center justify-between gap-4 mb-4">
@@ -189,7 +200,10 @@ const BlinkPage = () => {
           </h1>
 
           {/* Featured image */}
-          <div className="relative aspect-video w-full overflow-hidden rounded-xl mb-6">
+          <div className={cn(
+            "relative aspect-video w-full overflow-hidden rounded-xl mb-6",
+            isOlympic && "olympic-frost-overlay"
+          )}>
             <img
               src={getCategoryImage(post.sport_category?.slug, post.image_url, post.sport_category?.slug)}
               alt={post.title}

@@ -124,6 +124,48 @@
   .card-hover:hover {
     @apply -translate-y-1 shadow-lg;
   }
+
+  /* Olympic Winter Theme */
+  .olympic-card {
+    border-image: linear-gradient(135deg, hsl(200 80% 70%), hsl(220 70% 80%), hsl(200 80% 70%)) 1;
+    border-width: 2px;
+    position: relative;
+  }
+
+  .olympic-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(180deg, hsl(200 80% 90% / 0.08) 0%, transparent 40%);
+    border-radius: inherit;
+  }
+
+  .olympic-frost-overlay {
+    position: relative;
+  }
+
+  .olympic-frost-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, hsl(210 60% 95% / 0.15) 0%, transparent 50%);
+    border-radius: inherit;
+  }
+
+  .dark .olympic-card {
+    border-image: linear-gradient(135deg, hsl(200 60% 40%), hsl(220 50% 50%), hsl(200 60% 40%)) 1;
+  }
+
+  .dark .olympic-card::before {
+    background: linear-gradient(180deg, hsl(200 60% 40% / 0.1) 0%, transparent 40%);
+  }
+
+  .dark .olympic-frost-overlay::after {
+    background: linear-gradient(180deg, hsl(210 40% 30% / 0.2) 0%, transparent 50%);
+  }
 }
 
 @layer utilities {
