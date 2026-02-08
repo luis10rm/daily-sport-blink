@@ -1,19 +1,26 @@
 
 
-# Zamiana tagu GA4
+# Przycisk Facebook widoczny na mobile
 
 ## Problem
-Na stronie jest stary tag `G-T27C4HS75K`, a powinien byc `G-F9QDLPXFGG`.
+Karta "Publikuj na Facebook" jest w panelu bocznym (prawa kolumna). Na mobile caly layout zamienia sie w jedna kolumne i karta Facebook laduje na samym dole strony -- trzeba dlugo scrollowac, zeby ja znalezc.
+
+## Rozwiazanie
+Dodamy przycisk "Wyslij na Facebook" rowniez w gornej czesci formularza (widoczny na mobile), tak zeby byl latwo dostepny bez scrollowania.
 
 ## Zmiany
 
-### 1. `index.html`
-Zamiana identyfikatora w dwoch miejscach:
-- URL skryptu: `googletagmanager.com/gtag/js?id=G-F9QDLPXFGG`
-- Konfiguracja: `gtag('config', 'G-F9QDLPXFGG', { send_page_view: false })`
+### `src/pages/admin/PostEditor.tsx`
 
-### 2. Bez zmian w kodzie aplikacji
-Hook `useAnalytics.ts` nie zawiera identyfikatora GA4 -- uzywa globalnej funkcji `gtag()`, wiec dziala niezaleznie od ID.
+1. **Dodanie mobilnego przycisku FB** nad formularzem (obok przycisku "Zapisz" lub w sekcji "Generuj AI"), widocznego tylko na mobile (`lg:hidden`):
+   - Dla istniejacych postow: przycisk "Wyslij na Facebook" otwierajacy dialog
+   - Dla nowych postow: switch "Opublikuj przy zapisie"
 
-## Pliki do zmiany
-1. `index.html` -- zamiana `G-T27C4HS75K` na `G-F9QDLPXFGG` (2 miejsca)
+2. Karta Facebook w sidebarze pozostanie bez zmian (widoczna na desktop).
+
+Dzieki temu na mobile przycisk bedzie widoczny od razu po otwarciu edytora posta, a na desktop nic sie nie zmieni.
+
+### Szczegoly implementacji
+- Nowy blok z klasa `lg:hidden` umieszczony tuz pod sekcja "Generuj AI" (linia ~483)
+- Zawiera ten sam przycisk i logike co karta w sidebarze
+- Karta w sidebarze dostanie klase `hidden lg:block` aby uniknac duplikacji na desktop
