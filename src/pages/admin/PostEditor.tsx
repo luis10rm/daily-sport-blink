@@ -482,6 +482,39 @@ const PostEditor = () => {
               </CardContent>
             </Card>
 
+            {/* Mobile-only Facebook button */}
+            <div className="lg:hidden">
+              <Card>
+                <CardContent className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-2">
+                    <Facebook className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm font-medium">Facebook</span>
+                  </div>
+                  {isEditing ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowFacebookDialog(true)}
+                      disabled={publishToSocial.isPending}
+                    >
+                      {publishToSocial.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="mr-2 h-4 w-4" />
+                      )}
+                      Wyślij
+                    </Button>
+                  ) : (
+                    <Switch
+                      checked={publishToFacebook}
+                      onCheckedChange={setPublishToFacebook}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="grid gap-6 lg:grid-cols-3">
               {/* Main content */}
               <div className="space-y-6 lg:col-span-2">
@@ -714,8 +747,8 @@ const PostEditor = () => {
                   </CardContent>
                 </Card>
 
-                {/* Facebook Publishing Card */}
-                <Card>
+            {/* Facebook Publishing Card - hidden on mobile, shown on desktop */}
+                <Card className="hidden lg:block">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Facebook className="h-5 w-5 text-blue-600" />
