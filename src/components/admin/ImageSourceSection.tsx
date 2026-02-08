@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { categoryDefaultImages } from "@/config/categoryImages";
-import { Upload, Link as LinkIcon } from "lucide-react";
+import { Upload, Link as LinkIcon, Sparkles, Loader2 } from "lucide-react";
+import { useGenerateArticleImage } from "@/hooks/useSettings";
 
 interface ImageSourceSectionProps {
   form: UseFormReturn<any>;
@@ -18,6 +20,7 @@ export const ImageSourceSection = ({ form, category }: ImageSourceSectionProps) 
   const currentImageUrl = form.watch("image_url");
   const [useCustomImage, setUseCustomImage] = useState(!!currentImageUrl);
   const [activeTab, setActiveTab] = useState<"upload" | "url">("upload");
+  const generateImage = useGenerateArticleImage();
 
   const defaultImage = (category && categoryDefaultImages[category as keyof typeof categoryDefaultImages]) || categoryDefaultImages.other;
 
@@ -34,6 +37,27 @@ export const ImageSourceSection = ({ form, category }: ImageSourceSectionProps) 
 
   const handleRemoveImage = () => {
     form.setValue("image_url", "");
+  };
+
+  const handleGenerateAI = async () => {
+    const title = form.getValues("title");
+    const excerpt = form.getValues("excerpt");
+
+    if (!title) {
+      return;
+    }
+
+    try {
+      const result = await generateImage.mutateAsync({
+        title,
+        excerpt,
+        category,
+      });
+      setUseCustomImage(true);
+      form.setValue("image_url", result.image_url);
+    } catch {
+      // Error handled by hook
+    }
   };
 
   return (
@@ -58,6 +82,32 @@ export const ImageSourceSection = ({ form, category }: ImageSourceSectionProps) 
             </div>
           </div>
         </div>
+
+        {/* AI Image Generation */}
+        <Button
+          type="button"
+          variant="secondary"
+          className="w-full"
+          onClick={handleGenerateAI}
+          disabled={generateImage.isPending || !form.getValues("title")}
+        >
+          {generateImage.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generowanie grafiki AI...
+            </>
+          ) : (
+            <>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Wygeneruj grafikę AI
+            </>
+          )}
+        </Button>
+        {generateImage.isPending && (
+          <p className="text-xs text-muted-foreground text-center">
+            To może potrwać kilka sekund...
+          </p>
+        )}
 
         {/* Toggle for custom image */}
         <div className="flex items-center justify-between rounded-lg border p-3">
