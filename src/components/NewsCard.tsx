@@ -1,11 +1,12 @@
 import { forwardRef } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Sparkles } from "lucide-react";
+import { ExternalLink, Sparkles, Snowflake } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { getPostImage } from "@/config/categoryImages";
 import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
+import { isOlympicCategory } from "@/lib/olympicTheme";
 
 interface NewsCardProps {
   id: string;
@@ -64,6 +65,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
     // Determine if this post has AI-generated content (link to /blink/:slug)
     const hasContent = Boolean(content);
     const blinkUrl = `/blink/${slug}`;
+    const isOlympic = isOlympicCategory(sportCategory?.slug || categorySlug);
     
     const formattedDate = new Date(publishedAt).toLocaleDateString("pl-PL", {
       day: "numeric",
@@ -78,6 +80,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           "group relative flex flex-col overflow-hidden rounded-xl border bg-card card-hover",
           !disableAnimation && "opacity-0 animate-fade-in",
           isSponsored ? "border-primary/30 ring-1 ring-primary/20" : "border-border",
+          isOlympic && "olympic-card",
           className
         )}
         style={!disableAnimation ? { animationDelay: `${delay}ms` } : undefined}
@@ -90,8 +93,19 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           </div>
         )}
 
+        {/* Olympic badge */}
+        {isOlympic && (
+          <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-sky-500/90 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            <Snowflake className="h-3 w-3" />
+            Olimpijskie
+          </div>
+        )}
+
         {/* Image area */}
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
+        <div className={cn(
+          "relative aspect-[16/9] w-full overflow-hidden bg-muted",
+          isOlympic && "olympic-frost-overlay"
+        )}>
           <img
             src={getPostImage({
               image_url: imageUrl,
