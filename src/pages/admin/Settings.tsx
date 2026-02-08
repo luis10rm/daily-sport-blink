@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useSetting, useUpdateSetting } from "@/hooks/useSettings";
 import { usePatronSettings, useUpdatePatronSettings, PatronSettings } from "@/hooks/usePatronSettings";
-import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2, Facebook } from "lucide-react";
+import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2, Facebook, Image } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { LogoGenerator } from "@/components/admin/LogoGenerator";
@@ -77,6 +77,25 @@ Odpowiedz w formacie JSON:
   "content": "<p>Wprowadzenie...</p><h2>Piłka nożna</h2><p>Treść...</p>...",
   "suggested_tags": ["tag1", "tag2", "podsumowanie dnia"]
 }`;
+
+const DEFAULT_IMAGE_PROMPT = `Stwórz atrakcyjną, profesjonalną grafikę do artykułu sportowego.
+
+KONTEKST ARTYKUŁU:
+- Tytuł: {title}
+- Kategoria: {category}
+- Opis: {excerpt}
+
+ZASADY:
+1. Grafika musi być wizualnie dynamiczna i przyciągająca wzrok
+2. Styl: profesjonalna fotografia sportowa lub kinowy kadr filmowy
+3. Żywe, nasycone kolory z dramatycznym, kinowym oświetleniem
+4. Kompozycja dynamiczna z poczuciem ruchu i akcji sportowej
+5. Format 16:9, idealna jako miniaturka artykułu w serwisie informacyjnym
+6. BEZ tekstu, napisów, logotypów, znaków wodnych ani osób z twarzami
+7. Tematycznie ściśle dopasowana do treści i kontekstu artykułu
+8. Wysoka jakość, fotorealistyczna lub wysokiej jakości render 3D
+9. Użyj symbolicznych elementów sportu (piłki, rakiety, samochody wyścigowe itp.) pasujących do kategorii
+10. Tło powinno budować atmosferę - stadion, kort, tor wyścigowy lub abstrakcyjne dynamiczne tło`;
 
 const DEFAULT_FACEBOOK_PROMPT = `Jesteś copywriterem sportowym Szortsy.pl. Tworzysz angażujące posty na Facebooka.
 
@@ -180,6 +199,7 @@ const Settings = () => {
   const { data: contentPromptValue, isLoading: isLoadingContentPrompt } = useSetting("article_content_prompt");
   const { data: summaryPromptValue, isLoading: isLoadingSummaryPrompt } = useSetting("daily_summary_prompt");
   const { data: facebookPromptValue, isLoading: isLoadingFacebookPrompt } = useSetting("facebook_post_prompt");
+  const { data: imagePromptValue, isLoading: isLoadingImagePrompt } = useSetting("article_image_prompt");
   const { data: makeWebhookValue, isLoading: isLoadingMakeWebhook } = useSetting("make_webhook_url");
   const { data: patronData, isLoading: isLoadingPatron } = usePatronSettings();
   const updateSetting = useUpdateSetting();
@@ -200,6 +220,10 @@ const Settings = () => {
   // Facebook prompt state
   const [localFacebookPrompt, setLocalFacebookPrompt] = useState("");
   const [hasFacebookPromptChanges, setHasFacebookPromptChanges] = useState(false);
+  
+  // Image prompt state
+  const [localImagePrompt, setLocalImagePrompt] = useState("");
+  const [hasImagePromptChanges, setHasImagePromptChanges] = useState(false);
   
   // Make webhook state
   const [localMakeWebhook, setLocalMakeWebhook] = useState("");
@@ -233,6 +257,12 @@ const Settings = () => {
   }, [facebookPromptValue]);
 
   useEffect(() => {
+    if (imagePromptValue) {
+      setLocalImagePrompt(imagePromptValue);
+    }
+  }, [imagePromptValue]);
+
+  useEffect(() => {
     if (makeWebhookValue !== undefined) {
       setLocalMakeWebhook(makeWebhookValue || "");
     }
@@ -259,6 +289,10 @@ const Settings = () => {
   useEffect(() => {
     setHasFacebookPromptChanges(localFacebookPrompt !== facebookPromptValue && localFacebookPrompt !== "");
   }, [localFacebookPrompt, facebookPromptValue]);
+
+  useEffect(() => {
+    setHasImagePromptChanges(localImagePrompt !== imagePromptValue && localImagePrompt !== "");
+  }, [localImagePrompt, imagePromptValue]);
 
   useEffect(() => {
     const currentValue = makeWebhookValue || "";
@@ -317,6 +351,17 @@ const Settings = () => {
 
   const handleResetFacebookPrompt = () => {
     setLocalFacebookPrompt(DEFAULT_FACEBOOK_PROMPT);
+  };
+  const handleSaveImagePrompt = async () => {
+    await updateSetting.mutateAsync({
+      key: "article_image_prompt",
+      value: localImagePrompt,
+    });
+    setHasImagePromptChanges(false);
+  };
+
+  const handleResetImagePrompt = () => {
+    setLocalImagePrompt(DEFAULT_IMAGE_PROMPT);
   };
 
   const handleSaveMakeWebhook = async () => {
@@ -773,6 +818,53 @@ const Settings = () => {
                   <Button 
                     variant="outline" 
                     onClick={handleResetFacebookPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
+              </div>
+
+              {/* Article Image Prompt */}
+              <div className="space-y-2 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Image className="h-4 w-4 text-muted-foreground" />
+                  <Label htmlFor="image-prompt">Prompt generowania grafik AI</Label>
+                </div>
+                {isLoadingImagePrompt ? (
+                  <Skeleton className="h-48 w-full" />
+                ) : (
+                  <Textarea
+                    id="image-prompt"
+                    value={localImagePrompt}
+                    onChange={(e) => setLocalImagePrompt(e.target.value)}
+                    rows={12}
+                    className="font-mono text-sm"
+                    placeholder="Wprowadź prompt do generowania grafik artykułów..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Prompt używany do generowania grafik AI w edytorze postów. 
+                  Dostępne zmienne: {"{title}"}, {"{category}"}, {"{excerpt}"}.
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSaveImagePrompt} 
+                    disabled={!hasImagePromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleResetImagePrompt}
                     disabled={updateSetting.isPending}
                     size="sm"
                   >

@@ -103,6 +103,42 @@ export interface DailySummaryResult {
   date: string;
 }
 
+export const useGenerateArticleImage = () => {
+  return useMutation({
+    mutationFn: async ({
+      title,
+      excerpt,
+      category,
+    }: {
+      title: string;
+      excerpt?: string;
+      category?: string;
+    }): Promise<{ image_url: string }> => {
+      const { data, error } = await supabase.functions.invoke("generate-article-image", {
+        body: { title, excerpt, category },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      return data as { image_url: string };
+    },
+    onError: (error) => {
+      console.error("Error generating article image:", error);
+      if (error.message.includes("wiele zapytań") || error.message.includes("Rate limit")) {
+        toast.error("Zbyt wiele zapytań AI. Spróbuj ponownie za chwilę.");
+      } else if (error.message.includes("kredytów") || error.message.includes("credits")) {
+        toast.error("Brak kredytów AI. Doładuj konto.");
+      } else {
+        toast.error("Nie udało się wygenerować grafiki");
+      }
+    },
+    onSuccess: () => {
+      toast.success("Grafika AI wygenerowana!");
+    },
+  });
+};
+
 export const useGenerateDailySummary = () => {
   return useMutation({
     mutationFn: async (date: Date): Promise<DailySummaryResult> => {
