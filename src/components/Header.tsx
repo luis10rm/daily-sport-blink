@@ -1,8 +1,10 @@
-import { Archive, ChevronDown, Newspaper, Users } from "lucide-react";
+import { Archive, ChevronDown, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { ThemeToggle } from "./ThemeToggle";
+import logoIcon from "@/assets/logo-icon.png";
+import logoText from "@/assets/logo-text.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,12 +27,10 @@ export const Header = () => {
       <header className="border-b border-border bg-card/95 md:bg-card/50 md:backdrop-blur-sm sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Newspaper className="h-5 w-5" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+            <img src={logoIcon} alt="Szortsy logo" className="h-6 w-6" />
           </div>
-          <span className="font-heading text-xl font-bold tracking-tight text-foreground">
-            Szortsy
-          </span>
+          <img src={logoText} alt="Szortsy" className="h-5 w-auto dark:invert-0 invert" />
           <span className="text-sm text-muted-foreground hidden sm:block">
             O sporcie: krótko, codziennie
           </span>
