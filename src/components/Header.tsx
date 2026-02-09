@@ -27,10 +27,10 @@ export const Header = () => {
       <header className="border-b border-border bg-card/95 md:bg-card/50 md:backdrop-blur-sm sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <img src={logoIcon} alt="Szortsy logo" className="h-6 w-6" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+            <img src={logoIcon} alt="Szortsy logo" className="h-7 w-7" />
           </div>
-          <img src={logoText} alt="Szortsy" className="h-5 w-auto dark:invert-0 invert" />
+          <img src={logoText} alt="Szortsy" className="h-7 w-auto dark:invert-0 invert" />
           <span className="text-sm text-muted-foreground hidden sm:block">
             O sporcie: krótko, codziennie
           </span>
