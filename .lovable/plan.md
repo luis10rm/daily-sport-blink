@@ -1,23 +1,12 @@
 
+# Poprawka rozmiaru logo w headerze
 
-# Podmiana logo w naglowku na wlasciwe pliki
+Logo tekstowe ("Szortsy") nie jest widoczne -- prawdopodobnie plik PNG z bialym tekstem jest zbyt maly przy `h-5`, a filtr `invert` moze nie dzialac prawidlowo.
 
-## Co sie zmieni
-Obecne logo w headerze to ikona Newspaper + tekst "Szortsy" renderowany jako HTML. Zastapimy to przeslanymi plikami graficznymi:
-- **Logo.png** -- ikona/symbol "S" (bialy na przezroczystym tle)
-- **Szortsy_napis.png** -- napis "SZORTSY" (bialy na przezroczystym tle)
+## Zmiany w `src/components/Header.tsx`
 
-Poniewaz oba pliki sa biale, beda dobrze widoczne w dark mode. W light mode potrzebuja ciemnego tla lub filtra CSS -- ikona zostanie umieszczona w kolorowym kontenerze (jak dotychczas), a napis dostanie filtr `dark:invert-0 invert` zeby byl widoczny na jasnym tle.
+- Zwiekszyc rozmiar ikony logo: kontener z `h-9 w-9` na `h-10 w-10`, obrazek z `h-6 w-6` na `h-7 w-7`
+- Zwiekszyc rozmiar napisu: z `h-5` na `h-7` lub `h-8`
+- Upewnic sie, ze klasy `invert` / `dark:invert-0` sa poprawnie zastosowane (w light mode napis powinien byc ciemny, wiec `invert` jest potrzebne; w dark mode bialy oryginal jest ok, wiec `dark:invert-0` zdejmuje filtr)
 
-## Szczegoly techniczne
-
-### Pliki do skopiowania
-- `user-uploads://Logo.png` -> `src/assets/logo-icon.png`
-- `user-uploads://Szortsy_napis.png` -> `src/assets/logo-text.png`
-
-### `src/components/Header.tsx`
-- Import obu obrazkow z `@/assets/`
-- Zamiana ikony Newspaper na `<img src={logoIcon}>` w zielonym kontenerze
-- Zamiana tekstu "Szortsy" na `<img src={logoText}>` z odpowiednimi klasami dla widocznosci w light/dark mode
-- Podpis "O sporcie: krotko, codziennie" zostaje bez zmian
-
+Jedna zmiana w jednym pliku -- szybka poprawka rozmiaru.
