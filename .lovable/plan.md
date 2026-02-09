@@ -1,26 +1,23 @@
 
 
-# Przycisk Facebook widoczny na mobile
+# Podmiana logo w naglowku na wlasciwe pliki
 
-## Problem
-Karta "Publikuj na Facebook" jest w panelu bocznym (prawa kolumna). Na mobile caly layout zamienia sie w jedna kolumne i karta Facebook laduje na samym dole strony -- trzeba dlugo scrollowac, zeby ja znalezc.
+## Co sie zmieni
+Obecne logo w headerze to ikona Newspaper + tekst "Szortsy" renderowany jako HTML. Zastapimy to przeslanymi plikami graficznymi:
+- **Logo.png** -- ikona/symbol "S" (bialy na przezroczystym tle)
+- **Szortsy_napis.png** -- napis "SZORTSY" (bialy na przezroczystym tle)
 
-## Rozwiazanie
-Dodamy przycisk "Wyslij na Facebook" rowniez w gornej czesci formularza (widoczny na mobile), tak zeby byl latwo dostepny bez scrollowania.
+Poniewaz oba pliki sa biale, beda dobrze widoczne w dark mode. W light mode potrzebuja ciemnego tla lub filtra CSS -- ikona zostanie umieszczona w kolorowym kontenerze (jak dotychczas), a napis dostanie filtr `dark:invert-0 invert` zeby byl widoczny na jasnym tle.
 
-## Zmiany
+## Szczegoly techniczne
 
-### `src/pages/admin/PostEditor.tsx`
+### Pliki do skopiowania
+- `user-uploads://Logo.png` -> `src/assets/logo-icon.png`
+- `user-uploads://Szortsy_napis.png` -> `src/assets/logo-text.png`
 
-1. **Dodanie mobilnego przycisku FB** nad formularzem (obok przycisku "Zapisz" lub w sekcji "Generuj AI"), widocznego tylko na mobile (`lg:hidden`):
-   - Dla istniejacych postow: przycisk "Wyslij na Facebook" otwierajacy dialog
-   - Dla nowych postow: switch "Opublikuj przy zapisie"
+### `src/components/Header.tsx`
+- Import obu obrazkow z `@/assets/`
+- Zamiana ikony Newspaper na `<img src={logoIcon}>` w zielonym kontenerze
+- Zamiana tekstu "Szortsy" na `<img src={logoText}>` z odpowiednimi klasami dla widocznosci w light/dark mode
+- Podpis "O sporcie: krotko, codziennie" zostaje bez zmian
 
-2. Karta Facebook w sidebarze pozostanie bez zmian (widoczna na desktop).
-
-Dzieki temu na mobile przycisk bedzie widoczny od razu po otwarciu edytora posta, a na desktop nic sie nie zmieni.
-
-### Szczegoly implementacji
-- Nowy blok z klasa `lg:hidden` umieszczony tuz pod sekcja "Generuj AI" (linia ~483)
-- Zawiera ten sam przycisk i logike co karta w sidebarze
-- Karta w sidebarze dostanie klase `hidden lg:block` aby uniknac duplikacji na desktop
