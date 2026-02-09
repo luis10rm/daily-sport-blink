@@ -1,12 +1,26 @@
 
-# Poprawka rozmiaru logo w headerze
+# Unikalne URL-e dla podsumowań dnia
 
-Logo tekstowe ("Szortsy") nie jest widoczne -- prawdopodobnie plik PNG z bialym tekstem jest zbyt maly przy `h-5`, a filtr `invert` moze nie dzialac prawidlowo.
+## Problem
+Wszystkie podsumowania dnia dostają identyczny `source_url`: `https://szortsy.pl/podsumowanie`. Choc kazde podsumowanie ma juz unikatowy slug (generowany z tytulu), statyczny source_url jest nieczytelny i nie pomaga w SEO.
 
-## Zmiany w `src/components/Header.tsx`
+## Rozwiazanie
+Zmienic `source_url` tak, zeby zawieral date podsumowania, np. `https://szortsy.pl/podsumowanie/2026-02-08`. Dzieki temu kazde podsumowanie bedzie mialo unikatowy identyfikator zrodla.
 
-- Zwiekszyc rozmiar ikony logo: kontener z `h-9 w-9` na `h-10 w-10`, obrazek z `h-6 w-6` na `h-7 w-7`
-- Zwiekszyc rozmiar napisu: z `h-5` na `h-7` lub `h-8`
-- Upewnic sie, ze klasy `invert` / `dark:invert-0` sa poprawnie zastosowane (w light mode napis powinien byc ciemny, wiec `invert` jest potrzebne; w dark mode bialy oryginal jest ok, wiec `dark:invert-0` zdejmuje filtr)
+## Zakres zmian
 
-Jedna zmiana w jednym pliku -- szybka poprawka rozmiaru.
+### 1. `src/pages/admin/PostEditor.tsx`
+- Zmienic linie ustawiajaca `source_url` z `"https://szortsy.pl/podsumowanie"` na `"https://szortsy.pl/podsumowanie/YYYY-MM-DD"` gdzie data pochodzi z kontekstu prefill (z dashboardu przekazywana jest wybrana data)
+- Aby uzyskac date, nalezy ja przekazac w obiekcie `prefill` z Dashboardu
+
+### 2. `src/pages/admin/Dashboard.tsx`
+- Dodac pole `date` do obiektu `prefill` przekazywanego przez `navigate()`, np. `date: format(selectedDate, "yyyy-MM-dd")`
+
+### 3. `src/config/categoryImages.ts`
+- Zaktualizowac warunek `post.source_url?.includes("/podsumowanie")` -- ten juz dziala poprawnie, bo `includes` znajdzie "/podsumowanie" rowniez w "/podsumowanie/2026-02-08"
+
+## Efekt
+- Kazde podsumowanie dnia bedzie mialo unikatowy `source_url` z data
+- Slug w bazie danych jest juz unikatowy (generowany automatycznie z tytulu + ID)
+- Lepsza indeksacja w Google -- kazda strona podsumowania jest traktowana jako osobny zasob
+- Brak zmian w routingu -- podsumowania nadal dzialaja przez `/blink/:slug`
