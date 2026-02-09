@@ -71,6 +71,7 @@ const Dashboard = () => {
           excerpt: result.excerpt,
           content: result.content,
           tags: result.suggested_tags.join(", "),
+          date: format(selectedDate, "yyyy-MM-dd"),
         },
       },
     });
