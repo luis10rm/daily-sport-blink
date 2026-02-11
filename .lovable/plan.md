@@ -1,26 +1,42 @@
 
-# Unikalne URL-e dla podsumowań dnia
+
+# Naprawa podwójnego tapnięcia "Przeczytaj więcej" na mobile
 
 ## Problem
-Wszystkie podsumowania dnia dostają identyczny `source_url`: `https://szortsy.pl/podsumowanie`. Choc kazde podsumowanie ma juz unikatowy slug (generowany z tytulu), statyczny source_url jest nieczytelny i nie pomaga w SEO.
+Na urządzeniach dotykowych (telefony, tablety) przeglądarka traktuje pierwszy tap jako "hover", a drugi jako "click". Dotyczy to dwóch elementów:
 
-## Rozwiazanie
-Zmienic `source_url` tak, zeby zawieral date podsumowania, np. `https://szortsy.pl/podsumowanie/2026-02-08`. Dzieki temu kazde podsumowanie bedzie mialo unikatowy identyfikator zrodla.
+1. **Klasa `card-hover`** na karcie -- pierwszy tap wywołuje `-translate-y-1` i `shadow-lg`
+2. **Style `hover:bg-primary hover:text-primary-foreground`** na przycisku -- pierwszy tap zmienia kolor przycisku
+
+## Rozwiązanie
+Ograniczyć efekty hover tylko do urządzeń z myszką/trackpadem za pomocą media query `@media (hover: hover)`.
 
 ## Zakres zmian
 
-### 1. `src/pages/admin/PostEditor.tsx`
-- Zmienic linie ustawiajaca `source_url` z `"https://szortsy.pl/podsumowanie"` na `"https://szortsy.pl/podsumowanie/YYYY-MM-DD"` gdzie data pochodzi z kontekstu prefill (z dashboardu przekazywana jest wybrana data)
-- Aby uzyskac date, nalezy ja przekazac w obiekcie `prefill` z Dashboardu
+### 1. `src/index.css` -- klasa `.card-hover`
+Zmiana:
+```css
+.card-hover:hover {
+  @apply -translate-y-1 shadow-lg;
+}
+```
+Na:
+```css
+@media (hover: hover) {
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+}
+```
 
-### 2. `src/pages/admin/Dashboard.tsx`
-- Dodac pole `date` do obiektu `prefill` przekazywanego przez `navigate()`, np. `date: format(selectedDate, "yyyy-MM-dd")`
+### 2. `src/components/NewsCard.tsx` -- przycisk "Przeczytaj więcej"
+Zamiana klas `hover:bg-primary hover:text-primary-foreground` na wariant wspierający tylko prawdziwy hover. Najszybsze rozwiązanie: dodać do przycisku dodatkową klasę z media query, lub użyć Tailwind modyfikatora `@hover` (niedostępny domyślnie w Tailwind v3). Alternatywnie -- przenieść hover style przycisku do CSS z `@media (hover: hover)`, lub zastosować podejście z dedykowaną klasą.
 
-### 3. `src/config/categoryImages.ts`
-- Zaktualizowac warunek `post.source_url?.includes("/podsumowanie")` -- ten juz dziala poprawnie, bo `includes` znajdzie "/podsumowanie" rowniez w "/podsumowanie/2026-02-08"
+Najprostsze podejście: dodać niestandardową klasę CSS w `index.css` dla przycisków CTA i owinąć hover style w `@media (hover: hover)`.
+
+### 3. `src/components/NewsOfTheDay.tsx` -- ten sam przycisk
+Sprawdzić czy ma hover style -- jeśli tak, zastosować analogiczną poprawkę.
 
 ## Efekt
-- Kazde podsumowanie dnia bedzie mialo unikatowy `source_url` z data
-- Slug w bazie danych jest juz unikatowy (generowany automatycznie z tytulu + ID)
-- Lepsza indeksacja w Google -- kazda strona podsumowania jest traktowana jako osobny zasob
-- Brak zmian w routingu -- podsumowania nadal dzialaja przez `/blink/:slug`
+- Na mobile: jeden tap = natychmiastowe otwarcie artykułu
+- Na desktopie: hover efekty działają bez zmian (karta się unosi, przycisk zmienia kolor)
