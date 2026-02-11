@@ -121,6 +121,21 @@
     @apply transition-all duration-300 ease-out;
   }
   
+  /* CTA button hover - only for pointer devices */
+  .cta-hover:hover {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .cta-sponsored-hover:hover {
+    @apply bg-primary/90 shadow-lg;
+  }
+
+  .cta-notd-hover:hover {
+    @apply shadow-lg brightness-110;
+  }
+}
+
+@media (hover: hover) {
   .card-hover:hover {
     @apply -translate-y-1 shadow-lg;
   }
