@@ -1,95 +1,83 @@
 
-# Naprawa podwojnego klikania na iOS - prawdziwa przyczyna
 
-## Analiza problemu
+# Naprawa klikania na mobile - podejście z bannera
 
-Dotychczasowe zmiany (media query `pointer: fine`, `touch-action: manipulation`) byly poprawne, ale **nie wystarczajace**. Prawdziwy winowajca to klasa CSS `transition-all` zastosowana na elementach karty i przyciskow CTA.
+## Problem
 
-### Mechanizm problemu na iOS
+Baner reklamowy działa od razu, bo jego CTA to `<button>` z `onClick` + `window.open()`. Karty newsów używają `<Link to="...">` (React Router) i `<a href="...">`, które iOS WebKit traktuje inaczej - przechwytuje pierwsze tapnięcie.
 
-iOS WebKit (Chrome na iPhonie rowniez uzywa WebKit) stosuje logike "sticky hover":
+## Rozwiązanie
 
-1. Gdy element ma `transition-all`, przegladarka wie, ze ten element moze animowac WSZYSTKIE wlasciwosci (w tym `transform`, `box-shadow`)
-2. Nawet jesli efekt `:hover` jest ukryty za media query `(pointer: fine)`, iOS i tak parsuje te reguly i "wie", ze element ma potencjalne stany hover
-3. Pierwsze tapniecie aktywuje stan hover (przeglądarka czeka, czy uzytkownik chce zobaczyc efekt hover)
-4. Dopiero drugie tapniecie wykonuje nawigację
+Zamienić `<Link>` i `<a>` na `<button>` z programową nawigacją - dokładnie tak jak w bannerze.
 
-### Dowody w kodzie
+## Zmiany
 
-**Plik `src/index.css` linia 125-127:**
-```css
-.card-hover {
-  transition-all duration-300 ease-out;  /* <-- ZAWSZE aktywne, nawet na mobile */
-}
-```
-Ten `transition-all` jest na elemencie `<article>`, ktory opakowuje przycisk "Przeczytaj wiecej".
+### 1. `src/components/NewsCard.tsx`
 
-**Plik `src/components/NewsCard.tsx` linia 167:**
+Zamiana CTA "Przeczytaj więcej":
+
+**Dla postów z contentem (linia 163-174):**
 ```tsx
-className="... transition-all ..."  /* <-- na przycisku Link/a */
+// Było: <Link to={blinkUrl}>
+// Będzie:
+<button
+  onClick={() => window.location.href = blinkUrl}
+  type="button"
+  className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors bg-primary/10 text-primary cta-hover"
+>
+  Przeczytaj więcej
+</button>
 ```
 
-**Plik `src/components/NewsOfTheDay.tsx` linia 94:**
+**Dla postów z linkiem zewnętrznym (linia 175-190):**
 ```tsx
-className="... transition-all ..."  /* <-- na przycisku Link/a */
+// Było: <a href={sourceUrl} target="_blank">
+// Będzie:
+<button
+  onClick={() => window.open(sourceUrl, '_blank', 'noopener,noreferrer')}
+  type="button"
+  className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors bg-primary/10 text-primary cta-hover"
+>
+  Przeczytaj więcej
+  <ExternalLink className="h-4 w-4" />
+</button>
 ```
 
-`transition-all` na przyciskach CTA to drugi problem - iOS widzi element z tranzycja i potencjalnym hoverem i wchodzi w tryb podwojnego tapa.
+### 2. `src/components/NewsOfTheDay.tsx`
 
-## Plan naprawy
+Taka sama zamiana - `<Link>` i `<a>` na `<button>` z `onClick`.
 
-### 1. Klasa `.card-hover` - przeniesc tranzycje do media query
-
-Zamiast stosowac `transition-all` na wszystkich urzadzeniach, tranzycja bedzie aktywna TYLKO na desktopie (pointer: fine):
-
-```css
-/* Bez tranzycji domyslnie */
-.card-hover {
-  /* puste - brak transition */
-}
-
-/* Tranzycje TYLKO na desktopie */
-@media (hover: hover) and (pointer: fine) {
-  .card-hover {
-    transition: all 0.3s ease-out;
-  }
-  .card-hover:hover {
-    transform: translateY(-4px);
-    box-shadow: ...;
-  }
-}
-```
-
-### 2. Przyciski CTA w NewsCard.tsx
-
-Zamienic `transition-all` na `transition-colors` - ta wlasciwosc NIE powoduje podwojnego tapa na iOS, bo nie obejmuje `transform` ani `box-shadow`:
-
+**Dla contentu (linia 94-100):**
 ```tsx
-// Bylo:
-className="... transition-all ..."
-
-// Bedzie:
-className="... transition-colors ..."
+<button
+  onClick={() => window.location.href = `/blink/${post.slug}`}
+  type="button"
+  className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md transition-colors cta-notd-hover"
+>
+  Przeczytaj więcej
+</button>
 ```
 
-### 3. Przyciski CTA w NewsOfTheDay.tsx
+**Dla linku zewnętrznego (linia 101-111):**
+```tsx
+<button
+  onClick={() => window.open(post.source_url, '_blank', 'noopener,noreferrer')}
+  type="button"
+  className="..."
+>
+  Przeczytaj więcej
+  <ExternalLink className="h-5 w-5" />
+</button>
+```
 
-Taka sama zmiana jak w NewsCard - `transition-all` na `transition-colors`.
+## Dlaczego to zadziała
 
-### 4. Inne komponenty z inline `hover:` (bonus)
+Baner działa na iOS po jednym tapnięciu, bo `<button onClick>` nie podlega logice "sticky hover" przeglądarki WebKit. Przeglądarka nie przechwytuje pierwszego tapnięcia na przycisku z handlerem JS - wykonuje go natychmiast. Dokładnie ten sam mechanizm zastosujemy na przyciskach newsów.
 
-Komponenty `AuthorProfileCard.tsx`, `SponsorBanner.tsx`, `StoriesCircle.tsx`, `DynamicStoriesCircle.tsx` rowniez uzywaja inline Tailwind `hover:` klas (np. `hover:shadow-lg`, `hover:-translate-y-1`, `group-hover:scale-105`). Te moga powodowac ten sam problem. Opakowalem je w `@media (pointer: fine)` przez niestandardowe klasy CSS, lub usune inline hovers i zastapie klasami z media query.
-
-## Podsumowanie zmian
+## Pliki do edycji
 
 | Plik | Zmiana |
 |------|--------|
-| `src/index.css` | Przeniesienie `transition` z `.card-hover` do bloku `@media (pointer: fine)` |
-| `src/components/NewsCard.tsx` | `transition-all` -> `transition-colors` na przyciskach CTA |
-| `src/components/NewsOfTheDay.tsx` | `transition-all` -> `transition-colors` na przyciskach CTA |
-| `src/components/AuthorProfileCard.tsx` | Przeniesienie inline `hover:` do klas CSS w media query |
-| `src/components/SponsorBanner.tsx` | Przeniesienie inline `hover:` do klas CSS w media query |
-| `src/components/StoriesCircle.tsx` | Przeniesienie `group-hover:scale-105` do media query |
-| `src/components/DynamicStoriesCircle.tsx` | Przeniesienie `group-hover:scale-105` do media query |
+| `src/components/NewsCard.tsx` | `<Link>` i `<a>` na `<button onClick>` |
+| `src/components/NewsOfTheDay.tsx` | `<Link>` i `<a>` na `<button onClick>` |
 
-Ta zmiana calkowicie eliminuje przyczyne podwojnego klikania, poniewaz iOS nie bedzie mial zadnych tranzycji ani hoverow do "przechwycenia" na urzadzeniach dotykowych.
