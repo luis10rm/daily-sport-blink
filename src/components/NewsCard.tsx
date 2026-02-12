@@ -161,24 +161,24 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
 
           {/* Conditional link: internal blink page if content exists, otherwise external source */}
           {hasContent ? (
-            <Link
-              to={blinkUrl}
+            <button
+              onClick={() => { window.location.href = blinkUrl; }}
+              type="button"
               className={cn(
-                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
+                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer",
                 isSponsored
                   ? "bg-primary text-primary-foreground shadow-md cta-sponsored-hover"
                   : "bg-primary/10 text-primary cta-hover"
               )}
             >
               Przeczytaj więcej
-            </Link>
+            </button>
           ) : (
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => { window.open(sourceUrl, '_blank', 'noopener,noreferrer'); }}
+              type="button"
               className={cn(
-                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
+                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer",
                 isSponsored
                   ? "bg-primary text-primary-foreground shadow-md cta-sponsored-hover"
                   : "bg-primary/10 text-primary cta-hover"
@@ -186,7 +186,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             >
               Przeczytaj więcej
               <ExternalLink className="h-4 w-4" />
-            </a>
+            </button>
           )}
           <span className="text-xs text-muted-foreground text-center">
             Źródło: {getSourceName(sourceUrl)}
