@@ -159,7 +159,7 @@ export const SponsorBanner = ({
               <img
                 src={imageDesktopUrl}
                 alt={title || "Reklama"}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+           className="w-full h-full object-cover card-img-hover"
               />
             )}
           </div>
@@ -177,7 +177,7 @@ export const SponsorBanner = ({
               <img
                 src={imageMobileUrl || imageDesktopUrl}
                 alt={title || "Reklama"}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                 className="w-full h-full object-cover card-img-hover"
               />
             )}
           </div>
@@ -239,17 +239,17 @@ export const SponsorBanner = ({
                 <img
                   src={imageDesktopUrl}
                   alt={title || "Reklama"}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
+                   className="w-full h-full object-cover card-img-hover"
+                   onError={(e) => {
+                     e.currentTarget.style.display = 'none';
+                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                   }}
+                 />
               ) : imageMobileUrl ? (
                 <img
                   src={imageMobileUrl}
                   alt={title || "Reklama"}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  className="w-full h-full object-cover card-img-hover"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -275,17 +275,17 @@ export const SponsorBanner = ({
                 <img
                   src={imageMobileUrl}
                   alt={title || "Reklama"}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
+                   className="w-full h-full object-cover card-img-hover"
+                   onError={(e) => {
+                     e.currentTarget.style.display = 'none';
+                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                   }}
+                 />
               ) : imageDesktopUrl ? (
                 <img
                   src={imageDesktopUrl}
                   alt={title || "Reklama"}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                  className="w-full h-full object-cover card-img-hover"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';
                     e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -305,7 +305,7 @@ export const SponsorBanner = ({
               <button
                 onClick={handleClick}
                 type="button"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
               >
                 {ctaText}
                 <ExternalLink className="h-4 w-4" />
@@ -395,7 +395,7 @@ export const SponsorBanner = ({
             <button
               onClick={handleClick}
               type="button"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
             >
               {ctaText}
               <ExternalLink className="h-4 w-4" />
