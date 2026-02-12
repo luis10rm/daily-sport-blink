@@ -117,7 +117,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             loading={loading}
             // @ts-ignore - fetchpriority is valid HTML but not in React types
             fetchpriority={fetchPriority}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 card-img-hover"
           />
         </div>
 
@@ -139,7 +139,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
                     key={tag}
                     to={`/tag/${generateSlug(tag)}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                    className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground transition-colors tag-hover"
                   >
                     {tag}
                   </Link>

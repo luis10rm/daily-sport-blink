@@ -65,7 +65,7 @@ export const FeedbackBox = ({ className }: FeedbackBoxProps) => {
       "before:absolute before:inset-0 before:rounded-lg before:p-[1px]",
       "before:bg-gradient-to-r before:from-transparent before:via-primary/40 before:to-transparent",
       "before:bg-[length:200%_100%] before:animate-shimmer-border",
-      "before:-z-10",
+      "before:-z-10 before:pointer-events-none",
       className
     )}>
       <MessageSquare className="h-5 w-5 text-primary shrink-0 mt-0.5" />

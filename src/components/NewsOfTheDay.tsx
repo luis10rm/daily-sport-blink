@@ -46,7 +46,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 card-img-hover"
           />
         </div>
 
@@ -68,7 +68,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
                   <Link
                     key={tag}
                     to={`/tag/${generateSlug(tag)}`}
-                    className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                    className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors tag-hover"
                   >
                     {tag}
                   </Link>
