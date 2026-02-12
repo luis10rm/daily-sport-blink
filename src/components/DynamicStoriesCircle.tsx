@@ -95,7 +95,7 @@ export const DynamicStoriesCircle = ({
       {/* Circle with gradient ring */}
       <div
         className={cn(
-          "relative p-[3px] rounded-full transition-transform duration-200 group-hover:scale-105",
+          "relative p-[3px] rounded-full stories-circle-hover",
           !hasUnread && "bg-muted-foreground/30"
         )}
         style={gradientStyle}

@@ -164,7 +164,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             <Link
               to={blinkUrl}
               className={cn(
-                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all",
+                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
                 isSponsored
                   ? "bg-primary text-primary-foreground shadow-md cta-sponsored-hover"
                   : "bg-primary/10 text-primary cta-hover"
@@ -178,7 +178,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
-                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all",
+                "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors",
                 isSponsored
                   ? "bg-primary text-primary-foreground shadow-md cta-sponsored-hover"
                   : "bg-primary/10 text-primary cta-hover"

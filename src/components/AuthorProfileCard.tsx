@@ -22,7 +22,7 @@ export const AuthorProfileCard = ({ author, postsCount }: AuthorProfileCardProps
 
   return (
     <Link to={`/autor/${author.slug}`}>
-      <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full">
+      <Card className="group overflow-hidden card-hover h-full">
         {/* Cover Image */}
         <div 
           className="h-24 bg-gradient-to-br from-primary/20 to-primary/5 relative"
