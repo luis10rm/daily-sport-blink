@@ -30,7 +30,7 @@ export const Header = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <img src={logoIcon} alt="Szortsy logo" className="h-7 w-7" />
           </div>
-          <img src={logoText} alt="Szortsy" className="h-7 w-auto dark:invert-0 invert" />
+          <span className="text-xl font-bold tracking-tight text-foreground">Szortsy</span>
           <span className="text-sm text-muted-foreground hidden sm:block">
             O sporcie: krótko, codziennie
           </span>
