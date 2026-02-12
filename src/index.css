@@ -114,43 +114,19 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
   }
+
+  /* Disable 300ms tap delay on all interactive elements for iOS */
+  a, button, [role="button"], input, textarea, select, summary {
+    touch-action: manipulation;
+  }
 }
 
 @layer components {
   .card-hover {
     @apply transition-all duration-300 ease-out;
   }
-}
 
-@media (hover: hover) {
-  .card-hover:hover {
-    @apply -translate-y-1 shadow-lg;
-  }
-
-  /* CTA button hover - only for pointer devices */
-  .cta-hover:hover {
-    @apply bg-primary text-primary-foreground;
-  }
-
-  .cta-sponsored-hover:hover {
-    @apply bg-primary/90 shadow-lg;
-  }
-
-  .cta-notd-hover:hover {
-    @apply shadow-lg brightness-110;
-  }
-
-  /* Card image zoom on hover - only for pointer devices */
-  .group:hover .card-img-hover {
-    transform: scale(1.05);
-  }
-
-  /* Tag hover - only for pointer devices */
-  .tag-hover:hover {
-    @apply bg-primary/10 text-primary;
-  }
-
-  /* Olympic Winter Theme */
+  /* Olympic Winter Theme - always visible */
   .olympic-card {
     border-image: linear-gradient(135deg, hsl(200 80% 70%), hsl(220 70% 80%), hsl(200 80% 70%)) 1;
     border-width: 2px;
@@ -190,6 +166,33 @@
 
   .dark .olympic-frost-overlay::after {
     background: linear-gradient(180deg, hsl(210 40% 30% / 0.2) 0%, transparent 50%);
+  }
+}
+
+/* Hover effects ONLY for mouse/trackpad devices (pointer: fine excludes touch) */
+@media (hover: hover) and (pointer: fine) {
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+
+  .cta-hover:hover {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .cta-sponsored-hover:hover {
+    @apply bg-primary/90 shadow-lg;
+  }
+
+  .cta-notd-hover:hover {
+    @apply shadow-lg brightness-110;
+  }
+
+  .group:hover .card-img-hover {
+    transform: scale(1.05);
+  }
+
+  .tag-hover:hover {
+    @apply bg-primary/10 text-primary;
   }
 }
 
