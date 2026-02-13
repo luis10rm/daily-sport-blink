@@ -173,7 +173,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             </button>
           ) : (
             <button
-              onClick={(e) => {
+              onTouchEnd={(e) => {
                 e.stopPropagation();
                 window.open(sourceUrl, "_blank", "noopener,noreferrer");
               }}
