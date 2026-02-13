@@ -113,5 +113,11 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography"),
+    function ({ addVariant }) {
+      addVariant("hover", "@media (any-hover: hover) and (any-pointer: fine) { &:hover }");
+    },
+  ],
 } satisfies Config;
