@@ -116,9 +116,9 @@
   }
 
   /* Disable 300ms tap delay on all interactive elements for iOS */
-  a, button, [role="button"], input, textarea, select, summary {
-    touch-action: manipulation;
-  }
+  // a, button, [role="button"], input, textarea, select, summary {
+  //   touch-action: manipulation;
+  // }
 }
 
 @layer components {
@@ -170,7 +170,7 @@
 }
 
 /* Hover effects ONLY for mouse/trackpad devices (pointer: fine excludes touch) */
-@media (hover: hover) and (pointer: fine) {
+// @media (hover: hover) and (pointer: fine) {
   .card-hover {
     @apply transition-all duration-300 ease-out;
   }
@@ -219,7 +219,7 @@
   .tag-hover:hover {
     @apply bg-primary/10 text-primary;
   }
-}
+// }
 
 @layer utilities {
   .text-balance {
