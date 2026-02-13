@@ -157,9 +157,11 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           {/* Conditional link: internal blink page if content exists, otherwise external source */}
           {hasContent ? (
             <button
+              onPress={(e) => {
+                e.stopPropagation();
+                window.location.href = blinkUrl;
+              }}
               type="button"
-              onPress={console.log}
-              {/* href={blinkUrl} */}
               className={cn(
                 "touch-manipulation mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold cursor-pointer",
                 isSponsored
