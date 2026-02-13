@@ -179,14 +179,23 @@
     @apply -translate-y-1 shadow-lg;
   }
 
+  .cta-hover {
+    transition: color 0.2s, background-color 0.2s;
+  }
   .cta-hover:hover {
     @apply bg-primary text-primary-foreground;
   }
 
+  .cta-sponsored-hover {
+    transition: color 0.2s, background-color 0.2s, box-shadow 0.2s;
+  }
   .cta-sponsored-hover:hover {
     @apply bg-primary/90 shadow-lg;
   }
 
+  .cta-notd-hover {
+    transition: filter 0.2s, box-shadow 0.2s;
+  }
   .cta-notd-hover:hover {
     @apply shadow-lg brightness-110;
   }
