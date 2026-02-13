@@ -157,7 +157,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           {/* Conditional link: internal blink page if content exists, otherwise external source */}
           {hasContent ? (
             <button
-              onPress={(e) => {
+              onTouchEnd={(e) => {
                 e.stopPropagation();
                 window.location.href = blinkUrl;
               }}
