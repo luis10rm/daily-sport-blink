@@ -177,7 +177,7 @@
 }
 
 /* Hover effects ONLY for mouse/trackpad devices (pointer: fine excludes touch) */
-/* @media (hover: hover) and (pointer: fine) { */
+/* @media (hover: hover) and (pointer: fine) { 
 .card-hover {
   @apply transition-all duration-300 ease-out;
 }
@@ -194,6 +194,7 @@
 .cta-hover:hover {
   @apply bg-primary text-primary-foreground;
 }
+*/
 
 .cta-sponsored-hover {
   transition:
@@ -217,19 +218,20 @@
 .card-img-hover {
   transition: transform 0.5s ease;
 }
-
+/*
 .group:hover .card-img-hover {
   transform: scale(1.05);
 }
-
+*/
 .stories-circle-hover {
   transition: transform 0.2s ease;
 }
 
+/*                                            
 .group:hover .stories-circle-hover {
   transform: scale(1.05);
 }
-
+*/
 .tag-hover:hover {
   @apply bg-primary/10 text-primary;
 }
