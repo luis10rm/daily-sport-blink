@@ -60,13 +60,13 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
       fetchPriority = "auto",
       disableAnimation = false,
     },
-    ref
+    ref,
   ) => {
     // Determine if this post has AI-generated content (link to /blink/:slug)
     const hasContent = Boolean(content);
     const blinkUrl = `/blink/${slug}`;
     const isOlympic = isOlympicCategory(sportCategory?.slug || categorySlug);
-    
+
     const formattedDate = new Date(publishedAt).toLocaleDateString("pl-PL", {
       day: "numeric",
       month: "long",
@@ -81,7 +81,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           !disableAnimation && "opacity-0 animate-fade-in",
           isSponsored ? "border-primary/30 ring-1 ring-primary/20" : "border-border",
           isOlympic && "olympic-card",
-          className
+          className,
         )}
         style={!disableAnimation ? { animationDelay: `${delay}ms` } : undefined}
       >
@@ -102,10 +102,9 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
         )}
 
         {/* Image area */}
-        <div className={cn(
-          "relative aspect-[16/9] w-full overflow-hidden bg-muted",
-          isOlympic && "olympic-frost-overlay"
-        )}>
+        <div
+          className={cn("relative aspect-[16/9] w-full overflow-hidden bg-muted", isOlympic && "olympic-frost-overlay")}
+        >
           <img
             src={getPostImage({
               image_url: imageUrl,
@@ -149,12 +148,8 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           </div>
 
           <div className="flex flex-1 flex-col gap-2">
-            <h3 className="font-heading text-lg font-semibold leading-tight text-foreground line-clamp-2">
-              {title}
-            </h3>
-            <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">
-              {excerpt}
-            </p>
+            <h3 className="font-heading text-lg font-semibold leading-tight text-foreground line-clamp-2">{title}</h3>
+            <p className="text-sm leading-relaxed text-muted-foreground line-clamp-3">{excerpt}</p>
           </div>
 
           {author && <AuthorCard author={author} />}
@@ -162,39 +157,43 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           {/* Conditional link: internal blink page if content exists, otherwise external source */}
           {hasContent ? (
             <button
-              onClick={() => { window.location.href = blinkUrl; }}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = blinkUrl;
+              }}
               type="button"
               className={cn(
                 "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold cursor-pointer",
                 isSponsored
                   ? "bg-primary text-primary-foreground shadow-md cta-sponsored-hover"
-                  : "bg-primary/10 text-primary cta-hover"
+                  : "bg-primary/10 text-primary cta-hover",
               )}
             >
               Przeczytaj więcej
             </button>
           ) : (
             <button
-              onClick={() => { window.open(sourceUrl, '_blank', 'noopener,noreferrer'); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(sourceUrl, "_blank", "noopener,noreferrer");
+              }}
               type="button"
               className={cn(
                 "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold cursor-pointer",
                 isSponsored
                   ? "bg-primary text-primary-foreground shadow-md cta-sponsored-hover"
-                  : "bg-primary/10 text-primary cta-hover"
+                  : "bg-primary/10 text-primary cta-hover",
               )}
             >
               Przeczytaj więcej
               <ExternalLink className="h-4 w-4" />
             </button>
           )}
-          <span className="text-xs text-muted-foreground text-center">
-            Źródło: {getSourceName(sourceUrl)}
-          </span>
+          <span className="text-xs text-muted-foreground text-center">Źródło: {getSourceName(sourceUrl)}</span>
         </div>
       </article>
     );
-  }
+  },
 );
 
 NewsCard.displayName = "NewsCard";
