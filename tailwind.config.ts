@@ -1,6 +1,9 @@
 import type { Config } from "tailwindcss";
 
 export default {
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
@@ -14,8 +17,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Outfit', 'sans-serif'],
-        sans: ['Outfit', 'system-ui', 'sans-serif'],
+        heading: ["Outfit", "sans-serif"],
+        sans: ["Outfit", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -110,8 +113,5 @@ export default {
       },
     },
   },
-  plugins: [
-    require("tailwindcss-animate"),
-    require("@tailwindcss/typography"),
-  ],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
