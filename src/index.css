@@ -177,65 +177,62 @@
 }
 
 /* Hover effects ONLY for mouse/trackpad devices (pointer: fine excludes touch) */
-/* @media (hover: hover) and (pointer: fine) { 
-.card-hover {
-  @apply transition-all duration-300 ease-out;
-}
+@media (hover: hover) and (pointer: fine) {
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
 
-.card-hover:hover {
-  @apply -translate-y-1 shadow-lg;
-}
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
 
-.cta-hover {
-  transition:
-    color 0.2s,
-    background-color 0.2s;
-}
-.cta-hover:hover {
-  @apply bg-primary text-primary-foreground;
-}
-*/
+  .cta-hover {
+    transition:
+      color 0.2s,
+      background-color 0.2s;
+  }
+  .cta-hover:hover {
+    @apply bg-primary text-primary-foreground;
+  }
+  .cta-sponsored-hover {
+    transition:
+      color 0.2s,
+      background-color 0.2s,
+      box-shadow 0.2s;
+  }
+  .cta-sponsored-hover:hover {
+    @apply bg-primary/90 shadow-lg;
+  }
 
-.cta-sponsored-hover {
-  transition:
-    color 0.2s,
-    background-color 0.2s,
-    box-shadow 0.2s;
-}
-.cta-sponsored-hover:hover {
-  @apply bg-primary/90 shadow-lg;
-}
+  .cta-notd-hover {
+    transition:
+      filter 0.2s,
+      box-shadow 0.2s;
+  }
+  .cta-notd-hover:hover {
+    @apply shadow-lg brightness-110;
+  }
 
-.cta-notd-hover {
-  transition:
-    filter 0.2s,
-    box-shadow 0.2s;
-}
-.cta-notd-hover:hover {
-  @apply shadow-lg brightness-110;
-}
+  .card-img-hover {
+    transition: transform 0.5s ease;
+  }
 
-.card-img-hover {
-  transition: transform 0.5s ease;
-}
-/*
-.group:hover .card-img-hover {
-  transform: scale(1.05);
-}
-*/
-.stories-circle-hover {
-  transition: transform 0.2s ease;
-}
+  .group:hover .card-img-hover {
+    transform: scale(1.05);
+  }
 
-/*                                            
-.group:hover .stories-circle-hover {
-  transform: scale(1.05);
+  .stories-circle-hover {
+    transition: transform 0.2s ease;
+  }
+
+  .group:hover .stories-circle-hover {
+    transform: scale(1.05);
+  }
+
+  .tag-hover:hover {
+    @apply bg-primary/10 text-primary;
+  }
 }
-*/
-.tag-hover:hover {
-  @apply bg-primary/10 text-primary;
-}
-/* } */
 
 @layer utilities {
   .text-balance {
