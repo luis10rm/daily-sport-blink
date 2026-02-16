@@ -61,12 +61,6 @@ export const PatronBar = () => {
         color: patron.text_color,
       };
 
-  const handleClick = () => {
-    if (patron.cta_url) {
-      window.open(patron.cta_url, "_blank", "noopener,noreferrer");
-    }
-  };
-
   return (
     <div
       className={cn(
@@ -76,16 +70,8 @@ export const PatronBar = () => {
       )}
       style={backgroundStyle}
     >
-      {/* Mobile: entire bar is clickable */}
       <div
-        role={patron.cta_url ? "link" : undefined}
-        tabIndex={patron.cta_url ? 0 : undefined}
-        onClick={handleClick}
-        onKeyDown={(e) => e.key === "Enter" && handleClick()}
-        className={cn(
-          "container flex items-center justify-center gap-2 sm:gap-3 px-4 text-sm sm:text-base",
-          patron.cta_url && "cursor-pointer sm:cursor-default"
-        )}
+        className="container flex items-center justify-center gap-2 sm:gap-3 px-4 text-sm sm:text-base"
       >
         <Star className="h-4 w-4 flex-shrink-0 fill-current" />
         
@@ -106,19 +92,19 @@ export const PatronBar = () => {
         </span>
         
         {patron.cta_text && patron.cta_url && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(patron.cta_url, "_blank", "noopener,noreferrer");
-            }}
-            className="hidden sm:inline-flex ml-2 px-3 py-1 rounded-full text-xs font-semibold transition-all hover:scale-105"
+          <a
+            href={patron.cta_url}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex ml-2 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold patron-cta-hover"
             style={{
               backgroundColor: patron.text_color,
               color: patron.background_color,
             }}
           >
             {patron.cta_text}
-          </button>
+          </a>
         )}
       </div>
 
