@@ -1,55 +1,78 @@
 
-# Animacja gratyfikacyjna po przeczytaniu wszystkich newsow
 
-## Obecny stan
+# Lepsze CTA briefingu w TodaysNewsBanner
 
-Statyczna ikona `PartyPopper` z prostym fade-in i tekst. Malo efektowne.
+## Problem
+
+Obecny CTA "Zobacz dzienny briefing" to maly pasek na dole banera z ikona gazety i strzalka. Jest subtelny, wtapia sie w tlo i nie zacheca do klikniecia. Na desktop to maly pill-button, rowniez malo widoczny.
 
 ## Propozycja
 
-Wieloetapowa animacja "celebration" z konfetti i pulsujaca ikona trofeum:
+### Mobile: Pelny przycisk CTA z gradientem
 
-### Elementy animacji
+Zamiast subtelnego paska `bg-primary/10`, pelny przycisk z solidnym tlem primary, zaokraglony, wycentrowany, z wieksza czcionka i animacja pulse na strzalce:
 
-1. **Pulsujace trofeum** -- ikona Trophy z animacja scale (powiekszenie od 0 do 1 z odbiciem sprężystym) + zloty gradient
-2. **Konfetti CSS** -- 8-12 malych kwadracikow/koleczek rozlatujacych sie z centrum w rozne strony (czyste CSS keyframes, bez bibliotek)
-3. **Tekst wchodzacy z opoznieniem** -- naglowek pojawia sie 0.3s po ikonie, podtekst 0.5s po
-
-### Nowe keyframes w `tailwind.config.ts`
-
-```
-"celebration-pop": scale 0 -> 1.2 -> 1 (cubic-bezier spring)
-"confetti-fall": translateY + rotate + opacity (kazde z losowym kierunkiem)
-"celebration-text": opacity 0 -> 1, translateY 20px -> 0 z opoznieniem
+```text
++---------------------------------------+
+|  5  sportowych hitow                  |
+|  Wtorek, 17 lutego                     |
+|                                       |
+|  [===== Zobacz briefing  ->  =====]  |  <-- pelny przycisk primary
++---------------------------------------+
 ```
 
-### Zmiany w plikach
+Szczegoly:
+- Przycisk jako osobny element wewnatrz banera (nie pasek na calej szerokosci)
+- Solidne tlo `bg-primary` z `text-primary-foreground` (bialy tekst na zielonym)
+- Zaokraglony (`rounded-lg`), z paddingiem `py-3 px-5`
+- Ikona `ChevronRight` z animacja `animate-bounce` horyzontalnie (lub pulse)
+- Marginesy dookola `mx-4 mb-4` zeby nie kleil sie do krawedzi
+- `touch-manipulation` dla iOS
+
+### Desktop: Wyrazniejszy przycisk
+
+Zamiana subtelnego pill-outline na solidny przycisk primary:
+- `bg-primary text-primary-foreground` zamiast `bg-primary/10 text-primary`
+- Wiekszy padding i czcionka
+- Hover: `hover:bg-primary/90` z lekkim scale
+
+## Plik do edycji
 
 | Plik | Zmiana |
 |------|--------|
-| `tailwind.config.ts` | 3 nowe keyframes + animacje: `celebration-pop`, `confetti-1` do `confetti-6`, `celebration-text` |
-| `src/pages/DailyPage.tsx` | Nowy blok completion z konfetti divami, ikona Trophy zamiast PartyPopper, opoznione teksty |
+| `src/components/TodaysNewsBanner.tsx` | Zamiana subtelnego CTA na pelny, solidny przycisk primary (mobile: pelny blok, desktop: wiekszy pill) |
 
-### Struktura HTML completion
+## Szczegoly techniczne
 
-```text
-<div className="relative">
-  <!-- 6-8 confetti dots rozlatujacych sie -->
-  <div className="confetti confetti-1" />
-  <div className="confetti confetti-2" />
-  ...
-  
-  <!-- Trophy z pop animation -->
-  <Trophy className="animate-celebration-pop text-yellow-500" />
-  
-  <!-- Tekst z delay -->
-  <p className="animate-celebration-text" style="delay: 0.3s">
-    Przeczytales wszystkie newsy!
-  </p>
-  <p className="animate-celebration-text" style="delay: 0.5s">
-    Wroc jutro po nowa dawke sportu
-  </p>
+### Mobile CTA (linie 124-136)
+
+Zamiana paska `bg-primary/10 border-t` na wycentrowany przycisk:
+
+```tsx
+<div className="px-4 pb-4 pt-1">
+  <Link
+    to={`/dzien/${todayStr}`}
+    className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground touch-manipulation active:scale-[0.98] transition-transform"
+  >
+    <Newspaper className="h-4 w-4" />
+    Zobacz dzienny briefing
+    <ChevronRight className="h-4 w-4 animate-[pulse_2s_ease-in-out_infinite]" />
+  </Link>
 </div>
 ```
 
-Konfetti to czyste CSS (6 malych `<span>` z roznymi kolorami i kierunkami animacji), bez dodatkowych bibliotek. Animacja odpala sie jednorazowo gdy `progress >= 90`.
+### Desktop CTA (linie 170-176)
+
+Zamiana subtelnego pill na solidny:
+
+```tsx
+<Link
+  to={`/dzien/${todayStr}`}
+  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+>
+  Zobacz briefing
+  <ChevronRight className="h-3.5 w-3.5" />
+</Link>
+```
+
+Brak nowych zaleznosci. Brak zmian w tailwind.config.ts.
