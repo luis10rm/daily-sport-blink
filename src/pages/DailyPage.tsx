@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { format, subDays, addDays, isAfter, startOfDay, isValid, parse } from "date-fns";
 import { pl } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, ExternalLink, Newspaper, ArrowLeft, PartyPopper } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Newspaper, ArrowLeft, Trophy } from "lucide-react";
 import { usePostsByDate } from "@/hooks/usePosts";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { Header } from "@/components/Header";
@@ -275,14 +275,45 @@ export default function DailyPage() {
               })}
             </div>
 
-            {/* Completion message */}
+            {/* Celebration */}
             {progress >= 90 && (
-              <div className="text-center py-10 animate-fade-in">
-                <PartyPopper className="h-8 w-8 mx-auto mb-3 text-primary" />
-                <p className="text-lg font-semibold text-foreground">
+              <div className="relative flex flex-col items-center py-14 overflow-hidden">
+                {/* Confetti particles */}
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <span
+                    key={i}
+                    className={`absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full animate-confetti-${i}`}
+                    style={{
+                      backgroundColor: [
+                        "hsl(var(--primary))",
+                        "#facc15",
+                        "#f97316",
+                        "#22d3ee",
+                        "#a78bfa",
+                        "#34d399",
+                      ][i - 1],
+                    }}
+                  />
+                ))}
+
+                {/* Trophy */}
+                <div className="animate-celebration-pop">
+                  <Trophy className="h-14 w-14 text-yellow-500 drop-shadow-lg" />
+                </div>
+
+                {/* Text */}
+                <p
+                  className="text-lg font-semibold text-foreground mt-4 opacity-0 animate-celebration-text"
+                  style={{ animationDelay: "0.3s" }}
+                >
                   Przeczytałeś wszystkie newsy z tego dnia!
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">Wróć jutro po nową dawkę sportu 🏆</p>
+                <p
+                  className="text-sm text-muted-foreground mt-1 opacity-0 animate-celebration-text"
+                  style={{ animationDelay: "0.5s" }}
+                >
+                  Wróć jutro po nową dawkę sportu 🏆
+                </p>
               </div>
             )}
           </div>

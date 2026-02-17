@@ -103,6 +103,40 @@ export default {
           "0%, 50%": { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        "celebration-pop": {
+          "0%": { transform: "scale(0)", opacity: "0" },
+          "60%": { transform: "scale(1.25)", opacity: "1" },
+          "80%": { transform: "scale(0.95)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "celebration-text": {
+          "0%": { opacity: "0", transform: "translateY(16px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "confetti-1": {
+          "0%": { transform: "translate(0,0) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translate(-60px,-80px) rotate(200deg)", opacity: "0" },
+        },
+        "confetti-2": {
+          "0%": { transform: "translate(0,0) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translate(70px,-90px) rotate(-180deg)", opacity: "0" },
+        },
+        "confetti-3": {
+          "0%": { transform: "translate(0,0) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translate(-80px,30px) rotate(160deg)", opacity: "0" },
+        },
+        "confetti-4": {
+          "0%": { transform: "translate(0,0) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translate(50px,60px) rotate(-220deg)", opacity: "0" },
+        },
+        "confetti-5": {
+          "0%": { transform: "translate(0,0) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translate(-30px,-100px) rotate(140deg)", opacity: "0" },
+        },
+        "confetti-6": {
+          "0%": { transform: "translate(0,0) rotate(0deg)", opacity: "1" },
+          "100%": { transform: "translate(90px,-40px) rotate(-160deg)", opacity: "0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -110,6 +144,14 @@ export default {
         "fade-in": "fade-in 0.5s ease-out forwards",
         "shimmer-border": "shimmer-border 3s ease-in-out infinite",
         "delayed-fade-in": "delayed-fade-in 2s ease-out forwards",
+        "celebration-pop": "celebration-pop 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards",
+        "celebration-text": "celebration-text 0.5s ease-out forwards",
+        "confetti-1": "confetti-1 0.8s ease-out forwards",
+        "confetti-2": "confetti-2 0.9s ease-out forwards",
+        "confetti-3": "confetti-3 0.85s ease-out forwards",
+        "confetti-4": "confetti-4 0.95s ease-out forwards",
+        "confetti-5": "confetti-5 0.75s ease-out forwards",
+        "confetti-6": "confetti-6 0.88s ease-out forwards",
       },
     },
   },
