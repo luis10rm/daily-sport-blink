@@ -100,37 +100,40 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
     );
   }
 
-  // Mobile compact version - min-height prevents CLS
+  // Mobile version
   if (isMobile) {
     return (
       <section
         className={cn(
-          "mb-8 rounded-xl p-4 animate-fade-in min-h-[60px]",
+          "mb-8 rounded-xl animate-fade-in overflow-hidden",
           isTakeoverActive
             ? "bg-card border border-border shadow-lg"
-            : "border border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10",
+            : "border border-primary/20 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5",
           className
         )}
       >
-        <div className="flex items-center gap-3">
-          <Newspaper className="h-5 w-5 text-primary flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm text-foreground">
-              <span className="font-semibold">{mobileVariant.prefix}</span>
-              <span className="mx-1.5 text-muted-foreground">·</span>
-              <span className="text-primary font-bold text-lg">{displayCount}</span>
-              <span className="text-muted-foreground ml-1">{mobileVariant.suffix}</span>
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{capitalizedDate}</p>
+        {/* Top row: count + text */}
+        <div className="px-4 pt-4 pb-3">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-primary">{displayCount}</span>
+            <span className="text-sm text-foreground font-medium">{mobileVariant.suffix}</span>
           </div>
-          <Link
-            to={`/dzien/${todayStr}`}
-            className="flex-shrink-0 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20"
-          >
-            Briefing
-            <ChevronRight className="h-3 w-3" />
-          </Link>
+          <p className="text-xs text-muted-foreground mt-0.5">{capitalizedDate}</p>
         </div>
+
+        {/* CTA bar */}
+        <Link
+          to={`/dzien/${todayStr}`}
+          className="flex items-center justify-between gap-2 px-4 py-3 bg-primary/10 border-t border-primary/20 touch-manipulation"
+        >
+          <div className="flex items-center gap-2">
+            <Newspaper className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-primary">
+              Zobacz dzienny briefing
+            </span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-primary" />
+        </Link>
       </section>
     );
   }
