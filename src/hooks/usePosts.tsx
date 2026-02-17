@@ -83,6 +83,31 @@ export const usePosts = () => {
   });
 };
 
+// Fetch posts by specific date (YYYY-MM-DD)
+export const usePostsByDate = (date: string) => {
+  return useQuery({
+    queryKey: ["posts", "date", date],
+    queryFn: async () => {
+      const parsed = new Date(date + "T00:00:00");
+      if (isNaN(parsed.getTime())) return [] as Post[];
+
+      const startOfDay = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0, 0).toISOString();
+      const endOfDay = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 23, 59, 59, 999).toISOString();
+
+      const { data, error } = await supabase
+        .from("posts")
+        .select(POST_SELECT)
+        .gte("published_at", startOfDay)
+        .lte("published_at", endOfDay)
+        .order("published_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Post[];
+    },
+    enabled: !!date,
+  });
+};
+
 // Fetch posts from today only
 export const useTodaysPosts = () => {
   return useQuery({

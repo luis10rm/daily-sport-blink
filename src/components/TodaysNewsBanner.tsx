@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
-import { Newspaper } from "lucide-react";
+import { Newspaper, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -42,7 +43,9 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
   const [variant] = useState(() => variants[Math.floor(Math.random() * variants.length)]);
   const [mobileVariant] = useState(() => mobileVariants[Math.floor(Math.random() * mobileVariants.length)]);
 
-  const formattedDate = format(new Date(), "EEEE, d MMMM", { locale: pl });
+  const today = new Date();
+  const todayStr = format(today, "yyyy-MM-dd");
+  const formattedDate = format(today, "EEEE, d MMMM", { locale: pl });
   // Capitalize first letter
   const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
@@ -111,7 +114,7 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
       >
         <div className="flex items-center gap-3">
           <Newspaper className="h-5 w-5 text-primary flex-shrink-0" />
-          <div>
+          <div className="flex-1">
             <p className="text-sm text-foreground">
               <span className="font-semibold">{mobileVariant.prefix}</span>
               <span className="mx-1.5 text-muted-foreground">·</span>
@@ -120,6 +123,13 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">{capitalizedDate}</p>
           </div>
+          <Link
+            to={`/dzien/${todayStr}`}
+            className="flex-shrink-0 inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/20"
+          >
+            Briefing
+            <ChevronRight className="h-3 w-3" />
+          </Link>
         </div>
       </section>
     );
@@ -152,6 +162,15 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
         <span className="text-base text-foreground font-medium">
           {variant.after}
         </span>
+
+        {/* Briefing button */}
+        <Link
+          to={`/dzien/${todayStr}`}
+          className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+        >
+          Zobacz briefing
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
 
       {/* Date below */}
