@@ -433,46 +433,14 @@ FORMATOWANIE (OBOWIĄZKOWE):
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "openai/gpt-5-mini",
         messages: [
-          { role: "system", content: extractionPrompt },
-          { role: "user", content: `Przeanalizuj ten artykuł i wygeneruj dane:\n\n${articleText}` },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_article_data",
-              description: "Ekstraktuj dane z artykułu sportowego",
-              parameters: {
-                type: "object",
-                properties: {
-                  title: {
-                    type: "string",
-                    description: "Tytuł artykułu (max 80 znaków, po polsku)"
-                  },
-                  excerpt: {
-                    type: "string",
-                    description: "Krótki opis (max 200 znaków, zachęcający)"
-                  },
-                  category: {
-                    type: "string",
-                    enum: ["football", "basketball", "tennis", "f1", "mma", "other"],
-                    description: "Kategoria sportowa"
-                  },
-                  tags: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "3-5 tagów (krótkie słowa kluczowe)"
-                  },
-                },
-                required: ["title", "excerpt", "category", "tags"],
-                additionalProperties: false,
-              },
-            },
+          { 
+            role: "system", 
+            content: `Jesteś asystentem redakcji sportowej. Analizujesz artykuł i zwracasz dane w JSON.\n\nZwróć TYLKO JSON bez żadnego dodatkowego tekstu, bez bloku kodu, bez markdown:\n{"title": "...", "excerpt": "...", "category": "...", "tags": [...]}\n\nZasady:\n- title: max 80 znaków, po polsku\n- excerpt: max 200 znaków, zachęcający\n- category: JEDEN z: football, basketball, tennis, f1, mma, other\n- tags: tablica 3-5 krótkich słów kluczowych po polsku`
           },
+          { role: "user", content: `Przeanalizuj ten artykuł:\n\n${articleText}` },
         ],
-        tool_choice: { type: "function", function: { name: "extract_article_data" } },
       }),
     });
 
@@ -495,12 +463,14 @@ FORMATOWANIE (OBOWIĄZKOWE):
     }
 
     const metadataData = await metadataResponse.json();
-    const metadataToolCall = metadataData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!metadataToolCall || metadataToolCall.function.name !== "extract_article_data") {
+    const metadataContent = metadataData.choices?.[0]?.message?.content;
+    if (!metadataContent) {
       throw new Error("Invalid AI response format for metadata");
     }
 
-    const extractedMetadata = JSON.parse(metadataToolCall.function.arguments);
+    // Strip markdown code blocks if present
+    const cleanedMetadata = metadataContent.replace(/```(?:json)?\n?/g, "").replace(/```/g, "").trim();
+    const extractedMetadata = JSON.parse(cleanedMetadata);
     console.log("Extracted metadata:", extractedMetadata);
 
     // Step 1.5: Fetch related posts from the same category for internal linking
@@ -541,9 +511,12 @@ FORMATOWANIE (OBOWIĄZKOWE):
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "openai/gpt-5-mini",
         messages: [
-          { role: "system", content: contentPrompt },
+          { 
+            role: "system", 
+            content: contentPrompt
+          },
           {
             role: "user",
             content: `Tytuł: ${extractedMetadata.title}
@@ -555,27 +528,6 @@ Oryginalny artykuł:
 ${articleText}`
           },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "generate_article_content",
-              description: "Wygeneruj pełną treść artykułu sportowego",
-              parameters: {
-                type: "object",
-                properties: {
-                  content: {
-                    type: "string",
-                    description: "Pełna treść artykułu (300-500 słów, po polsku, podzielona na akapity)"
-                  },
-                },
-                required: ["content"],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "generate_article_content" } },
       }),
     });
 
@@ -583,21 +535,18 @@ ${articleText}`
 
     if (contentResponse.ok) {
       const contentData = await contentResponse.json();
-      const contentToolCall = contentData.choices?.[0]?.message?.tool_calls?.[0];
-      if (contentToolCall && contentToolCall.function.name === "generate_article_content") {
-        const contentResult = JSON.parse(contentToolCall.function.arguments);
-        generatedContent = contentResult.content || "";
-        console.log("Generated content length:", generatedContent.length);
+      generatedContent = contentData.choices?.[0]?.message?.content || "";
+      console.log("Generated content length:", generatedContent.length);
 
-        if (generatedContent.includes("**")) {
-          console.warn("AI used Markdown despite HTML instructions, converting...");
-          generatedContent = generatedContent.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
-          generatedContent = generatedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-          generatedContent = generatedContent.replace(/(?<![a-zA-Z0-9])\*([^*]+)\*(?![a-zA-Z0-9])/g, '<em>$1</em>');
-        }
+      if (generatedContent.includes("**")) {
+        console.warn("AI used Markdown despite HTML instructions, converting...");
+        generatedContent = generatedContent.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+        generatedContent = generatedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        generatedContent = generatedContent.replace(/(?<![a-zA-Z0-9])\*([^*]+)\*(?![a-zA-Z0-9])/g, '<em>$1</em>');
       }
     } else {
-      console.error("Content generation failed, continuing without content");
+      const errText = await contentResponse.text();
+      console.error("Content generation failed:", contentResponse.status, errText);
     }
 
     // Add extraction quality metadata for frontend warnings
