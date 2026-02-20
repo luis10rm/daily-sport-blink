@@ -1,35 +1,32 @@
 
 
-## Naprawa linków wewnętrznych w podsumowaniach dnia
+## Naprawa promptu podsumowania dnia w bazie danych
 
 ### Problem
 
-Edge function `generate-daily-summary` pobiera z bazy danych posty z polami `id`, `title`, `excerpt` i `category` -- ale **nie pobiera `slug`**. Prompt AI mówi "dodaj link w formacie `<a href="/blink/ID">`", więc AI podstawia UUID lub (częściej) wymyśla własny tekst przypominający slug. Tymczasem trasa `/blink/:slug` wymaga prawdziwego slugu z bazy.
+Prompt podsumowania dnia został zmieniony w kodzie (DEFAULT_SUMMARY_PROMPT), ale w bazie danych w tabeli `settings` (klucz `daily_summary_prompt`) jest zapisany niestandardowy prompt, ktory nadpisuje domyslny. Ten zapisany prompt wciaz zawiera stare instrukcje:
+- `<a href="/blink/ID">` zamiast `<a href="/blink/SLUG">`
+- Brak informacji o polu `slug` w danych wejsciowych
+- Format danych: `(title, excerpt, category, id)` zamiast `(title, excerpt, category, id, slug)`
 
-Wynik: linki typu `/blink/podsumowanie-2002-srebro-polaka-na-zio-dramat-i-triumfy-7612f1bc` -- nie istnieją i zwracają 404.
+Kod edge function priorytetowo uzywa promptu z bazy (linia ~195), wiec zmiany w DEFAULT_SUMMARY_PROMPT sa ignorowane.
 
-### Rozwiązanie
+### Rozwiazanie
 
-Dwie zmiany w `supabase/functions/generate-daily-summary/index.ts`:
+**1. Aktualizacja promptu w bazie danych**
 
-**1. Dodanie `slug` do zapytania SQL**
+Wykonanie UPDATE na tabeli `settings`, zmieniajac w zapisanym prompcie:
+- `(title, excerpt, category, id)` na `(title, excerpt, category, id, slug)`
+- `<a href="/blink/ID">tekst linku</a>` na `<a href="/blink/SLUG">tekst linku</a>` (w sekcji SEO)
+- `<a href="/blink/ID">` na `<a href="/blink/SLUG">` (w sekcji FORMATOWANIE)
+- Dodanie instrukcji: "Dla kazdego wspomnianego newsa uzyj DOKLADNEGO slugu z danych wejsciowych (pole 'slug'). NIGDY nie wymyslaj wlasnych slugow."
 
-Zmiana selecta z:
-```
-id, title, excerpt, sport_category:category_id (name, slug)
-```
-na:
-```
-id, slug, title, excerpt, sport_category:category_id (name, slug)
-```
+**2. Poprawka fallbacku w edge function**
 
-**2. Przekazanie `slug` do kontekstu AI i aktualizacja promptu**
-
-- W `postsContext` dodać pole `slug` obok `id`
-- W `DEFAULT_SUMMARY_PROMPT` zmienić instrukcję linkowania z `<a href="/blink/ID">` na `<a href="/blink/SLUG">` i wyraźnie napisać, że AI ma użyć dokładnego slugu z danych wejściowych (bez modyfikacji)
-- Analogicznie zaktualizować zapasowy fragment promptu (linia 207)
+W `supabase/functions/generate-daily-summary/index.ts` (ok. linia 207) -- fragment ktory dopisuje instrukcje formatowania do custom promptu, jesli ich brakuje -- tez zawiera stare `<a href="/blink/SLUG">`. Ten fragment juz zostal poprawiony w ostatniej edycji, wiec wymaga tylko weryfikacji.
 
 ### Pliki do zmiany
 
-- `supabase/functions/generate-daily-summary/index.ts` -- zapytanie, kontekst AI, prompt
+- Tabela `settings` w bazie danych -- aktualizacja wartosci klucza `daily_summary_prompt`
+- Weryfikacja `supabase/functions/generate-daily-summary/index.ts` (fallback prompt)
 
