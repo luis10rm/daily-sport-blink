@@ -425,24 +425,40 @@ FORMATOWANIE (OBOWIĄZKOWE):
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Step 1: Extract metadata (title, excerpt, category, tags)
-    const metadataResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-5-mini",
-        messages: [
-          { 
-            role: "system", 
-            content: `Jesteś asystentem redakcji sportowej. Analizujesz artykuł i zwracasz dane w JSON.\n\nZwróć TYLKO JSON bez żadnego dodatkowego tekstu, bez bloku kodu, bez markdown:\n{"title": "...", "excerpt": "...", "category": "...", "tags": [...]}\n\nZasady:\n- title: max 80 znaków, po polsku\n- excerpt: max 200 znaków, zachęcający\n- category: JEDEN z: football, basketball, tennis, f1, mma, other\n- tags: tablica 3-5 krótkich słów kluczowych po polsku`
+    // Helper: call AI with automatic fallback (Gemini → GPT-mini on 500)
+    const callAI = async (messages: Array<{role: string; content: string}>, label: string) => {
+      const primaryModel = "google/gemini-3-flash-preview";
+      const fallbackModel = "openai/gpt-5-mini";
+
+      const tryModel = async (model: string) => {
+        return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
           },
-          { role: "user", content: `Przeanalizuj ten artykuł:\n\n${articleText}` },
-        ],
-      }),
-    });
+          body: JSON.stringify({ model, messages }),
+        });
+      };
+
+      let response = await tryModel(primaryModel);
+
+      if (response.status === 500 || response.status === 503) {
+        console.warn(`${label}: primary model (${primaryModel}) returned ${response.status}, falling back to ${fallbackModel}`);
+        response = await tryModel(fallbackModel);
+      }
+
+      return response;
+    };
+
+    // Step 1: Extract metadata (title, excerpt, category, tags)
+    const metadataResponse = await callAI([
+      { 
+        role: "system", 
+        content: `Jesteś asystentem redakcji sportowej. Analizujesz artykuł i zwracasz dane w JSON.\n\nZwróć TYLKO JSON bez żadnego dodatkowego tekstu, bez bloku kodu, bez markdown:\n{"title": "...", "excerpt": "...", "category": "...", "tags": [...]}\n\nZasady:\n- title: max 80 znaków, po polsku\n- excerpt: max 200 znaków, zachęcający\n- category: JEDEN z: football, basketball, tennis, f1, mma, other\n- tags: tablica 3-5 krótkich słów kluczowych po polsku`
+      },
+      { role: "user", content: `Przeanalizuj ten artykuł:\n\n${articleText}` },
+    ], "metadata");
 
     if (!metadataResponse.ok) {
       if (metadataResponse.status === 429) {
@@ -504,32 +520,22 @@ FORMATOWANIE (OBOWIĄZKOWE):
     }
 
     // Step 2: Generate full article content
-    const contentResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+    const contentResponse = await callAI([
+      { 
+        role: "system", 
+        content: contentPrompt
       },
-      body: JSON.stringify({
-        model: "openai/gpt-5-mini",
-        messages: [
-          { 
-            role: "system", 
-            content: contentPrompt
-          },
-          {
-            role: "user",
-            content: `Tytuł: ${extractedMetadata.title}
+      {
+        role: "user",
+        content: `Tytuł: ${extractedMetadata.title}
 
 ${relatedContext ? `POWIĄZANE ARTYKUŁY NA STRONIE (do linkowania wewnętrznego - wybierz 1-2 najbardziej pasujące):
 ${relatedContext}` : "Brak powiązanych artykułów do linkowania."}
 
 Oryginalny artykuł:
 ${articleText}`
-          },
-        ],
-      }),
-    });
+      },
+    ], "content");
 
     let generatedContent = "";
 
