@@ -103,7 +103,7 @@ SEO:
 - NIGDY nie wymyślaj własnych slugów ani nie modyfikuj podanych — kopiuj slug dokładnie tak, jak pojawia się w danych
 
 FORMATOWANIE (OBOWIĄZKOWE):
-- Używaj TYLKO tagów HTML: <h2>, <p>, <strong>, <em>, <a href="/blink/ID">
+- Używaj TYLKO tagów HTML: <h2>, <p>, <strong>, <em>, <a href="/blink/SLUG">
 - NIE używaj składni Markdown (**, *, #, ## itp.)
 - Pogrubienia: <strong>tekst</strong>
 - Kursywa: <em>tekst</em>
