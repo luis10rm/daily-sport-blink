@@ -1,35 +1,35 @@
 
-## Dodanie strony /news/* z noindex
 
-### Cel
-Artykuły pod ścieżką `/news/*` zostały przeniesione na `/blink/*`. Google może wciąż mieć zaindeksowane stare adresy `/news/*`. Potrzebujemy strony, która:
-- Dodaje meta tag `<meta name="robots" content="noindex, follow">` (by Google wyindeksował stare URL-e)
-- Informuje użytkownika, że artykuł został przeniesiony
-- Linkuje do strony głównej (sygnał SEO "follow")
+## Naprawa linków wewnętrznych w podsumowaniach dnia
 
-Uwaga: HTTP 410 jest niemożliwe w React SPA — status zawsze będzie 200. Noindex w meta tagu jest właściwym rozwiązaniem po stronie aplikacji.
+### Problem
 
-### Plan implementacji
+Edge function `generate-daily-summary` pobiera z bazy danych posty z polami `id`, `title`, `excerpt` i `category` -- ale **nie pobiera `slug`**. Prompt AI mówi "dodaj link w formacie `<a href="/blink/ID">`", więc AI podstawia UUID lub (częściej) wymyśla własny tekst przypominający slug. Tymczasem trasa `/blink/:slug` wymaga prawdziwego slugu z bazy.
 
-**1. Nowy plik: `src/pages/NewsGone.tsx`**
+Wynik: linki typu `/blink/podsumowanie-2002-srebro-polaka-na-zio-dramat-i-triumfy-7612f1bc` -- nie istnieją i zwracają 404.
 
-Strona wyświetlana dla wszystkich ścieżek `/news/*`:
-- Ustawia `<meta name="robots" content="noindex, follow">` przez `useEffect`
-- Wyświetla komunikat "Ten artykuł został przeniesiony" z linkiem do strony głównej i archiwum
-- Używa istniejących komponentów: `Header`, `Footer`, `Button`
-- Wygląd podobny do `NotFound.tsx`, ale z innym tekstem i ikoną (np. `MoveRight` lub `Archive`)
+### Rozwiązanie
 
-**2. Aktualizacja `src/App.tsx`**
+Dwie zmiany w `supabase/functions/generate-daily-summary/index.ts`:
 
-Dodanie trasy przed `<Route path="*">`:
-```tsx
-<Route path="/news/*" element={<NewsGone />} />
+**1. Dodanie `slug` do zapytania SQL**
+
+Zmiana selecta z:
+```
+id, title, excerpt, sport_category:category_id (name, slug)
+```
+na:
+```
+id, slug, title, excerpt, sport_category:category_id (name, slug)
 ```
 
-### Technical details
+**2. Przekazanie `slug` do kontekstu AI i aktualizacja promptu**
 
-Meta tag zostanie ustawiony przez `useEffect` bezpośrednio w `<head>` dokumentu i wyczyszczony przy odmontowaniu komponentu (żeby nie wpłynąć na inne strony). Użyjemy też istniejącego hooka `useSEOMeta` z opcją `robots: "noindex, follow"` — jest już zaimplementowany w `src/hooks/useSEOMeta.ts`.
+- W `postsContext` dodać pole `slug` obok `id`
+- W `DEFAULT_SUMMARY_PROMPT` zmienić instrukcję linkowania z `<a href="/blink/ID">` na `<a href="/blink/SLUG">` i wyraźnie napisać, że AI ma użyć dokładnego slugu z danych wejściowych (bez modyfikacji)
+- Analogicznie zaktualizować zapasowy fragment promptu (linia 207)
 
 ### Pliki do zmiany
-- **Nowy** `src/pages/NewsGone.tsx` — komponent strony
-- **Edytowany** `src/App.tsx` — dodanie trasy `/news/*`
+
+- `supabase/functions/generate-daily-summary/index.ts` -- zapytanie, kontekst AI, prompt
+
