@@ -99,7 +99,8 @@ SEO:
 - Tytuł: max 60 znaków, musi zawierać datę i główne sporty dnia
 - Meta description (excerpt): max 155 znaków, zachęcający do przeczytania
 - Naturalne użycie słów kluczowych sportowych
-- Dla każdego wspomnianego newsa dodaj wewnętrzny link w formacie: <a href="/blink/ID">tekst linku</a>
+- Dla każdego wspomnianego newsa dodaj wewnętrzny link używając DOKŁADNEGO slugu z danych wejściowych (pole "slug"), w formacie: <a href="/blink/SLUG">tekst linku</a>
+- NIGDY nie wymyślaj własnych slugów ani nie modyfikuj podanych — kopiuj slug dokładnie tak, jak pojawia się w danych
 
 FORMATOWANIE (OBOWIĄZKOWE):
 - Używaj TYLKO tagów HTML: <h2>, <p>, <strong>, <em>, <a href="/blink/ID">
@@ -159,6 +160,7 @@ serve(async (req) => {
       .from("posts")
       .select(`
         id,
+        slug,
         title,
         excerpt,
         sport_category:category_id (
@@ -204,16 +206,18 @@ serve(async (req) => {
         summaryPrompt += `
 
 FORMATOWANIE (OBOWIĄZKOWE):
-- Używaj TYLKO tagów HTML: <h2>, <p>, <strong>, <em>, <a href="/blink/ID">
+- Używaj TYLKO tagów HTML: <h2>, <p>, <strong>, <em>, <a href="/blink/SLUG">
 - NIE używaj składni Markdown (**, *, #, ## itp.)
 - Pogrubienia: <strong>tekst</strong>
-- Kursywa: <em>tekst</em>`;
+- Kursywa: <em>tekst</em>
+- Linki wewnętrzne: używaj DOKŁADNEGO slugu z danych wejściowych, nie wymyślaj własnych`;
       }
     }
 
     // Prepare context for AI
     const postsContext = posts.map((p: any) => ({
       id: p.id,
+      slug: p.slug,
       title: p.title,
       excerpt: p.excerpt,
       category: p.sport_category?.name || "Inne",
