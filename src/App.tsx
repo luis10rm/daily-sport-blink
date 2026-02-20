@@ -34,6 +34,7 @@ import TagPage from "./pages/TagPage";
 import TagsListPage from "./pages/TagsListPage";
 import BlinkPage from "./pages/BlinkPage";
 import DailyPage from "./pages/DailyPage";
+import NewsGone from "./pages/NewsGone";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -213,6 +214,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+              <Route path="/news/*" element={<NewsGone />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
