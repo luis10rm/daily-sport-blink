@@ -216,7 +216,6 @@ FORMATOWANIE (OBOWIĄZKOWE):
 
     // Prepare context for AI
     const postsContext = posts.map((p: any) => ({
-      id: p.id,
       slug: p.slug,
       title: p.title,
       excerpt: p.excerpt,
@@ -316,6 +315,11 @@ ${JSON.stringify(postsContext, null, 2)}`;
       if (jsonMatch) {
         jsonString = jsonMatch[1].trim();
       }
+      // Remove control characters that break JSON parsing
+      jsonString = jsonString.replace(/[\x00-\x1F\x7F]/g, (ch: string) => {
+        if (ch === '\n' || ch === '\r' || ch === '\t') return ch;
+        return '';
+      });
       result = JSON.parse(jsonString);
     } catch (parseError) {
       console.error("Failed to parse AI response as JSON:", parseError);
