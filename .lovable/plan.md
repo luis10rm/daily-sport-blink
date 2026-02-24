@@ -1,18 +1,53 @@
 
 
-## Instalacja Meta Pixel
+## Poprawa CTA na stronie `/start`
 
-### Zmiana
+### Feedback
+- **Desktop**: Przycisk za nisko — dodać CTA też u góry
+- **Mobile**: CTA powinno pływać (sticky na dole ekranu), a gdy użytkownik dotrze do końca strony, przycisk powinien być inline (nie zasłaniać treści)
 
-Dodanie kodu Meta Pixel do `index.html` w sekcji `<head>`, tuż po skrypcie Google Analytics. Pixel ID: `1440716734345408`.
+### Zmiany w `src/pages/StartPage.tsx`
 
-Dodatkowo tag `<noscript>` z fallback image trafi na początek `<body>`.
+**1. Desktop — dodatkowe CTA w headerze**
+- Pod nagłówkiem "Sportowe newsy. Inaczej." dodać mniejszy przycisk CTA `Sprawdzam →` widoczny tylko na desktop (`hidden sm:inline-flex`)
+- Dolny przycisk zostaje bez zmian
+
+**2. Mobile — sticky floating CTA**
+- Dodać `useEffect` + `IntersectionObserver` śledzący dolny przycisk (ref)
+- Gdy dolny przycisk jest poza viewport → pokazać sticky CTA (`fixed bottom-6 left-6 right-6 z-20`) z animacją fade-in
+- Gdy dolny przycisk wchodzi w viewport → ukryć sticky CTA (żeby nie zasłaniał)
+- Sticky CTA widoczny tylko na mobile (`sm:hidden`)
+- Dodać lekki `backdrop-blur` i cień pod sticky CTA dla czytelności
 
 ### Szczegóły techniczne
 
-**Plik: `index.html`**
-- W `<head>` po bloku Google Analytics: wstawienie skryptu `fbevents.js` z `fbq('init', '1440716734345408')` i `fbq('track', 'PageView')`
-- Na początku `<body>`: wstawienie tagu `<noscript>` z 1x1 tracking pixel image
+```
+Struktura:
+┌─────────────────────────┐
+│  [X]                    │  ← close button
+│                         │
+│  Witaj na Szortsy       │
+│  Sportowe newsy. Inaczej│
+│  [Sprawdzam →] (desktop)│  ← NOWY: sm:inline-flex
+│                         │
+│  ┌─ Feature 1 ─────┐   │
+│  ├─ Feature 2 ─────┤   │
+│  ├─ Feature 3 ─────┤   │
+│  ├─ Feature 4 ─────┤   │
+│  └─ Feature 5 ─────┘   │
+│                         │
+│  [Sprawdzam →] (inline) │  ← istniejący, z ref
+│                         │
+│  ┌──────────────────┐   │
+│  │[Sprawdzam→] fixed│   │  ← NOWY: mobile sticky, znika
+│  └──────────────────┘   │    gdy inline CTA widoczne
+└─────────────────────────┘
+```
 
-Pixel będzie śledzić PageView na każdej stronie automatycznie. Nie wymaga żadnych zmian w kodzie React — działa globalnie z poziomu HTML.
+**Implementacja IntersectionObserver:**
+- `useRef` na dolnym przycisku inline
+- `useState` `showFloatingCta` (domyślnie `true`)
+- Observer: `isIntersecting` → `setShowFloatingCta(false)`, else `true`
+- Floating button: `transition-all duration-300` + `opacity-0 translate-y-4` gdy ukryty
+- Dodać `pb-20 sm:pb-0` do kontenera na mobile, żeby sticky CTA nie zasłaniał ostatniej sekcji
 
