@@ -67,7 +67,7 @@ const StartPage = () => {
         <X className="h-6 w-6" />
       </button>
 
-      <div className="w-full max-w-2xl mx-auto px-6 py-12 pb-32 sm:pb-12 flex flex-col items-center gap-8">
+      <div className="w-full max-w-2xl mx-auto px-6 pt-16 pb-32 sm:pt-12 sm:pb-12 flex flex-col items-center gap-8">
         {/* Logo / Header */}
         <div className="text-center space-y-3 animate-fade-in">
           <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
