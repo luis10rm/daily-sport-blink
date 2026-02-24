@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useRef, useState, useEffect } from "react";
 import { X, Timer, ShieldOff, Smartphone, FileText, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
@@ -33,12 +34,25 @@ const features = [
 
 const StartPage = () => {
   const navigate = useNavigate();
+  const inlineCtaRef = useRef<HTMLButtonElement>(null);
+  const [showFloatingCta, setShowFloatingCta] = useState(true);
 
   useSEOMeta({
     title: "Rozpocznij",
     description: "Odkryj Szortsy — sportowe newsy w nowej formie. Krótko, bez reklam, na Twoich zasadach.",
     robots: "noindex, nofollow",
   });
+
+  useEffect(() => {
+    const el = inlineCtaRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowFloatingCta(!entry.isIntersecting),
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const goHome = () => navigate("/");
 
@@ -53,13 +67,21 @@ const StartPage = () => {
         <X className="h-6 w-6" />
       </button>
 
-      <div className="w-full max-w-2xl mx-auto px-6 py-12 flex flex-col items-center gap-8">
+      <div className="w-full max-w-2xl mx-auto px-6 py-12 pb-20 sm:pb-12 flex flex-col items-center gap-8">
         {/* Logo / Header */}
         <div className="text-center space-y-3 animate-fade-in">
           <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
             Witaj na <span className="text-primary">Szortsy</span>
           </h1>
           <p className="text-white/60 text-lg">Sportowe newsy. Inaczej.</p>
+          {/* Desktop CTA in header */}
+          <Button
+            onClick={goHome}
+            size="default"
+            className="hidden sm:inline-flex mt-2 px-8"
+          >
+            Sprawdzam →
+          </Button>
         </div>
 
         {/* Features */}
@@ -81,12 +103,28 @@ const StartPage = () => {
           ))}
         </div>
 
-        {/* CTA */}
+        {/* Inline CTA */}
         <Button
+          ref={inlineCtaRef}
           onClick={goHome}
           size="lg"
           className="w-full sm:w-auto px-12 text-base animate-fade-in"
           style={{ animationDelay: "750ms", animationFillMode: "both" }}
+        >
+          Sprawdzam →
+        </Button>
+      </div>
+
+      {/* Mobile floating CTA */}
+      <div
+        className={`fixed bottom-6 left-6 right-6 z-20 sm:hidden transition-all duration-300 ${
+          showFloatingCta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+        }`}
+      >
+        <Button
+          onClick={goHome}
+          size="lg"
+          className="w-full text-base shadow-lg backdrop-blur-sm"
         >
           Sprawdzam →
         </Button>
