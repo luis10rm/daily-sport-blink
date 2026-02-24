@@ -67,7 +67,7 @@ const StartPage = () => {
         <X className="h-6 w-6" />
       </button>
 
-      <div className="w-full max-w-2xl mx-auto px-6 py-12 pb-20 sm:pb-12 flex flex-col items-center gap-8">
+      <div className="w-full max-w-2xl mx-auto px-6 py-12 pb-32 sm:pb-12 flex flex-col items-center gap-8">
         {/* Logo / Header */}
         <div className="text-center space-y-3 animate-fade-in">
           <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
@@ -117,7 +117,7 @@ const StartPage = () => {
 
       {/* Mobile floating CTA */}
       <div
-        className={`fixed bottom-6 left-6 right-6 z-20 sm:hidden transition-all duration-300 ${
+        className={`fixed bottom-8 left-6 right-6 z-20 sm:hidden transition-all duration-300 ${
           showFloatingCta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         }`}
       >
