@@ -1,32 +1,41 @@
 
 
-## Naprawa promptu podsumowania dnia w bazie danych
+## Landing Page `/start` — Onboarding Banner dla nowych użytkowników z kampanii
 
-### Problem
+### Cel
+Stworzenie dedykowanej strony `/start`, która wita nowych użytkowników z kampanii reklamowych atrakcyjnym, pełnoekranowym banerem prezentującym wartości Szortsy. Po zamknięciu (CTA lub X) użytkownik trafia na stronę główną.
 
-Prompt podsumowania dnia został zmieniony w kodzie (DEFAULT_SUMMARY_PROMPT), ale w bazie danych w tabeli `settings` (klucz `daily_summary_prompt`) jest zapisany niestandardowy prompt, ktory nadpisuje domyslny. Ten zapisany prompt wciaz zawiera stare instrukcje:
-- `<a href="/blink/ID">` zamiast `<a href="/blink/SLUG">`
-- Brak informacji o polu `slug` w danych wejsciowych
-- Format danych: `(title, excerpt, category, id)` zamiast `(title, excerpt, category, id, slug)`
+### Co powstanie
 
-Kod edge function priorytetowo uzywa promptu z bazy (linia ~195), wiec zmiany w DEFAULT_SUMMARY_PROMPT sa ignorowane.
+Pełnoekranowy overlay/modal z 5 sekcjami ułożonymi pionowo, każda z ikoną i krótkim hasłem. Styl: ciemne tło z gradientem, duże ikony z Lucide, animowane wejścia sekcji.
 
-### Rozwiazanie
+**Treści na banerze (zredagowane):**
 
-**1. Aktualizacja promptu w bazie danych**
+1. **⏱ Krótko lub na spokojnie** — Masz minutę? Przeczytaj blink. Masz więcej? Zanurz się w pełnym artykule. Ty decydujesz.
 
-Wykonanie UPDATE na tabeli `settings`, zmieniajac w zapisanym prompcie:
-- `(title, excerpt, category, id)` na `(title, excerpt, category, id, slug)`
-- `<a href="/blink/ID">tekst linku</a>` na `<a href="/blink/SLUG">tekst linku</a>` (w sekcji SEO)
-- `<a href="/blink/ID">` na `<a href="/blink/SLUG">` (w sekcji FORMATOWANIE)
-- Dodanie instrukcji: "Dla kazdego wspomnianego newsa uzyj DOKLADNEGO slugu z danych wejsciowych (pole 'slug'). NIGDY nie wymyslaj wlasnych slugow."
+2. **🚫 Zero irytujących reklam** — Jedyny portal sportowy, gdzie reklamy nie zasłaniają treści i nie wyskakują znikąd.
 
-**2. Poprawka fallbacku w edge function**
+3. **📱 Przeglądaj jak social media** — Przewijaj newsy jak stories. Każdy artykuł skrócony do esencji — swipe i wiesz.
 
-W `supabase/functions/generate-daily-summary/index.ts` (ok. linia 207) -- fragment ktory dopisuje instrukcje formatowania do custom promptu, jesli ich brakuje -- tez zawiera stare `<a href="/blink/SLUG">`. Ten fragment juz zostal poprawiony w ostatniej edycji, wiec wymaga tylko weryfikacji.
+4. **📋 Podsumowanie dnia** — Nie masz czasu śledzić wszystkiego? Dostaniesz obszerne podsumowanie najważniejszych wydarzeń.
 
-### Pliki do zmiany
+5. **⏰ Briefing na osi czasu** — Wszystkie newsy dnia ułożone chronologicznie. Jeden rzut oka i jesteś na bieżąco.
 
-- Tabela `settings` w bazie danych -- aktualizacja wartosci klucza `daily_summary_prompt`
-- Weryfikacja `supabase/functions/generate-daily-summary/index.ts` (fallback prompt)
+Na dole: przycisk CTA **"Sprawdzam →"** (prowadzi do `/`).
+W prawym górnym rogu: przycisk **X** (też prowadzi do `/`).
+
+### Szczegóły techniczne
+
+**Nowe pliki:**
+- `src/pages/StartPage.tsx` — komponent strony z pełnoekranowym banerem
+- Animacje wejścia sekcji przez CSS (staggered fade-in + slide-up)
+
+**Modyfikacje:**
+- `src/App.tsx` — dodanie trasy `<Route path="/start" element={<StartPage />} />`
+
+**Zachowanie:**
+- Kliknięcie CTA lub X → `navigate("/")` (React Router)
+- Strona nie wymaga autentykacji ani backendu
+- SEO: meta tag `noindex` (strona kampanijna, nie do indeksowania)
+- Responsywna: na mobile sekcje w jednej kolumnie, na desktop 2-3 kolumny lub centered single column
 
