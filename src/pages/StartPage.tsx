@@ -57,17 +57,18 @@ const StartPage = () => {
   const goHome = () => navigate("/");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-y-auto" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       {/* Close button */}
       <button
         onClick={goHome}
-        className="absolute top-4 right-4 z-10 rounded-full p-2 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        className="fixed top-4 right-4 z-10 rounded-full p-2 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        style={{ top: 'calc(1rem + env(safe-area-inset-top))' }}
         aria-label="Zamknij"
       >
         <X className="h-6 w-6" />
       </button>
 
-      <div className="w-full max-w-2xl mx-auto px-6 pt-16 pb-32 sm:pt-12 sm:pb-12 flex flex-col items-center gap-8">
+      <div className="w-full max-w-2xl mx-auto px-6 pt-14 pb-32 sm:pt-12 sm:pb-12 flex flex-col items-center gap-8">
         {/* Logo / Header */}
         <div className="text-center space-y-3 animate-fade-in">
           <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
