@@ -1,23 +1,24 @@
 
 
-## Rozmyte tło pod floating CTA na mobile
+## Możliwość ponownego kadrowania zdjęcia w tle autora
 
-Aktualnie pływający przycisk "Sprawdzam →" na mobile jest umieszczony bezpośrednio nad treścią bez żadnego tła, co wygląda "surowo" — tekst pod spodem prześwituje.
+Aktualnie po wgraniu zdjęcia w tle (cover) widać tylko podgląd z przyciskiem usunięcia. Nie ma opcji ponownego kadrowania bez usuwania i wgrywania od nowa.
 
 ### Plan
 
-Dodam pod przyciskiem warstwę z rozmytym tłem (gradient + backdrop-blur), która będzie płynnie zanikać ku górze. Dzięki temu przycisk będzie wyraźnie oddzielony od treści poniżej.
+Dodam przycisk "Kadruj" do widoku wgranego zdjęcia w `ImageUploader`. Po kliknięciu otworzy się modal kadrowania z aktualnym zdjęciem, a po zapisie nowy wykadrowany plik zostanie wgrany i zastąpi stary URL.
 
 ### Szczegóły techniczne
 
-**Plik: `src/pages/StartPage.tsx`** — modyfikacja sekcji floating CTA (linie ~109-120):
+**Plik: `src/components/admin/ImageUploader.tsx`**
 
-- Zamienię kontener `div` na wersję z:
-  - `bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent` — gradient od dołu ku górze
-  - `backdrop-blur-md` — rozmycie treści pod spodem
-  - Większy padding (`pb-8 pt-6`) żeby przycisk miał "oddech"
-  - `bottom-0 left-0 right-0` zamiast `bottom-8 left-6 right-6` — gradient na całą szerokość, przycisk z marginesami wewnętrznymi
-  - Obsługa safe area na dole: `paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))'`
+1. W sekcji `if (value)` (linie 117-136) — obok przycisku usuwania (X) dodam przycisk "Kadruj" (ikona `Crop`):
+   - Kliknięcie ustawia `pendingImage` na aktualny `value` i otwiera `ImageCropModal`
+   - Przycisk widoczny tylko gdy `enableCrop === true`
 
-Efekt: przycisk będzie wyglądał jakby "unosił się" nad rozmytą warstwą, a tekst pod spodem nie będzie przeszkadzał wizualnie.
+2. Przeniosę renderowanie `ImageCropModal` (linie 174-182) **poza** warunek `if (value)` / else, tak aby modal był dostępny zarówno przy nowym uploaderze, jak i przy ponownym kadrowaniu istniejącego zdjęcia. Aktualnie modal renderuje się tylko gdy `value` jest puste (w gałęzi `else`).
+
+3. Import ikony `Crop` z `lucide-react`.
+
+Efekt: przy wgranym zdjęciu cover pojawi się przycisk kadrowania, który otworzy znany już modal z `react-easy-crop`.
 
