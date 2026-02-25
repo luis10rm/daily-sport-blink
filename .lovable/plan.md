@@ -1,53 +1,23 @@
 
 
-## Poprawa CTA na stronie `/start`
+## Rozmyte tło pod floating CTA na mobile
 
-### Feedback
-- **Desktop**: Przycisk za nisko — dodać CTA też u góry
-- **Mobile**: CTA powinno pływać (sticky na dole ekranu), a gdy użytkownik dotrze do końca strony, przycisk powinien być inline (nie zasłaniać treści)
+Aktualnie pływający przycisk "Sprawdzam →" na mobile jest umieszczony bezpośrednio nad treścią bez żadnego tła, co wygląda "surowo" — tekst pod spodem prześwituje.
 
-### Zmiany w `src/pages/StartPage.tsx`
+### Plan
 
-**1. Desktop — dodatkowe CTA w headerze**
-- Pod nagłówkiem "Sportowe newsy. Inaczej." dodać mniejszy przycisk CTA `Sprawdzam →` widoczny tylko na desktop (`hidden sm:inline-flex`)
-- Dolny przycisk zostaje bez zmian
-
-**2. Mobile — sticky floating CTA**
-- Dodać `useEffect` + `IntersectionObserver` śledzący dolny przycisk (ref)
-- Gdy dolny przycisk jest poza viewport → pokazać sticky CTA (`fixed bottom-6 left-6 right-6 z-20`) z animacją fade-in
-- Gdy dolny przycisk wchodzi w viewport → ukryć sticky CTA (żeby nie zasłaniał)
-- Sticky CTA widoczny tylko na mobile (`sm:hidden`)
-- Dodać lekki `backdrop-blur` i cień pod sticky CTA dla czytelności
+Dodam pod przyciskiem warstwę z rozmytym tłem (gradient + backdrop-blur), która będzie płynnie zanikać ku górze. Dzięki temu przycisk będzie wyraźnie oddzielony od treści poniżej.
 
 ### Szczegóły techniczne
 
-```
-Struktura:
-┌─────────────────────────┐
-│  [X]                    │  ← close button
-│                         │
-│  Witaj na Szortsy       │
-│  Sportowe newsy. Inaczej│
-│  [Sprawdzam →] (desktop)│  ← NOWY: sm:inline-flex
-│                         │
-│  ┌─ Feature 1 ─────┐   │
-│  ├─ Feature 2 ─────┤   │
-│  ├─ Feature 3 ─────┤   │
-│  ├─ Feature 4 ─────┤   │
-│  └─ Feature 5 ─────┘   │
-│                         │
-│  [Sprawdzam →] (inline) │  ← istniejący, z ref
-│                         │
-│  ┌──────────────────┐   │
-│  │[Sprawdzam→] fixed│   │  ← NOWY: mobile sticky, znika
-│  └──────────────────┘   │    gdy inline CTA widoczne
-└─────────────────────────┘
-```
+**Plik: `src/pages/StartPage.tsx`** — modyfikacja sekcji floating CTA (linie ~109-120):
 
-**Implementacja IntersectionObserver:**
-- `useRef` na dolnym przycisku inline
-- `useState` `showFloatingCta` (domyślnie `true`)
-- Observer: `isIntersecting` → `setShowFloatingCta(false)`, else `true`
-- Floating button: `transition-all duration-300` + `opacity-0 translate-y-4` gdy ukryty
-- Dodać `pb-20 sm:pb-0` do kontenera na mobile, żeby sticky CTA nie zasłaniał ostatniej sekcji
+- Zamienię kontener `div` na wersję z:
+  - `bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent` — gradient od dołu ku górze
+  - `backdrop-blur-md` — rozmycie treści pod spodem
+  - Większy padding (`pb-8 pt-6`) żeby przycisk miał "oddech"
+  - `bottom-0 left-0 right-0` zamiast `bottom-8 left-6 right-6` — gradient na całą szerokość, przycisk z marginesami wewnętrznymi
+  - Obsługa safe area na dole: `paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))'`
+
+Efekt: przycisk będzie wyglądał jakby "unosił się" nad rozmytą warstwą, a tekst pod spodem nie będzie przeszkadzał wizualnie.
 
