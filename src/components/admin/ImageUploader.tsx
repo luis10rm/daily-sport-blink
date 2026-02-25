@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X, Loader2, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -114,62 +114,75 @@ export const ImageUploader = ({
     disabled: disabled || isUploading,
   });
 
-  if (value) {
-    return (
-      <div className="relative rounded-lg border overflow-hidden">
-        <img
-          src={value}
-          alt="Podgląd"
-          className="w-full aspect-video object-cover"
-        />
-        <Button
-          type="button"
-          variant="destructive"
-          size="icon"
-          className="absolute top-2 right-2"
-          onClick={onRemove}
-          disabled={disabled}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div
-        {...getRootProps()}
-        className={cn(
-          "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-          isDragActive
-            ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25 hover:border-primary/50",
-          (disabled || isUploading) && "opacity-50 cursor-not-allowed"
-        )}
-      >
-        <input {...getInputProps()} />
-        <div className="flex flex-col items-center gap-2">
-          {isUploading ? (
-            <>
-              <Loader2 className="h-10 w-10 text-muted-foreground animate-spin" />
-              <p className="text-sm text-muted-foreground">Przesyłanie...</p>
-            </>
-          ) : (
-            <>
-              <Upload className="h-10 w-10 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                {isDragActive
-                  ? "Upuść plik tutaj..."
-                  : "Przeciągnij plik lub kliknij aby wybrać"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                JPG, PNG, WebP - max 5MB
-              </p>
-            </>
-          )}
+      {value ? (
+        <div className="relative rounded-lg border overflow-hidden">
+          <img
+            src={value}
+            alt="Podgląd"
+            className="w-full aspect-video object-cover"
+          />
+          <div className="absolute top-2 right-2 flex gap-1">
+            {enableCrop && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                onClick={() => {
+                  setPendingImage(value);
+                  setCropModalOpen(true);
+                }}
+                disabled={disabled}
+              >
+                <Crop className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              onClick={onRemove}
+              disabled={disabled}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div
+          {...getRootProps()}
+          className={cn(
+            "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+            isDragActive
+              ? "border-primary bg-primary/5"
+              : "border-muted-foreground/25 hover:border-primary/50",
+            (disabled || isUploading) && "opacity-50 cursor-not-allowed"
+          )}
+        >
+          <input {...getInputProps()} />
+          <div className="flex flex-col items-center gap-2">
+            {isUploading ? (
+              <>
+                <Loader2 className="h-10 w-10 text-muted-foreground animate-spin" />
+                <p className="text-sm text-muted-foreground">Przesyłanie...</p>
+              </>
+            ) : (
+              <>
+                <Upload className="h-10 w-10 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  {isDragActive
+                    ? "Upuść plik tutaj..."
+                    : "Przeciągnij plik lub kliknij aby wybrać"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG, WebP - max 5MB
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {enableCrop && pendingImage && (
         <ImageCropModal
