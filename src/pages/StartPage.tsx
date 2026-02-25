@@ -118,14 +118,15 @@ const StartPage = () => {
 
       {/* Mobile floating CTA */}
       <div
-        className={`fixed bottom-8 left-6 right-6 z-20 sm:hidden transition-all duration-300 ${
-          showFloatingCta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
+        className={`fixed bottom-0 left-0 right-0 z-20 sm:hidden transition-all duration-300 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent backdrop-blur-md pt-6 px-6 ${
+          showFloatingCta ? "opacity-100 translate-y-0" : "opacity-0 translate-y-full pointer-events-none"
         }`}
+        style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
       >
         <Button
           onClick={goHome}
           size="lg"
-          className="w-full text-base shadow-lg backdrop-blur-sm"
+          className="w-full text-base shadow-lg"
         >
           Sprawdzam →
         </Button>
