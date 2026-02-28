@@ -95,20 +95,33 @@ const InstallPage = () => {
 
         {/* iOS instructions */}
         {isIOS && (
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-              Jak zainstalować na iPhone?
-            </h3>
+          <div className="space-y-5">
             <div className="space-y-3">
-              <Step number={1} icon={<Share className="h-5 w-5" />}>
-                Kliknij ikonę <strong>Udostępnij</strong> <Share className="h-4 w-4 inline" /> na dole ekranu Safari
-              </Step>
-              <Step number={2} icon={<Plus className="h-5 w-5" />}>
-                Przewiń w dół i wybierz <strong>"Dodaj do ekranu początkowego"</strong>
-              </Step>
-              <Step number={3} icon={<Smartphone className="h-5 w-5" />}>
-                Kliknij <strong>"Dodaj"</strong> w prawym górnym rogu
-              </Step>
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Safari — jak zainstalować?
+              </h3>
+              <div className="space-y-3">
+                <Step number={1} icon={<Share className="h-5 w-5" />}>
+                  Kliknij ikonę <strong>Udostępnij</strong> <Share className="h-4 w-4 inline" /> na dole ekranu
+                </Step>
+                <Step number={2} icon={<Plus className="h-5 w-5" />}>
+                  Przewiń w dół i wybierz <strong>"Dodaj do ekranu początkowego"</strong>
+                </Step>
+                <Step number={3} icon={<Smartphone className="h-5 w-5" />}>
+                  Kliknij <strong>"Dodaj"</strong> w prawym górnym rogu
+                </Step>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Chrome / inna przeglądarka?
+              </h3>
+              <div className="rounded-xl bg-card border border-border p-4">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Na iOS jedynie <strong className="text-foreground">Safari</strong> obsługuje dodawanie do ekranu głównego. Otwórz tę stronę w Safari, aby zainstalować Szortsy.
+                </p>
+              </div>
             </div>
           </div>
         )}
