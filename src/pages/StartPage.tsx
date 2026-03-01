@@ -61,7 +61,8 @@ const StartPage = () => {
       {/* Close button */}
       <button
         onClick={goHome}
-        className="fixed top-4 right-4 z-10 rounded-full p-2 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+        onTouchEnd={(e) => { e.preventDefault(); goHome(); }}
+        className="fixed top-4 right-4 z-10 rounded-full p-2 text-white/60 transition-colors touch-manipulation"
         style={{ top: 'calc(1rem + env(safe-area-inset-top))' }}
         aria-label="Zamknij"
       >
