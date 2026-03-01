@@ -209,28 +209,31 @@
       filter 0.2s,
       box-shadow 0.2s;
   }
-  .cta-notd-hover:hover {
-    @apply shadow-lg brightness-110;
-  }
 
   .card-img-hover {
     transition: transform 0.5s ease;
-  }
-
-  .group:hover .card-img-hover {
-    transform: scale(1.05);
   }
 
   .stories-circle-hover {
     transition: transform 0.2s ease;
   }
 
-  .group:hover .stories-circle-hover {
-    transform: scale(1.05);
-  }
+  @media (hover: hover) {
+    .cta-notd-hover:hover {
+      @apply shadow-lg brightness-110;
+    }
 
-  .tag-hover:hover {
-    @apply bg-primary/10 text-primary;
+    .group:hover .card-img-hover {
+      transform: scale(1.05);
+    }
+
+    .group:hover .stories-circle-hover {
+      transform: scale(1.05);
+    }
+
+    .tag-hover:hover {
+      @apply bg-primary/10 text-primary;
+    }
   }
 
   .patron-cta-hover {
