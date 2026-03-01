@@ -91,16 +91,18 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
           {post.content ? (
             <button
               onClick={() => { window.location.href = `/blink/${post.slug}`; }}
+              onTouchEnd={(e) => { e.preventDefault(); window.location.href = `/blink/${post.slug}`; }}
               type="button"
-              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover"
+              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover touch-manipulation"
             >
               Przeczytaj więcej
             </button>
           ) : (
             <button
               onClick={() => { window.open(post.source_url, '_blank', 'noopener,noreferrer'); }}
+              onTouchEnd={(e) => { e.preventDefault(); window.open(post.source_url, '_blank', 'noopener,noreferrer'); }}
               type="button"
-              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover"
+              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover touch-manipulation"
             >
               Przeczytaj więcej
               <ExternalLink className="h-5 w-5" />
