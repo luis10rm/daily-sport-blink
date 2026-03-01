@@ -1,24 +1,32 @@
 
 
-## Możliwość ponownego kadrowania zdjęcia w tle autora
+## Plan: Ujednolicenie one-click na mobile (onTouchEnd + touch-manipulation)
 
-Aktualnie po wgraniu zdjęcia w tle (cover) widać tylko podgląd z przyciskiem usunięcia. Nie ma opcji ponownego kadrowania bez usuwania i wgrywania od nowa.
+### Co brakuje
+NewsCard stosuje wzorzec `onClick` + `onTouchEnd` + klasa CSS `touch-manipulation` na przyciskach CTA. Pozostałe komponenty mają tylko `onClick`, co na iOS może powodować 300ms opóźnienie.
 
-### Plan
+### Zmiany
 
-Dodam przycisk "Kadruj" do widoku wgranego zdjęcia w `ImageUploader`. Po kliknięciu otworzy się modal kadrowania z aktualnym zdjęciem, a po zapisie nowy wykadrowany plik zostanie wgrany i zastąpi stary URL.
+**1. `src/components/NewsOfTheDay.tsx`**
+- Dodać `onTouchEnd` na obu przyciskach CTA (linie 92-107) — analogicznie jak w NewsCard
+- Dodać klasę `touch-manipulation` do obu przycisków
 
-### Szczegóły techniczne
+**2. `src/pages/StartPage.tsx`**
+- Dodać `onTouchEnd={goHome}` na przycisku X (linia 62)
+- Dodać `touch-manipulation` do przycisku X
+- Dodać `onTouchEnd={goHome}` na floating CTA i inline CTA (Button)
+- Alternatywnie: dodać globalnie `touch-manipulation` do komponentu Button
 
-**Plik: `src/components/admin/ImageUploader.tsx`**
+**3. `src/pages/InstallPage.tsx`**
+- Dodać `onTouchEnd` + `touch-manipulation` na: przycisk back, "Zainstaluj teraz", "Przejdź do newsów", "Wróć do newsów"
 
-1. W sekcji `if (value)` (linie 117-136) — obok przycisku usuwania (X) dodam przycisk "Kadruj" (ikona `Crop`):
-   - Kliknięcie ustawia `pendingImage` na aktualny `value` i otwiera `ImageCropModal`
-   - Przycisk widoczny tylko gdy `enableCrop === true`
+**4. `src/components/PWAInstallBanner.tsx`**
+- Dodać `onTouchEnd={dismiss}` na przycisku X (linia 31)
+- Dodać `onTouchEnd={handleInstall}` + `touch-manipulation` na przycisku CTA
 
-2. Przeniosę renderowanie `ImageCropModal` (linie 174-182) **poza** warunek `if (value)` / else, tak aby modal był dostępny zarówno przy nowym uploaderze, jak i przy ponownym kadrowaniu istniejącego zdjęcia. Aktualnie modal renderuje się tylko gdy `value` jest puste (w gałęzi `else`).
+**5. (Opcjonalnie) `src/components/ui/button.tsx`**
+- Dodać `touch-manipulation` globalnie do bazowych klas Button — wtedy wszystkie przyciski w aplikacji automatycznie dostaną eliminację 300ms delay, bez konieczności dodawania ręcznie w każdym komponencie
 
-3. Import ikony `Crop` z `lucide-react`.
-
-Efekt: przy wgranym zdjęciu cover pojawi się przycisk kadrowania, który otworzy znany już modal z `react-easy-crop`.
+### Zakres wpływu
+Zmiana w `button.tsx` (punkt 5) jest najefektywniejsza — pokrywa StartPage, InstallPage, PWAInstallBanner i wszystkie inne miejsca jednym ruchem. Pozostałe zmiany (punkty 1-4) dotyczą `onTouchEnd` i niestandardowych przycisków (nie-Button).
 
