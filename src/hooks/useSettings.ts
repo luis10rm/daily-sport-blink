@@ -87,6 +87,10 @@ export const useExtractArticle = () => {
         toast.error("Brak kredytów AI. Doładuj konto w ustawieniach.");
       } else if (error.message.includes("za mało") || error.message.includes("znaków")) {
         toast.error(error.message);
+      } else if (error.message.includes("timeout") || error.message.includes("nie odpowiedzia")) {
+        toast.error("AI nie odpowiedziało w czasie. Spróbuj ponownie.");
+      } else if (error.message.includes("AI Gateway")) {
+        toast.error("Błąd AI Gateway. Spróbuj ponownie za chwilę.");
       } else {
         toast.error("Nie udało się przeanalizować artykułu");
       }
