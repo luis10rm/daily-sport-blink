@@ -425,12 +425,13 @@ FORMATOWANIE (OBOWIĄZKOWE):
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Helper: call AI with automatic fallback (Gemini → GPT-mini on 500)
+    // Helper: call AI with automatic fallback (Gemini → GPT-mini on 500) and timeout
+    const AI_TIMEOUT_MS = 50000; // 50s timeout per AI call
     const callAI = async (messages: Array<{role: string; content: string}>, label: string) => {
       const primaryModel = "google/gemini-3-flash-preview";
       const fallbackModel = "openai/gpt-5-mini";
 
-      const tryModel = async (model: string) => {
+      const tryModel = async (model: string, signal: AbortSignal) => {
         return fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -438,17 +439,32 @@ FORMATOWANIE (OBOWIĄZKOWE):
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ model, messages }),
+          signal,
         });
       };
 
-      let response = await tryModel(primaryModel);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
-      if (response.status === 500 || response.status === 503) {
-        console.warn(`${label}: primary model (${primaryModel}) returned ${response.status}, falling back to ${fallbackModel}`);
-        response = await tryModel(fallbackModel);
+      try {
+        console.log(`[${label}] Calling AI with model ${primaryModel}...`);
+        let response = await tryModel(primaryModel, controller.signal);
+
+        if (response.status === 500 || response.status === 503) {
+          console.warn(`[${label}] Primary model returned ${response.status}, falling back to ${fallbackModel}`);
+          response = await tryModel(fallbackModel, controller.signal);
+        }
+
+        console.log(`[${label}] AI responded with status ${response.status}`);
+        return response;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          throw new Error(`AI nie odpowiedziało w czasie (${label} timeout ${AI_TIMEOUT_MS / 1000}s)`);
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
       }
-
-      return response;
     };
 
     // Step 1: Extract metadata (title, excerpt, category, tags)
