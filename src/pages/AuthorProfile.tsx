@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import { AuthorHero } from "@/components/AuthorHero";
 import { AuthorStats } from "@/components/AuthorStats";
 import { NewsCard } from "@/components/NewsCard";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { useAuthor, useAuthorPosts, useAuthorStats } from "@/hooks/useAuthors";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileX } from "lucide-react";
@@ -16,7 +16,11 @@ const AuthorProfile = () => {
   const { data: posts, isLoading: postsLoading } = useAuthorPosts(author?.id || "");
   const { data: stats, isLoading: statsLoading } = useAuthorStats(author?.id || "");
   
-  useDocumentTitle(author?.display_name || "Profil autora");
+  useSEOMeta({
+    title: author?.display_name || "Profil autora",
+    description: author?.bio || undefined,
+    canonical: slug ? `https://szortsy.pl/redakcja/${slug}` : undefined,
+  });
 
   if (authorLoading) {
     return (

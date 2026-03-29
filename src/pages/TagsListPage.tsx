@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { SEO } from "@/components/SEO";
 import { useTags } from "@/hooks/useTags";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +19,7 @@ import {
 const TagsListPage = () => {
   const { data: tags = [], isLoading } = useTags(1);
 
-  useDocumentTitle("Tagi - Szortsy");
+  useSEOMeta({ title: "Tagi", description: "Lista wszystkich tagów w serwisie Szortsy. Przeglądaj wiadomości sportowe po tematach." });
 
   // Group tags alphabetically
   const groupedTags = tags.reduce((acc, tag) => {

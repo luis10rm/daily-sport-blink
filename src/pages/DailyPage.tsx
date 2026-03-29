@@ -4,7 +4,7 @@ import { format, subDays, addDays, isAfter, startOfDay, isValid, parse } from "d
 import { pl } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, ExternalLink, Newspaper, ArrowLeft, Trophy } from "lucide-react";
 import { usePostsByDate } from "@/hooks/usePosts";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { DynamicSportIcon } from "@/components/DynamicSportIcon";
@@ -45,7 +45,7 @@ export default function DailyPage() {
   const { data: posts = [], isLoading } = usePostsByDate(dateStr);
 
   const formattedDate = formatDatePl(safeDate);
-  useDocumentTitle(`Briefing sportowy — ${formattedDate}`);
+  useSEOMeta({ title: `Briefing sportowy — ${formattedDate}`, canonical: `https://szortsy.pl/dzien/${dateStr}` });
 
   const prevDate = format(subDays(safeDate, 1), "yyyy-MM-dd");
   const nextDate = addDays(safeDate, 1);
