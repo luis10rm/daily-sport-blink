@@ -1,43 +1,36 @@
 
 
-## Naprawa SEO canonical i og:url
+## Problem: Statyczne meta tagi w `index.html` vs dynamiczne z JS
 
 ### Diagnoza
+Screenshot użytkownika to **View Source** (surowy HTML serwera). W SPA:
+- `index.html` serwuje **stałe** meta tagi (og:url, og:title, og:description) — linie 21-27
+- React hook `useSEOMeta` nadpisuje je **dopiero po załadowaniu JS**
+- "View Source" zawsze pokazuje surowy HTML — canonical/og:url tam nie zmienią się dynamicznie
+- Facebook/Twitter crawlery **nie wykonują JS** → zawsze widzą wartości z `index.html`
+- Googlebot wykonuje JS, więc widzi poprawne wartości (ale z opóźnieniem)
 
-| Źródło problemu | Szczegół |
-|---|---|
-| `index.html` linia 34 | Statyczny `<link rel="canonical" href="https://szortsy.pl" />` — ładuje się przed React i **nigdy nie jest usuwany** |
-| `useSEOMeta.ts` linia 62 | Hook poprawnie buduje `canonical = SITE_URL + location.pathname`, ale tag z `index.html` pozostaje jako duplikat |
-| Strony bez `useSEOMeta` | `AuthorProfile`, `AuthorsPage`, `DailyPage`, `TagsListPage` używają tylko `useDocumentTitle` — nie ustawiają canonical/og:url wcale |
+### Co zrobić
 
-**Efekt**: Google widzi stały `canonical = https://szortsy.pl` na każdej podstronie (statyczny tag z HTML wygrywa lub tworzy duplikat).
+**Opcja A — Minimalna (zalecana)**: Usunąć/wyczyścić statyczne meta tagi z `index.html`, zostawić dynamiczne z JS.
+- Googlebot (wykonuje JS) → widzi poprawne canonical i og:url
+- Social crawlery → widzą domyślne/puste wartości (mniej idealne, ale nie mylące)
 
-### Zmiany
+Zmiany w `index.html`:
+- Usunąć `og:url` (linia 24) — React i tak to ustawi dynamicznie
+- Zostawić og:title/description jako fallback dla homepage
 
-**1. `index.html`** — usunąć statyczny canonical (linia 34)
-```
-PRZED:  <link rel="canonical" href="https://szortsy.pl" />
-PO:     (usunięte)
-```
+**Opcja B — Pełna (SSR/prerendering)**: Użyć usługi prerendering (np. prerender.io, Cloudflare Workers) żeby serwować crawlerom pełny HTML z poprawnymi meta tagami. To jedyne 100% rozwiązanie dla social media preview na podstronach SPA.
 
-**2. `src/hooks/useSEOMeta.ts`** — bez zmian w logice (już działa poprawnie), ale upewnić się że `setLink("canonical", ...)` nadpisuje istniejący tag a nie tworzy drugi — obecna implementacja jest OK.
-
-**3. Strony bez `useSEOMeta` — dodać hook**:
-
-- **`src/pages/AuthorProfile.tsx`** — dodać `useSEOMeta({ title: author?.display_name, canonical: https://szortsy.pl/redakcja/${slug} })`
-- **`src/pages/AuthorsPage.tsx`** — dodać `useSEOMeta({ title: "Nasi autorzy" })` (zastąpi `useDocumentTitle`)
-- **`src/pages/DailyPage.tsx`** — dodać `useSEOMeta({ title: "Briefing sportowy — ..." })` (zastąpi `useDocumentTitle`)
-- **`src/pages/TagsListPage.tsx`** — dodać `useSEOMeta({ title: "Tagi" })` (zastąpi `useDocumentTitle`)
-
-### Podsumowanie zmian
+### Plan zmian (Opcja A)
 
 | Plik | Zmiana |
 |---|---|
-| `index.html` | Usunięcie `<link rel="canonical">` (1 linia) |
-| `AuthorProfile.tsx` | `useDocumentTitle` → `useSEOMeta` z title + canonical |
-| `AuthorsPage.tsx` | `useDocumentTitle` → `useSEOMeta` z title |
-| `DailyPage.tsx` | `useDocumentTitle` → `useSEOMeta` z title |
-| `TagsListPage.tsx` | `useDocumentTitle` → `useSEOMeta` z title |
+| `index.html` | Usunąć `<meta property="og:url" content="https://szortsy.pl" />` (linia 24) |
+| `index.html` | Usunąć `<meta property="og:type" content="website" />` (linia 23) — React ustawi dynamicznie |
 
-Po tych zmianach każda strona będzie miała dokładnie 1 tag canonical i og:url odpowiadający bieżącemu URL.
+To sprawi że "View Source" nie będzie pokazywać mylącego canonical/og:url. Googlebot (który wykonuje JS) zobaczy poprawne dynamiczne wartości.
+
+### Ograniczenia
+Bez SSR/prerendering, social media preview (Facebook, Twitter) dla podstron artykułów zawsze pokaże domyślny og:title/og:description z index.html zamiast tytułu artykułu. Jeśli social preview jest ważne — potrzebny jest prerendering.
 
