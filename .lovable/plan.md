@@ -1,91 +1,47 @@
 
 
-## News Discovery — automatyczne propozycje newsów z monitorowanych źródeł
+## Naprawa scan-news-sources — błędny parsing odpowiedzi Firecrawl
 
-### Cel
-Admin dodaje listę zaufanych źródeł sportowych (np. sport.pl, meczyki.pl, weszlo.com). System cyklicznie skanuje te strony, wyciąga najnowsze artykuły, AI ocenia ich atrakcyjność, a admin w panelu jednym kliknięciem akceptuje propozycję — co automatycznie tworzy szkic posta (z gotowym tytułem, treścią, kategorią, tagami, obrazkiem) gotowy do publikacji.
+### Diagnoza (potwierdzona)
 
-### Architektura
+Test API Firecrawl pokazał:
+- Endpoint `/v2/map` zwraca `links: [{url, title, description}, ...]` — **tablicę obiektów**, nie stringów
+- Kod w `firecrawlMap()` robi `data.links || data.data?.links` i traktuje to jako `string[]`
+- Filtr `isLikelyArticleUrl()` dostaje obiekty zamiast stringów → wszystko odrzuca → 0 kandydatów → 0 propozycji
+- Brak błędów w logach, bo "technicznie" funkcja przeszła cały loop bez exception
 
-```text
-[news_sources]  ──cron co 1h──>  [scan-news-sources]  ──Firecrawl──>  surowa lista artykułów
-                                          │
-                                          ▼
-                                 [news_suggestions]  <──AI ocena (score 1-10)
-                                          │
-                                          ▼
-                          Panel admina /admin/suggestions
-                                          │
-                          [Zaakceptuj] ──> extract-article (istniejący) ──> PostEditor (prefill)
-                          [Odrzuć]    ──> status: rejected
-```
+Drugorzędnie: dużo wyników to URL-e sitemap.xml (`/sitemap-articles-XXXX.xml`) — trzeba je odfiltrować.
 
-### Zmiany w bazie
+### Plan zmian (1 plik)
 
-**Tabela `news_sources`** — lista monitorowanych portali
-- `id`, `name`, `url` (np. https://sport.pl), `list_selector` (opcjonalnie CSS dla listy), `is_active`, `last_scanned_at`, `created_at`
+**`supabase/functions/scan-news-sources/index.ts`**
 
-**Tabela `news_suggestions`** — propozycje newsów
-- `id`, `source_id`, `article_url` (unique), `title`, `excerpt`, `image_url`, `published_at`
-- `ai_score` (1-10), `ai_reasoning`, `suggested_category_id`, `suggested_tags`
-- `status` ('pending' | 'accepted' | 'rejected' | 'published')
-- `accepted_post_id` (FK do posts po publikacji)
-- `discovered_at`, `created_at`
+1. **Parser `firecrawlMap()`** — obsłuż obie formy odpowiedzi:
+   - Jeśli element to obiekt → wyciągnij `.url`
+   - Jeśli string → zostaw
+   - Zwróć `string[]`
+   - Zwiększ `limit` do `100` (więcej szans na świeże artykuły)
 
-RLS: tylko admin/editor mogą czytać/zapisywać.
+2. **`isLikelyArticleUrl()`** — dodaj filtry:
+   - Wyklucz `.xml` (sitemapy)
+   - Wyklucz ścieżki krótsze niż ~15 znaków bez slugu
+   - Już jest `.xml` w wykluczeniach, ale linki kończą się np. `-2017.xml` — sprawdzić regex
 
-### Edge functions
+3. **Lepsze logowanie diagnostyczne** — żeby następnym razem od razu widzieć problem:
+   - `console.log` ile linków zwrócił Firecrawl (raw)
+   - Ile przeszło filtr `isLikelyArticleUrl`
+   - Ile było duplikatów (już istniejących w `news_suggestions`)
+   - Ile poszło do scrape + AI
 
-**1. `scan-news-sources`** (nowa, cron co 1h)
-- Pobiera aktywne źródła z `news_sources`
-- Dla każdego źródła używa **Firecrawl `/map` lub `/scrape` z formatem `links`** żeby pobrać listę URL-i artykułów
-- Filtruje URL-e które już są w `news_suggestions` (deduplikacja po `article_url`)
-- Dla nowych: scrape metadata (title, excerpt, image, date) — Firecrawl `scrape` z `formats: ['markdown', 'json']`
-- Wywołuje Lovable AI (gemini-2.5-flash) — ocena atrakcyjności + sugerowana kategoria + tagi
-- Zapisuje do `news_suggestions` ze statusem `pending`
+4. **Domyślnie pomiń sitemapy** w wynikach Firecrawl (`/sitemap`, `.xml`)
 
-**2. Schedule** — `pg_cron` co 1h wywołuje `scan-news-sources`
+5. **Toast frontendowy** już pokazuje `new_suggestions` i `duplicates` — dodać do `details` per source: `total_links` (raw z Firecrawl) + `filtered` (po filtrze) — to już jest w `perSource`, tylko nieużywane w UI. Pozostawić bez zmian w UI.
 
-### Panel admina — nowa strona `/admin/suggestions`
+### Rekomendacja dla użytkownika (poza kodem)
 
-**Layout**: lista kart propozycji posortowana po `ai_score DESC, discovered_at DESC`
+- **Flashscore** to portal z wynikami live, nie artykułami. Zamień na np. `https://sportowefakty.wp.pl`, `https://weszlo.com`, `https://www.meczyki.pl` — będą dawać więcej propozycji.
 
-Każda karta:
-- Miniatura + tytuł + excerpt + źródło + data
-- Badge ze score AI (np. „⭐ 9/10 — gorący temat") + tooltip z `ai_reasoning`
-- Sugerowana kategoria + tagi (chip)
-- Przyciski:
-  - **„Przygotuj artykuł"** → nawiguje do `/admin/posts/new` z prefillem przez istniejący flow `useExtractArticle` (URL źródła auto-wypełniony, AI generuje treść)
-  - **„Odrzuć"** → status `rejected`
-  - **„Otwórz źródło"** → link zewnętrzny
+### Test po wdrożeniu
 
-Filtry: status (pending/rejected/all), źródło, min. score, dzisiejsze.
+Po deploy: kliknij „Skanuj teraz" w `/admin/sources` → toast pokaże liczbę nowych propozycji → sprawdź `/admin/suggestions`.
 
-**Sidebar nawigacja**: dodać link „Propozycje newsów" z badge'em pokazującym liczbę pending.
-
-### Sub-strona `/admin/sources` — zarządzanie źródłami
-
-Prosta CRUD-owa lista:
-- Tabela: nazwa, URL, status (aktywny/nie), ostatni skan, liczba propozycji
-- Modal dodawania: nazwa + URL + opcjonalny CSS selector
-- Przycisk „Skanuj teraz" — manual trigger `scan-news-sources` dla pojedynczego źródła
-
-### Integracja z istniejącym flow
-
-Przycisk „Przygotuj artykuł" w propozycji **NIE** generuje wszystkiego automatycznie — wykorzystuje istniejący `useExtractArticle` w `PostEditor`, czyli:
-1. Otwiera `/admin/posts/new`
-2. Pole `source_url` jest auto-wypełnione
-3. Auto-uruchamia AI extraction (jak teraz po kliknięciu „Generuj AI")
-4. Admin może edytować przed publikacją
-5. Po zapisie posta → aktualizuje `news_suggestions.status = 'published'` + `accepted_post_id`
-
-### Wymagania techniczne
-
-- **Firecrawl** — już połączony (widzę `FIRECRAWL_API_KEY` w sekretach + użycie w `extract-article`)
-- **Lovable AI** — już używany (`gemini-2.5-flash` do oceny — tani, szybki)
-- **pg_cron + pg_net** — do enable'a (jeśli jeszcze nie aktywne) dla harmonogramu
-- Brak nowych sekretów
-
-### Kluczowe pytania przed implementacją
-
-Trzy decyzje wpłyną na zakres MVP:
