@@ -17,7 +17,7 @@ interface NewsSource {
   list_selector: string | null;
 }
 
-async function firecrawlMap(url: string, limit = 30): Promise<string[]> {
+async function firecrawlMap(url: string, limit = 100): Promise<string[]> {
   const res = await fetch("https://api.firecrawl.dev/v2/map", {
     method: "POST",
     headers: {
@@ -32,7 +32,18 @@ async function firecrawlMap(url: string, limit = 30): Promise<string[]> {
     return [];
   }
   const data = await res.json();
-  const links: string[] = data.links || data.data?.links || [];
+  const rawLinks: unknown[] = data.links || data.data?.links || [];
+  // Firecrawl v2 returns objects { url, title, description }; older versions returned strings
+  const links: string[] = rawLinks
+    .map((l) => {
+      if (typeof l === "string") return l;
+      if (l && typeof l === "object" && "url" in l && typeof (l as { url: unknown }).url === "string") {
+        return (l as { url: string }).url;
+      }
+      return "";
+    })
+    .filter((u) => u.length > 0);
+  console.log(`[firecrawlMap] ${url} → raw=${rawLinks.length}, urls=${links.length}`);
   return links;
 }
 
@@ -42,12 +53,11 @@ function isLikelyArticleUrl(articleUrl: string, sourceUrl: string): boolean {
     const src = new URL(sourceUrl);
     if (u.hostname !== src.hostname) return false;
     const path = u.pathname;
-    // skip homepage / category / tag listings
-    if (path === "/" || path.length < 10) return false;
-    // skip obvious non-articles
-    if (/\.(jpg|png|gif|css|js|pdf|xml)$/i.test(path)) return false;
-    if (/\/(tag|tagi|kategoria|category|autor|author|szukaj|search)\//i.test(path)) return false;
-    // require some slug-like structure
+    if (path === "/" || path.length < 15) return false;
+    // skip sitemaps, feeds, assets (anywhere, e.g. /sitemap-articles-2017.xml)
+    if (/\.(jpg|jpeg|png|gif|webp|css|js|pdf|xml|rss|atom|ico|svg)(\?|$)/i.test(path)) return false;
+    if (/sitemap/i.test(path)) return false;
+    if (/\/(tag|tagi|kategoria|category|autor|author|szukaj|search|archiwum|archive)\//i.test(path)) return false;
     return /[a-z0-9-]{8,}/i.test(path);
   } catch {
     return false;
@@ -232,16 +242,18 @@ Deno.serve(async (req) => {
 
     for (const source of sources as NewsSource[]) {
       console.log(`[scan] ${source.name} (${source.url})`);
-      const links = await firecrawlMap(source.url, 40);
-      const candidates = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url)))).slice(0, 15);
+      const links = await firecrawlMap(source.url, 100);
+      const filtered = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url))));
+      const candidates = filtered.slice(0, 15);
+      console.log(`[scan] ${source.name} links=${links.length} filtered=${filtered.length} candidates=${candidates.length}`);
 
       // dedup against existing suggestions
-      const { data: existing } = await supabase
-        .from("news_suggestions")
-        .select("article_url")
-        .in("article_url", candidates);
+      const { data: existing } = candidates.length
+        ? await supabase.from("news_suggestions").select("article_url").in("article_url", candidates)
+        : { data: [] as { article_url: string }[] };
       const existingSet = new Set((existing || []).map((r: { article_url: string }) => r.article_url));
       const fresh = candidates.filter((u) => !existingSet.has(u));
+      console.log(`[scan] ${source.name} fresh=${fresh.length} (already_in_suggestions=${candidates.length - fresh.length})`);
 
       let added = 0;
       let dups = 0;
