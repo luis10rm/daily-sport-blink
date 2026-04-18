@@ -187,6 +187,24 @@ export default function SuggestionsList() {
                           Przywróć
                         </Button>
                       )}
+                      {s.status === "duplicate" && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePrepare(s.id, s.article_url)}
+                          >
+                            <Sparkles className="mr-2 h-4 w-4" /> Mimo to przygotuj
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => updateStatus.mutate({ id: s.id, status: "rejected" })}
+                          >
+                            <X className="mr-2 h-4 w-4" /> Odrzuć
+                          </Button>
+                        </>
+                      )}
                       <Button size="sm" variant="ghost" asChild>
                         <a href={s.article_url} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="mr-2 h-4 w-4" /> Otwórz źródło
