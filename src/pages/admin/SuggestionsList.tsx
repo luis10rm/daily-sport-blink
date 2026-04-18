@@ -148,9 +148,14 @@ export default function SuggestionsList() {
                       {s.sport_categories?.name && (
                         <Badge variant="secondary">{s.sport_categories.name}</Badge>
                       )}
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(s.discovered_at), { addSuffix: true, locale: pl })}
-                      </span>
+                      <div className="ml-auto flex flex-col items-end text-xs text-muted-foreground">
+                        {s.published_at && (
+                          <span title={new Date(s.published_at).toLocaleString("pl-PL")}>
+                            📅 {new Date(s.published_at).toLocaleString("pl-PL", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        )}
+                        <span>wykryto {formatDistanceToNow(new Date(s.discovered_at), { addSuffix: true, locale: pl })}</span>
+                      </div>
                     </div>
                     <h3 className="font-semibold leading-tight">{s.title || s.article_url}</h3>
                     {s.excerpt && (
