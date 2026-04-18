@@ -1,0 +1,2 @@
+[functions.scan-news-sources]
+verify_jwt = false
