@@ -73,9 +73,10 @@ export default function SuggestionsList() {
         <Card>
           <CardContent className="flex flex-wrap gap-3 p-4">
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="pending">Oczekujące</SelectItem>
+                <SelectItem value="duplicate">Duplikaty</SelectItem>
                 <SelectItem value="rejected">Odrzucone</SelectItem>
                 <SelectItem value="published">Opublikowane</SelectItem>
                 <SelectItem value="all">Wszystkie</SelectItem>
