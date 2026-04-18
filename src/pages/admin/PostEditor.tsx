@@ -100,7 +100,17 @@ const PostEditor = () => {
   const { user } = useAuth();
 
   // Check for prefill data from navigation state (e.g., from daily summary generator)
-  const prefillData = (location.state as { prefill?: PrefillData })?.prefill;
+  const navState = location.state as {
+    prefill?: PrefillData;
+    sourceUrl?: string;
+    suggestionId?: string;
+    autoExtract?: boolean;
+  } | null;
+  const prefillData = navState?.prefill;
+  const prefillSourceUrl = navState?.sourceUrl;
+  const suggestionId = navState?.suggestionId;
+  const autoExtract = navState?.autoExtract;
+  const [autoExtractTriggered, setAutoExtractTriggered] = useState(false);
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
   const { data: sportCategories, isLoading: isLoadingCategories } = useSportCategories();
@@ -176,6 +186,22 @@ const PostEditor = () => {
       form.setValue("author_id", currentUserAuthor.id);
     }
   }, [isEditing, currentUserAuthor, form]);
+
+  // Prefill source_url from a news suggestion and optionally auto-trigger AI extraction
+  useEffect(() => {
+    if (isEditing) return;
+    if (prefillSourceUrl && !form.getValues("source_url")) {
+      form.setValue("source_url", prefillSourceUrl);
+    }
+    if (autoExtract && prefillSourceUrl && !autoExtractTriggered) {
+      setAutoExtractTriggered(true);
+      // small delay so form value commits
+      setTimeout(() => {
+        handleAIExtract();
+      }, 100);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillSourceUrl, autoExtract, isEditing, autoExtractTriggered]);
 
   // Reset published_at to current time when creating a new post (not editing)
   useEffect(() => {
@@ -273,7 +299,15 @@ const PostEditor = () => {
     } else {
       const newPost = await createPost.mutateAsync({ ...postData, created_by: user?.id });
       savedPostId = newPost?.id;
-      
+
+      // Mark originating suggestion as published
+      if (suggestionId && newPost?.id) {
+        await supabase
+          .from("news_suggestions")
+          .update({ status: "published", accepted_post_id: newPost.id })
+          .eq("id", suggestionId);
+      }
+
       // Notify Google about the new post (only for new posts, not edits)
       if (newPost?.slug) {
         notifyGoogleIndex(newPost.slug);

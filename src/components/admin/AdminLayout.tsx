@@ -3,7 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePendingSuggestionsCount } from "@/hooks/useNewsDiscovery";
 import {
   Sheet,
   SheetContent,
@@ -24,6 +26,8 @@ import {
   UserPen,
   Menu,
   MessageSquare,
+  Sparkles,
+  Globe,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -32,6 +36,8 @@ interface AdminLayoutProps {
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/suggestions", label: "Propozycje newsów", icon: Sparkles, badge: "pendingSuggestions" as const },
+  { href: "/admin/sources", label: "Źródła", icon: Globe },
   { href: "/admin/posts", label: "Posty", icon: FileText },
   { href: "/admin/banners", label: "Banery", icon: Megaphone },
   { href: "/admin/authors", label: "Autorzy", icon: UserPen },
@@ -64,12 +70,15 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     }
   };
 
+  const { data: pendingSuggestions } = usePendingSuggestionsCount();
+
   const SidebarContent = () => (
     <>
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4">
         {filteredNavItems.map((item) => {
           const isActive = location.pathname === item.href;
+          const showBadge = item.badge === "pendingSuggestions" && (pendingSuggestions ?? 0) > 0;
           return (
             <Link
               key={item.href}
@@ -83,7 +92,12 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
               )}
             >
               <item.icon className="h-5 w-5" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {showBadge && (
+                <Badge variant={isActive ? "secondary" : "default"} className="h-5 px-1.5 text-xs">
+                  {pendingSuggestions}
+                </Badge>
+              )}
             </Link>
           );
         })}
