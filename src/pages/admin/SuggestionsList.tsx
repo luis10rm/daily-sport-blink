@@ -83,9 +83,15 @@ export default function SuggestionsList() {
             <h1 className="text-3xl font-bold">Propozycje newsów</h1>
             <p className="text-muted-foreground">AI sugeruje, ty decydujesz co publikujemy.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => navigate("/admin/sources")}>
               <Settings2 className="mr-2 h-4 w-4" /> Źródła
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleClearSuggestions("rejected")}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Wyczyść odrzucone
             </Button>
             <Button onClick={() => scan.mutate({ maxPerSource: 5, todayOnly: true })} disabled={scan.isPending}>
               <RefreshCw className={`mr-2 h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
@@ -95,7 +101,7 @@ export default function SuggestionsList() {
         </div>
 
         <Card>
-          <CardContent className="flex flex-wrap gap-3 p-4">
+          <CardContent className="flex flex-wrap items-center gap-3 p-4">
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -124,8 +130,18 @@ export default function SuggestionsList() {
                 <SelectItem value="9">Min. 9 🔥</SelectItem>
               </SelectContent>
             </Select>
+            {filtersActive && (
+              <Button variant="ghost" size="sm" onClick={resetFilters}>
+                <FilterX className="mr-2 h-4 w-4" /> Wyczyść filtry
+              </Button>
+            )}
+            <div className="ml-auto text-xs text-muted-foreground">
+              {suggestions?.length ?? 0} wyników
+            </div>
           </CardContent>
         </Card>
+
+
 
         {isLoading ? (
           <div className="space-y-3">
