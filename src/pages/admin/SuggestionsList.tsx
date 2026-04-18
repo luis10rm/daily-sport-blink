@@ -52,12 +52,12 @@ export default function SuggestionsList() {
   const handleClearSuggestions = async (scope: "rejected" | "all_non_published") => {
     const label = scope === "rejected" ? "wszystkie odrzucone" : "wszystkie oprócz opublikowanych";
     if (!confirm(`Na pewno usunąć ${label}? Tej operacji nie można cofnąć.`)) return;
-    const query = supabase.from("news_suggestions").delete();
-    const { error, count } = scope === "rejected"
-      ? await query.eq("status", "rejected").select("*", { count: "exact", head: true })
-      : await query.neq("status", "published").select("*", { count: "exact", head: true });
+    const base = supabase.from("news_suggestions").delete();
+    const { error } = scope === "rejected"
+      ? await base.eq("status", "rejected")
+      : await base.neq("status", "published");
     if (error) { toast.error(error.message); return; }
-    toast.success(`Usunięto ${count ?? 0} propozycji`);
+    toast.success(`Usunięto ${label}`);
     qc.invalidateQueries({ queryKey: ["news_suggestions"] });
     qc.invalidateQueries({ queryKey: ["news_suggestions_pending_count"] });
   };
