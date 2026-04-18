@@ -275,9 +275,26 @@ Deno.serve(async (req) => {
 
       let added = 0;
       let dups = 0;
-      for (const articleUrl of fresh.slice(0, 8)) {
+      let skippedNotToday = 0;
+      for (const articleUrl of fresh) {
+        if (added + dups >= maxPerSource) break;
         const meta = await firecrawlScrapeMeta(articleUrl);
         if (!meta?.title) continue;
+
+        // KRYTYCZNE: pomiń artykuły spoza ostatnich 24h, jeśli mamy datę publikacji
+        if (todayOnly) {
+          if (!meta.publishedAt) {
+            // brak daty — pomijamy bezpiecznie (bez daty nie wiemy czy świeży)
+            console.log(`[scan] skip (no publishedAt): ${articleUrl}`);
+            skippedNotToday++;
+            continue;
+          }
+          if (!isFromToday(meta.publishedAt)) {
+            console.log(`[scan] skip (old: ${meta.publishedAt}): ${articleUrl}`);
+            skippedNotToday++;
+            continue;
+          }
+        }
 
         // Duplicate check vs already-published posts
         let isDuplicate = false;
@@ -333,6 +350,7 @@ Deno.serve(async (req) => {
           totalNew++;
         }
       }
+      console.log(`[scan] ${source.name} done: new=${added} dup=${dups} skipped_old=${skippedNotToday}`);
 
       await supabase
         .from("news_sources")
