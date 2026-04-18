@@ -242,16 +242,18 @@ Deno.serve(async (req) => {
 
     for (const source of sources as NewsSource[]) {
       console.log(`[scan] ${source.name} (${source.url})`);
-      const links = await firecrawlMap(source.url, 40);
-      const candidates = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url)))).slice(0, 15);
+      const links = await firecrawlMap(source.url, 100);
+      const filtered = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url))));
+      const candidates = filtered.slice(0, 15);
+      console.log(`[scan] ${source.name} links=${links.length} filtered=${filtered.length} candidates=${candidates.length}`);
 
       // dedup against existing suggestions
-      const { data: existing } = await supabase
-        .from("news_suggestions")
-        .select("article_url")
-        .in("article_url", candidates);
+      const { data: existing } = candidates.length
+        ? await supabase.from("news_suggestions").select("article_url").in("article_url", candidates)
+        : { data: [] as { article_url: string }[] };
       const existingSet = new Set((existing || []).map((r: { article_url: string }) => r.article_url));
       const fresh = candidates.filter((u) => !existingSet.has(u));
+      console.log(`[scan] ${source.name} fresh=${fresh.length} (already_in_suggestions=${candidates.length - fresh.length})`);
 
       let added = 0;
       let dups = 0;
