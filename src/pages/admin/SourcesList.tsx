@@ -148,8 +148,9 @@ export default function SourcesList() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => scan.mutate(s.id)}
+                          onClick={() => scan.mutate({ sourceId: s.id, maxPerSource, todayOnly })}
                           disabled={scan.isPending}
+                          title="Skanuj to źródło"
                         >
                           <RefreshCw className={`h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
                         </Button>
