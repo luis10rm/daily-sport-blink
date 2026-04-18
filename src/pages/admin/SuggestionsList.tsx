@@ -40,6 +40,27 @@ export default function SuggestionsList() {
   });
   const updateStatus = useUpdateSuggestionStatus();
   const scan = useScanNewsSources();
+  const qc = useQueryClient();
+
+  const filtersActive = status !== "pending" || sourceId !== "all" || minScore !== "0";
+  const resetFilters = () => {
+    setStatus("pending");
+    setSourceId("all");
+    setMinScore("0");
+  };
+
+  const handleClearSuggestions = async (scope: "rejected" | "all_non_published") => {
+    const label = scope === "rejected" ? "wszystkie odrzucone" : "wszystkie oprócz opublikowanych";
+    if (!confirm(`Na pewno usunąć ${label}? Tej operacji nie można cofnąć.`)) return;
+    const query = supabase.from("news_suggestions").delete();
+    const { error, count } = scope === "rejected"
+      ? await query.eq("status", "rejected").select("*", { count: "exact", head: true })
+      : await query.neq("status", "published").select("*", { count: "exact", head: true });
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Usunięto ${count ?? 0} propozycji`);
+    qc.invalidateQueries({ queryKey: ["news_suggestions"] });
+    qc.invalidateQueries({ queryKey: ["news_suggestions_pending_count"] });
+  };
 
   const handlePrepare = (id: string, articleUrl: string) => {
     navigate("/admin/posts/new", {
