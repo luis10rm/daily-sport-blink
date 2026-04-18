@@ -136,6 +136,12 @@ export default function SuggestionsList() {
                           <TooltipContent className="max-w-xs">{s.ai_reasoning || "—"}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                      {s.status === "duplicate" && (
+                        <Badge variant="destructive">Duplikat</Badge>
+                      )}
+                      {s.status === "published" && (
+                        <Badge variant="default">Opublikowano</Badge>
+                      )}
                       {s.news_sources?.name && (
                         <Badge variant="outline">{s.news_sources.name}</Badge>
                       )}
