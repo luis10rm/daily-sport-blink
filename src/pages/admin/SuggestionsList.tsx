@@ -63,7 +63,7 @@ export default function SuggestionsList() {
             <Button variant="outline" onClick={() => navigate("/admin/sources")}>
               <Settings2 className="mr-2 h-4 w-4" /> Źródła
             </Button>
-            <Button onClick={() => scan.mutate(undefined)} disabled={scan.isPending}>
+            <Button onClick={() => scan.mutate({ maxPerSource: 5, todayOnly: true })} disabled={scan.isPending}>
               <RefreshCw className={`mr-2 h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
               Skanuj teraz
             </Button>
