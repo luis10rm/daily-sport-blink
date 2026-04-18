@@ -179,6 +179,121 @@ export type Database = {
         }
         Relationships: []
       }
+      news_sources: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          last_scanned_at: string | null
+          list_selector: string | null
+          name: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          last_scanned_at?: string | null
+          list_selector?: string | null
+          name: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          last_scanned_at?: string | null
+          list_selector?: string | null
+          name?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      news_suggestions: {
+        Row: {
+          accepted_post_id: string | null
+          ai_reasoning: string | null
+          ai_score: number | null
+          article_url: string
+          created_at: string
+          discovered_at: string
+          excerpt: string | null
+          id: string
+          image_url: string | null
+          published_at: string | null
+          source_id: string | null
+          status: string
+          suggested_category_id: string | null
+          suggested_tags: string[] | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          accepted_post_id?: string | null
+          ai_reasoning?: string | null
+          ai_score?: number | null
+          article_url: string
+          created_at?: string
+          discovered_at?: string
+          excerpt?: string | null
+          id?: string
+          image_url?: string | null
+          published_at?: string | null
+          source_id?: string | null
+          status?: string
+          suggested_category_id?: string | null
+          suggested_tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accepted_post_id?: string | null
+          ai_reasoning?: string | null
+          ai_score?: number | null
+          article_url?: string
+          created_at?: string
+          discovered_at?: string
+          excerpt?: string | null
+          id?: string
+          image_url?: string | null
+          published_at?: string | null
+          source_id?: string | null
+          status?: string
+          suggested_category_id?: string | null
+          suggested_tags?: string[] | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_suggestions_accepted_post_id_fkey"
+            columns: ["accepted_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_suggestions_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "news_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_suggestions_suggested_category_id_fkey"
+            columns: ["suggested_category_id"]
+            isOneToOne: false
+            referencedRelation: "sport_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_id: string | null
