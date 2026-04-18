@@ -1,0 +1,254 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+interface NewsSource {
+  id: string;
+  name: string;
+  url: string;
+  list_selector: string | null;
+}
+
+async function firecrawlMap(url: string, limit = 30): Promise<string[]> {
+  const res = await fetch("https://api.firecrawl.dev/v2/map", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ url, limit, includeSubdomains: false }),
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    console.error(`Firecrawl map failed for ${url}: ${res.status} ${txt}`);
+    return [];
+  }
+  const data = await res.json();
+  const links: string[] = data.links || data.data?.links || [];
+  return links;
+}
+
+function isLikelyArticleUrl(articleUrl: string, sourceUrl: string): boolean {
+  try {
+    const u = new URL(articleUrl);
+    const src = new URL(sourceUrl);
+    if (u.hostname !== src.hostname) return false;
+    const path = u.pathname;
+    // skip homepage / category / tag listings
+    if (path === "/" || path.length < 10) return false;
+    // skip obvious non-articles
+    if (/\.(jpg|png|gif|css|js|pdf|xml)$/i.test(path)) return false;
+    if (/\/(tag|tagi|kategoria|category|autor|author|szukaj|search)\//i.test(path)) return false;
+    // require some slug-like structure
+    return /[a-z0-9-]{8,}/i.test(path);
+  } catch {
+    return false;
+  }
+}
+
+async function firecrawlScrapeMeta(url: string): Promise<{
+  title?: string;
+  excerpt?: string;
+  image?: string;
+  publishedAt?: string;
+} | null> {
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        url,
+        formats: ["markdown"],
+        onlyMainContent: true,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const meta = data.metadata || data.data?.metadata || {};
+    const markdown: string = data.markdown || data.data?.markdown || "";
+    return {
+      title: meta.title || meta.ogTitle,
+      excerpt: (meta.description || meta.ogDescription || markdown.slice(0, 300))?.toString().slice(0, 500),
+      image: meta.ogImage || meta.image,
+      publishedAt: meta.publishedTime || meta.articlePublishedTime,
+    };
+  } catch (e) {
+    console.error(`scrape meta error for ${url}`, e);
+    return null;
+  }
+}
+
+async function aiScore(
+  title: string,
+  excerpt: string,
+  categories: { id: string; name: string }[],
+): Promise<{ score: number; reasoning: string; categoryId: string | null; tags: string[] }> {
+  if (!LOVABLE_API_KEY) {
+    return { score: 5, reasoning: "AI key missing", categoryId: null, tags: [] };
+  }
+  const catList = categories.map((c) => `${c.id}: ${c.name}`).join("\n");
+  const prompt = `Oceniasz atrakcyjność polskiego newsa sportowego dla portalu „Szortsy" (krótkie, ciekawe newsy).
+
+TYTUŁ: ${title}
+LEAD: ${excerpt}
+
+DOSTĘPNE KATEGORIE:
+${catList}
+
+Zwróć WYŁĄCZNIE JSON:
+{
+  "score": <1-10, gdzie 10 = gorący temat dnia, must-publish>,
+  "reasoning": "<1 zdanie po polsku>",
+  "category_id": "<id z listy lub null>",
+  "tags": ["tag1","tag2","tag3"]
+}`;
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: "Odpowiadasz tylko poprawnym JSON-em, bez bloków markdown." },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("AI score failed", res.status, txt);
+      return { score: 5, reasoning: "AI error", categoryId: null, tags: [] };
+    }
+    const data = await res.json();
+    const raw: string = data.choices?.[0]?.message?.content ?? "{}";
+    const cleaned = raw.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    return {
+      score: Math.max(1, Math.min(10, Number(parsed.score) || 5)),
+      reasoning: String(parsed.reasoning || ""),
+      categoryId: parsed.category_id && parsed.category_id !== "null" ? parsed.category_id : null,
+      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 5).map(String) : [],
+    };
+  } catch (e) {
+    console.error("AI score parse error", e);
+    return { score: 5, reasoning: "AI parse error", categoryId: null, tags: [] };
+  }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    let sourceFilter: string | null = null;
+    if (req.method === "POST") {
+      try {
+        const body = await req.json();
+        if (body?.source_id && typeof body.source_id === "string") {
+          sourceFilter = body.source_id;
+        }
+      } catch {
+        // no body, scan all
+      }
+    }
+
+    let query = supabase.from("news_sources").select("id,name,url,list_selector").eq("is_active", true);
+    if (sourceFilter) query = query.eq("id", sourceFilter);
+    const { data: sources, error: srcErr } = await query;
+    if (srcErr) throw srcErr;
+
+    if (!sources || sources.length === 0) {
+      return new Response(JSON.stringify({ ok: true, message: "No active sources", scanned: 0 }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: categories } = await supabase
+      .from("sport_categories")
+      .select("id,name")
+      .order("sort_order");
+    const cats = categories || [];
+
+    let totalNew = 0;
+    const perSource: Array<{ source: string; new: number; total_links: number }> = [];
+
+    for (const source of sources as NewsSource[]) {
+      console.log(`[scan] ${source.name} (${source.url})`);
+      const links = await firecrawlMap(source.url, 40);
+      const candidates = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url)))).slice(0, 15);
+
+      // dedup against existing
+      const { data: existing } = await supabase
+        .from("news_suggestions")
+        .select("article_url")
+        .in("article_url", candidates);
+      const existingSet = new Set((existing || []).map((r: { article_url: string }) => r.article_url));
+      const fresh = candidates.filter((u) => !existingSet.has(u));
+
+      let added = 0;
+      for (const articleUrl of fresh.slice(0, 8)) {
+        const meta = await firecrawlScrapeMeta(articleUrl);
+        if (!meta?.title) continue;
+
+        const ai = await aiScore(meta.title, meta.excerpt || "", cats);
+
+        const { error: insErr } = await supabase.from("news_suggestions").insert({
+          source_id: source.id,
+          article_url: articleUrl,
+          title: meta.title,
+          excerpt: meta.excerpt,
+          image_url: meta.image,
+          published_at: meta.publishedAt,
+          ai_score: ai.score,
+          ai_reasoning: ai.reasoning,
+          suggested_category_id: ai.categoryId,
+          suggested_tags: ai.tags,
+          status: "pending",
+        });
+        if (insErr) {
+          console.error(`insert failed for ${articleUrl}`, insErr.message);
+          continue;
+        }
+        added++;
+        totalNew++;
+      }
+
+      await supabase
+        .from("news_sources")
+        .update({ last_scanned_at: new Date().toISOString() })
+        .eq("id", source.id);
+
+      perSource.push({ source: source.name, new: added, total_links: candidates.length });
+    }
+
+    return new Response(
+      JSON.stringify({ ok: true, scanned: sources.length, new_suggestions: totalNew, details: perSource }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("scan-news-sources fatal", msg);
+    return new Response(JSON.stringify({ ok: false, error: msg }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
