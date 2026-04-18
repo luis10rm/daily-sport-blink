@@ -33,6 +33,8 @@ export default function SourcesList() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [selector, setSelector] = useState("");
+  const [maxPerSource, setMaxPerSource] = useState(5);
+  const [todayOnly, setTodayOnly] = useState(true);
 
   const handleAdd = async () => {
     if (!name || !url) return;
@@ -76,6 +78,36 @@ export default function SourcesList() {
         </div>
 
         <Card>
+          <CardContent className="flex flex-wrap items-end gap-4 p-4">
+            <div className="space-y-1">
+              <Label htmlFor="max-per-source">Max propozycji na źródło</Label>
+              <Input
+                id="max-per-source"
+                type="number"
+                min={1}
+                max={20}
+                value={maxPerSource}
+                onChange={(e) => setMaxPerSource(Math.max(1, Math.min(20, Number(e.target.value) || 5)))}
+                className="w-32"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch id="today-only" checked={todayOnly} onCheckedChange={setTodayOnly} />
+              <Label htmlFor="today-only" className="cursor-pointer">Tylko z dzisiaj (24h)</Label>
+            </div>
+            <Button
+              className="ml-auto"
+              onClick={() => scan.mutate({ maxPerSource, todayOnly })}
+              disabled={scan.isPending}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
+              Skanuj wszystkie
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+
           <CardContent className="p-0">
             <Table>
               <TableHeader>
@@ -116,8 +148,9 @@ export default function SourcesList() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => scan.mutate(s.id)}
+                          onClick={() => scan.mutate({ sourceId: s.id, maxPerSource, todayOnly })}
                           disabled={scan.isPending}
+                          title="Skanuj to źródło"
                         >
                           <RefreshCw className={`h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
                         </Button>

@@ -143,13 +143,22 @@ export const useUpdateSuggestionStatus = () => {
   });
 };
 
+interface ScanOptions {
+  sourceId?: string;
+  maxPerSource?: number;
+  todayOnly?: boolean;
+}
+
 export const useScanNewsSources = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (sourceId?: string) => {
-      const { data, error } = await supabase.functions.invoke("scan-news-sources", {
-        body: sourceId ? { source_id: sourceId } : {},
-      });
+    mutationFn: async (opts?: ScanOptions | string) => {
+      const options: ScanOptions = typeof opts === "string" ? { sourceId: opts } : opts || {};
+      const body: Record<string, unknown> = {};
+      if (options.sourceId) body.source_id = options.sourceId;
+      if (typeof options.maxPerSource === "number") body.max_per_source = options.maxPerSource;
+      if (typeof options.todayOnly === "boolean") body.today_only = options.todayOnly;
+      const { data, error } = await supabase.functions.invoke("scan-news-sources", { body });
       if (error) throw error;
       return data as { ok: boolean; new_suggestions?: number; duplicates?: number; details?: unknown };
     },
