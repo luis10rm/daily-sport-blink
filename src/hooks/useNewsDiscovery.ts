@@ -151,7 +151,7 @@ export const useScanNewsSources = () => {
         body: sourceId ? { source_id: sourceId } : {},
       });
       if (error) throw error;
-      return data as { ok: boolean; new_suggestions?: number; details?: unknown };
+      return data as { ok: boolean; new_suggestions?: number; duplicates?: number; details?: unknown };
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["news_suggestions"] });
