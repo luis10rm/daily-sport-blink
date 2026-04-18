@@ -169,16 +169,34 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     let sourceFilter: string | null = null;
+    let maxPerSource = 5; // ile propozycji max na źródło (po filtrze "dzisiaj")
+    let todayOnly = true; // KRYTYCZNE: domyślnie tylko z dzisiaj
     if (req.method === "POST") {
       try {
         const body = await req.json();
         if (body?.source_id && typeof body.source_id === "string") {
           sourceFilter = body.source_id;
         }
+        if (typeof body?.max_per_source === "number" && body.max_per_source > 0) {
+          maxPerSource = Math.min(20, Math.floor(body.max_per_source));
+        }
+        if (typeof body?.today_only === "boolean") {
+          todayOnly = body.today_only;
+        }
       } catch {
         // no body, scan all
       }
     }
+    console.log(`[scan] config: maxPerSource=${maxPerSource}, todayOnly=${todayOnly}`);
+
+    // Granica "dzisiaj" — od północy czasu warszawskiego (UTC+1/+2). Bezpiecznie: ostatnie 24h.
+    const todayCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const isFromToday = (publishedAt?: string): boolean => {
+      if (!publishedAt) return false;
+      const d = new Date(publishedAt);
+      if (isNaN(d.getTime())) return false;
+      return d >= todayCutoff;
+    };
 
     let query = supabase.from("news_sources").select("id,name,url,list_selector").eq("is_active", true);
     if (sourceFilter) query = query.eq("id", sourceFilter);
