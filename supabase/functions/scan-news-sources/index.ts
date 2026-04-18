@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
       const links = await firecrawlMap(source.url, 40);
       const candidates = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url)))).slice(0, 15);
 
-      // dedup against existing
+      // dedup against existing suggestions
       const { data: existing } = await supabase
         .from("news_suggestions")
         .select("article_url")
@@ -244,11 +244,39 @@ Deno.serve(async (req) => {
       const fresh = candidates.filter((u) => !existingSet.has(u));
 
       let added = 0;
+      let dups = 0;
       for (const articleUrl of fresh.slice(0, 8)) {
         const meta = await firecrawlScrapeMeta(articleUrl);
         if (!meta?.title) continue;
 
-        const ai = await aiScore(meta.title, meta.excerpt || "", cats);
+        // Duplicate check vs already-published posts
+        let isDuplicate = false;
+        let dupReason = "";
+        const normUrl = normalizeUrl(articleUrl);
+        if (postUrlSet.has(normUrl)) {
+          isDuplicate = true;
+          dupReason = "Ten URL źródłowy ma już opublikowany post.";
+        } else {
+          const incomingTokens = tokenSet(meta.title);
+          let bestSim = 0;
+          let bestTitle = "";
+          for (const p of postTitleTokens) {
+            const sim = jaccard(incomingTokens, p.tokens);
+            if (sim > bestSim) {
+              bestSim = sim;
+              bestTitle = p.title;
+            }
+          }
+          if (bestSim >= 0.6) {
+            isDuplicate = true;
+            dupReason = `Bardzo podobny tytuł (${Math.round(bestSim * 100)}%) do: „${bestTitle}".`;
+          }
+        }
+
+        let ai = { score: 5, reasoning: "", categoryId: null as string | null, tags: [] as string[] };
+        if (!isDuplicate) {
+          ai = await aiScore(meta.title, meta.excerpt || "", cats);
+        }
 
         const { error: insErr } = await supabase.from("news_suggestions").insert({
           source_id: source.id,
@@ -257,18 +285,23 @@ Deno.serve(async (req) => {
           excerpt: meta.excerpt,
           image_url: meta.image,
           published_at: meta.publishedAt,
-          ai_score: ai.score,
-          ai_reasoning: ai.reasoning,
+          ai_score: isDuplicate ? 0 : ai.score,
+          ai_reasoning: isDuplicate ? dupReason : ai.reasoning,
           suggested_category_id: ai.categoryId,
           suggested_tags: ai.tags,
-          status: "pending",
+          status: isDuplicate ? "duplicate" : "pending",
         });
         if (insErr) {
           console.error(`insert failed for ${articleUrl}`, insErr.message);
           continue;
         }
-        added++;
-        totalNew++;
+        if (isDuplicate) {
+          dups++;
+          totalDup++;
+        } else {
+          added++;
+          totalNew++;
+        }
       }
 
       await supabase
@@ -276,11 +309,11 @@ Deno.serve(async (req) => {
         .update({ last_scanned_at: new Date().toISOString() })
         .eq("id", source.id);
 
-      perSource.push({ source: source.name, new: added, total_links: candidates.length });
+      perSource.push({ source: source.name, new: added, duplicates: dups, total_links: candidates.length });
     }
 
     return new Response(
-      JSON.stringify({ ok: true, scanned: sources.length, new_suggestions: totalNew, details: perSource }),
+      JSON.stringify({ ok: true, scanned: sources.length, new_suggestions: totalNew, duplicates: totalDup, details: perSource }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
