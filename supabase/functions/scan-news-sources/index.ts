@@ -188,7 +188,47 @@ Deno.serve(async (req) => {
     const cats = categories || [];
 
     let totalNew = 0;
-    const perSource: Array<{ source: string; new: number; total_links: number }> = [];
+    let totalDup = 0;
+    const perSource: Array<{ source: string; new: number; duplicates: number; total_links: number }> = [];
+
+    // Helpers for title-based duplicate detection
+    const normalizeTitle = (s: string): string =>
+      s
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    const tokenSet = (s: string): Set<string> =>
+      new Set(normalizeTitle(s).split(" ").filter((w) => w.length >= 4));
+    const jaccard = (a: Set<string>, b: Set<string>): number => {
+      if (a.size === 0 || b.size === 0) return 0;
+      let inter = 0;
+      for (const t of a) if (b.has(t)) inter++;
+      return inter / (a.size + b.size - inter);
+    };
+    const normalizeUrl = (u: string): string => {
+      try {
+        const url = new URL(u);
+        return (url.hostname + url.pathname).replace(/\/+$/, "").toLowerCase();
+      } catch {
+        return u.toLowerCase();
+      }
+    };
+
+    // Preload recent published posts for title similarity (last 30 days)
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentPosts } = await supabase
+      .from("posts")
+      .select("title,source_url")
+      .gte("published_at", since)
+      .limit(500);
+    const postUrlSet = new Set((recentPosts || []).map((p) => normalizeUrl(p.source_url || "")));
+    const postTitleTokens = (recentPosts || []).map((p) => ({
+      title: p.title as string,
+      tokens: tokenSet(p.title as string),
+    }));
 
     for (const source of sources as NewsSource[]) {
       console.log(`[scan] ${source.name} (${source.url})`);
