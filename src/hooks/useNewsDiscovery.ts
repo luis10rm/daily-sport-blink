@@ -157,7 +157,7 @@ export const useScanNewsSources = () => {
       qc.invalidateQueries({ queryKey: ["news_suggestions"] });
       qc.invalidateQueries({ queryKey: ["news_sources"] });
       qc.invalidateQueries({ queryKey: ["news_suggestions_pending_count"] });
-      toast.success(`Skan zakończony — ${data?.new_suggestions ?? 0} nowych propozycji`);
+      toast.success(`Skan zakończony — ${data?.new_suggestions ?? 0} nowych, ${data?.duplicates ?? 0} duplikatów`);
     },
     onError: (e: Error) => toast.error(`Skan nieudany: ${e.message}`),
   });
