@@ -100,7 +100,17 @@ const PostEditor = () => {
   const { user } = useAuth();
 
   // Check for prefill data from navigation state (e.g., from daily summary generator)
-  const prefillData = (location.state as { prefill?: PrefillData })?.prefill;
+  const navState = location.state as {
+    prefill?: PrefillData;
+    sourceUrl?: string;
+    suggestionId?: string;
+    autoExtract?: boolean;
+  } | null;
+  const prefillData = navState?.prefill;
+  const prefillSourceUrl = navState?.sourceUrl;
+  const suggestionId = navState?.suggestionId;
+  const autoExtract = navState?.autoExtract;
+  const [autoExtractTriggered, setAutoExtractTriggered] = useState(false);
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
   const { data: sportCategories, isLoading: isLoadingCategories } = useSportCategories();
