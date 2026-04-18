@@ -73,9 +73,10 @@ export default function SuggestionsList() {
         <Card>
           <CardContent className="flex flex-wrap gap-3 p-4">
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="pending">Oczekujące</SelectItem>
+                <SelectItem value="duplicate">Duplikaty</SelectItem>
                 <SelectItem value="rejected">Odrzucone</SelectItem>
                 <SelectItem value="published">Opublikowane</SelectItem>
                 <SelectItem value="all">Wszystkie</SelectItem>
@@ -135,6 +136,12 @@ export default function SuggestionsList() {
                           <TooltipContent className="max-w-xs">{s.ai_reasoning || "—"}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+                      {s.status === "duplicate" && (
+                        <Badge variant="destructive">Duplikat</Badge>
+                      )}
+                      {s.status === "published" && (
+                        <Badge variant="default">Opublikowano</Badge>
+                      )}
                       {s.news_sources?.name && (
                         <Badge variant="outline">{s.news_sources.name}</Badge>
                       )}
@@ -179,6 +186,24 @@ export default function SuggestionsList() {
                         >
                           Przywróć
                         </Button>
+                      )}
+                      {s.status === "duplicate" && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handlePrepare(s.id, s.article_url)}
+                          >
+                            <Sparkles className="mr-2 h-4 w-4" /> Mimo to przygotuj
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => updateStatus.mutate({ id: s.id, status: "rejected" })}
+                          >
+                            <X className="mr-2 h-4 w-4" /> Odrzuć
+                          </Button>
+                        </>
                       )}
                       <Button size="sm" variant="ghost" asChild>
                         <a href={s.article_url} target="_blank" rel="noopener noreferrer">
