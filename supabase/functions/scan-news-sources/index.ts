@@ -79,19 +79,61 @@ async function firecrawlScrapeMeta(url: string): Promise<{
       },
       body: JSON.stringify({
         url,
-        formats: ["markdown"],
-        onlyMainContent: true,
+        formats: ["markdown", "rawHtml"],
+        onlyMainContent: false,
       }),
     });
     if (!res.ok) return null;
     const data = await res.json();
     const meta = data.metadata || data.data?.metadata || {};
     const markdown: string = data.markdown || data.data?.markdown || "";
+    const rawHtml: string = data.rawHtml || data.data?.rawHtml || "";
+
+    // Try many meta keys (Firecrawl returns various depending on site)
+    let publishedAt: string | undefined =
+      meta.publishedTime ||
+      meta.articlePublishedTime ||
+      meta["article:published_time"] ||
+      meta["og:article:published_time"] ||
+      meta.datePublished ||
+      meta.date ||
+      meta.pubdate ||
+      meta.publishdate;
+
+    // Fallback: parse from rawHtml — JSON-LD, <meta>, <time datetime="...">
+    if (!publishedAt && rawHtml) {
+      // 1) JSON-LD datePublished
+      const ldMatches = rawHtml.match(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi) || [];
+      for (const block of ldMatches) {
+        const inner = block.replace(/<script[^>]*>|<\/script>/gi, "").trim();
+        try {
+          const parsed = JSON.parse(inner);
+          const items = Array.isArray(parsed) ? parsed : [parsed];
+          for (const it of items) {
+            const dp = it?.datePublished || it?.dateCreated || it?.uploadDate;
+            if (dp && typeof dp === "string") { publishedAt = dp; break; }
+          }
+          if (publishedAt) break;
+        } catch { /* skip */ }
+      }
+      // 2) <meta property="article:published_time" content="...">
+      if (!publishedAt) {
+        const m = rawHtml.match(/<meta[^>]+(?:property|name)=["'](?:article:published_time|datePublished|date|pubdate)["'][^>]+content=["']([^"']+)["']/i)
+          || rawHtml.match(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:article:published_time|datePublished|date|pubdate)["']/i);
+        if (m) publishedAt = m[1];
+      }
+      // 3) <time datetime="...">
+      if (!publishedAt) {
+        const m = rawHtml.match(/<time[^>]+datetime=["']([^"']+)["']/i);
+        if (m) publishedAt = m[1];
+      }
+    }
+
     return {
       title: meta.title || meta.ogTitle,
       excerpt: (meta.description || meta.ogDescription || markdown.slice(0, 300))?.toString().slice(0, 500),
       image: meta.ogImage || meta.image,
-      publishedAt: meta.publishedTime || meta.articlePublishedTime,
+      publishedAt,
     };
   } catch (e) {
     console.error(`scrape meta error for ${url}`, e);
