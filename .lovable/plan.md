@@ -1,54 +1,38 @@
 
 
-## Jak działa AI score (1-10) w propozycjach newsów
+## Diagnoza
 
-### Gdzie jest liczony
-Edge function `scan-news-sources` — dla każdego nowego artykułu (po deduplikacji URL i tytułu) wysyła pojedyncze zapytanie do Lovable AI (`google/gemini-2.5-flash`), które zwraca JSON: `score`, `reasoning`, `category_id`, `tags`.
+Z logów widać: `RMF SPORT done: new=0 dup=0 skipped_old=15`. Wszystkie 15 kandydatów odrzucone jako stare/bez daty. Powody:
 
-### Co dostaje AI jako wejście
-- **Tytuł** artykułu (z Firecrawl scrape / OG meta)
-- **Excerpt / opis** (pierwsze ~300-500 znaków treści lub meta description)
-- **URL** źródła
-- **Listę dostępnych kategorii sportowych** z bazy (żeby mogło dopasować)
-- **Instrukcję systemową** definiującą kryteria oceny
+1. **Firecrawl Map zwraca evergreen / popularne URL-e**, nie najnowsze. Pierwsze 15 linków na liście to artykuły z 2008-2025 (Maradona, Bianchi, Radwańska itd.). To znana cecha `/v2/map` — ranking wg sygnałów linkowych, nie daty.
+2. **`candidates.slice(0, 15)`** odcina pulę zanim w ogóle dotrzemy do dzisiejszych. Świeże newsy z dziś są dalej niż 15. miejsce.
+3. WP Sport: większość trafień to `/zuzel/relacja-na-zywo/...` — strony bez `published_at` w meta, więc lecą w `skip (no publishedAt)`.
+4. RMF zwraca też dziwne daty z przyszłości (2026-03-25 itd.) — to przez przesunięty zegar sandboxa, ale to niezależny problem.
 
-### Kryteria oceny (prompt)
-AI ocenia atrakcyjność newsa dla polskiego portalu sportowego pod kątem:
-- **Świeżość / aktualność** — breaking news > zapowiedź > analiza historyczna
-- **Zasięg / popularność dyscypliny** — piłka nożna (PL/top ligi), F1, NBA wyżej; nisze niżej
-- **Nazwiska / kluby** — polscy zawodnicy, znane gwiazdy (Lewandowski, Świątek itp.) podbijają score
-- **"Klikalność"** — transfery, kontuzje gwiazd, skandale, rekordy, wyniki kluczowych meczów
-- **Unikalność** — exclusive / scoop > powtarzalna agencyjna depesza
-- **Jakość źródła i tytułu** — clickbait bez treści obniża
+## Rozwiązanie
 
-### Skala (zgodnie z UI w `SuggestionsList.tsx`)
-| Score | Znaczenie | Badge |
-|-------|-----------|-------|
-| **9-10** | Gorący temat, top priorytet — breaking, transfer gwiazdy, sensacja | `default` (mocny) |
-| **5-8** | Solidny news warty publikacji | `secondary` |
-| **1-4** | Słaby / niszowy / mało atrakcyjny | `outline` |
-| **null** | AI nie zwróciło scoru (błąd / timeout) | `?/10` |
+Zmiana strategii discovery: zamiast brać pierwsze 15 z `Map`, **scrape'ujemy stronę główną źródła** i wyciągamy linki bezpośrednio z HTML (sekcja "najnowsze"), które są naturalnie świeże.
 
-W filtrach admin może ustawić próg: „Każdy", „Min. 5", „Min. 7", „Min. 9 🔥".
+### Zmiany w `supabase/functions/scan-news-sources/index.ts`
 
-### `ai_reasoning` (tooltip pod badge'em)
-AI razem ze scorem zwraca 1-2 zdania uzasadnienia (np. „Transfer Lewandowskiego do Barcelony — top temat, polski zawodnik, gwiazda światowa"). Wyświetla się po najechaniu na badge w karcie propozycji.
+1. **Nowa funkcja `firecrawlScrapeHomepageLinks(url)`** — scrape strony głównej z `formats: ["links", "rawHtml"]`, zwraca listę linków w kolejności występowania w HTML (czyli ~chronologicznie u większości serwisów newsowych).
+2. **Hybrydowa strategia w pętli źródeł**:
+   - Najpierw `scrapeHomepageLinks()` → daje świeże linki z headerów / list "najnowsze"
+   - Fallback do `firecrawlMap()` jeśli homepage scrape zwróci <10 sensownych linków
+3. **Zwiększenie puli kandydatów do scrape'owania metadanych**: zamiast `slice(0, 15)`, bierzemy `slice(0, 30)` i pętlę przerywamy po znalezieniu `maxPerSource` świeżych (czyli z ostatnich 24h). Nie marnujemy czasu jeśli już mamy 5 świeżych.
+4. **Tolerancja dat z przyszłości** (≤ 7 dni do przodu) — żeby przesunięty zegar/strefa czasowa nie wycinał poprawnych newsów.
+5. **Lepszy logging**: per-źródło raportować ile linków było analizowanych, ile miało datę, ile świeżych, ile bez daty.
 
-### Sortowanie
-Lista w `/admin/suggestions` jest posortowana po `ai_score DESC, discovered_at DESC` — najwyżej oceniane na górze.
+### Zmiany w UI (`SuggestionsList.tsx`)
 
-### Ograniczenia / co warto wiedzieć
-- **Subiektywność** — model ocenia na podstawie samego tytułu + krótkiego opisu, nie czyta pełnej treści (oszczędność tokenów). Dlatego clickbaitowy tytuł może dostać wyższy score niż zasługuje.
-- **Brak feedback loop** — score nie uczy się z Twoich akceptacji/odrzuceń. Każdy news oceniany od zera.
-- **Polski kontekst** — prompt jest po polsku i instruuje AI że to portal PL, więc news z Ekstraklasy zwykle dostanie wyższy score niż równoważny z ligi tureckiej.
-- Jeśli Firecrawl nie wyciągnie excerptu, AI dostaje tylko tytuł → score mniej trafny.
+Po skanie pokażemy w toaście rozbicie per-źródło (`details`), żeby było widać który serwis zwrócił 0 z jakim powodem.
 
-### Możliwe ulepszenia (gdybyś chciał później)
-1. **Personalizacja** — uczenie na bazie Twoich akceptacji/odrzuceń (które tematy faktycznie publikujesz)
-2. **Boost za świeżość** — dodać `freshness_score` na podstawie `published_at` (news < 2h = +1)
-3. **Boost za źródło** — premiowanie wybranych źródeł (np. weszlo.com +1)
-4. **Pokazanie reasoning bezpośrednio** w karcie (nie tylko tooltip) — szybsze podejmowanie decyzji
-5. **Próg auto-rejection** — np. score < 3 automatycznie do `rejected` żeby nie zaśmiecać listy
+### Test po wdrożeniu
 
-To jest odpowiedź na pytanie wyjaśniające — nie wymaga implementacji. Daj znać, czy chcesz żebym zaimplementował którekolwiek z ulepszeń.
+Klik "Skanuj wszystkie" → toast pokaże nowe + breakdown → sprawdzić `/admin/suggestions`.
+
+### Plik do edycji
+
+- `supabase/functions/scan-news-sources/index.ts` (główna zmiana — hybrydowy discovery)
+- `src/pages/admin/SuggestionsList.tsx` (toast z details)
 
