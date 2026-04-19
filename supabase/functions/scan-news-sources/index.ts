@@ -33,7 +33,6 @@ async function firecrawlMap(url: string, limit = 100): Promise<string[]> {
   }
   const data = await res.json();
   const rawLinks: unknown[] = data.links || data.data?.links || [];
-  // Firecrawl v2 returns objects { url, title, description }; older versions returned strings
   const links: string[] = rawLinks
     .map((l) => {
       if (typeof l === "string") return l;
@@ -45,6 +44,64 @@ async function firecrawlMap(url: string, limit = 100): Promise<string[]> {
     .filter((u) => u.length > 0);
   console.log(`[firecrawlMap] ${url} → raw=${rawLinks.length}, urls=${links.length}`);
   return links;
+}
+
+// Scrape strony głównej i wyciąga linki w kolejności występowania w HTML (top → bottom).
+// Większość portali newsowych umieszcza najświeższe newsy na górze.
+async function firecrawlScrapeHomepageLinks(url: string): Promise<string[]> {
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url, formats: ["links", "rawHtml"], onlyMainContent: false }),
+    });
+    if (!res.ok) {
+      console.error(`[homepageScrape] ${url} failed: ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    const linksField: unknown = data.links || data.data?.links || [];
+    const rawHtml: string = data.rawHtml || data.data?.rawHtml || "";
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+
+    // 1) Preferuj kolejność wystąpień w rawHtml (najświeższe są zwykle wysoko)
+    if (rawHtml) {
+      const hrefRe = /href=["']([^"']+)["']/gi;
+      let m: RegExpExecArray | null;
+      while ((m = hrefRe.exec(rawHtml)) !== null) {
+        let href = m[1];
+        if (!href) continue;
+        try {
+          const abs = new URL(href, url).toString().split("#")[0];
+          if (!seen.has(abs)) {
+            seen.add(abs);
+            ordered.push(abs);
+          }
+        } catch { /* skip */ }
+      }
+    }
+
+    // 2) Dorzuć cokolwiek z linksField, czego nie było w rawHtml
+    if (Array.isArray(linksField)) {
+      for (const l of linksField) {
+        const u = typeof l === "string" ? l : (l && typeof l === "object" && "url" in l ? (l as { url: string }).url : "");
+        if (u && !seen.has(u)) {
+          seen.add(u);
+          ordered.push(u);
+        }
+      }
+    }
+
+    console.log(`[homepageScrape] ${url} → links=${ordered.length}`);
+    return ordered;
+  } catch (e) {
+    console.error(`[homepageScrape] error for ${url}`, e);
+    return [];
+  }
 }
 
 function isLikelyArticleUrl(articleUrl: string, sourceUrl: string): boolean {
@@ -231,13 +288,15 @@ Deno.serve(async (req) => {
     }
     console.log(`[scan] config: maxPerSource=${maxPerSource}, todayOnly=${todayOnly}`);
 
-    // Granica "dzisiaj" — od północy czasu warszawskiego (UTC+1/+2). Bezpiecznie: ostatnie 24h.
+    // Granica "dzisiaj" — ostatnie 24h. Tolerancja dla dat z przyszłości (≤7 dni) by ratować
+    // przesunięty zegar/strefę czasową w sandboxie i meta tagach.
     const todayCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const futureCutoff = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const isFromToday = (publishedAt?: string): boolean => {
       if (!publishedAt) return false;
       const d = new Date(publishedAt);
       if (isNaN(d.getTime())) return false;
-      return d >= todayCutoff;
+      return d >= todayCutoff && d <= futureCutoff;
     };
 
     let query = supabase.from("news_sources").select("id,name,url,list_selector").eq("is_active", true);
@@ -259,7 +318,7 @@ Deno.serve(async (req) => {
 
     let totalNew = 0;
     let totalDup = 0;
-    const perSource: Array<{ source: string; new: number; duplicates: number; total_links: number }> = [];
+    const perSource: Array<{ source: string; new: number; duplicates: number; total_links: number; analyzed: number; skipped_old: number; skipped_no_date: number }> = [];
 
     // Helpers for title-based duplicate detection
     const normalizeTitle = (s: string): string =>
@@ -302,10 +361,23 @@ Deno.serve(async (req) => {
 
     for (const source of sources as NewsSource[]) {
       console.log(`[scan] ${source.name} (${source.url})`);
-      const links = await firecrawlMap(source.url, 100);
-      const filtered = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url))));
-      const candidates = filtered.slice(0, 15);
-      console.log(`[scan] ${source.name} links=${links.length} filtered=${filtered.length} candidates=${candidates.length}`);
+
+      // HYBRID DISCOVERY: najpierw scrape strony głównej (świeże newsy są na górze HTML),
+      // fallback na Map jeśli homepage zwróci za mało.
+      let links = await firecrawlScrapeHomepageLinks(source.url);
+      let filtered = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url))));
+      console.log(`[scan] ${source.name} homepage_links=${links.length} filtered=${filtered.length}`);
+
+      if (filtered.length < 10) {
+        console.log(`[scan] ${source.name} fallback to Map (homepage gave too few)`);
+        const mapLinks = await firecrawlMap(source.url, 100);
+        const merged = Array.from(new Set([...filtered, ...mapLinks.filter((l) => isLikelyArticleUrl(l, source.url))]));
+        filtered = merged;
+      }
+
+      // Większa pula — do 30 kandydatów; pętla i tak przerywa się po znalezieniu maxPerSource świeżych
+      const candidates = filtered.slice(0, 30);
+      console.log(`[scan] ${source.name} candidates=${candidates.length}`);
 
       // dedup against existing suggestions
       const { data: existing } = candidates.length
@@ -318,17 +390,20 @@ Deno.serve(async (req) => {
       let added = 0;
       let dups = 0;
       let skippedNotToday = 0;
+      let skippedNoDate = 0;
+      let analyzed = 0;
       for (const articleUrl of fresh) {
-        if (added + dups >= maxPerSource) break;
+        // Przerywamy gdy znajdziemy maxPerSource świeżych (added, nie added+dups — duplikaty się nie liczą)
+        if (added >= maxPerSource) break;
+        analyzed++;
         const meta = await firecrawlScrapeMeta(articleUrl);
         if (!meta?.title) continue;
 
         // KRYTYCZNE: pomiń artykuły spoza ostatnich 24h, jeśli mamy datę publikacji
         if (todayOnly) {
           if (!meta.publishedAt) {
-            // brak daty — pomijamy bezpiecznie (bez daty nie wiemy czy świeży)
             console.log(`[scan] skip (no publishedAt): ${articleUrl}`);
-            skippedNotToday++;
+            skippedNoDate++;
             continue;
           }
           if (!isFromToday(meta.publishedAt)) {
@@ -392,14 +467,22 @@ Deno.serve(async (req) => {
           totalNew++;
         }
       }
-      console.log(`[scan] ${source.name} done: new=${added} dup=${dups} skipped_old=${skippedNotToday}`);
+      console.log(`[scan] ${source.name} done: analyzed=${analyzed} new=${added} dup=${dups} skipped_old=${skippedNotToday} skipped_no_date=${skippedNoDate}`);
 
       await supabase
         .from("news_sources")
         .update({ last_scanned_at: new Date().toISOString() })
         .eq("id", source.id);
 
-      perSource.push({ source: source.name, new: added, duplicates: dups, total_links: candidates.length });
+      perSource.push({
+        source: source.name,
+        new: added,
+        duplicates: dups,
+        total_links: candidates.length,
+        analyzed,
+        skipped_old: skippedNotToday,
+        skipped_no_date: skippedNoDate,
+      });
     }
 
     return new Response(
