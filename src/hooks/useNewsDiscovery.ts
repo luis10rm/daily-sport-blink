@@ -160,13 +160,19 @@ export const useScanNewsSources = () => {
       if (typeof options.todayOnly === "boolean") body.today_only = options.todayOnly;
       const { data, error } = await supabase.functions.invoke("scan-news-sources", { body });
       if (error) throw error;
-      return data as { ok: boolean; new_suggestions?: number; duplicates?: number; details?: unknown };
+      return data as { ok: boolean; new_suggestions?: number; duplicates?: number; details?: Array<{ source: string; new: number; duplicates: number; analyzed?: number; skipped_old?: number; skipped_no_date?: number }> };
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["news_suggestions"] });
       qc.invalidateQueries({ queryKey: ["news_sources"] });
       qc.invalidateQueries({ queryKey: ["news_suggestions_pending_count"] });
-      toast.success(`Skan zakończony — ${data?.new_suggestions ?? 0} nowych, ${data?.duplicates ?? 0} duplikatów`);
+      const breakdown = (data?.details || [])
+        .map((d) => `• ${d.source}: ${d.new} nowych${d.skipped_old ? `, ${d.skipped_old} starych` : ""}${d.skipped_no_date ? `, ${d.skipped_no_date} bez daty` : ""}`)
+        .join("\n");
+      toast.success(`Skan zakończony — ${data?.new_suggestions ?? 0} nowych, ${data?.duplicates ?? 0} duplikatów`, {
+        description: breakdown || undefined,
+        duration: 8000,
+      });
     },
     onError: (e: Error) => toast.error(`Skan nieudany: ${e.message}`),
   });
