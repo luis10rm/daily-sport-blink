@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
 
     let totalNew = 0;
     let totalDup = 0;
-    const perSource: Array<{ source: string; new: number; duplicates: number; total_links: number }> = [];
+    const perSource: Array<{ source: string; new: number; duplicates: number; total_links: number; analyzed: number; skipped_old: number; skipped_no_date: number }> = [];
 
     // Helpers for title-based duplicate detection
     const normalizeTitle = (s: string): string =>
