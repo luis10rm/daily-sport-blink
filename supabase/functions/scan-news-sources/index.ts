@@ -33,7 +33,6 @@ async function firecrawlMap(url: string, limit = 100): Promise<string[]> {
   }
   const data = await res.json();
   const rawLinks: unknown[] = data.links || data.data?.links || [];
-  // Firecrawl v2 returns objects { url, title, description }; older versions returned strings
   const links: string[] = rawLinks
     .map((l) => {
       if (typeof l === "string") return l;
@@ -45,6 +44,64 @@ async function firecrawlMap(url: string, limit = 100): Promise<string[]> {
     .filter((u) => u.length > 0);
   console.log(`[firecrawlMap] ${url} → raw=${rawLinks.length}, urls=${links.length}`);
   return links;
+}
+
+// Scrape strony głównej i wyciąga linki w kolejności występowania w HTML (top → bottom).
+// Większość portali newsowych umieszcza najświeższe newsy na górze.
+async function firecrawlScrapeHomepageLinks(url: string): Promise<string[]> {
+  try {
+    const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${FIRECRAWL_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url, formats: ["links", "rawHtml"], onlyMainContent: false }),
+    });
+    if (!res.ok) {
+      console.error(`[homepageScrape] ${url} failed: ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    const linksField: unknown = data.links || data.data?.links || [];
+    const rawHtml: string = data.rawHtml || data.data?.rawHtml || "";
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+
+    // 1) Preferuj kolejność wystąpień w rawHtml (najświeższe są zwykle wysoko)
+    if (rawHtml) {
+      const hrefRe = /href=["']([^"']+)["']/gi;
+      let m: RegExpExecArray | null;
+      while ((m = hrefRe.exec(rawHtml)) !== null) {
+        let href = m[1];
+        if (!href) continue;
+        try {
+          const abs = new URL(href, url).toString().split("#")[0];
+          if (!seen.has(abs)) {
+            seen.add(abs);
+            ordered.push(abs);
+          }
+        } catch { /* skip */ }
+      }
+    }
+
+    // 2) Dorzuć cokolwiek z linksField, czego nie było w rawHtml
+    if (Array.isArray(linksField)) {
+      for (const l of linksField) {
+        const u = typeof l === "string" ? l : (l && typeof l === "object" && "url" in l ? (l as { url: string }).url : "");
+        if (u && !seen.has(u)) {
+          seen.add(u);
+          ordered.push(u);
+        }
+      }
+    }
+
+    console.log(`[homepageScrape] ${url} → links=${ordered.length}`);
+    return ordered;
+  } catch (e) {
+    console.error(`[homepageScrape] error for ${url}`, e);
+    return [];
+  }
 }
 
 function isLikelyArticleUrl(articleUrl: string, sourceUrl: string): boolean {
