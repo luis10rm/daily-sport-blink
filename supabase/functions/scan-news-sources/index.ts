@@ -288,13 +288,15 @@ Deno.serve(async (req) => {
     }
     console.log(`[scan] config: maxPerSource=${maxPerSource}, todayOnly=${todayOnly}`);
 
-    // Granica "dzisiaj" — od północy czasu warszawskiego (UTC+1/+2). Bezpiecznie: ostatnie 24h.
+    // Granica "dzisiaj" — ostatnie 24h. Tolerancja dla dat z przyszłości (≤7 dni) by ratować
+    // przesunięty zegar/strefę czasową w sandboxie i meta tagach.
     const todayCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const futureCutoff = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const isFromToday = (publishedAt?: string): boolean => {
       if (!publishedAt) return false;
       const d = new Date(publishedAt);
       if (isNaN(d.getTime())) return false;
-      return d >= todayCutoff;
+      return d >= todayCutoff && d <= futureCutoff;
     };
 
     let query = supabase.from("news_sources").select("id,name,url,list_selector").eq("is_active", true);
