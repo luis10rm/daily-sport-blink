@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useActiveBannerForDevice, BannerPosition } from "@/hooks/useBanners";
+import { useActiveBannerForDevice, useActiveBannersCountForDevice, BannerPosition } from "@/hooks/useBanners";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -78,11 +78,22 @@ const DeviceSlotStatus = ({
 };
 
 const SlotItem = ({ slot }: { slot: SlotInfo }) => {
+  const { data: desktopCount } = useActiveBannersCountForDevice(slot.position, "desktop");
+  const { data: mobileCount } = useActiveBannersCountForDevice(slot.position, "mobile");
+  const maxCount = Math.max(desktopCount ?? 0, mobileCount ?? 0);
+
   return (
     <div className="p-4 rounded-lg border bg-card">
-      <div className="mb-2">
-        <span className="font-medium">{slot.label}</span>
-        <p className="text-xs text-muted-foreground">{slot.description}</p>
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <span className="font-medium">{slot.label}</span>
+          <p className="text-xs text-muted-foreground">{slot.description}</p>
+        </div>
+        {maxCount > 1 && (
+          <Badge variant="outline" className="text-xs flex-shrink-0">
+            Rotacja: {maxCount}
+          </Badge>
+        )}
       </div>
       <div className="mt-3">
         <DeviceSlotStatus slot={slot} device="desktop" />
