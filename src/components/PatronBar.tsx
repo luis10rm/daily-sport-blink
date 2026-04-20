@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePatronSettings } from "@/hooks/usePatronSettings";
 import { X, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,9 @@ export const PatronBar = () => {
   const { data: patron, isLoading } = usePatronSettings();
   const [dismissed, setDismissed] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+
+  // A/B variant: pick once per mount so it doesn't flicker between re-renders
+  const variant = useMemo<"A" | "B">(() => (Math.random() < 0.5 ? "A" : "B"), []);
 
   useEffect(() => {
     // Check sessionStorage for dismissed state
@@ -91,21 +94,32 @@ export const PatronBar = () => {
           {patron.patron_name}
         </span>
         
-        {patron.cta_text && patron.cta_url && (
-          <a
-            href={patron.cta_url}
-            target="_blank"
-            rel="noopener noreferrer sponsored"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex ml-2 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold patron-cta-hover"
-            style={{
-              backgroundColor: patron.text_color,
-              color: patron.background_color,
-            }}
-          >
-            {patron.cta_text}
-          </a>
-        )}
+        {(() => {
+          const hasB = !!(patron.cta_text_b && patron.cta_url_b);
+          const useB = hasB && variant === "B";
+          const ctaText = useB ? patron.cta_text_b : patron.cta_text;
+          const ctaUrl = useB ? patron.cta_url_b : patron.cta_url;
+          const activeVariant = useB ? "B" : "A";
+
+          if (!ctaText || !ctaUrl) return null;
+
+          return (
+            <a
+              href={ctaUrl}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              data-patron-variant={activeVariant}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex ml-2 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold patron-cta-hover"
+              style={{
+                backgroundColor: patron.text_color,
+                color: patron.background_color,
+              }}
+            >
+              {ctaText}
+            </a>
+          );
+        })()}
       </div>
 
       {patron.dismissible && (

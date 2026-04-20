@@ -9,6 +9,8 @@ export interface PatronSettings {
   patron_logo_url?: string;
   cta_text?: string;
   cta_url?: string;
+  cta_text_b?: string;
+  cta_url_b?: string;
   background_color: string;
   text_color: string;
   style: "solid" | "gradient" | "glass";
@@ -22,6 +24,8 @@ const DEFAULT_PATRON_SETTINGS: PatronSettings = {
   patron_logo_url: "",
   cta_text: "",
   cta_url: "",
+  cta_text_b: "",
+  cta_url_b: "",
   background_color: "#1e3a5f",
   text_color: "#ffffff",
   style: "solid",
