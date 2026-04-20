@@ -127,6 +127,8 @@ const DEFAULT_PATRON: PatronSettings = {
   patron_logo_url: "",
   cta_text: "",
   cta_url: "",
+  cta_text_b: "",
+  cta_url_b: "",
   background_color: "#1e3a5f",
   text_color: "#ffffff",
   style: "solid",
@@ -469,25 +471,56 @@ const Settings = () => {
                     />
                   </div>
 
-                  {/* CTA Fields */}
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="cta_text">Tekst CTA (opcjonalnie)</Label>
-                      <Input
-                        id="cta_text"
-                        value={patronSettings.cta_text || ""}
-                        onChange={(e) => updatePatronField("cta_text", e.target.value)}
-                        placeholder="Sprawdź ofertę"
-                      />
+                  {/* CTA Fields - Wariant A */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Wariant A (CTA główne)</Label>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="cta_text">Tekst CTA (opcjonalnie)</Label>
+                        <Input
+                          id="cta_text"
+                          value={patronSettings.cta_text || ""}
+                          onChange={(e) => updatePatronField("cta_text", e.target.value)}
+                          placeholder="Sprawdź ofertę"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cta_url">URL CTA</Label>
+                        <Input
+                          id="cta_url"
+                          value={patronSettings.cta_url || ""}
+                          onChange={(e) => updatePatronField("cta_url", e.target.value)}
+                          placeholder="https://redbull.pl"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cta_url">URL CTA</Label>
-                      <Input
-                        id="cta_url"
-                        value={patronSettings.cta_url || ""}
-                        onChange={(e) => updatePatronField("cta_url", e.target.value)}
-                        placeholder="https://redbull.pl"
-                      />
+                  </div>
+
+                  {/* CTA Fields - Wariant B (A/B test) */}
+                  <div className="space-y-2 border-l-2 border-primary/30 pl-4">
+                    <Label className="text-sm font-semibold">Wariant B (A/B test — opcjonalnie)</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Jeśli wypełnisz wariant B, ruch będzie dzielony losowo 50/50 między wariant A i B przy każdej odsłonie strony.
+                    </p>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="cta_text_b">Tekst CTA B</Label>
+                        <Input
+                          id="cta_text_b"
+                          value={patronSettings.cta_text_b || ""}
+                          onChange={(e) => updatePatronField("cta_text_b", e.target.value)}
+                          placeholder="Zobacz wariant B"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="cta_url_b">URL CTA B</Label>
+                        <Input
+                          id="cta_url_b"
+                          value={patronSettings.cta_url_b || ""}
+                          onChange={(e) => updatePatronField("cta_url_b", e.target.value)}
+                          placeholder="https://redbull.pl/landing-b"
+                        />
+                      </div>
                     </div>
                   </div>
 
