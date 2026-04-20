@@ -1,30 +1,33 @@
 
 
-## Równomierna rotacja banerów w slocie (50/50)
+## A/B testing CTA w pasku patrona
 
-### Problem
-W `useActiveBannerForDevice` zawsze zwracany jest pierwszy poprawny baner (sortowanie po `updated_at`). Gdy w slocie jest kilka aktywnych banerów, drugi nigdy się nie wyświetla.
-
-### Rozwiązanie
-Zwracać **wszystkich** kandydatów spełniających kryteria, a następnie po stronie klienta wybierać losowo jednego per odsłona. Przy 2 banerach losowanie z rozkładu jednostajnego daje ~50/50 ruchu w długim okresie. Dla N banerów — równomiernie 1/N każdy.
+### Cel
+W ustawieniach patrona dodać drugi link CTA (URL B). Gdy oba są wypełnione, `PatronBar` losuje 50/50 który link pokazać użytkownikowi przy każdej odsłonie strony — analogicznie do rotacji banerów.
 
 ### Zmiany
 
-**1. `src/hooks/useBanners.tsx` — `useActiveBannerForDevice`**
-- Zmienić nazwę logiki: zamiast `find()` używać `filter()` żeby zwrócić tablicę wszystkich poprawnych banerów dla pozycji + urządzenia.
-- W `queryFn` po pobraniu i przefiltrowaniu po datach/obrazach, losować jeden baner: `validBanners[Math.floor(Math.random() * validBanners.length)]`.
-- Losowanie w `queryFn` (a nie w komponencie) działa naturalnie — każde świeże wywołanie zapytania = nowa odsłona = nowy los.
-- Ustawić `staleTime: 0` i `gcTime: 0` dla tego query żeby React Query nie cache'ował wyniku między mountami strony (każde wejście = nowa odsłona = nowy los). Alternatywnie — losowanie dopiero w komponencie, ale wtedy hook musi zwracać tablicę. Wybieram opcję z `staleTime: 0`, bo nie zmienia API hooka i nie wymaga modyfikacji `Index.tsx` ani `ActiveSlotsOverview.tsx`.
+**1. `src/hooks/usePatronSettings.ts`**
+- Rozszerzyć interfejs `PatronSettings` o pola: `cta_url_b?: string` i `cta_text_b?: string` (opcjonalne — wstecznie kompatybilne).
+- Dodać do `DEFAULT_PATRON_SETTINGS` puste stringi.
 
-**2. `src/components/admin/ActiveSlotsOverview.tsx`**
-- Bez zmian funkcjonalnych — nadal pokazuje "Aktywny" + tytuł jednego banera. Dodać małą informację `(rotacja: N banerów)` jeśli w slocie jest więcej niż jeden aktywny baner — wymaga osobnego zapytania liczącego kandydatów. Opcjonalne, ale przydatne UX.
+**2. `src/pages/admin/Settings.tsx` — sekcja Patron Bar**
+- Pod istniejącymi polami CTA dodać drugi blok: "Wariant B (A/B test)" z polami `cta_text_b` i `cta_url_b`.
+- Krótki helper text: „Jeśli wypełnisz wariant B, ruch będzie dzielony losowo 50/50 między wariant A i B na każdą odsłonę strony."
+- Walidacja: jeśli podany `cta_url_b`, musi być poprawnym URL (jak istniejące `cta_url`).
+- Aktualizacja `PatronBarPreview` — bez zmian wizualnych, podgląd nadal pokazuje wariant A (bo na żywo by skakał).
 
-### Szczegóły techniczne (rotacja vs cache)
-- Tracking impresji (`impression_tag`) jest już zaimplementowany w `SponsorBanner` per render — czyli każdy wybór = jeden impression pixel. Działa out-of-the-box.
-- React Query z `staleTime: 0` przelosuje przy każdym mount strony głównej. Jeden użytkownik wracający 10× zobaczy ~5×A i ~5×B.
-- W ramach jednej sesji bez przeładowania (SPA navigation) hook nie jest re-mountowany na tej samej stronie, więc baner się nie zmieni — to pożądane, żeby nie "skakał" w trakcie czytania.
+**3. `src/components/PatronBar.tsx` — losowanie wariantu**
+- Przy każdym mount komponentu losować `useMemo(() => Math.random() < 0.5 ? 'A' : 'B', [])` — wariant ustalany raz na sesję wyświetlenia (żeby nie skakał między re-renderami).
+- Jeśli `cta_url_b` i `cta_text_b` są wypełnione, użyć wylosowanego wariantu (A lub B) do `href` i etykiety przycisku CTA. W przeciwnym razie fallback do wariantu A (obecne zachowanie).
+- Dodać atrybut `data-patron-variant="A"` / `"B"` na elemencie `<a>` CTA — żeby w przyszłości łatwo wpiąć analitykę / GA4 event tracking.
+
+### Co dostaje użytkownik
+- W panelu `/admin/settings` w sekcji Patron Bar zobaczy dwa zestawy pól CTA (A i B).
+- Po zapisaniu, na stronie głównej połowa odsłon kliknie w landing A, połowa w B — gotowy do A/B testów po stronie klienta (np. Google Analytics z parametrem `?variant=a/b` w URL-u).
 
 ### Pliki do edycji
-- `src/hooks/useBanners.tsx` — modyfikacja `useActiveBannerForDevice`
-- `src/components/admin/ActiveSlotsOverview.tsx` — opcjonalny licznik "rotacja: N"
+- `src/hooks/usePatronSettings.ts` — rozszerzenie interfejsu
+- `src/pages/admin/Settings.tsx` — pola formularza dla wariantu B
+- `src/components/PatronBar.tsx` — losowanie 50/50 i `data-patron-variant`
 
