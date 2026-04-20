@@ -92,46 +92,66 @@ export const useActiveBanner = (position: BannerPosition) => {
 };
 
 // Fetch active banner for a specific position AND device (desktop/mobile)
+// When multiple banners are eligible, picks one at random per query (even rotation)
 export const useActiveBannerForDevice = (position: BannerPosition, device: "desktop" | "mobile") => {
   return useQuery({
     queryKey: ["banners", "active", position, device],
+    staleTime: 0,
+    gcTime: 0,
     queryFn: async () => {
       const now = new Date().toISOString();
       
-      // Fetch banners for this position that target this device or all devices
-      // Note: We only use one .or() to avoid PostgREST query conflicts
       const { data, error } = await supabase
         .from("banners")
         .select("*")
         .eq("position", position)
         .eq("is_active", true)
         .or(`target_device.eq.all,target_device.eq.${device}`)
-        .order("updated_at", { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (error) throw error;
       
-      // Filter by dates and find banner with valid image for this device
-      const validBanner = data?.find(banner => {
-        // Check start_date validity
-        if (banner.start_date && new Date(banner.start_date) > new Date(now)) {
-          return false;
-        }
-        
-        // Check end_date validity
-        if (banner.end_date && new Date(banner.end_date) < new Date(now)) {
-          return false;
-        }
-        
-        // Check if banner has the right image for this device
+      // Filter by dates and require valid image for this device
+      const validBanners = (data || []).filter(banner => {
+        if (banner.start_date && new Date(banner.start_date) > new Date(now)) return false;
+        if (banner.end_date && new Date(banner.end_date) < new Date(now)) return false;
         if (device === "desktop") {
-          return banner.image_desktop_url && banner.image_desktop_url !== "";
+          return !!banner.image_desktop_url;
         } else {
-          return banner.image_mobile_url && banner.image_mobile_url !== "";
+          return !!banner.image_mobile_url;
         }
       });
       
-      return (validBanner as Banner) || null;
+      if (validBanners.length === 0) return null;
+      
+      // Even rotation: random pick from all eligible banners
+      const picked = validBanners[Math.floor(Math.random() * validBanners.length)];
+      return picked as Banner;
+    },
+  });
+};
+
+// Returns the count of eligible banners for a slot (used to show rotation indicator in admin)
+export const useActiveBannersCountForDevice = (position: BannerPosition, device: "desktop" | "mobile") => {
+  return useQuery({
+    queryKey: ["banners", "active-count", position, device],
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("banners")
+        .select("*")
+        .eq("position", position)
+        .eq("is_active", true)
+        .or(`target_device.eq.all,target_device.eq.${device}`)
+        .limit(20);
+      if (error) throw error;
+      const valid = (data || []).filter(banner => {
+        if (banner.start_date && new Date(banner.start_date) > new Date(now)) return false;
+        if (banner.end_date && new Date(banner.end_date) < new Date(now)) return false;
+        if (device === "desktop") return !!banner.image_desktop_url;
+        return !!banner.image_mobile_url;
+      });
+      return valid.length;
     },
   });
 };
