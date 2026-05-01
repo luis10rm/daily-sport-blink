@@ -49,13 +49,21 @@ export default function SuggestionsList() {
     setMinScore("0");
   };
 
-  const handleClearSuggestions = async (scope: "rejected" | "all_non_published") => {
-    const label = scope === "rejected" ? "wszystkie odrzucone" : "wszystkie oprócz opublikowanych";
+  const handleClearSuggestions = async (scope: "rejected" | "all_non_published" | "all") => {
+    const label =
+      scope === "rejected"
+        ? "wszystkie odrzucone"
+        : scope === "all"
+        ? "WSZYSTKIE propozycje (również opublikowane)"
+        : "wszystkie oprócz opublikowanych";
     if (!confirm(`Na pewno usunąć ${label}? Tej operacji nie można cofnąć.`)) return;
     const base = supabase.from("news_suggestions").delete();
-    const { error } = scope === "rejected"
-      ? await base.eq("status", "rejected")
-      : await base.neq("status", "published");
+    const { error } =
+      scope === "rejected"
+        ? await base.eq("status", "rejected")
+        : scope === "all"
+        ? await base.not("id", "is", null)
+        : await base.neq("status", "published");
     if (error) { toast.error(error.message); return; }
     toast.success(`Usunięto ${label}`);
     qc.invalidateQueries({ queryKey: ["news_suggestions"] });
@@ -92,6 +100,12 @@ export default function SuggestionsList() {
               onClick={() => handleClearSuggestions("rejected")}
             >
               <Trash2 className="mr-2 h-4 w-4" /> Wyczyść odrzucone
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleClearSuggestions("all")}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Wyczyść wszystkie
             </Button>
             <Button onClick={() => scan.mutate({ maxPerSource: 5, todayOnly: true })} disabled={scan.isPending}>
               <RefreshCw className={`mr-2 h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
