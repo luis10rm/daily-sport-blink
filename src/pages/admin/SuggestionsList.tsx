@@ -101,6 +101,12 @@ export default function SuggestionsList() {
             >
               <Trash2 className="mr-2 h-4 w-4" /> Wyczyść odrzucone
             </Button>
+            <Button
+              variant="destructive"
+              onClick={() => handleClearSuggestions("all")}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Wyczyść wszystkie
+            </Button>
             <Button onClick={() => scan.mutate({ maxPerSource: 5, todayOnly: true })} disabled={scan.isPending}>
               <RefreshCw className={`mr-2 h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
               Skanuj teraz
