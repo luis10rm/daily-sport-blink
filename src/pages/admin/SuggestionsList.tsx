@@ -51,6 +51,68 @@ export default function SuggestionsList() {
     setMinScore("0");
   };
 
+  // ===== Bulk selection =====
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const bulkPrepare = useBulkPrepareSuggestions();
+  const MAX_BULK = 6;
+
+  const selectableIds = useMemo(
+    () => (suggestions ?? []).filter((s) => s.status === "pending").map((s) => s.id),
+    [suggestions]
+  );
+
+  const toggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else {
+        if (next.size >= MAX_BULK) {
+          toast.warning(`Maksymalnie ${MAX_BULK} naraz`);
+          return prev;
+        }
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectHighScore = () => {
+    const high = (suggestions ?? [])
+      .filter((s) => s.status === "pending" && (s.ai_score ?? 0) >= 7)
+      .slice(0, MAX_BULK)
+      .map((s) => s.id);
+    setSelectedIds(new Set(high));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkPublish = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Opublikujesz ${ids.length} ${ids.length === 1 ? "artykuł" : "artykuły"} od razu na stronie głównej. Kontynuować?`)) return;
+    try {
+      await bulkPrepare.mutateAsync(ids);
+      setSelectedIds(new Set());
+    } catch {
+      // toast handled by hook
+    }
+  };
+
+  const handleBulkReject = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Odrzucić ${ids.length} ${ids.length === 1 ? "propozycję" : "propozycje"}?`)) return;
+    const { error } = await supabase
+      .from("news_suggestions")
+      .update({ status: "rejected" })
+      .in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Odrzucono ${ids.length}`);
+    setSelectedIds(new Set());
+    qc.invalidateQueries({ queryKey: ["news_suggestions"] });
+    qc.invalidateQueries({ queryKey: ["news_suggestions_pending_count"] });
+  };
+
   const handleClearSuggestions = async (scope: "rejected" | "all_non_published" | "all") => {
     const label =
       scope === "rejected"
