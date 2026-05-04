@@ -1,33 +1,49 @@
+## Bulk publish propozycji — wdrożenie
 
+### Decyzje
+- **Tryb zapisu:** od razu publish (`published_at = now()`).
+- **Concurrency:** 3 równolegle (bezpiecznie dla Gemini rate-limit).
+- **Obrazki:** bez AI w bulk — użyjemy `image_url` z propozycji lub fallback kategorii. Redaktor może dogenerować obrazek ręcznie w edytorze post-publish.
 
-## A/B testing CTA w pasku patrona
+### Flow użytkownika
+1. W `/admin/suggestions` przy każdej karcie pojawia się checkbox.
+2. U góry — sticky pasek z licznikiem zaznaczonych: „Zaznacz wszystkie ze score ≥ 7", „Wyczyść zaznaczenie".
+3. Przyciski akcji bulk: **„Opublikuj N zaznaczonych"** (primary) + **„Odrzuć N"** (outline).
+4. Klik „Opublikuj N" → confirm dialog („Opublikujesz N artykułów od razu na stronie głównej. Kontynuować?") → wywołanie edge function.
+5. Toast progresywny: „Przetwarzam 3/8…", potem „✅ Opublikowano 7 (1 błąd)".
+6. Karty znikają z listy `pending` (status zmienia się na `published`).
 
-### Cel
-W ustawieniach patrona dodać drugi link CTA (URL B). Gdy oba są wypełnione, `PatronBar` losuje 50/50 który link pokazać użytkownikowi przy każdej odsłonie strony — analogicznie do rotacji banerów.
+### Edge function: `bulk-prepare-suggestions`
+- Auth: JWT → `is_admin_or_editor`.
+- Input: `{ suggestion_ids: string[] }` (Zod, max 20).
+- Pobiera propozycje z DB (status `pending` lub `duplicate`).
+- Przetwarza w batchach po 3 równolegle (`Promise.allSettled`):
+  - Wywołuje wewnętrznie `extract-article` (reuse istniejącego — invoke przez supabase.functions.invoke z service role).
+  - Z wyniku tworzy rekord w `posts`:
+    - `title`, `excerpt`, `content`, `tags`, `category_id`, `image_url` (z propozycji lub null), `source_url` (z propozycji), `published_at = now()`, `created_by = user.id`.
+    - `slug` generuje się automatycznie przez trigger.
+  - Aktualizuje `news_suggestions`: `status = 'published'`, `accepted_post_id = nowyId`.
+  - W przypadku błędu — `status` propozycji bez zmian, zwraca info do response.
+- Response: `{ successful: [{suggestion_id, post_id, slug}], failed: [{suggestion_id, error}] }`.
+- Po stronie klienta: invalidate query `news_suggestions` + `posts` + (opcjonalnie) trigger `notify-google-index` dla każdego nowego posta.
 
-### Zmiany
+### Indeksowanie Google
+Po sukcesie każdy nowy post zostanie wysłany do `notify-google-index` (fire-and-forget, jak w istniejącym single flow). Nie blokuje response.
 
-**1. `src/hooks/usePatronSettings.ts`**
-- Rozszerzyć interfejs `PatronSettings` o pola: `cta_url_b?: string` i `cta_text_b?: string` (opcjonalne — wstecznie kompatybilne).
-- Dodać do `DEFAULT_PATRON_SETTINGS` puste stringi.
+### Obsługa błędów
+- Timeout pojedynczej ekstrakcji (~50 s) → ten jeden artykuł leci do `failed`, reszta dalej.
+- Limit Lovable AI (429) → retry 1× po 3 s, potem fail.
+- Cała funkcja ma timeout ~120 s (max edge function); dla 20 artykułów x 50 s / 3 równolegle = ~330 s — **dlatego limit 6 sztuk per wywołanie** (6/3 × 50 s = 100 s, mieści się).
 
-**2. `src/pages/admin/Settings.tsx` — sekcja Patron Bar**
-- Pod istniejącymi polami CTA dodać drugi blok: "Wariant B (A/B test)" z polami `cta_text_b` i `cta_url_b`.
-- Krótki helper text: „Jeśli wypełnisz wariant B, ruch będzie dzielony losowo 50/50 między wariant A i B na każdą odsłonę strony."
-- Walidacja: jeśli podany `cta_url_b`, musi być poprawnym URL (jak istniejące `cta_url`).
-- Aktualizacja `PatronBarPreview` — bez zmian wizualnych, podgląd nadal pokazuje wariant A (bo na żywo by skakał).
+### Pliki do edycji / utworzenia
+- nowy: `supabase/functions/bulk-prepare-suggestions/index.ts`
+- `src/pages/admin/SuggestionsList.tsx` — checkboxy, sticky bar, mutacja
+- nowy hook: `src/hooks/useBulkPrepareSuggestions.ts`
 
-**3. `src/components/PatronBar.tsx` — losowanie wariantu**
-- Przy każdym mount komponentu losować `useMemo(() => Math.random() < 0.5 ? 'A' : 'B', [])` — wariant ustalany raz na sesję wyświetlenia (żeby nie skakał między re-renderami).
-- Jeśli `cta_url_b` i `cta_text_b` są wypełnione, użyć wylosowanego wariantu (A lub B) do `href` i etykiety przycisku CTA. W przeciwnym razie fallback do wariantu A (obecne zachowanie).
-- Dodać atrybut `data-patron-variant="A"` / `"B"` na elemencie `<a>` CTA — żeby w przyszłości łatwo wpiąć analitykę / GA4 event tracking.
+### Brak migracji DB
+Nie potrzebujemy nowych kolumn — używamy istniejącego flow `published_at = now()` i `accepted_post_id`.
 
-### Co dostaje użytkownik
-- W panelu `/admin/settings` w sekcji Patron Bar zobaczy dwa zestawy pól CTA (A i B).
-- Po zapisaniu, na stronie głównej połowa odsłon kliknie w landing A, połowa w B — gotowy do A/B testów po stronie klienta (np. Google Analytics z parametrem `?variant=a/b` w URL-u).
-
-### Pliki do edycji
-- `src/hooks/usePatronSettings.ts` — rozszerzenie interfejsu
-- `src/pages/admin/Settings.tsx` — pola formularza dla wariantu B
-- `src/components/PatronBar.tsx` — losowanie 50/50 i `data-patron-variant`
-
+### Co później (poza tym tasku)
+- Punkt 2 z poprzedniego planu (status draft + bulk publish z PostsList) — jeśli zmienisz zdanie i będziesz chciał tryb review.
+- Auto-pilot dla score ≥ 9.
+- Bulk push na FB.
