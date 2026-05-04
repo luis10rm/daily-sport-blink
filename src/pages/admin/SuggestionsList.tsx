@@ -220,6 +220,44 @@ export default function SuggestionsList() {
         </Card>
 
 
+        {/* Sticky bulk actions bar */}
+        {status === "pending" && selectableIds.length > 0 && (
+          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-lg border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="text-sm font-medium">
+              Zaznaczono: <span className="text-primary">{selectedIds.size}</span> / {MAX_BULK}
+            </div>
+            <Button size="sm" variant="ghost" onClick={selectHighScore}>
+              Zaznacz top score ≥ 7
+            </Button>
+            {selectedIds.size > 0 && (
+              <Button size="sm" variant="ghost" onClick={clearSelection}>
+                Wyczyść zaznaczenie
+              </Button>
+            )}
+            <div className="ml-auto flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkReject}
+                disabled={selectedIds.size === 0 || bulkPrepare.isPending}
+              >
+                <X className="mr-2 h-4 w-4" /> Odrzuć ({selectedIds.size})
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleBulkPublish}
+                disabled={selectedIds.size === 0 || bulkPrepare.isPending}
+              >
+                {bulkPrepare.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Rocket className="mr-2 h-4 w-4" />
+                )}
+                Opublikuj {selectedIds.size > 0 ? `(${selectedIds.size})` : ""}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="space-y-3">
@@ -232,8 +270,17 @@ export default function SuggestionsList() {
         ) : (
           <div className="space-y-3">
             {suggestions.map((s) => (
-              <Card key={s.id} className="overflow-hidden">
+              <Card key={s.id} className={`overflow-hidden ${selectedIds.has(s.id) ? "ring-2 ring-primary" : ""}`}>
                 <CardContent className="flex flex-col gap-4 p-4 md:flex-row">
+                  {s.status === "pending" && (
+                    <div className="flex md:items-start md:pt-1">
+                      <Checkbox
+                        checked={selectedIds.has(s.id)}
+                        onCheckedChange={() => toggleOne(s.id)}
+                        aria-label="Zaznacz do publikacji zbiorczej"
+                      />
+                    </div>
+                  )}
                   {s.image_url && (
                     <img
                       src={s.image_url}
