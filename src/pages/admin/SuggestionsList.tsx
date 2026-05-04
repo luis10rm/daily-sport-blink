@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
@@ -7,9 +7,11 @@ import {
   useScanNewsSources,
   useNewsSources,
 } from "@/hooks/useNewsDiscovery";
+import { useBulkPrepareSuggestions } from "@/hooks/useBulkPrepareSuggestions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -19,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, Sparkles, X, RefreshCw, Settings2, FilterX, Trash2 } from "lucide-react";
+import { ExternalLink, Sparkles, X, RefreshCw, Settings2, FilterX, Trash2, Rocket, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -47,6 +49,68 @@ export default function SuggestionsList() {
     setStatus("pending");
     setSourceId("all");
     setMinScore("0");
+  };
+
+  // ===== Bulk selection =====
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const bulkPrepare = useBulkPrepareSuggestions();
+  const MAX_BULK = 6;
+
+  const selectableIds = useMemo(
+    () => (suggestions ?? []).filter((s) => s.status === "pending").map((s) => s.id),
+    [suggestions]
+  );
+
+  const toggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else {
+        if (next.size >= MAX_BULK) {
+          toast.warning(`Maksymalnie ${MAX_BULK} naraz`);
+          return prev;
+        }
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const selectHighScore = () => {
+    const high = (suggestions ?? [])
+      .filter((s) => s.status === "pending" && (s.ai_score ?? 0) >= 7)
+      .slice(0, MAX_BULK)
+      .map((s) => s.id);
+    setSelectedIds(new Set(high));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleBulkPublish = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Opublikujesz ${ids.length} ${ids.length === 1 ? "artykuł" : "artykuły"} od razu na stronie głównej. Kontynuować?`)) return;
+    try {
+      await bulkPrepare.mutateAsync(ids);
+      setSelectedIds(new Set());
+    } catch {
+      // toast handled by hook
+    }
+  };
+
+  const handleBulkReject = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Odrzucić ${ids.length} ${ids.length === 1 ? "propozycję" : "propozycje"}?`)) return;
+    const { error } = await supabase
+      .from("news_suggestions")
+      .update({ status: "rejected" })
+      .in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Odrzucono ${ids.length}`);
+    setSelectedIds(new Set());
+    qc.invalidateQueries({ queryKey: ["news_suggestions"] });
+    qc.invalidateQueries({ queryKey: ["news_suggestions_pending_count"] });
   };
 
   const handleClearSuggestions = async (scope: "rejected" | "all_non_published" | "all") => {
@@ -156,6 +220,44 @@ export default function SuggestionsList() {
         </Card>
 
 
+        {/* Sticky bulk actions bar */}
+        {status === "pending" && selectableIds.length > 0 && (
+          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-lg border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
+            <div className="text-sm font-medium">
+              Zaznaczono: <span className="text-primary">{selectedIds.size}</span> / {MAX_BULK}
+            </div>
+            <Button size="sm" variant="ghost" onClick={selectHighScore}>
+              Zaznacz top score ≥ 7
+            </Button>
+            {selectedIds.size > 0 && (
+              <Button size="sm" variant="ghost" onClick={clearSelection}>
+                Wyczyść zaznaczenie
+              </Button>
+            )}
+            <div className="ml-auto flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleBulkReject}
+                disabled={selectedIds.size === 0 || bulkPrepare.isPending}
+              >
+                <X className="mr-2 h-4 w-4" /> Odrzuć ({selectedIds.size})
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleBulkPublish}
+                disabled={selectedIds.size === 0 || bulkPrepare.isPending}
+              >
+                {bulkPrepare.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Rocket className="mr-2 h-4 w-4" />
+                )}
+                Opublikuj {selectedIds.size > 0 ? `(${selectedIds.size})` : ""}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="space-y-3">
@@ -168,8 +270,17 @@ export default function SuggestionsList() {
         ) : (
           <div className="space-y-3">
             {suggestions.map((s) => (
-              <Card key={s.id} className="overflow-hidden">
+              <Card key={s.id} className={`overflow-hidden ${selectedIds.has(s.id) ? "ring-2 ring-primary" : ""}`}>
                 <CardContent className="flex flex-col gap-4 p-4 md:flex-row">
+                  {s.status === "pending" && (
+                    <div className="flex md:items-start md:pt-1">
+                      <Checkbox
+                        checked={selectedIds.has(s.id)}
+                        onCheckedChange={() => toggleOne(s.id)}
+                        aria-label="Zaznacz do publikacji zbiorczej"
+                      />
+                    </div>
+                  )}
                   {s.image_url && (
                     <img
                       src={s.image_url}
