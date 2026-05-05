@@ -82,6 +82,17 @@ serve(async (req) => {
       .maybeSingle();
     const defaultCategoryId = defaultCat?.id ?? null;
 
+    // ===== Resolve current user's author profile (for author_id on posts) =====
+    const { data: currentAuthor } = await admin
+      .from("authors")
+      .select("id")
+      .eq("linked_user_id", userId)
+      .maybeSingle();
+    const currentAuthorId = currentAuthor?.id ?? null;
+    if (!currentAuthorId) {
+      console.warn(`[bulk-prepare] User ${userId} has no linked author profile — posts will be created without author_id`);
+    }
+
     // ===== Process in concurrency-limited batches =====
     const successful: SuccessResult[] = [];
     const failed: FailResult[] = [];
