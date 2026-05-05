@@ -155,6 +155,7 @@ serve(async (req) => {
           tags: Array.isArray(tags) ? tags.slice(0, 10) : [],
           published_at: new Date().toISOString(),
           created_by: userId,
+          author_id: currentAuthorId,
         };
 
         const { data: newPost, error: insertErr } = await admin
