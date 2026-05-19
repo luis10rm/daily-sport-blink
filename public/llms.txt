@@ -1,0 +1,44 @@
+# Szortsy
+
+> Minimalistyczny agregator wiadomości sportowych. Krótkie, 60-sekundowe streszczenia najważniejszych wydarzeń sportowych w języku polskim. Czytelny układ, ciemny motyw, bez zbędnego balastu.
+
+## Strony
+
+- [/](/): Strona główna — najnowsze wiadomości sportowe z ostatnich 7 dni.
+- [/archiwum](/archiwum): Archiwum newsów starszych niż 7 dni z filtrowaniem po kategoriach.
+- [/blink/{slug}](/blink/przykladowy-artykul): Pełny artykuł — rozwinięcie newsa z nagłówkiem, treścią, obrazem i źródłem.
+- [/redakcja/{slug}](/redakcja/autor): Profil autora/redaktora z listą jego artykułów.
+- [/dzien/{data}](/dzien/2026-05-19): Podsumowanie dnia — timeline wszystkich newsów z wybranej daty.
+- [/tag/{slug}](/tag/pilka-nozna): Lista artykułów oznaczonych danym tagiem.
+- [/tags](/tags): Przegląd wszystkich dostępnych tagów.
+
+## Kategorie sportowe
+
+Strona główna i archiwum prezentują newsy pogrupowane w kategorie sportowe, m.in.:
+- Piłka noża
+- Piłka nożna — Liga Mistrzów
+- Piłka nożna — Liga Europy
+- Piłka nożna — Ekstraklasa
+- Piłka nożna — Euro 2024
+- Koszykówka
+- Siatkówka
+- Tenis
+- F1
+- MMA
+- NHL
+- Żużel
+- Sporty zimowe / Igrzyska
+- E-sport
+
+## Ważne zasady
+
+- Treści są generowane i kuratowane przez zespół redakcyjny oraz wspierane przez AI.
+- Każdy artykuł zawiera link do oryginalnego źródła (atrybucja).
+- Strona jest zoptymalizowana pod urządzenia mobilne (PWA).
+- Język serwisu: polski.
+
+## Informacje techniczne
+
+- URL kanoniczny: https://www.szortsy.pl
+- Język: pl-PL
+- Schemat danych: NewsArticle (schema.org) dla każdego artykułu.
