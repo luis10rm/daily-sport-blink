@@ -265,6 +265,39 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ===== Auth: require admin/editor =====
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Brak autoryzacji" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Nieprawidłowy token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = claimsData.claims.sub as string;
+    const { data: roleRows } = await userClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId);
+    const userRoles = (roleRows ?? []).map((r: { role: string }) => r.role);
+    if (!userRoles.some((r) => r === "admin" || r === "editor")) {
+      return new Response(JSON.stringify({ error: "Brak uprawnień (admin/editor)" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    console.log(`[scan] authenticated user=${userId} roles=${userRoles.join(",")}`);
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     let sourceFilter: string | null = null;

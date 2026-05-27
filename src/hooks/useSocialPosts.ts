@@ -10,7 +10,7 @@ export interface SocialPost {
   caption: string | null;
   scheduled_at: string | null;
   published_at: string | null;
-  webhook_response: Record<string, unknown> | null;
+  webhook_response?: Record<string, unknown> | null;
   created_at: string;
   created_by: string | null;
 }
@@ -23,7 +23,7 @@ export const useSocialPostsByPostId = (postId: string) => {
       
       const { data, error } = await supabase
         .from("social_posts")
-        .select("*")
+        .select("id, post_id, platform, status, caption, scheduled_at, published_at, created_at, created_by")
         .eq("post_id", postId)
         .order("created_at", { ascending: false });
 
