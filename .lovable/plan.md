@@ -1,69 +1,126 @@
 ## Cel
-Wyróżnić newsy z kategorii **"Mistrzostwa świata w piłce nożnej 2026"** (slug: `mistrzostwa-swiata-w-pilce-noznej-2026`) wizualnym oznaczeniem — na kafelku na stronie głównej oraz na stronie artykułu `/blink/:slug`. Wzorujemy się na sprawdzonym pattern *Olympic theme*.
+Stworzyć dedykowaną stronę-hub MŚ 2026 (`/mistrzostwa-swiata-2026`) łączącą:
+- **Live dane** z Football-Data.org (terminarz, wyniki, top strzelcy)
+- **Agregację naszych postów** z kategorii `mistrzostwa-swiata-w-pilce-noznej-2026` (wszystkie, bez limitu 7 dni)
 
-## Decyzje (potwierdzone)
-- **Data startu MŚ:** 11.06.2026 (oficjalny start FIFA)
-- **Etykieta badge'a:** „MŚ 2026"
-- **Countdown:** tylko na stronie artykułu (kafelki zostają minimalistyczne)
-- **Kolor:** pełny złoty (amber/gold)
+Plus wejścia z badge'a na kafelkach i bannera nad feedem.
 
-## Koncept wizualny
+## Architektura danych
 
-**Badge na kafelku** (lewy górny róg, analogicznie do `Olimpijskie`):
-- Ikona `Trophy` (lucide) + tekst „MŚ 2026"
-- Tło: pełny złoty (`bg-amber-500/95`), tekst ciemny (`text-amber-950`) dla maksymalnego kontrastu
-- Karta dostaje subtelną złotą ramkę + delikatny glow (klasa `.worldcup-card`)
+**API:** Football-Data.org (free tier, 10 req/min, MŚ w darmowym pakiecie, competition code `WC`).
 
-**Ribbon na stronie artykułu `/blink/:slug`**:
-- Nad tytułem wstążka: `Trophy` + „Mistrzostwa Świata 2026 • Start za X dni"
-- Po starcie: ten sam komponent przełączy się na „NA ŻYWO" (przygotowanie pod fazę 2 użytkownika)
-- Delikatny złoty akcent w sekcji meta kategorii
+**Cache w bazie** — chronimy klucz i nie wybijamy limitu (10 req/min to mało):
 
-## Implementacja
-
-### 1) `src/lib/worldCupTheme.ts` (nowy plik)
-Analogicznie do `olympicTheme.ts`:
-```ts
-const WORLD_CUP_SLUGS = ["mistrzostwa-swiata-w-pilce-noznej-2026"];
-const WORLD_CUP_START = new Date("2026-06-11T00:00:00Z");
-
-export const isWorldCupCategory = (slug?: string | null): boolean
-export const getWorldCupPhase = (): "pre" | "live" | "post"
-export const getDaysUntilWorldCup = (): number
+```text
+public.worldcup_cache
+├── cache_key      text PRIMARY KEY    -- np. "matches", "scorers", "standings"
+├── data           jsonb
+├── fetched_at     timestamptz
+└── expires_at     timestamptz
 ```
-Liczone raz przy renderze, bez interwałów.
+- RLS: `SELECT` dla anon/authenticated, `ALL` dla service_role
+- Edge function jest jedynym writerem (przez service role)
 
-### 2) Tokeny w `src/index.css` + `tailwind.config.ts`
-- Zmienne HSL: `--worldcup-gold`, `--worldcup-gold-glow`
-- Klasa `.worldcup-card` — złota ramka 1px + glow shadow (tylko `@media (hover: hover)` dla intensywniejszego efektu hover, mobile bez)
+**Edge function `worldcup-data`:**
+- GET `?resource=matches|scorers|standings|teams`
+- Sprawdza cache → jeśli świeży, zwraca; jeśli nie, fetch z API → zapis → zwrot
+- TTL: 60s w trakcie meczu (live), 5 min poza, 1h dla `teams`
+- Secret: `FOOTBALL_DATA_API_KEY` (poproszę o niego przy implementacji)
+- CORS pełne, klient woła `supabase.functions.invoke('worldcup-data', { body: { resource: 'matches' }})`
 
-### 3) `src/components/WorldCupBadge.tsx` (nowy, współdzielony)
-Mały komponent: `Trophy` + „MŚ 2026" w złotym chipie. Używany w `NewsCard` i `NewsOfTheDay`.
+## Strony i komponenty
 
-### 4) `src/components/WorldCupRibbon.tsx` (nowy)
-Wstążka nad tytułem na `BlinkPage` z countdownem („Start za X dni" / „NA ŻYWO" / brak gdy `post`).
+### 1) `src/pages/WorldCup2026.tsx` (nowy, route `/mistrzostwa-swiata-2026`)
 
-### 5) `src/components/NewsCard.tsx` (edycja)
-- Wyliczyć `isWorldCup` z `sportCategory?.slug || categorySlug`
-- Dodać `<WorldCupBadge />` w lewym górnym rogu obrazka
-- Dodać klasę `worldcup-card` na `<article>` gdy `isWorldCup`
-- Olimpijski badge i WC badge to różne kategorie — brak konfliktu pozycyjnego
+Sekcje od góry:
 
-### 6) `src/components/NewsOfTheDay.tsx` (edycja)
-Dodać ten sam badge w analogicznym miejscu (spójność z kafelkami).
+1. **Hero** — pełnoekranowy gradient złoto/granatowy, logo turnieju (Trophy + „Mistrzostwa Świata FIFA 2026"), countdown lub „NA ŻYWO" / „PO TURNIEJU" zależnie od fazy (z istniejącego `worldCupTheme.ts`)
+2. **`<WorldCupMatchesWidget />`** — terminarz: 5 najbliższych nadchodzących + 5 ostatnio rozegranych; przy live mecz pulsujący czerwony „LIVE" + minuta gry
+3. **`<WorldCupStandings />`** — tabele 12 grup (w fazie grupowej) lub drabinka 1/8, 1/4, 1/2, finał (w fazie pucharowej) — auto-przełączanie po dacie
+4. **`<WorldCupTopScorers />`** — top 10 strzelców (mini-karty z flagą, drużyną, liczbą goli)
+5. **`<WorldCupNewsAggregator />`** — wszystkie nasze posty z kategorii (slug: `mistrzostwa-swiata-w-pilce-noznej-2026`), sortowane od najnowszego, paginacja po 12 (bez 7-dniowego limitu), reużywamy `NewsCard`
+6. **Footer-CTA** — „Czytaj wszystkie kategorie" + link do `/`
 
-### 7) `src/pages/BlinkPage.tsx` (edycja)
-- Renderować `<WorldCupRibbon />` nad tytułem gdy `isWorldCupCategory(post.sport_category?.slug)`
-- Lekki złoty akcent w meta kategorii (border-left lub tło chipa)
+Pre-faza (przed 11.06.2026): sekcje 2-4 pokazują „Terminarz dostępny od…" / „Tabele dostępne po pierwszej kolejce" — wyświetlamy hero + sekcja 5 (nasze posty) jako główny content. Niczego nie ukrywamy nagle.
 
-### 8) Memory
-Dodać `mem://style/world-cup-2026-theme` opisujące mechanizm (slug, kolor, faza, lokalizacje użycia). Update `mem://index.md`.
+### 2) Hooks (`src/hooks/useWorldCupData.ts`)
+- `useWorldCupMatches()` — React Query, staleTime 30s
+- `useWorldCupScorers()` — staleTime 5min
+- `useWorldCupStandings()` — staleTime 5min
+- Wszystkie wołają edge function `worldcup-data`
 
-## Co NIE wchodzi w tę iterację
-- Globalne motywowanie layoutu (header/wallpaper/tło) — to faza 2
-- Strona kategorii `/kategoria/mistrzostwa-swiata-w-pilce-noznej-2026` — można dorzucić mały hero później
-- Real-time countdown z sekundami — wystarczy „za X dni" liczone przy renderze
+### 3) `src/hooks/useWorldCupPosts.ts`
+- Wszystkie posty z kategorii o slug `mistrzostwa-swiata-w-pilce-noznej-2026`
+- Paginacja po 12, sort `published_at DESC`
+- Bez 7-dniowego limitu (świadome odstępstwo od core rule — to strefa archiwalna+aktualna)
 
-## Pliki do utworzenia/edycji
-- **Nowe:** `src/lib/worldCupTheme.ts`, `src/components/WorldCupBadge.tsx`, `src/components/WorldCupRibbon.tsx`, `mem://style/world-cup-2026-theme`
-- **Edycja:** `src/components/NewsCard.tsx`, `src/components/NewsOfTheDay.tsx`, `src/pages/BlinkPage.tsx`, `src/index.css`, `tailwind.config.ts`, `mem://index.md`
+### 4) Linki wejściowe
+
+- **`src/components/WorldCupBadge.tsx`** (edycja) — opakować w `<Link to="/mistrzostwa-swiata-2026">` + `stopPropagation` żeby klik w badge nie otwierał artykułu
+- **`src/components/WorldCupHomeBanner.tsx`** (nowy) — pasek nad feedem na `/`:
+  - Złoty gradient, Trophy + tekst dynamiczny:
+    - Pre: „MŚ 2026 — start za X dni. Zobacz strefę turnieju →"
+    - Live: „MŚ 2026 LIVE — zobacz wyniki dnia →" (+ kropka pulsująca)
+    - Post: ukryty
+  - Wstawiony w `src/pages/Index.tsx` nad listą kafelków
+  - Zamykalny (localStorage `wc-banner-dismissed-{phase}`)
+
+### 5) SEO
+- `<SEO title="Mistrzostwa Świata 2026 — wyniki, tabele, terminarz | Szortsy" description="..." />`
+- JSON-LD `SportsEvent` ze startDate `2026-06-11`, endDate `2026-07-19`, location US/CA/MX
+- Dodanie do `public/sitemap.xml` (i edge function `sitemap` jeśli generuje dynamicznie)
+
+### 6) `src/App.tsx` — nowy route
+```tsx
+<Route path="/mistrzostwa-swiata-2026" element={<WorldCup2026 />} />
+```
+
+## Bezpieczeństwo i limity API
+
+Football-Data free = 10 req/min. Strategia:
+- Edge function cachuje **per-resource**, więc 3 endpointy × ruch użytkowników = max ~3 req/min do upstream
+- Jeśli kiedyś przekroczymy → upgrade do API-Football (osobna iteracja, plan zostawia miejsce)
+- W trakcie meczów cron w Supabase co 60s odświeża cache w tle (opcjonalnie — w fazie 2)
+
+## Pliki
+
+**Nowe:**
+- `src/pages/WorldCup2026.tsx`
+- `src/components/worldcup/WorldCupHero.tsx`
+- `src/components/worldcup/WorldCupMatchesWidget.tsx`
+- `src/components/worldcup/WorldCupStandings.tsx`
+- `src/components/worldcup/WorldCupTopScorers.tsx`
+- `src/components/worldcup/WorldCupNewsAggregator.tsx`
+- `src/components/WorldCupHomeBanner.tsx`
+- `src/hooks/useWorldCupData.ts`
+- `src/hooks/useWorldCupPosts.ts`
+- `supabase/functions/worldcup-data/index.ts`
+- Migration: tabela `worldcup_cache` + RLS + GRANT
+
+**Edycja:**
+- `src/App.tsx` (nowy route)
+- `src/pages/Index.tsx` (banner nad feedem)
+- `src/components/WorldCupBadge.tsx` (Link do hubu)
+- `public/sitemap.xml` (+ funkcja `sitemap` jeśli dynamiczna)
+- `mem://style/world-cup-2026-theme` (rozszerzenie o hub)
+- `mem://index.md` (dopisać wpis o hubie)
+
+## Czego NIE robimy w tej iteracji
+- API-Football (płatne) — zostaje na później jeśli ruch uzasadni
+- Cron-job odświeżający cache w tle — działa lazy, na żądanie (wystarczy na start)
+- Powiadomienia push przed meczem Polski — osobna funkcjonalność
+- Predykcje meczów / typer — osobny moduł
+- Wallpaper/header theming na czas MŚ — faza 2 Twojego oryginalnego pomysłu
+
+## Co trzeba ode mnie / od Ciebie przed startem
+1. Założenie konta Football-Data.org (free, 30 sekund) → kopiujesz API key → poproszę przez secret prompt o `FOOTBALL_DATA_API_KEY`
+2. Akceptacja planu → ruszam z migracją + edge function w pierwszej kolejności, potem frontend
+
+## Kolejność wykonania
+1. Migracja `worldcup_cache` + RLS + GRANT
+2. Edge function `worldcup-data` (po dodaniu sekretu)
+3. Hooks `useWorldCupData` + `useWorldCupPosts`
+4. Strona `WorldCup2026.tsx` + komponenty sekcji
+5. Banner na homepage + Link na badge
+6. Route + SEO + sitemap
+7. Memory + finalny test na preview
