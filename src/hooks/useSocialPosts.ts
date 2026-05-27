@@ -23,7 +23,7 @@ export const useSocialPostsByPostId = (postId: string) => {
       
       const { data, error } = await supabase
         .from("social_posts")
-        .select("*")
+        .select("id, post_id, platform, status, caption, scheduled_at, published_at, created_at, created_by")
         .eq("post_id", postId)
         .order("created_at", { ascending: false });
 
