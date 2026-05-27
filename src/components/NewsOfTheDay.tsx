@@ -35,6 +35,11 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
         Wiadomość dnia
       </div>
 
+      {/* World Cup 2026 badge */}
+      {isWorldCup && (
+        <WorldCupBadge size="md" className="absolute right-4 top-4 z-10" />
+      )}
+
       <div className="flex flex-col md:flex-row">
         {/* Image area - LCP optimized */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted md:aspect-auto md:w-1/2">
