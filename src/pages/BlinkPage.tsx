@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 import { Footer } from "@/components/Footer";
 import { isOlympicCategory } from "@/lib/olympicTheme";
+import { isWorldCupCategory } from "@/lib/worldCupTheme";
+import { WorldCupRibbon } from "@/components/WorldCupRibbon";
 
 // Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string): string => {
