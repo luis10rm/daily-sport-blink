@@ -154,6 +154,7 @@ const BlinkPage = () => {
   };
 
   const isOlympic = isOlympicCategory(post.sport_category?.slug);
+  const isWorldCup = isWorldCupCategory(post.sport_category?.slug);
 
   return (
     <div className="min-h-screen bg-background">
