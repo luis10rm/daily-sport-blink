@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import { ExternalLink, Sparkles, Snowflake } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
+import { WorldCupBadge } from "./WorldCupBadge";
 import { getPostImage } from "@/config/categoryImages";
 import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
 import { isOlympicCategory } from "@/lib/olympicTheme";
+import { isWorldCupCategory } from "@/lib/worldCupTheme";
 
 interface NewsCardProps {
   id: string;
