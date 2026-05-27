@@ -180,6 +180,9 @@ const BlinkPage = () => {
             </div>
           )}
 
+          {/* World Cup 2026 ribbon */}
+          {isWorldCup && <WorldCupRibbon />}
+
           {/* Category and date */}
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2">
