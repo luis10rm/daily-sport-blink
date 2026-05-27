@@ -84,6 +84,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           !disableAnimation && "opacity-0 animate-fade-in",
           isSponsored ? "border-primary/30 ring-1 ring-primary/20" : "border-border",
           isOlympic && "olympic-card",
+          isWorldCup && "worldcup-card",
           className,
         )}
         style={!disableAnimation ? { animationDelay: `${delay}ms` } : undefined}
@@ -102,6 +103,11 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             <Snowflake className="h-3 w-3" />
             Olimpijskie
           </div>
+        )}
+
+        {/* World Cup 2026 badge */}
+        {isWorldCup && !isOlympic && (
+          <WorldCupBadge className="absolute left-3 top-3 z-10" />
         )}
 
         {/* Image area */}
