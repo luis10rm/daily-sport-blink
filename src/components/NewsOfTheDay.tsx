@@ -2,9 +2,11 @@ import { ExternalLink, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
+import { WorldCupBadge } from "./WorldCupBadge";
 import { getPostImage } from "@/config/categoryImages";
 import { Post } from "@/hooks/usePosts";
 import { cn, getSourceName, generateSlug } from "@/lib/utils";
+import { isWorldCupCategory } from "@/lib/worldCupTheme";
 
 interface NewsOfTheDayProps {
   post: Post;
