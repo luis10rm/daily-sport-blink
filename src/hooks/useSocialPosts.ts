@@ -10,7 +10,7 @@ export interface SocialPost {
   caption: string | null;
   scheduled_at: string | null;
   published_at: string | null;
-  webhook_response: Record<string, unknown> | null;
+  webhook_response?: Record<string, unknown> | null;
   created_at: string;
   created_by: string | null;
 }
