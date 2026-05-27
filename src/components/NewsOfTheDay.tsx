@@ -19,6 +19,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
     month: "long",
     year: "numeric",
   });
+  const isWorldCup = isWorldCupCategory(post.sport_category?.slug);
 
   return (
     <article
