@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import { ExternalLink, Sparkles, Snowflake } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
+import { WorldCupBadge } from "./WorldCupBadge";
 import { getPostImage } from "@/config/categoryImages";
 import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
 import { isOlympicCategory } from "@/lib/olympicTheme";
+import { isWorldCupCategory } from "@/lib/worldCupTheme";
 
 interface NewsCardProps {
   id: string;
@@ -66,6 +68,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
     const hasContent = Boolean(content);
     const blinkUrl = `/blink/${slug}`;
     const isOlympic = isOlympicCategory(sportCategory?.slug || categorySlug);
+    const isWorldCup = isWorldCupCategory(sportCategory?.slug || categorySlug);
 
     const formattedDate = new Date(publishedAt).toLocaleDateString("pl-PL", {
       day: "numeric",
@@ -81,6 +84,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           !disableAnimation && "opacity-0 animate-fade-in",
           isSponsored ? "border-primary/30 ring-1 ring-primary/20" : "border-border",
           isOlympic && "olympic-card",
+          isWorldCup && "worldcup-card",
           className,
         )}
         style={!disableAnimation ? { animationDelay: `${delay}ms` } : undefined}
@@ -99,6 +103,11 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             <Snowflake className="h-3 w-3" />
             Olimpijskie
           </div>
+        )}
+
+        {/* World Cup 2026 badge */}
+        {isWorldCup && !isOlympic && (
+          <WorldCupBadge className="absolute left-3 top-3 z-10" />
         )}
 
         {/* Image area */}

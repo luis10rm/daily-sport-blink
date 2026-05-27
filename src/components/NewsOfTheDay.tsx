@@ -2,9 +2,11 @@ import { ExternalLink, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
+import { WorldCupBadge } from "./WorldCupBadge";
 import { getPostImage } from "@/config/categoryImages";
 import { Post } from "@/hooks/usePosts";
 import { cn, getSourceName, generateSlug } from "@/lib/utils";
+import { isWorldCupCategory } from "@/lib/worldCupTheme";
 
 interface NewsOfTheDayProps {
   post: Post;
@@ -17,6 +19,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
     month: "long",
     year: "numeric",
   });
+  const isWorldCup = isWorldCupCategory(post.sport_category?.slug);
 
   return (
     <article
@@ -31,6 +34,11 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
         <Trophy className="h-4 w-4" />
         Wiadomość dnia
       </div>
+
+      {/* World Cup 2026 badge */}
+      {isWorldCup && (
+        <WorldCupBadge size="md" className="absolute right-4 top-4 z-10" />
+      )}
 
       <div className="flex flex-col md:flex-row">
         {/* Image area - LCP optimized */}
