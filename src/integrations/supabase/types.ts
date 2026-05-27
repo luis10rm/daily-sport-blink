@@ -644,6 +644,27 @@ export type Database = {
           },
         ]
       }
+      worldcup_cache: {
+        Row: {
+          cache_key: string
+          data: Json
+          expires_at: string
+          fetched_at: string
+        }
+        Insert: {
+          cache_key: string
+          data: Json
+          expires_at: string
+          fetched_at?: string
+        }
+        Update: {
+          cache_key?: string
+          data?: Json
+          expires_at?: string
+          fetched_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       authors_public: {
