@@ -14,7 +14,7 @@ const HUB_URL = "https://szortsy.pl/mistrzostwa-swiata-2026";
 
 const WorldCup2026 = () => {
   useSEOMeta({
-    title: "Mistrzostwa Świata 2026 — wyniki, tabele, terminarz | Szortsy",
+    title: "Mistrzostwa Świata 2026 — wyniki, tabele, terminarz",
     description:
       "Wszystko o FIFA World Cup 2026: live wyniki, tabele grup, najlepsi strzelcy i nasze artykuły o mundialu. Aktualizacje co minutę.",
     canonical: HUB_URL,
