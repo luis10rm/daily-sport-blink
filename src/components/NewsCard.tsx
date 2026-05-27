@@ -68,6 +68,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
     const hasContent = Boolean(content);
     const blinkUrl = `/blink/${slug}`;
     const isOlympic = isOlympicCategory(sportCategory?.slug || categorySlug);
+    const isWorldCup = isWorldCupCategory(sportCategory?.slug || categorySlug);
 
     const formattedDate = new Date(publishedAt).toLocaleDateString("pl-PL", {
       day: "numeric",
