@@ -40,6 +40,7 @@ import NewsGone from "./pages/NewsGone";
 import StartPage from "./pages/StartPage";
 import InstallPage from "./pages/InstallPage";
 import NotFound from "./pages/NotFound";
+import WorldCup2026 from "./pages/WorldCup2026";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ function App() {
               <Route path="/dzien/:date" element={<DailyPage />} />
               <Route path="/blink/:slug" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
+              <Route path="/mistrzostwa-swiata-2026" element={<WorldCup2026 />} />
               <Route path="/kategoria/:slug" element={<CategoryPage />} />
               <Route path="/tagi" element={<TagsListPage />} />
               <Route path="/tag/:slug" element={<TagPage />} />

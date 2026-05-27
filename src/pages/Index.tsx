@@ -11,6 +11,7 @@ import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
 import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
 import { FeedbackBox } from "@/components/FeedbackBox";
+import { WorldCupHomeBanner } from "@/components/WorldCupHomeBanner";
 import { MultiSEO, getWebsiteSEO, getRichItemListSEO } from "@/components/SEO";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts";
@@ -86,6 +87,9 @@ const Index = () => {
 
         {/* Todays News Banner */}
         <TodaysNewsBanner count={todaysPosts.length} isLoading={postsLoading} />
+
+        {/* World Cup 2026 Banner */}
+        <WorldCupHomeBanner className="mb-6" />
 
         {/* News of the Day */}
         {newsLoading ? (
