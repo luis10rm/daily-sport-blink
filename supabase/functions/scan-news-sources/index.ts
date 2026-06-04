@@ -539,7 +539,8 @@ Deno.serve(async (req) => {
     const postTitleTokens = (recentPosts || []).map((p) => ({
       id: p.id as string,
       title: p.title as string,
-      tokens: tokenSet(p.title as string),
+      tokens: contentTokens(p.title as string),
+      entities: extractEntities(p.title as string),
     }));
 
     let totalNew = 0;
