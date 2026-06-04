@@ -1,126 +1,68 @@
-## Cel
-Stworzyć dedykowaną stronę-hub MŚ 2026 (`/mistrzostwa-swiata-2026`) łączącą:
-- **Live dane** z Football-Data.org (terminarz, wyniki, top strzelcy)
-- **Agregację naszych postów** z kategorii `mistrzostwa-swiata-w-pilce-noznej-2026` (wszystkie, bez limitu 7 dni)
+## Diagnoza obecnego stanu
 
-Plus wejścia z badge'a na kafelkach i bannera nad feedem.
+Na podstawie logów `scan-news-sources` z ostatnich uruchomień (źródło Interia):
 
-## Architektura danych
+```
+[scan] Interia sport candidates=30
+[scan] skip (no publishedAt): https://sport.interia.pl/tenis/turnieje
+[scan] skip (no publishedAt): https://sport.interia.pl/pilka-nozna/euro
+[scan] skip (no publishedAt): https://sport.interia.pl/tenis/profil-iga-swiatek,sppi,677871
+... (×30)
+[scan] Interia sport done: analyzed=30 new=0 dup=0 skipped_old=0 skipped_no_date=30
+```
 
-**API:** Football-Data.org (free tier, 10 req/min, MŚ w darmowym pakiecie, competition code `WC`).
+**Wynik: 0 nowych z 30 analizowanych = ~30 zmarnowanych wywołań Firecrawl / źródło / uruchomienie.**
 
-**Cache w bazie** — chronimy klucz i nie wybijamy limitu (10 req/min to mało):
+### Pierwotne przyczyny
+
+1. **Filtr `isLikelyArticleUrl` jest za luźny.** Przepuszcza strony kategorii (`/tenis/turnieje`, `/pilka-nozna/euro`), strony profili zawodników (`/tenis/profil-iga-swiatek,sppi,677871`) oraz strony tagów. Nie są to artykuły, więc nie mają `publishedAt` i lecą do kosza po pełnym Firecrawl scrape.
+2. **Brak wczesnego przerwania.** Pętla analizuje wszystkie 30 kandydatów, nawet gdy 20 z rzędu nie ma daty — żadnego cut-offu.
+3. **Sekwencyjne scrape'y meta** — 30× po kolei (~30–60s na źródło).
+4. **Brak ścieżki RSS.** Interia, TVP Sport, Sport.pl, Przegląd Sportowy itd. mają oficjalne kanały RSS/Atom z gotowym `<pubDate>`, `<title>`, `<description>`, linkiem — bez Firecrawla, bez parsowania HTML, bez zgadywania daty.
+
+## Co zrobimy (zakres zmian — wyłącznie edge function `scan-news-sources`)
+
+### 1. RSS jako pierwsze źródło prawdy (największy efekt)
+- Dodać pole `feed_url` w tabeli `news_sources` (opcjonalne) + UI w `SourcesList` do wpisania (na razie bez UI — tylko migracja kolumny; UI w kolejnym kroku).
+- W skanerze: jeśli `feed_url` jest ustawiony → pobierz feed (`fetch` + parser XML), wyciągnij `link/title/description/pubDate/enclosure`. Brak Firecrawla na etapie discovery, mamy datę publikacji od ręki, filtr "ostatnie 24h" działa natychmiast.
+- Tylko dla newsów, które przejdą filtr czasu i dedup po URL/tytule, robimy Firecrawl scrape (po obrazek/lead jeśli brak w RSS). Realnie: 5–10 wywołań Firecrawl/źródło zamiast 30.
+
+### 2. Twardszy filtr "to artykuł, nie kategoria" (fallback dla źródeł bez RSS)
+- Wymóg: ścieżka URL musi zawierać **wzorzec ID artykułu** typowy dla portali: `,nId,12345`, `,sppi,12345`, `-12345.html`, `/news/...-12345`, lub ścieżka z ≥3 segmentami i ostatnim segmentem ≥30 znaków zawierającym myślniki (slug artykułu).
+- Czarna lista segmentów rozszerzona: `profil-`, `turnieje`, `wyniki`, `rozgrywki`, `liga-mistrzow`, `euro`, `mundial`, `bundesliga` itd. — to landingi kategorii, nie newsy.
+
+### 3. Wczesne przerwanie pętli
+- Jeśli pierwsze 10 kandydatów z rzędu nie ma daty publikacji → przerwij ten źródło, oznacz w logu `early_abort: bad_filter`. Oszczędza ~20 wywołań Firecrawl gdy filtr URL źle dobrał kandydatów.
+
+### 4. Równoległe scrape'y meta (kontrolowany concurrency = 4)
+- Zastąpić sekwencyjną pętlę `for ... await firecrawlScrapeMeta` puli z `Promise.all` po 4. Czas skanu źródła spada z ~60s do ~15s.
+
+### 5. Statystyki efektywności w odpowiedzi
+- Do zwracanego `details[]` dodać: `efficiency_pct = new / analyzed * 100`, `firecrawl_calls`, `used_rss: boolean`. Dzięki temu w UI `SourcesList` zobaczysz, które źródło marnuje budżet i które ma 0% trafień — szybka diagnoza.
+
+## Zmiany w plikach
 
 ```text
-public.worldcup_cache
-├── cache_key      text PRIMARY KEY    -- np. "matches", "scorers", "standings"
-├── data           jsonb
-├── fetched_at     timestamptz
-└── expires_at     timestamptz
-```
-- RLS: `SELECT` dla anon/authenticated, `ALL` dla service_role
-- Edge function jest jedynym writerem (przez service role)
+supabase/migrations/<timestamp>_news_sources_feed_url.sql   (NEW)
+  └─ ALTER TABLE news_sources ADD COLUMN feed_url text;
 
-**Edge function `worldcup-data`:**
-- GET `?resource=matches|scorers|standings|teams`
-- Sprawdza cache → jeśli świeży, zwraca; jeśli nie, fetch z API → zapis → zwrot
-- TTL: 60s w trakcie meczu (live), 5 min poza, 1h dla `teams`
-- Secret: `FOOTBALL_DATA_API_KEY` (poproszę o niego przy implementacji)
-- CORS pełne, klient woła `supabase.functions.invoke('worldcup-data', { body: { resource: 'matches' }})`
-
-## Strony i komponenty
-
-### 1) `src/pages/WorldCup2026.tsx` (nowy, route `/mistrzostwa-swiata-2026`)
-
-Sekcje od góry:
-
-1. **Hero** — pełnoekranowy gradient złoto/granatowy, logo turnieju (Trophy + „Mistrzostwa Świata FIFA 2026"), countdown lub „NA ŻYWO" / „PO TURNIEJU" zależnie od fazy (z istniejącego `worldCupTheme.ts`)
-2. **`<WorldCupMatchesWidget />`** — terminarz: 5 najbliższych nadchodzących + 5 ostatnio rozegranych; przy live mecz pulsujący czerwony „LIVE" + minuta gry
-3. **`<WorldCupStandings />`** — tabele 12 grup (w fazie grupowej) lub drabinka 1/8, 1/4, 1/2, finał (w fazie pucharowej) — auto-przełączanie po dacie
-4. **`<WorldCupTopScorers />`** — top 10 strzelców (mini-karty z flagą, drużyną, liczbą goli)
-5. **`<WorldCupNewsAggregator />`** — wszystkie nasze posty z kategorii (slug: `mistrzostwa-swiata-w-pilce-noznej-2026`), sortowane od najnowszego, paginacja po 12 (bez 7-dniowego limitu), reużywamy `NewsCard`
-6. **Footer-CTA** — „Czytaj wszystkie kategorie" + link do `/`
-
-Pre-faza (przed 11.06.2026): sekcje 2-4 pokazują „Terminarz dostępny od…" / „Tabele dostępne po pierwszej kolejce" — wyświetlamy hero + sekcja 5 (nasze posty) jako główny content. Niczego nie ukrywamy nagle.
-
-### 2) Hooks (`src/hooks/useWorldCupData.ts`)
-- `useWorldCupMatches()` — React Query, staleTime 30s
-- `useWorldCupScorers()` — staleTime 5min
-- `useWorldCupStandings()` — staleTime 5min
-- Wszystkie wołają edge function `worldcup-data`
-
-### 3) `src/hooks/useWorldCupPosts.ts`
-- Wszystkie posty z kategorii o slug `mistrzostwa-swiata-w-pilce-noznej-2026`
-- Paginacja po 12, sort `published_at DESC`
-- Bez 7-dniowego limitu (świadome odstępstwo od core rule — to strefa archiwalna+aktualna)
-
-### 4) Linki wejściowe
-
-- **`src/components/WorldCupBadge.tsx`** (edycja) — opakować w `<Link to="/mistrzostwa-swiata-2026">` + `stopPropagation` żeby klik w badge nie otwierał artykułu
-- **`src/components/WorldCupHomeBanner.tsx`** (nowy) — pasek nad feedem na `/`:
-  - Złoty gradient, Trophy + tekst dynamiczny:
-    - Pre: „MŚ 2026 — start za X dni. Zobacz strefę turnieju →"
-    - Live: „MŚ 2026 LIVE — zobacz wyniki dnia →" (+ kropka pulsująca)
-    - Post: ukryty
-  - Wstawiony w `src/pages/Index.tsx` nad listą kafelków
-  - Zamykalny (localStorage `wc-banner-dismissed-{phase}`)
-
-### 5) SEO
-- `<SEO title="Mistrzostwa Świata 2026 — wyniki, tabele, terminarz | Szortsy" description="..." />`
-- JSON-LD `SportsEvent` ze startDate `2026-06-11`, endDate `2026-07-19`, location US/CA/MX
-- Dodanie do `public/sitemap.xml` (i edge function `sitemap` jeśli generuje dynamicznie)
-
-### 6) `src/App.tsx` — nowy route
-```tsx
-<Route path="/mistrzostwa-swiata-2026" element={<WorldCup2026 />} />
+supabase/functions/scan-news-sources/index.ts                (EDIT)
+  ├─ parseRssFeed(url)                — nowa funkcja, parser XML
+  ├─ discoverArticles(source)         — wrapper: RSS jeśli feed_url, inaczej hybrid scrape
+  ├─ isLikelyArticleUrl(...)          — zaostrzony regex + blacklist
+  ├─ pętla po kandydatach             — concurrency 4 + early abort po 10 no-date
+  └─ details[]                        — dorzucamy efficiency_pct, used_rss
 ```
 
-## Bezpieczeństwo i limity API
+## Czego NIE zmieniamy w tym kroku
 
-Football-Data free = 10 req/min. Strategia:
-- Edge function cachuje **per-resource**, więc 3 endpointy × ruch użytkowników = max ~3 req/min do upstream
-- Jeśli kiedyś przekroczymy → upgrade do API-Football (osobna iteracja, plan zostawia miejsce)
-- W trakcie meczów cron w Supabase co 60s odświeża cache w tle (opcjonalnie — w fazie 2)
+- UI `SourcesList` (dodanie pola `feed_url` w formularzu) — proponuję jako kolejny krok po potwierdzeniu, że RSS faktycznie podnosi skuteczność.
+- Cron scheduling, prompt AI scoringu, mechanizm dedup po tytule.
+- Inne edge functions.
 
-## Pliki
+## Oczekiwany efekt
 
-**Nowe:**
-- `src/pages/WorldCup2026.tsx`
-- `src/components/worldcup/WorldCupHero.tsx`
-- `src/components/worldcup/WorldCupMatchesWidget.tsx`
-- `src/components/worldcup/WorldCupStandings.tsx`
-- `src/components/worldcup/WorldCupTopScorers.tsx`
-- `src/components/worldcup/WorldCupNewsAggregator.tsx`
-- `src/components/WorldCupHomeBanner.tsx`
-- `src/hooks/useWorldCupData.ts`
-- `src/hooks/useWorldCupPosts.ts`
-- `supabase/functions/worldcup-data/index.ts`
-- Migration: tabela `worldcup_cache` + RLS + GRANT
-
-**Edycja:**
-- `src/App.tsx` (nowy route)
-- `src/pages/Index.tsx` (banner nad feedem)
-- `src/components/WorldCupBadge.tsx` (Link do hubu)
-- `public/sitemap.xml` (+ funkcja `sitemap` jeśli dynamiczna)
-- `mem://style/world-cup-2026-theme` (rozszerzenie o hub)
-- `mem://index.md` (dopisać wpis o hubie)
-
-## Czego NIE robimy w tej iteracji
-- API-Football (płatne) — zostaje na później jeśli ruch uzasadni
-- Cron-job odświeżający cache w tle — działa lazy, na żądanie (wystarczy na start)
-- Powiadomienia push przed meczem Polski — osobna funkcjonalność
-- Predykcje meczów / typer — osobny moduł
-- Wallpaper/header theming na czas MŚ — faza 2 Twojego oryginalnego pomysłu
-
-## Co trzeba ode mnie / od Ciebie przed startem
-1. Założenie konta Football-Data.org (free, 30 sekund) → kopiujesz API key → poproszę przez secret prompt o `FOOTBALL_DATA_API_KEY`
-2. Akceptacja planu → ruszam z migracją + edge function w pierwszej kolejności, potem frontend
-
-## Kolejność wykonania
-1. Migracja `worldcup_cache` + RLS + GRANT
-2. Edge function `worldcup-data` (po dodaniu sekretu)
-3. Hooks `useWorldCupData` + `useWorldCupPosts`
-4. Strona `WorldCup2026.tsx` + komponenty sekcji
-5. Banner na homepage + Link na badge
-6. Route + SEO + sitemap
-7. Memory + finalny test na preview
+- **Interia z RSS**: ~10 kandydatów/scan, ~5–8 nowych propozycji (z datą), 0 niepotrzebnych Firecrawl scrape'ów na strony kategorii.
+- **Czas skanu/źródło**: ~60s → ~15s.
+- **Koszt Firecrawl**: ~70% mniej wywołań na uruchomienie.
+- Logi i UI pokażą `efficiency_pct` zamiast tylko surowych liczników.
