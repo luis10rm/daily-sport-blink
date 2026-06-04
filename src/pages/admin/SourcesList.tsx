@@ -33,15 +33,51 @@ export default function SourcesList() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [selector, setSelector] = useState("");
+  const [pathIncludes, setPathIncludes] = useState("");
   const [maxPerSource, setMaxPerSource] = useState(5);
   const [todayOnly, setTodayOnly] = useState(true);
   const [useSemanticDedup, setUseSemanticDedup] = useState(true);
 
+  const parsePathRules = (raw: string): string[] | null => {
+    const rules = raw
+      .split(/[\n,]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (rules.length === 0) return null;
+    return rules;
+  };
+
   const handleAdd = async () => {
     if (!name || !url) return;
-    await create.mutateAsync({ name, url, list_selector: selector || undefined });
-    setName(""); setUrl(""); setSelector(""); setOpen(false);
+    const rules = parsePathRules(pathIncludes);
+    if (rules && rules.some((r) => !r.startsWith("/"))) {
+      alert("Każda ścieżka musi zaczynać się od '/' (np. /wiadomosci/)");
+      return;
+    }
+    await create.mutateAsync({
+      name,
+      url,
+      list_selector: selector || undefined,
+      url_path_includes: rules,
+    });
+    setName(""); setUrl(""); setSelector(""); setPathIncludes(""); setOpen(false);
   };
+
+  const handleEditPaths = (s: { id: string; name: string; url_path_includes: string[] | null }) => {
+    const current = (s.url_path_includes || []).join(", ");
+    const next = prompt(
+      `Filtr ścieżek URL dla "${s.name}"\n\nPodaj fragmenty pathname (po przecinku), które muszą wystąpić w linku.\nNp. /wiadomosci/, /news/\nPuste = bez filtra.`,
+      current,
+    );
+    if (next === null) return;
+    const rules = parsePathRules(next);
+    if (rules && rules.some((r) => !r.startsWith("/"))) {
+      alert("Każda ścieżka musi zaczynać się od '/'");
+      return;
+    }
+    update.mutate({ id: s.id, url_path_includes: rules });
+  };
+
 
   return (
     <AdminLayout>
