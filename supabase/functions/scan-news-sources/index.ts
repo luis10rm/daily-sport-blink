@@ -617,6 +617,7 @@ Deno.serve(async (req) => {
             suggested_category_id: r.ai!.categoryId,
             suggested_tags: r.ai!.tags,
             status: r.kind === "dup" ? "duplicate" : "pending",
+            accepted_post_id: r.matchedPostId ?? null,
           });
           if (insErr) { console.error(`insert failed for ${r.articleUrl}`, insErr.message); continue; }
           if (r.kind === "dup") { dups++; totalDup++; } else { added++; totalNew++; }
