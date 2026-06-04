@@ -7,10 +7,12 @@ export interface NewsSource {
   name: string;
   url: string;
   list_selector: string | null;
+  url_path_includes: string[] | null;
   is_active: boolean;
   last_scanned_at: string | null;
   created_at: string;
 }
+
 
 export interface NewsSuggestion {
   id: string;
@@ -48,7 +50,7 @@ export const useNewsSources = () => {
 export const useCreateNewsSource = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; url: string; list_selector?: string }) => {
+    mutationFn: async (input: { name: string; url: string; list_selector?: string; url_path_includes?: string[] | null }) => {
       const { data, error } = await supabase.from("news_sources").insert(input).select().single();
       if (error) throw error;
       return data;

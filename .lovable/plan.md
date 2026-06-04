@@ -1,55 +1,65 @@
-# Detekcja "tego samego newsa innymi słowami"
 
-## Stan obecny (krótka diagnoza)
+## Cel
 
-W `scan-news-sources` duplikaty wykrywamy tylko na 2 sposoby:
+Skaner ma respektować, że niektóre źródła (np. Flashscore) mieszają na stronie startowej linki do artykułów i do stron meczów/wyników. Dodajemy filtr ścieżek per źródło i kierujemy Flashscore na właściwą sekcję redakcyjną.
 
-1. **URL match** — `postUrlMap` po znormalizowanym `source_url`.
-2. **Jaccard tokenów tytułu** ≥ 0.6 vs posty z ostatnich 30 dni.
+## Zakres
 
-Słabe strony — i odpowiedź na Twoje pytanie:
+### 1) Migracja DB — `news_sources`
 
-- Jaccard porównuje **dosłowne słowa** tytułu. "Lewandowski z dubletem w Lidze Mistrzów" vs "Dwa gole Polaka w meczu Barcelony" → ~10% podobieństwa, mimo że to ten sam news. Próg 0.6 odsiewa tylko bardzo podobne sformułowania.
-- Porównujemy **tylko vs opublikowane posty**, nie vs inne sugestie z tego samego skanu. Dwa źródła piszą o tym samym → obie sugestie wpadną jako nowe.
-- Nie używamy **excerptu** ani treści — tylko tytuł.
-- Brak warstwy **semantycznej** (AI / embeddingi).
+Dodać kolumnę:
+- `url_path_includes TEXT[] NULL` — lista fragmentów ścieżek, które muszą wystąpić w pathname linku, żeby został zaakceptowany przez skaner. NULL/[] = brak filtra (zachowanie jak dziś).
 
-## Plan poprawy (3 warstwy, tania → droga)
+Przykład dla Flashscore: `['/wiadomosci/']`.
 
-### 1. Rozszerzony fingerprint tekstowy (deterministyczny, darmowy)
-- Tokeny liczone z **tytuł + excerpt** (nie tylko tytuł).
-- Stop-words PL/EN filtrowane (`w`, `na`, `the`, `vs`, `i`, itd.) — zostają tylko "treściwe" słowa.
-- Ekstrakcja **nazw własnych** (słowa zaczynające się wielką literą w oryginale, ≥3 znaki) → osobny zbiór "entities" (Lewandowski, Barcelona, Real, Świątek, MŚ).
-- Match: jeśli **≥3 wspólne entities** + jaccard treści ≥ 0.35 → duplikat.
-- Próg ogólnego jaccarda obniżony do **0.45** (z 0.6).
+Nie ruszamy RLS ani policies (kolumna dziedziczy istniejące).
 
-### 2. Dedup w obrębie skanu (cross-source)
-- Po zebraniu wszystkich `processOne` w danym przebiegu, budujemy `seenInThisScan` (entities + tytuł).
-- Druga i kolejne sugestie o tym samym secie entities → oznaczone jako `dup` z `dupReason: "Inne źródło opisuje to samo wydarzenie (już w tej sesji skanu): <tytuł>"`.
-- Zachowujemy ten z wyższym `ai.score` jako kanoniczny, resztę odrzucamy.
+### 2) Update danych (osobny krok przez insert tool, po migracji)
 
-### 3. Warstwa semantyczna AI (opcjonalna, włączana flagą)
-- Tylko dla kandydatów, które **przeszły** warstwy 1+2 i mają już opublikowany post o **≥2 wspólnych entities** w ostatnich 7 dniach → wołamy `google/gemini-2.5-flash` przez Lovable AI Gateway z krótkim promptem: "Czy te dwa newsy opisują to samo wydarzenie? TAK/NIE".
-- Koszt: tylko gdy istnieje sensowny kandydat (rzadko), więc kilka–kilkanaście wywołań na skan.
-- Flagę `useSemanticDedup: true` przekazujemy z UI (checkbox w skanerze, domyślnie ON).
+Dla rekordu Flashscore w `news_sources`:
+- `url` → `https://www.flashscore.pl/wiadomosci/`
+- `url_path_includes` → `{/wiadomosci/}`
 
-## Co się zmienia w UI
+### 3) Edge function `scan-news-sources`
 
-- `dupReason` w `news_suggestions` będzie bardziej precyzyjny (entities + score + warstwa, która zdecydowała).
-- W `SuggestionsList.tsx` badge "✅ Już na stronie" bez zmian — działa na `accepted_post_id`, który już ustawiamy.
-- Dodajemy w panelu skanera mały toggle: **"Wykrywaj semantycznie ten sam temat (AI)"** — domyślnie ON.
+W miejscu, gdzie homepage'owe linki są filtrowane (po `firecrawlScrapeHomepageLinks` → zmienna `filtered`):
 
-## Pliki do zmiany
+- Pobrać `source.url_path_includes` razem z resztą pól źródła.
+- Po istniejącym filtrze dodać warstwę: jeśli `url_path_includes` jest niepustą tablicą, odrzucić linki, których `new URL(link).pathname` nie zawiera żadnego z tych fragmentów.
+- Log diagnostyczny: `[scan] ${source.name} path_filtered=${linksAfter}/${linksBefore} (rules=${rules.join(',')})`.
 
-- `supabase/functions/scan-news-sources/index.ts` — helpers (`stopwords`, `extractEntities`, `contentTokens`), warstwa 2 (post-batch dedup), warstwa 3 (AI gate), parametr `useSemanticDedup`.
-- `src/pages/admin/` (komponent triggera skanu) — checkbox + przekazanie flagi.
+Nie zmieniamy logiki dat ani semantic dedup.
 
-## Czego NIE zmieniamy
+### 4) UI — `src/pages/admin/SourcesList.tsx` (formularz źródła)
 
-- Schemy DB (`accepted_post_id` już mamy).
-- Logiki publikacji ani `bulk-prepare-suggestions`.
-- Hooka `useExistingPostsByUrls` — dotyczy tylko URL.
+W formularzu edycji/dodawania źródła:
+- Nowe pole "Ścieżki URL (filtr)" — input typu tag/chips lub textarea z linią per wartość.
+- Helper: "Linki muszą zawierać przynajmniej jeden z tych fragmentów (np. `/wiadomosci/`, `/news/`). Puste = bez filtra."
+- Walidacja: każdy fragment musi zaczynać się od `/`.
+- Zapis do `news_sources.url_path_includes` jako `string[]` lub `null`, gdy puste.
 
-## Pytanie do Ciebie
+### 5) Regeneracja typów
 
-Czy chcesz od razu wszystkie 3 warstwy, czy zaczynamy od 1+2 (deterministyczne, zero kosztu AI), a semantykę dorzucamy później jeśli wciąż prześlizgują się duplikaty?
+Po migracji `src/integrations/supabase/types.ts` zostanie odświeżony automatycznie — kod TS w edge function i UI używa nowego pola.
+
+## Poza zakresem (świadomie)
+
+- Brak `scan_url` (osobny URL do skanowania vs. wyświetlania) — nie potrzebujemy go, skoro `url` może wskazywać prosto na sekcję redakcyjną.
+- Brak zmian w logice 24h, semantic dedup, `accepted_post_id`, bulk-prepare.
+- Brak nowego trybu "treat_as_news=false" dla stron meczowych.
+
+## Pliki
+
+- `supabase/migrations/<timestamp>_news_sources_url_path_includes.sql` (nowy)
+- `supabase/functions/scan-news-sources/index.ts` (rozszerzenie filtra linków + select pola)
+- `src/pages/admin/SourcesList.tsx` (nowe pole formularza + obsługa zapisu)
+
+## Test plan
+
+1. Migracja przechodzi, kolumna widoczna w `news_sources`.
+2. Update Flashscore: `url=/wiadomosci/`, `url_path_includes={/wiadomosci/}`.
+3. Klik "Skanuj Flashscore" w `/admin/news-sources`:
+   - W logach: `homepage_links=N filtered=M path_filtered=K/M`
+   - `skipped_no_date` znacząco spada (artykuły mają `og:published_time`).
+   - Pojawiają się nowe sugestie w `news_suggestions`.
+4. Inne źródła (RMPL, sport.tvp itp.) bez `url_path_includes` działają jak dotąd (regresja zerowa).

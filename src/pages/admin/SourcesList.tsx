@@ -18,7 +18,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Plus, RefreshCw, Trash2, Filter } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -33,15 +33,51 @@ export default function SourcesList() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [selector, setSelector] = useState("");
+  const [pathIncludes, setPathIncludes] = useState("");
   const [maxPerSource, setMaxPerSource] = useState(5);
   const [todayOnly, setTodayOnly] = useState(true);
   const [useSemanticDedup, setUseSemanticDedup] = useState(true);
 
+  const parsePathRules = (raw: string): string[] | null => {
+    const rules = raw
+      .split(/[\n,]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (rules.length === 0) return null;
+    return rules;
+  };
+
   const handleAdd = async () => {
     if (!name || !url) return;
-    await create.mutateAsync({ name, url, list_selector: selector || undefined });
-    setName(""); setUrl(""); setSelector(""); setOpen(false);
+    const rules = parsePathRules(pathIncludes);
+    if (rules && rules.some((r) => !r.startsWith("/"))) {
+      alert("Każda ścieżka musi zaczynać się od '/' (np. /wiadomosci/)");
+      return;
+    }
+    await create.mutateAsync({
+      name,
+      url,
+      list_selector: selector || undefined,
+      url_path_includes: rules,
+    });
+    setName(""); setUrl(""); setSelector(""); setPathIncludes(""); setOpen(false);
   };
+
+  const handleEditPaths = (s: { id: string; name: string; url_path_includes: string[] | null }) => {
+    const current = (s.url_path_includes || []).join(", ");
+    const next = prompt(
+      `Filtr ścieżek URL dla "${s.name}"\n\nPodaj fragmenty pathname (po przecinku), które muszą wystąpić w linku.\nNp. /wiadomosci/, /news/\nPuste = bez filtra.`,
+      current,
+    );
+    if (next === null) return;
+    const rules = parsePathRules(next);
+    if (rules && rules.some((r) => !r.startsWith("/"))) {
+      alert("Każda ścieżka musi zaczynać się od '/'");
+      return;
+    }
+    update.mutate({ id: s.id, url_path_includes: rules });
+  };
+
 
   return (
     <AdminLayout>
@@ -70,7 +106,19 @@ export default function SourcesList() {
                   <Label>Selektor CSS listy (opcjonalnie)</Label>
                   <Input value={selector} onChange={(e) => setSelector(e.target.value)} placeholder=".article-list a" />
                 </div>
+                <div>
+                  <Label>Filtr ścieżek URL (opcjonalnie)</Label>
+                  <Input
+                    value={pathIncludes}
+                    onChange={(e) => setPathIncludes(e.target.value)}
+                    placeholder="/wiadomosci/, /news/"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Linki muszą zawierać przynajmniej jeden z tych fragmentów. Każdy musi zaczynać się od „/". Puste = bez filtra.
+                  </p>
+                </div>
               </div>
+
               <DialogFooter>
                 <Button onClick={handleAdd} disabled={!name || !url || create.isPending}>Dodaj</Button>
               </DialogFooter>
@@ -137,7 +185,13 @@ export default function SourcesList() {
                         <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           {s.url}
                         </a>
+                        {s.url_path_includes && s.url_path_includes.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            filtr: {s.url_path_includes.join(", ")}
+                          </div>
+                        )}
                       </TableCell>
+
                       <TableCell>
                         <Switch
                           checked={s.is_active}
@@ -159,6 +213,15 @@ export default function SourcesList() {
                         >
                           <RefreshCw className={`h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditPaths(s)}
+                          title="Edytuj filtr ścieżek URL"
+                        >
+                          <Filter className="h-4 w-4" />
+                        </Button>
+
                         <Button
                           size="sm"
                           variant="ghost"

@@ -191,6 +191,7 @@ export type Database = {
           name: string
           updated_at: string
           url: string
+          url_path_includes: string[] | null
         }
         Insert: {
           created_at?: string
@@ -203,6 +204,7 @@ export type Database = {
           name: string
           updated_at?: string
           url: string
+          url_path_includes?: string[] | null
         }
         Update: {
           created_at?: string
@@ -215,6 +217,7 @@ export type Database = {
           name?: string
           updated_at?: string
           url?: string
+          url_path_includes?: string[] | null
         }
         Relationships: []
       }
