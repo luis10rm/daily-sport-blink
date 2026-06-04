@@ -47,11 +47,30 @@ export default function SuggestionsList() {
   const scan = useScanNewsSources();
   const qc = useQueryClient();
 
-  const filtersActive = status !== "pending" || sourceId !== "all" || minScore !== "0";
+  // Map URL → existing published post (instant "already on site" indicator)
+  const urlsForCheck = useMemo(
+    () => (suggestions ?? []).map((s) => s.article_url),
+    [suggestions]
+  );
+  const { data: existingMap } = useExistingPostsByUrls(urlsForCheck);
+  const getExistingPost = (s: { article_url: string; accepted_post_id?: string | null }) =>
+    existingMap?.get(s.article_url) ??
+    (s.accepted_post_id
+      ? { id: s.accepted_post_id, slug: "", title: "" }
+      : undefined);
+
+  const visibleSuggestions = useMemo(() => {
+    if (!suggestions) return [];
+    if (!hidePublished) return suggestions;
+    return suggestions.filter((s) => !existingMap?.has(s.article_url));
+  }, [suggestions, existingMap, hidePublished]);
+
+  const filtersActive = status !== "pending" || sourceId !== "all" || minScore !== "0" || !hidePublished;
   const resetFilters = () => {
     setStatus("pending");
     setSourceId("all");
     setMinScore("0");
+    setHidePublished(true);
   };
 
   // ===== Bulk selection =====
@@ -60,8 +79,11 @@ export default function SuggestionsList() {
   const MAX_BULK = 6;
 
   const selectableIds = useMemo(
-    () => (suggestions ?? []).filter((s) => s.status === "pending").map((s) => s.id),
-    [suggestions]
+    () =>
+      (visibleSuggestions ?? [])
+        .filter((s) => s.status === "pending" && !existingMap?.has(s.article_url))
+        .map((s) => s.id),
+    [visibleSuggestions, existingMap]
   );
 
   const toggleOne = (id: string) => {
