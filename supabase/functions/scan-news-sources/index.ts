@@ -512,7 +512,7 @@ Deno.serve(async (req) => {
       return d >= todayCutoff && d <= futureCutoff;
     };
 
-    let query = supabase.from("news_sources").select("id,name,url,list_selector,feed_url").eq("is_active", true);
+    let query = supabase.from("news_sources").select("id,name,url,list_selector,feed_url,url_path_includes").eq("is_active", true);
     if (sourceFilter) query = query.eq("id", sourceFilter);
     const { data: sources, error: srcErr } = await query;
     if (srcErr) throw srcErr;
