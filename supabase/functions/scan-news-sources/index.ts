@@ -545,6 +545,15 @@ Deno.serve(async (req) => {
 
     let totalNew = 0;
     let totalDup = 0;
+    // Cross-source dedup w obrębie tego skanu — rośnie razem z inserterami.
+    const seenInScan: Array<{
+      title: string;
+      excerpt?: string;
+      tokens: Set<string>;
+      entities: Set<string>;
+      url: string;
+    }> = [];
+    let aiDedupCalls = 0;
     const perSource: Array<{
       source: string; new: number; duplicates: number; total_links: number;
       analyzed: number; skipped_old: number; skipped_no_date: number;
