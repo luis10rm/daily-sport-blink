@@ -216,6 +216,15 @@ export default function SourcesList() {
                         <Button
                           size="sm"
                           variant="ghost"
+                          onClick={() => handleEditPaths(s)}
+                          title="Edytuj filtr ścieżek URL"
+                        >
+                          <Filter className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => {
                             if (confirm(`Usunąć źródło "${s.name}"?`)) remove.mutate(s.id);
                           }}
