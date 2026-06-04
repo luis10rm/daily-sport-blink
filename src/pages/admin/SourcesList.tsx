@@ -35,6 +35,7 @@ export default function SourcesList() {
   const [selector, setSelector] = useState("");
   const [maxPerSource, setMaxPerSource] = useState(5);
   const [todayOnly, setTodayOnly] = useState(true);
+  const [useSemanticDedup, setUseSemanticDedup] = useState(true);
 
   const handleAdd = async () => {
     if (!name || !url) return;
