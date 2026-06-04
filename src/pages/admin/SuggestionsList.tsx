@@ -233,13 +233,23 @@ export default function SuggestionsList() {
                 <SelectItem value="9">Min. 9 🔥</SelectItem>
               </SelectContent>
             </Select>
+            <div className="flex items-center gap-2 px-2">
+              <Checkbox
+                id="hide-published"
+                checked={hidePublished}
+                onCheckedChange={(v) => setHidePublished(v === true)}
+              />
+              <Label htmlFor="hide-published" className="cursor-pointer text-sm font-normal">
+                Ukryj już opublikowane
+              </Label>
+            </div>
             {filtersActive && (
               <Button variant="ghost" size="sm" onClick={resetFilters}>
                 <FilterX className="mr-2 h-4 w-4" /> Wyczyść filtry
               </Button>
             )}
             <div className="ml-auto text-xs text-muted-foreground">
-              {suggestions?.length ?? 0} wyników
+              {visibleSuggestions.length} z {suggestions?.length ?? 0} wyników
             </div>
           </CardContent>
         </Card>
