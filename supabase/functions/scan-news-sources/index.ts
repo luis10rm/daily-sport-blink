@@ -582,12 +582,33 @@ Deno.serve(async (req) => {
         let links = await firecrawlScrapeHomepageLinks(source.url);
         let filtered = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url))));
         console.log(`[scan] ${source.name} homepage_links=${links.length} filtered=${filtered.length}`);
+        const pathRules = (source.url_path_includes || []).filter((r) => typeof r === "string" && r.length > 0);
+        if (pathRules.length > 0) {
+          const before = filtered.length;
+          filtered = filtered.filter((l) => {
+            try {
+              const p = new URL(l).pathname;
+              return pathRules.some((r) => p.includes(r));
+            } catch { return false; }
+          });
+          console.log(`[scan] ${source.name} path_filtered=${filtered.length}/${before} (rules=${pathRules.join(",")})`);
+        }
         if (filtered.length < 10) {
           firecrawlCalls++;
           const mapLinks = await firecrawlMap(source.url, 100);
-          filtered = Array.from(new Set([...filtered, ...mapLinks.filter((l) => isLikelyArticleUrl(l, source.url))]));
+          let mapFiltered = mapLinks.filter((l) => isLikelyArticleUrl(l, source.url));
+          if (pathRules.length > 0) {
+            mapFiltered = mapFiltered.filter((l) => {
+              try {
+                const p = new URL(l).pathname;
+                return pathRules.some((r) => p.includes(r));
+              } catch { return false; }
+            });
+          }
+          filtered = Array.from(new Set([...filtered, ...mapFiltered]));
         }
         discovered = filtered.slice(0, 30).map((u) => ({ url: u, fromFeed: false }));
+
       }
 
       // ===== Dedup vs existing suggestions =====
