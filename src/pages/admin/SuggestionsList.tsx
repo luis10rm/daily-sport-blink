@@ -6,12 +6,14 @@ import {
   useUpdateSuggestionStatus,
   useScanNewsSources,
   useNewsSources,
+  useExistingPostsByUrls,
 } from "@/hooks/useNewsDiscovery";
 import { useBulkPrepareSuggestions } from "@/hooks/useBulkPrepareSuggestions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, Sparkles, X, RefreshCw, Settings2, FilterX, Trash2, Rocket, Loader2 } from "lucide-react";
+import { ExternalLink, Sparkles, X, RefreshCw, Settings2, FilterX, Trash2, Rocket, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
