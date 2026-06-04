@@ -1,0 +1,1 @@
+ALTER TABLE public.news_sources ADD COLUMN IF NOT EXISTS url_path_includes TEXT[];
