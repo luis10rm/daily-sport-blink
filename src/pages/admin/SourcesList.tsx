@@ -153,7 +153,7 @@ export default function SourcesList() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => scan.mutate({ sourceId: s.id, maxPerSource, todayOnly })}
+                          onClick={() => scan.mutate({ sourceId: s.id, maxPerSource, todayOnly, useSemanticDedup })}
                           disabled={scan.isPending}
                           title="Skanuj to źródło"
                         >
