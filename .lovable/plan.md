@@ -1,29 +1,55 @@
-## Cel
+# Detekcja "tego samego newsa innymi słowami"
 
-Pokaż w liście propozycji od razu, że artykuł jest już opublikowany na stronie — bez uruchamiania flow przygotowania.
+## Stan obecny (krótka diagnoza)
 
-## Zmiany
+W `scan-news-sources` duplikaty wykrywamy tylko na 2 sposoby:
 
-### 1. `supabase/functions/scan-news-sources/index.ts`
-- W preloadzie postów dodać `id, slug` obok `title, source_url`.
-- Zbudować `postUrlMap: Map<normUrl, {id, slug, title}>` i `postTitleMap` z tym samym kontekstem.
-- Przy wykryciu duplikatu (URL match lub jaccard ≥ 0.6) zapisać `accepted_post_id` = id najlepiej dopasowanego posta. Bez dodatkowych zapytań w pętli.
+1. **URL match** — `postUrlMap` po znormalizowanym `source_url`.
+2. **Jaccard tokenów tytułu** ≥ 0.6 vs posty z ostatnich 30 dni.
 
-### 2. `src/hooks/useNewsDiscovery.ts`
-- Nowy hook `useExistingPostsByUrls(urls: string[])` — jedno zapytanie `posts.select("id,slug,title,source_url").in("source_url", urls)`, zwraca `Map<articleUrl, {id,slug,title}>`. `enabled: urls.length > 0`.
+Słabe strony — i odpowiedź na Twoje pytanie:
 
-### 3. `src/pages/admin/SuggestionsList.tsx`
-- Po pobraniu sugestii: wywołać hook z listą `article_url`.
-- Helper `getExistingPost(s)` → najpierw `existingMap.get(s.article_url)`, fallback przez `s.accepted_post_id` (jeśli scanner zapisał).
-- Jeśli istnieje, renderuj na karcie:
-  - zielony badge **"✅ Już na stronie"** (semantyczne tokeny — `bg-primary/15 text-primary border-primary/30`),
-  - przycisk **"Otwórz na stronie"** linkujący do `/blink/{slug}` (target=_blank),
-  - przyciski **"Przygotuj artykuł"** i checkbox bulk — `disabled` + tooltip "Ten artykuł jest już opublikowany". Zachowujemy "Mimo to przygotuj" w kebabie (na rzadkie przypadki).
-- `selectHighScore()` i `toggleOne()` pomijają już-opublikowane.
-- Nowy checkbox w pasku filtrów: **"Ukryj już opublikowane"** (default ON) — filtruje `suggestions` po stronie klienta, bez kasowania rekordów.
+- Jaccard porównuje **dosłowne słowa** tytułu. "Lewandowski z dubletem w Lidze Mistrzów" vs "Dwa gole Polaka w meczu Barcelony" → ~10% podobieństwa, mimo że to ten sam news. Próg 0.6 odsiewa tylko bardzo podobne sformułowania.
+- Porównujemy **tylko vs opublikowane posty**, nie vs inne sugestie z tego samego skanu. Dwa źródła piszą o tym samym → obie sugestie wpadną jako nowe.
+- Nie używamy **excerptu** ani treści — tylko tytuł.
+- Brak warstwy **semantycznej** (AI / embeddingi).
 
-## Czego nie ruszam
-- Schema bazy (`accepted_post_id` już istnieje), edge function `bulk-prepare-suggestions`, logika publikacji, progi podobieństwa.
+## Plan poprawy (3 warstwy, tania → droga)
 
-## Efekt
-Otwierasz listę → zielony badge i link do żywego artykułu od razu, bez wydłużania flow.
+### 1. Rozszerzony fingerprint tekstowy (deterministyczny, darmowy)
+- Tokeny liczone z **tytuł + excerpt** (nie tylko tytuł).
+- Stop-words PL/EN filtrowane (`w`, `na`, `the`, `vs`, `i`, itd.) — zostają tylko "treściwe" słowa.
+- Ekstrakcja **nazw własnych** (słowa zaczynające się wielką literą w oryginale, ≥3 znaki) → osobny zbiór "entities" (Lewandowski, Barcelona, Real, Świątek, MŚ).
+- Match: jeśli **≥3 wspólne entities** + jaccard treści ≥ 0.35 → duplikat.
+- Próg ogólnego jaccarda obniżony do **0.45** (z 0.6).
+
+### 2. Dedup w obrębie skanu (cross-source)
+- Po zebraniu wszystkich `processOne` w danym przebiegu, budujemy `seenInThisScan` (entities + tytuł).
+- Druga i kolejne sugestie o tym samym secie entities → oznaczone jako `dup` z `dupReason: "Inne źródło opisuje to samo wydarzenie (już w tej sesji skanu): <tytuł>"`.
+- Zachowujemy ten z wyższym `ai.score` jako kanoniczny, resztę odrzucamy.
+
+### 3. Warstwa semantyczna AI (opcjonalna, włączana flagą)
+- Tylko dla kandydatów, które **przeszły** warstwy 1+2 i mają już opublikowany post o **≥2 wspólnych entities** w ostatnich 7 dniach → wołamy `google/gemini-2.5-flash` przez Lovable AI Gateway z krótkim promptem: "Czy te dwa newsy opisują to samo wydarzenie? TAK/NIE".
+- Koszt: tylko gdy istnieje sensowny kandydat (rzadko), więc kilka–kilkanaście wywołań na skan.
+- Flagę `useSemanticDedup: true` przekazujemy z UI (checkbox w skanerze, domyślnie ON).
+
+## Co się zmienia w UI
+
+- `dupReason` w `news_suggestions` będzie bardziej precyzyjny (entities + score + warstwa, która zdecydowała).
+- W `SuggestionsList.tsx` badge "✅ Już na stronie" bez zmian — działa na `accepted_post_id`, który już ustawiamy.
+- Dodajemy w panelu skanera mały toggle: **"Wykrywaj semantycznie ten sam temat (AI)"** — domyślnie ON.
+
+## Pliki do zmiany
+
+- `supabase/functions/scan-news-sources/index.ts` — helpers (`stopwords`, `extractEntities`, `contentTokens`), warstwa 2 (post-batch dedup), warstwa 3 (AI gate), parametr `useSemanticDedup`.
+- `src/pages/admin/` (komponent triggera skanu) — checkbox + przekazanie flagi.
+
+## Czego NIE zmieniamy
+
+- Schemy DB (`accepted_post_id` już mamy).
+- Logiki publikacji ani `bulk-prepare-suggestions`.
+- Hooka `useExistingPostsByUrls` — dotyczy tylko URL.
+
+## Pytanie do Ciebie
+
+Czy chcesz od razu wszystkie 3 warstwy, czy zaczynamy od 1+2 (deterministyczne, zero kosztu AI), a semantykę dorzucamy później jeśli wciąż prześlizgują się duplikaty?
