@@ -805,8 +805,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    console.log(`[scan] TOTAL new=${totalNew} dup=${totalDup} ai_dedup_calls=${aiDedupCalls}`);
     return new Response(
-      JSON.stringify({ ok: true, scanned: sources.length, new_suggestions: totalNew, duplicates: totalDup, details: perSource }),
+      JSON.stringify({ ok: true, scanned: sources.length, new_suggestions: totalNew, duplicates: totalDup, ai_dedup_calls: aiDedupCalls, details: perSource }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
