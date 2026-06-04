@@ -106,7 +106,19 @@ export default function SourcesList() {
                   <Label>Selektor CSS listy (opcjonalnie)</Label>
                   <Input value={selector} onChange={(e) => setSelector(e.target.value)} placeholder=".article-list a" />
                 </div>
+                <div>
+                  <Label>Filtr ścieżek URL (opcjonalnie)</Label>
+                  <Input
+                    value={pathIncludes}
+                    onChange={(e) => setPathIncludes(e.target.value)}
+                    placeholder="/wiadomosci/, /news/"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Linki muszą zawierać przynajmniej jeden z tych fragmentów. Każdy musi zaczynać się od „/". Puste = bez filtra.
+                  </p>
+                </div>
               </div>
+
               <DialogFooter>
                 <Button onClick={handleAdd} disabled={!name || !url || create.isPending}>Dodaj</Button>
               </DialogFooter>
