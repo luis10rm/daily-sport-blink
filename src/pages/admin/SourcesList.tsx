@@ -185,7 +185,13 @@ export default function SourcesList() {
                         <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           {s.url}
                         </a>
+                        {s.url_path_includes && s.url_path_includes.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            filtr: {s.url_path_includes.join(", ")}
+                          </div>
+                        )}
                       </TableCell>
+
                       <TableCell>
                         <Switch
                           checked={s.is_active}
