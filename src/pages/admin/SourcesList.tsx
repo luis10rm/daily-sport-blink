@@ -96,9 +96,13 @@ export default function SourcesList() {
               <Switch id="today-only" checked={todayOnly} onCheckedChange={setTodayOnly} />
               <Label htmlFor="today-only" className="cursor-pointer">Tylko z dzisiaj (24h)</Label>
             </div>
+            <div className="flex items-center gap-2" title="Gdy fingerprint tekstowy zasugeruje, że to ten sam news z innego źródła, AI dodatkowo to potwierdza. Włącz, jeśli widzisz dublujące się tematy.">
+              <Switch id="semantic-dedup" checked={useSemanticDedup} onCheckedChange={setUseSemanticDedup} />
+              <Label htmlFor="semantic-dedup" className="cursor-pointer">Wykrywaj ten sam temat (AI)</Label>
+            </div>
             <Button
               className="ml-auto"
-              onClick={() => scan.mutate({ maxPerSource, todayOnly })}
+              onClick={() => scan.mutate({ maxPerSource, todayOnly, useSemanticDedup })}
               disabled={scan.isPending}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
