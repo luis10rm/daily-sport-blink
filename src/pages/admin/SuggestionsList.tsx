@@ -298,14 +298,17 @@ export default function SuggestionsList() {
           <div className="space-y-3">
             {[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 w-full" />)}
           </div>
-        ) : !suggestions || suggestions.length === 0 ? (
+        ) : !visibleSuggestions || visibleSuggestions.length === 0 ? (
           <Card><CardContent className="p-8 text-center text-muted-foreground">
             Brak propozycji. Kliknij „Skanuj teraz" lub dodaj źródła.
           </CardContent></Card>
         ) : (
           <div className="space-y-3">
-            {suggestions.map((s) => (
-              <Card key={s.id} className={`overflow-hidden ${selectedIds.has(s.id) ? "ring-2 ring-primary" : ""}`}>
+            {visibleSuggestions.map((s) => {
+              const existing = getExistingPost(s);
+              const isAlreadyOnSite = Boolean(existingMap?.has(s.article_url));
+              return (
+              <Card key={s.id} className={`overflow-hidden ${selectedIds.has(s.id) ? "ring-2 ring-primary" : ""} ${isAlreadyOnSite ? "opacity-75" : ""}`}>
                 <CardContent className="flex flex-col gap-4 p-4 md:flex-row">
                   {s.status === "pending" && (
                     <div className="flex md:items-start md:pt-1">
@@ -313,6 +316,7 @@ export default function SuggestionsList() {
                         checked={selectedIds.has(s.id)}
                         onCheckedChange={() => toggleOne(s.id)}
                         aria-label="Zaznacz do publikacji zbiorczej"
+                        disabled={isAlreadyOnSite}
                       />
                     </div>
                   )}
@@ -326,6 +330,11 @@ export default function SuggestionsList() {
                   )}
                   <div className="flex-1 space-y-2">
                     <div className="flex flex-wrap items-start gap-2">
+                      {isAlreadyOnSite && (
+                        <Badge className="border-primary/30 bg-primary/15 text-primary hover:bg-primary/20">
+                          <CheckCircle2 className="mr-1 h-3 w-3" /> Już na stronie
+                        </Badge>
+                      )}
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -336,7 +345,7 @@ export default function SuggestionsList() {
                           <TooltipContent className="max-w-xs">{s.ai_reasoning || "—"}</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      {s.status === "duplicate" && (
+                      {s.status === "duplicate" && !isAlreadyOnSite && (
                         <Badge variant="destructive">Duplikat</Badge>
                       )}
                       {s.status === "published" && (
@@ -369,7 +378,14 @@ export default function SuggestionsList() {
                       </div>
                     )}
                     <div className="flex flex-wrap gap-2 pt-2">
-                      {s.status === "pending" && (
+                      {isAlreadyOnSite && existing?.slug && (
+                        <Button size="sm" variant="default" asChild>
+                          <a href={`/blink/${existing.slug}`} target="_blank" rel="noopener noreferrer">
+                            <CheckCircle2 className="mr-2 h-4 w-4" /> Otwórz na stronie
+                          </a>
+                        </Button>
+                      )}
+                      {s.status === "pending" && !isAlreadyOnSite && (
                         <>
                           <Button size="sm" onClick={() => handlePrepare(s.id, s.article_url)}>
                             <Sparkles className="mr-2 h-4 w-4" /> Przygotuj artykuł
@@ -382,6 +398,20 @@ export default function SuggestionsList() {
                             <X className="mr-2 h-4 w-4" /> Odrzuć
                           </Button>
                         </>
+                      )}
+                      {s.status === "pending" && isAlreadyOnSite && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span>
+                                <Button size="sm" variant="ghost" disabled>
+                                  <Sparkles className="mr-2 h-4 w-4" /> Przygotuj artykuł
+                                </Button>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Ten artykuł jest już opublikowany na stronie.</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       )}
                       {s.status === "rejected" && (
                         <Button
@@ -419,7 +449,8 @@ export default function SuggestionsList() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
