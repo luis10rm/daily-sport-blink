@@ -19,7 +19,9 @@ interface NewsSource {
   url: string;
   list_selector: string | null;
   feed_url?: string | null;
+  url_path_includes?: string[] | null;
 }
+
 
 interface DiscoveredItem {
   url: string;
