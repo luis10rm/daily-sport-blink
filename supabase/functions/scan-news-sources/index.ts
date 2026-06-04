@@ -488,6 +488,7 @@ Deno.serve(async (req) => {
     let sourceFilter: string | null = null;
     let maxPerSource = 5;
     let todayOnly = true;
+    let useSemanticDedup = true;
     if (req.method === "POST") {
       try {
         const body = await req.json();
@@ -495,9 +496,10 @@ Deno.serve(async (req) => {
         if (typeof body?.max_per_source === "number" && body.max_per_source > 0)
           maxPerSource = Math.min(20, Math.floor(body.max_per_source));
         if (typeof body?.today_only === "boolean") todayOnly = body.today_only;
+        if (typeof body?.use_semantic_dedup === "boolean") useSemanticDedup = body.use_semantic_dedup;
       } catch { /* no body */ }
     }
-    console.log(`[scan] config maxPerSource=${maxPerSource} todayOnly=${todayOnly}`);
+    console.log(`[scan] config maxPerSource=${maxPerSource} todayOnly=${todayOnly} semantic=${useSemanticDedup}`);
 
     const todayCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const futureCutoff = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
