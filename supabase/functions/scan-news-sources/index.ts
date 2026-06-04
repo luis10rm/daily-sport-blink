@@ -721,6 +721,39 @@ Deno.serve(async (req) => {
           noDateStreak = 0;
           if (r.kind === "skipped_old") { skippedNotToday++; continue; }
 
+          // ===== Warstwa 2: cross-source dedup w obrębie tego skanu =====
+          let crossDupReason: string | undefined;
+          if (r.kind !== "dup") {
+            const incomingTokens = contentTokens(r.meta!.title, r.meta!.excerpt);
+            const incomingEntities = extractEntities(`${r.meta!.title} ${r.meta!.excerpt || ""}`);
+            for (const prev of seenInScan) {
+              const sim = jaccard(incomingTokens, prev.tokens);
+              const entHits = intersectSize(incomingEntities, prev.entities);
+              const fingerprintHit = (entHits >= 3 && sim >= 0.35) || sim >= 0.45;
+              if (!fingerprintHit) continue;
+
+              let confirmed = true;
+              // Warstwa 3: AI gate — pytamy tylko gdy fingerprint match jest "graniczny"
+              // (entHits < 4 i sim < 0.6), żeby nie palić tokenów.
+              if (useSemanticDedup && entHits < 4 && sim < 0.6) {
+                aiDedupCalls++;
+                confirmed = await aiSameStory(
+                  { title: r.meta!.title, excerpt: r.meta!.excerpt },
+                  { title: prev.title, excerpt: prev.excerpt },
+                );
+              }
+              if (confirmed) {
+                crossDupReason = entHits >= 3
+                  ? `Inne źródło w tym skanie już opisuje to wydarzenie (${entHits} wspólnych nazw, ${Math.round(sim * 100)}% treści): „${prev.title}".`
+                  : `Inne źródło w tym skanie opisuje to samo (${Math.round(sim * 100)}% treści): „${prev.title}".`;
+                break;
+              }
+            }
+          }
+
+          const finalKind: "added" | "dup" = (r.kind === "dup" || crossDupReason) ? "dup" : "added";
+          const finalReason = crossDupReason ?? r.dupReason;
+
           const { error: insErr } = await supabase.from("news_suggestions").insert({
             source_id: source.id,
             article_url: r.articleUrl,
@@ -728,15 +761,25 @@ Deno.serve(async (req) => {
             excerpt: r.meta!.excerpt,
             image_url: r.meta!.image,
             published_at: r.meta!.publishedAt,
-            ai_score: r.kind === "dup" ? 0 : r.ai!.score,
-            ai_reasoning: r.kind === "dup" ? r.dupReason : r.ai!.reasoning,
+            ai_score: finalKind === "dup" ? 0 : r.ai!.score,
+            ai_reasoning: finalKind === "dup" ? finalReason : r.ai!.reasoning,
             suggested_category_id: r.ai!.categoryId,
             suggested_tags: r.ai!.tags,
-            status: r.kind === "dup" ? "duplicate" : "pending",
+            status: finalKind === "dup" ? "duplicate" : "pending",
             accepted_post_id: r.matchedPostId ?? null,
           });
           if (insErr) { console.error(`insert failed for ${r.articleUrl}`, insErr.message); continue; }
-          if (r.kind === "dup") { dups++; totalDup++; } else { added++; totalNew++; }
+
+          // Zarejestruj w obrębie skanu — także duplikaty, żeby kolejne źródła miały do czego porównać.
+          seenInScan.push({
+            title: r.meta!.title,
+            excerpt: r.meta!.excerpt,
+            tokens: contentTokens(r.meta!.title, r.meta!.excerpt),
+            entities: extractEntities(`${r.meta!.title} ${r.meta!.excerpt || ""}`),
+            url: r.articleUrl,
+          });
+
+          if (finalKind === "dup") { dups++; totalDup++; } else { added++; totalNew++; }
 
           if (added >= maxPerSource) break outer;
         }
