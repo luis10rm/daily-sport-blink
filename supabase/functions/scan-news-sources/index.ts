@@ -437,9 +437,17 @@ Deno.serve(async (req) => {
 
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: recentPosts } = await supabase
-      .from("posts").select("title,source_url").gte("published_at", since).limit(500);
-    const postUrlSet = new Set((recentPosts || []).map((p) => normalizeUrl(p.source_url || "")));
+      .from("posts").select("id,slug,title,source_url").gte("published_at", since).limit(500);
+    const postUrlMap = new Map<string, { id: string; slug: string; title: string }>();
+    for (const p of recentPosts || []) {
+      if (p.source_url) {
+        postUrlMap.set(normalizeUrl(p.source_url), {
+          id: p.id as string, slug: p.slug as string, title: p.title as string,
+        });
+      }
+    }
     const postTitleTokens = (recentPosts || []).map((p) => ({
+      id: p.id as string,
       title: p.title as string,
       tokens: tokenSet(p.title as string),
     }));
