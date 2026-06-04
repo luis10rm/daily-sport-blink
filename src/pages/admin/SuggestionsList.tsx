@@ -103,7 +103,7 @@ export default function SuggestionsList() {
 
   const selectHighScore = () => {
     const high = (suggestions ?? [])
-      .filter((s) => s.status === "pending" && (s.ai_score ?? 0) >= 7)
+      .filter((s) => s.status === "pending" && (s.ai_score ?? 0) >= 7 && !existingMap?.has(s.article_url))
       .slice(0, MAX_BULK)
       .map((s) => s.id);
     setSelectedIds(new Set(high));
