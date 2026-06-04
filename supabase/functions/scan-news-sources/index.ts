@@ -512,6 +512,7 @@ Deno.serve(async (req) => {
         meta?: { title: string; excerpt?: string; image?: string; publishedAt?: string };
         ai?: { score: number; reasoning: string; categoryId: string | null; tags: string[] };
         dupReason?: string;
+        matchedPostId?: string;
       }> => {
         let meta: { title?: string; excerpt?: string; image?: string; publishedAt?: string } | null = null;
 
@@ -546,20 +547,25 @@ Deno.serve(async (req) => {
 
         let isDuplicate = false;
         let dupReason = "";
+        let matchedPostId: string | undefined;
         const normUrl = normalizeUrl(item.url);
-        if (postUrlSet.has(normUrl)) {
+        const urlMatch = postUrlMap.get(normUrl);
+        if (urlMatch) {
           isDuplicate = true;
+          matchedPostId = urlMatch.id;
           dupReason = "Ten URL źródłowy ma już opublikowany post.";
         } else {
           const incomingTokens = tokenSet(meta.title);
           let bestSim = 0;
           let bestTitle = "";
+          let bestId: string | undefined;
           for (const p of postTitleTokens) {
             const sim = jaccard(incomingTokens, p.tokens);
-            if (sim > bestSim) { bestSim = sim; bestTitle = p.title; }
+            if (sim > bestSim) { bestSim = sim; bestTitle = p.title; bestId = p.id; }
           }
           if (bestSim >= 0.6) {
             isDuplicate = true;
+            matchedPostId = bestId;
             dupReason = `Bardzo podobny tytuł (${Math.round(bestSim * 100)}%) do: „${bestTitle}".`;
           }
         }
@@ -573,6 +579,7 @@ Deno.serve(async (req) => {
           meta: meta as { title: string; excerpt?: string; image?: string; publishedAt?: string },
           ai,
           dupReason: isDuplicate ? dupReason : undefined,
+          matchedPostId,
         };
       };
 
