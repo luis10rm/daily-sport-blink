@@ -35,6 +35,7 @@ export default function SourcesList() {
   const [selector, setSelector] = useState("");
   const [maxPerSource, setMaxPerSource] = useState(5);
   const [todayOnly, setTodayOnly] = useState(true);
+  const [useSemanticDedup, setUseSemanticDedup] = useState(true);
 
   const handleAdd = async () => {
     if (!name || !url) return;
@@ -95,9 +96,13 @@ export default function SourcesList() {
               <Switch id="today-only" checked={todayOnly} onCheckedChange={setTodayOnly} />
               <Label htmlFor="today-only" className="cursor-pointer">Tylko z dzisiaj (24h)</Label>
             </div>
+            <div className="flex items-center gap-2" title="Gdy fingerprint tekstowy zasugeruje, że to ten sam news z innego źródła, AI dodatkowo to potwierdza. Włącz, jeśli widzisz dublujące się tematy.">
+              <Switch id="semantic-dedup" checked={useSemanticDedup} onCheckedChange={setUseSemanticDedup} />
+              <Label htmlFor="semantic-dedup" className="cursor-pointer">Wykrywaj ten sam temat (AI)</Label>
+            </div>
             <Button
               className="ml-auto"
-              onClick={() => scan.mutate({ maxPerSource, todayOnly })}
+              onClick={() => scan.mutate({ maxPerSource, todayOnly, useSemanticDedup })}
               disabled={scan.isPending}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
@@ -148,7 +153,7 @@ export default function SourcesList() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => scan.mutate({ sourceId: s.id, maxPerSource, todayOnly })}
+                          onClick={() => scan.mutate({ sourceId: s.id, maxPerSource, todayOnly, useSemanticDedup })}
                           disabled={scan.isPending}
                           title="Skanuj to źródło"
                         >

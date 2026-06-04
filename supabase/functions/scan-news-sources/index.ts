@@ -343,17 +343,61 @@ Zwróć WYŁĄCZNIE JSON:
 
 // ===================== Helpers =====================
 
+const STOPWORDS_PL_EN = new Set([
+  // PL
+  "i","oraz","ale","lub","albo","aby","bo","by","bym","czy","gdy","gdyz","jak","jako","juz","jeszcze",
+  "ja","ty","on","ona","ono","my","wy","oni","one","to","ta","ten","te","tego","tej","tym","tych",
+  "w","we","z","ze","na","do","od","po","za","u","o","przy","pod","nad","bez","dla","przez","ku","wg",
+  "sie","nie","tak","tez","tylko","czyli","lecz","jesli","ich","jego","jej","jest","byl","byla","bylo","byly",
+  "bedzie","beda","maja","miec","mozna","moze","mogl","mogla",
+  // EN
+  "the","and","but","for","with","this","that","these","those","from","into","than","then","not",
+  "are","was","were","been","being","its","via","new","news",
+]);
+
 const normalizeTitle = (s: string): string =>
   s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+
 const tokenSet = (s: string): Set<string> =>
-  new Set(normalizeTitle(s).split(" ").filter((w) => w.length >= 4));
+  new Set(
+    normalizeTitle(s)
+      .split(" ")
+      .filter((w) => w.length >= 4 && !STOPWORDS_PL_EN.has(w)),
+  );
+
+// Łączy tytuł + excerpt, czyści, odsiewa stop-words i krótkie wyrazy.
+const contentTokens = (title: string, excerpt?: string): Set<string> => {
+  const text = `${title || ""} ${excerpt || ""}`.slice(0, 1200);
+  return tokenSet(text);
+};
+
+// Wyciąga nazwy własne: słowa zaczynające się wielką literą w oryginalnym tekście.
+const extractEntities = (text: string): Set<string> => {
+  if (!text) return new Set();
+  const entities = new Set<string>();
+  const re = /(?:^|[\s„"\-(\[])([A-ZĄĆĘŁŃÓŚŹŻ][a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ0-9]{2,})/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const base = m[1].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (base.length >= 3 && !STOPWORDS_PL_EN.has(base)) entities.add(base);
+  }
+  return entities;
+};
+
 const jaccard = (a: Set<string>, b: Set<string>): number => {
   if (a.size === 0 || b.size === 0) return 0;
   let inter = 0;
   for (const t of a) if (b.has(t)) inter++;
   return inter / (a.size + b.size - inter);
 };
+
+const intersectSize = (a: Set<string>, b: Set<string>): number => {
+  let n = 0;
+  for (const t of a) if (b.has(t)) n++;
+  return n;
+};
+
 const normalizeUrl = (u: string): string => {
   try {
     const url = new URL(u);
@@ -362,6 +406,50 @@ const normalizeUrl = (u: string): string => {
     return u.toLowerCase();
   }
 };
+
+// ===================== Semantic AI dedup (warstwa 3) =====================
+
+async function aiSameStory(
+  a: { title: string; excerpt?: string },
+  b: { title: string; excerpt?: string },
+): Promise<boolean> {
+  if (!LOVABLE_API_KEY) return false;
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": LOVABLE_API_KEY,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Oceniasz czy dwa newsy sportowe opisują DOKŁADNIE TO SAMO wydarzenie/fakt. Odpowiadasz wyłącznie 'TAK' albo 'NIE'.",
+          },
+          {
+            role: "user",
+            content:
+              `NEWS A:\nTytuł: ${a.title}\nLead: ${(a.excerpt || "").slice(0, 300)}\n\n` +
+              `NEWS B:\nTytuł: ${b.title}\nLead: ${(b.excerpt || "").slice(0, 300)}\n\n` +
+              `Czy A i B opisują to samo wydarzenie? Odpowiedz TAK lub NIE.`,
+          },
+        ],
+        temperature: 0,
+        max_tokens: 5,
+      }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    const txt = String(data?.choices?.[0]?.message?.content || "").trim().toUpperCase();
+    return txt.startsWith("TAK");
+  } catch (e) {
+    console.error("[ai-dedup] error", e instanceof Error ? e.message : String(e));
+    return false;
+  }
+}
 
 // ===================== Main handler =====================
 
@@ -400,6 +488,7 @@ Deno.serve(async (req) => {
     let sourceFilter: string | null = null;
     let maxPerSource = 5;
     let todayOnly = true;
+    let useSemanticDedup = true;
     if (req.method === "POST") {
       try {
         const body = await req.json();
@@ -407,9 +496,10 @@ Deno.serve(async (req) => {
         if (typeof body?.max_per_source === "number" && body.max_per_source > 0)
           maxPerSource = Math.min(20, Math.floor(body.max_per_source));
         if (typeof body?.today_only === "boolean") todayOnly = body.today_only;
+        if (typeof body?.use_semantic_dedup === "boolean") useSemanticDedup = body.use_semantic_dedup;
       } catch { /* no body */ }
     }
-    console.log(`[scan] config maxPerSource=${maxPerSource} todayOnly=${todayOnly}`);
+    console.log(`[scan] config maxPerSource=${maxPerSource} todayOnly=${todayOnly} semantic=${useSemanticDedup}`);
 
     const todayCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const futureCutoff = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -449,11 +539,21 @@ Deno.serve(async (req) => {
     const postTitleTokens = (recentPosts || []).map((p) => ({
       id: p.id as string,
       title: p.title as string,
-      tokens: tokenSet(p.title as string),
+      tokens: contentTokens(p.title as string),
+      entities: extractEntities(p.title as string),
     }));
 
     let totalNew = 0;
     let totalDup = 0;
+    // Cross-source dedup w obrębie tego skanu — rośnie razem z inserterami.
+    const seenInScan: Array<{
+      title: string;
+      excerpt?: string;
+      tokens: Set<string>;
+      entities: Set<string>;
+      url: string;
+    }> = [];
+    let aiDedupCalls = 0;
     const perSource: Array<{
       source: string; new: number; duplicates: number; total_links: number;
       analyzed: number; skipped_old: number; skipped_no_date: number;
@@ -555,18 +655,34 @@ Deno.serve(async (req) => {
           matchedPostId = urlMatch.id;
           dupReason = "Ten URL źródłowy ma już opublikowany post.";
         } else {
-          const incomingTokens = tokenSet(meta.title);
+          // Warstwa 1: fingerprint tekstowy (tytuł+excerpt + nazwy własne).
+          const incomingTokens = contentTokens(meta.title, meta.excerpt);
+          const incomingEntities = extractEntities(`${meta.title} ${meta.excerpt || ""}`);
           let bestSim = 0;
+          let bestEntHits = 0;
           let bestTitle = "";
           let bestId: string | undefined;
+          let bestReason = "";
           for (const p of postTitleTokens) {
             const sim = jaccard(incomingTokens, p.tokens);
-            if (sim > bestSim) { bestSim = sim; bestTitle = p.title; bestId = p.id; }
+            const entHits = intersectSize(incomingEntities, p.entities);
+            // Strong signal: ≥3 wspólne entities + jaccard ≥ 0.35
+            // Fallback: czysty jaccard ≥ 0.45
+            const isHit = (entHits >= 3 && sim >= 0.35) || sim >= 0.45;
+            if (isHit && (sim > bestSim || entHits > bestEntHits)) {
+              bestSim = sim;
+              bestEntHits = entHits;
+              bestTitle = p.title;
+              bestId = p.id;
+              bestReason = entHits >= 3
+                ? `Wspólne nazwy własne (${entHits}) i podobna treść (${Math.round(sim * 100)}%) z: „${p.title}".`
+                : `Bardzo podobna treść (${Math.round(sim * 100)}%) do: „${p.title}".`;
+            }
           }
-          if (bestSim >= 0.6) {
+          if (bestId) {
             isDuplicate = true;
             matchedPostId = bestId;
-            dupReason = `Bardzo podobny tytuł (${Math.round(bestSim * 100)}%) do: „${bestTitle}".`;
+            dupReason = bestReason;
           }
         }
 
@@ -605,6 +721,39 @@ Deno.serve(async (req) => {
           noDateStreak = 0;
           if (r.kind === "skipped_old") { skippedNotToday++; continue; }
 
+          // ===== Warstwa 2: cross-source dedup w obrębie tego skanu =====
+          let crossDupReason: string | undefined;
+          if (r.kind !== "dup") {
+            const incomingTokens = contentTokens(r.meta!.title, r.meta!.excerpt);
+            const incomingEntities = extractEntities(`${r.meta!.title} ${r.meta!.excerpt || ""}`);
+            for (const prev of seenInScan) {
+              const sim = jaccard(incomingTokens, prev.tokens);
+              const entHits = intersectSize(incomingEntities, prev.entities);
+              const fingerprintHit = (entHits >= 3 && sim >= 0.35) || sim >= 0.45;
+              if (!fingerprintHit) continue;
+
+              let confirmed = true;
+              // Warstwa 3: AI gate — pytamy tylko gdy fingerprint match jest "graniczny"
+              // (entHits < 4 i sim < 0.6), żeby nie palić tokenów.
+              if (useSemanticDedup && entHits < 4 && sim < 0.6) {
+                aiDedupCalls++;
+                confirmed = await aiSameStory(
+                  { title: r.meta!.title, excerpt: r.meta!.excerpt },
+                  { title: prev.title, excerpt: prev.excerpt },
+                );
+              }
+              if (confirmed) {
+                crossDupReason = entHits >= 3
+                  ? `Inne źródło w tym skanie już opisuje to wydarzenie (${entHits} wspólnych nazw, ${Math.round(sim * 100)}% treści): „${prev.title}".`
+                  : `Inne źródło w tym skanie opisuje to samo (${Math.round(sim * 100)}% treści): „${prev.title}".`;
+                break;
+              }
+            }
+          }
+
+          const finalKind: "added" | "dup" = (r.kind === "dup" || crossDupReason) ? "dup" : "added";
+          const finalReason = crossDupReason ?? r.dupReason;
+
           const { error: insErr } = await supabase.from("news_suggestions").insert({
             source_id: source.id,
             article_url: r.articleUrl,
@@ -612,15 +761,25 @@ Deno.serve(async (req) => {
             excerpt: r.meta!.excerpt,
             image_url: r.meta!.image,
             published_at: r.meta!.publishedAt,
-            ai_score: r.kind === "dup" ? 0 : r.ai!.score,
-            ai_reasoning: r.kind === "dup" ? r.dupReason : r.ai!.reasoning,
+            ai_score: finalKind === "dup" ? 0 : r.ai!.score,
+            ai_reasoning: finalKind === "dup" ? finalReason : r.ai!.reasoning,
             suggested_category_id: r.ai!.categoryId,
             suggested_tags: r.ai!.tags,
-            status: r.kind === "dup" ? "duplicate" : "pending",
+            status: finalKind === "dup" ? "duplicate" : "pending",
             accepted_post_id: r.matchedPostId ?? null,
           });
           if (insErr) { console.error(`insert failed for ${r.articleUrl}`, insErr.message); continue; }
-          if (r.kind === "dup") { dups++; totalDup++; } else { added++; totalNew++; }
+
+          // Zarejestruj w obrębie skanu — także duplikaty, żeby kolejne źródła miały do czego porównać.
+          seenInScan.push({
+            title: r.meta!.title,
+            excerpt: r.meta!.excerpt,
+            tokens: contentTokens(r.meta!.title, r.meta!.excerpt),
+            entities: extractEntities(`${r.meta!.title} ${r.meta!.excerpt || ""}`),
+            url: r.articleUrl,
+          });
+
+          if (finalKind === "dup") { dups++; totalDup++; } else { added++; totalNew++; }
 
           if (added >= maxPerSource) break outer;
         }
@@ -646,8 +805,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    console.log(`[scan] TOTAL new=${totalNew} dup=${totalDup} ai_dedup_calls=${aiDedupCalls}`);
     return new Response(
-      JSON.stringify({ ok: true, scanned: sources.length, new_suggestions: totalNew, duplicates: totalDup, details: perSource }),
+      JSON.stringify({ ok: true, scanned: sources.length, new_suggestions: totalNew, duplicates: totalDup, ai_dedup_calls: aiDedupCalls, details: perSource }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {

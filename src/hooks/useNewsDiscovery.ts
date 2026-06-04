@@ -177,6 +177,7 @@ interface ScanOptions {
   sourceId?: string;
   maxPerSource?: number;
   todayOnly?: boolean;
+  useSemanticDedup?: boolean;
 }
 
 export const useScanNewsSources = () => {
@@ -188,9 +189,10 @@ export const useScanNewsSources = () => {
       if (options.sourceId) body.source_id = options.sourceId;
       if (typeof options.maxPerSource === "number") body.max_per_source = options.maxPerSource;
       if (typeof options.todayOnly === "boolean") body.today_only = options.todayOnly;
+      if (typeof options.useSemanticDedup === "boolean") body.use_semantic_dedup = options.useSemanticDedup;
       const { data, error } = await supabase.functions.invoke("scan-news-sources", { body });
       if (error) throw error;
-      return data as { ok: boolean; new_suggestions?: number; duplicates?: number; details?: Array<{ source: string; new: number; duplicates: number; analyzed?: number; skipped_old?: number; skipped_no_date?: number }> };
+      return data as { ok: boolean; new_suggestions?: number; duplicates?: number; ai_dedup_calls?: number; details?: Array<{ source: string; new: number; duplicates: number; analyzed?: number; skipped_old?: number; skipped_no_date?: number }> };
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["news_suggestions"] });
