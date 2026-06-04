@@ -127,6 +127,36 @@ export const usePendingSuggestionsCount = () => {
   });
 };
 
+export interface ExistingPostRef {
+  id: string;
+  slug: string;
+  title: string;
+}
+
+export const useExistingPostsByUrls = (urls: string[]) => {
+  const unique = Array.from(new Set(urls.filter(Boolean)));
+  const key = unique.slice().sort().join("|");
+  return useQuery({
+    queryKey: ["existing_posts_by_urls", key],
+    enabled: unique.length > 0,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("posts")
+        .select("id, slug, title, source_url")
+        .in("source_url", unique);
+      if (error) throw error;
+      const map = new Map<string, ExistingPostRef>();
+      for (const p of data || []) {
+        if (p.source_url) {
+          map.set(p.source_url, { id: p.id, slug: p.slug, title: p.title });
+        }
+      }
+      return map;
+    },
+  });
+};
+
 export const useUpdateSuggestionStatus = () => {
   const qc = useQueryClient();
   return useMutation({

@@ -1,68 +1,29 @@
-## Diagnoza obecnego stanu
+## Cel
 
-Na podstawie logów `scan-news-sources` z ostatnich uruchomień (źródło Interia):
+Pokaż w liście propozycji od razu, że artykuł jest już opublikowany na stronie — bez uruchamiania flow przygotowania.
 
-```
-[scan] Interia sport candidates=30
-[scan] skip (no publishedAt): https://sport.interia.pl/tenis/turnieje
-[scan] skip (no publishedAt): https://sport.interia.pl/pilka-nozna/euro
-[scan] skip (no publishedAt): https://sport.interia.pl/tenis/profil-iga-swiatek,sppi,677871
-... (×30)
-[scan] Interia sport done: analyzed=30 new=0 dup=0 skipped_old=0 skipped_no_date=30
-```
+## Zmiany
 
-**Wynik: 0 nowych z 30 analizowanych = ~30 zmarnowanych wywołań Firecrawl / źródło / uruchomienie.**
+### 1. `supabase/functions/scan-news-sources/index.ts`
+- W preloadzie postów dodać `id, slug` obok `title, source_url`.
+- Zbudować `postUrlMap: Map<normUrl, {id, slug, title}>` i `postTitleMap` z tym samym kontekstem.
+- Przy wykryciu duplikatu (URL match lub jaccard ≥ 0.6) zapisać `accepted_post_id` = id najlepiej dopasowanego posta. Bez dodatkowych zapytań w pętli.
 
-### Pierwotne przyczyny
+### 2. `src/hooks/useNewsDiscovery.ts`
+- Nowy hook `useExistingPostsByUrls(urls: string[])` — jedno zapytanie `posts.select("id,slug,title,source_url").in("source_url", urls)`, zwraca `Map<articleUrl, {id,slug,title}>`. `enabled: urls.length > 0`.
 
-1. **Filtr `isLikelyArticleUrl` jest za luźny.** Przepuszcza strony kategorii (`/tenis/turnieje`, `/pilka-nozna/euro`), strony profili zawodników (`/tenis/profil-iga-swiatek,sppi,677871`) oraz strony tagów. Nie są to artykuły, więc nie mają `publishedAt` i lecą do kosza po pełnym Firecrawl scrape.
-2. **Brak wczesnego przerwania.** Pętla analizuje wszystkie 30 kandydatów, nawet gdy 20 z rzędu nie ma daty — żadnego cut-offu.
-3. **Sekwencyjne scrape'y meta** — 30× po kolei (~30–60s na źródło).
-4. **Brak ścieżki RSS.** Interia, TVP Sport, Sport.pl, Przegląd Sportowy itd. mają oficjalne kanały RSS/Atom z gotowym `<pubDate>`, `<title>`, `<description>`, linkiem — bez Firecrawla, bez parsowania HTML, bez zgadywania daty.
+### 3. `src/pages/admin/SuggestionsList.tsx`
+- Po pobraniu sugestii: wywołać hook z listą `article_url`.
+- Helper `getExistingPost(s)` → najpierw `existingMap.get(s.article_url)`, fallback przez `s.accepted_post_id` (jeśli scanner zapisał).
+- Jeśli istnieje, renderuj na karcie:
+  - zielony badge **"✅ Już na stronie"** (semantyczne tokeny — `bg-primary/15 text-primary border-primary/30`),
+  - przycisk **"Otwórz na stronie"** linkujący do `/blink/{slug}` (target=_blank),
+  - przyciski **"Przygotuj artykuł"** i checkbox bulk — `disabled` + tooltip "Ten artykuł jest już opublikowany". Zachowujemy "Mimo to przygotuj" w kebabie (na rzadkie przypadki).
+- `selectHighScore()` i `toggleOne()` pomijają już-opublikowane.
+- Nowy checkbox w pasku filtrów: **"Ukryj już opublikowane"** (default ON) — filtruje `suggestions` po stronie klienta, bez kasowania rekordów.
 
-## Co zrobimy (zakres zmian — wyłącznie edge function `scan-news-sources`)
+## Czego nie ruszam
+- Schema bazy (`accepted_post_id` już istnieje), edge function `bulk-prepare-suggestions`, logika publikacji, progi podobieństwa.
 
-### 1. RSS jako pierwsze źródło prawdy (największy efekt)
-- Dodać pole `feed_url` w tabeli `news_sources` (opcjonalne) + UI w `SourcesList` do wpisania (na razie bez UI — tylko migracja kolumny; UI w kolejnym kroku).
-- W skanerze: jeśli `feed_url` jest ustawiony → pobierz feed (`fetch` + parser XML), wyciągnij `link/title/description/pubDate/enclosure`. Brak Firecrawla na etapie discovery, mamy datę publikacji od ręki, filtr "ostatnie 24h" działa natychmiast.
-- Tylko dla newsów, które przejdą filtr czasu i dedup po URL/tytule, robimy Firecrawl scrape (po obrazek/lead jeśli brak w RSS). Realnie: 5–10 wywołań Firecrawl/źródło zamiast 30.
-
-### 2. Twardszy filtr "to artykuł, nie kategoria" (fallback dla źródeł bez RSS)
-- Wymóg: ścieżka URL musi zawierać **wzorzec ID artykułu** typowy dla portali: `,nId,12345`, `,sppi,12345`, `-12345.html`, `/news/...-12345`, lub ścieżka z ≥3 segmentami i ostatnim segmentem ≥30 znaków zawierającym myślniki (slug artykułu).
-- Czarna lista segmentów rozszerzona: `profil-`, `turnieje`, `wyniki`, `rozgrywki`, `liga-mistrzow`, `euro`, `mundial`, `bundesliga` itd. — to landingi kategorii, nie newsy.
-
-### 3. Wczesne przerwanie pętli
-- Jeśli pierwsze 10 kandydatów z rzędu nie ma daty publikacji → przerwij ten źródło, oznacz w logu `early_abort: bad_filter`. Oszczędza ~20 wywołań Firecrawl gdy filtr URL źle dobrał kandydatów.
-
-### 4. Równoległe scrape'y meta (kontrolowany concurrency = 4)
-- Zastąpić sekwencyjną pętlę `for ... await firecrawlScrapeMeta` puli z `Promise.all` po 4. Czas skanu źródła spada z ~60s do ~15s.
-
-### 5. Statystyki efektywności w odpowiedzi
-- Do zwracanego `details[]` dodać: `efficiency_pct = new / analyzed * 100`, `firecrawl_calls`, `used_rss: boolean`. Dzięki temu w UI `SourcesList` zobaczysz, które źródło marnuje budżet i które ma 0% trafień — szybka diagnoza.
-
-## Zmiany w plikach
-
-```text
-supabase/migrations/<timestamp>_news_sources_feed_url.sql   (NEW)
-  └─ ALTER TABLE news_sources ADD COLUMN feed_url text;
-
-supabase/functions/scan-news-sources/index.ts                (EDIT)
-  ├─ parseRssFeed(url)                — nowa funkcja, parser XML
-  ├─ discoverArticles(source)         — wrapper: RSS jeśli feed_url, inaczej hybrid scrape
-  ├─ isLikelyArticleUrl(...)          — zaostrzony regex + blacklist
-  ├─ pętla po kandydatach             — concurrency 4 + early abort po 10 no-date
-  └─ details[]                        — dorzucamy efficiency_pct, used_rss
-```
-
-## Czego NIE zmieniamy w tym kroku
-
-- UI `SourcesList` (dodanie pola `feed_url` w formularzu) — proponuję jako kolejny krok po potwierdzeniu, że RSS faktycznie podnosi skuteczność.
-- Cron scheduling, prompt AI scoringu, mechanizm dedup po tytule.
-- Inne edge functions.
-
-## Oczekiwany efekt
-
-- **Interia z RSS**: ~10 kandydatów/scan, ~5–8 nowych propozycji (z datą), 0 niepotrzebnych Firecrawl scrape'ów na strony kategorii.
-- **Czas skanu/źródło**: ~60s → ~15s.
-- **Koszt Firecrawl**: ~70% mniej wywołań na uruchomienie.
-- Logi i UI pokażą `efficiency_pct` zamiast tylko surowych liczników.
+## Efekt
+Otwierasz listę → zielony badge i link do żywego artykułu od razu, bez wydłużania flow.

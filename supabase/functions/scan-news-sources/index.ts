@@ -437,9 +437,17 @@ Deno.serve(async (req) => {
 
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: recentPosts } = await supabase
-      .from("posts").select("title,source_url").gte("published_at", since).limit(500);
-    const postUrlSet = new Set((recentPosts || []).map((p) => normalizeUrl(p.source_url || "")));
+      .from("posts").select("id,slug,title,source_url").gte("published_at", since).limit(500);
+    const postUrlMap = new Map<string, { id: string; slug: string; title: string }>();
+    for (const p of recentPosts || []) {
+      if (p.source_url) {
+        postUrlMap.set(normalizeUrl(p.source_url), {
+          id: p.id as string, slug: p.slug as string, title: p.title as string,
+        });
+      }
+    }
     const postTitleTokens = (recentPosts || []).map((p) => ({
+      id: p.id as string,
       title: p.title as string,
       tokens: tokenSet(p.title as string),
     }));
@@ -504,6 +512,7 @@ Deno.serve(async (req) => {
         meta?: { title: string; excerpt?: string; image?: string; publishedAt?: string };
         ai?: { score: number; reasoning: string; categoryId: string | null; tags: string[] };
         dupReason?: string;
+        matchedPostId?: string;
       }> => {
         let meta: { title?: string; excerpt?: string; image?: string; publishedAt?: string } | null = null;
 
@@ -538,20 +547,25 @@ Deno.serve(async (req) => {
 
         let isDuplicate = false;
         let dupReason = "";
+        let matchedPostId: string | undefined;
         const normUrl = normalizeUrl(item.url);
-        if (postUrlSet.has(normUrl)) {
+        const urlMatch = postUrlMap.get(normUrl);
+        if (urlMatch) {
           isDuplicate = true;
+          matchedPostId = urlMatch.id;
           dupReason = "Ten URL źródłowy ma już opublikowany post.";
         } else {
           const incomingTokens = tokenSet(meta.title);
           let bestSim = 0;
           let bestTitle = "";
+          let bestId: string | undefined;
           for (const p of postTitleTokens) {
             const sim = jaccard(incomingTokens, p.tokens);
-            if (sim > bestSim) { bestSim = sim; bestTitle = p.title; }
+            if (sim > bestSim) { bestSim = sim; bestTitle = p.title; bestId = p.id; }
           }
           if (bestSim >= 0.6) {
             isDuplicate = true;
+            matchedPostId = bestId;
             dupReason = `Bardzo podobny tytuł (${Math.round(bestSim * 100)}%) do: „${bestTitle}".`;
           }
         }
@@ -565,6 +579,7 @@ Deno.serve(async (req) => {
           meta: meta as { title: string; excerpt?: string; image?: string; publishedAt?: string },
           ai,
           dupReason: isDuplicate ? dupReason : undefined,
+          matchedPostId,
         };
       };
 
@@ -602,6 +617,7 @@ Deno.serve(async (req) => {
             suggested_category_id: r.ai!.categoryId,
             suggested_tags: r.ai!.tags,
             status: r.kind === "dup" ? "duplicate" : "pending",
+            accepted_post_id: r.matchedPostId ?? null,
           });
           if (insErr) { console.error(`insert failed for ${r.articleUrl}`, insErr.message); continue; }
           if (r.kind === "dup") { dups++; totalDup++; } else { added++; totalNew++; }
