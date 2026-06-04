@@ -655,18 +655,34 @@ Deno.serve(async (req) => {
           matchedPostId = urlMatch.id;
           dupReason = "Ten URL źródłowy ma już opublikowany post.";
         } else {
-          const incomingTokens = tokenSet(meta.title);
+          // Warstwa 1: fingerprint tekstowy (tytuł+excerpt + nazwy własne).
+          const incomingTokens = contentTokens(meta.title, meta.excerpt);
+          const incomingEntities = extractEntities(`${meta.title} ${meta.excerpt || ""}`);
           let bestSim = 0;
+          let bestEntHits = 0;
           let bestTitle = "";
           let bestId: string | undefined;
+          let bestReason = "";
           for (const p of postTitleTokens) {
             const sim = jaccard(incomingTokens, p.tokens);
-            if (sim > bestSim) { bestSim = sim; bestTitle = p.title; bestId = p.id; }
+            const entHits = intersectSize(incomingEntities, p.entities);
+            // Strong signal: ≥3 wspólne entities + jaccard ≥ 0.35
+            // Fallback: czysty jaccard ≥ 0.45
+            const isHit = (entHits >= 3 && sim >= 0.35) || sim >= 0.45;
+            if (isHit && (sim > bestSim || entHits > bestEntHits)) {
+              bestSim = sim;
+              bestEntHits = entHits;
+              bestTitle = p.title;
+              bestId = p.id;
+              bestReason = entHits >= 3
+                ? `Wspólne nazwy własne (${entHits}) i podobna treść (${Math.round(sim * 100)}%) z: „${p.title}".`
+                : `Bardzo podobna treść (${Math.round(sim * 100)}%) do: „${p.title}".`;
+            }
           }
-          if (bestSim >= 0.6) {
+          if (bestId) {
             isDuplicate = true;
             matchedPostId = bestId;
-            dupReason = `Bardzo podobny tytuł (${Math.round(bestSim * 100)}%) do: „${bestTitle}".`;
+            dupReason = bestReason;
           }
         }
 
