@@ -35,6 +35,7 @@ export default function SuggestionsList() {
   const [status, setStatus] = useState("pending");
   const [sourceId, setSourceId] = useState<string>("all");
   const [minScore, setMinScore] = useState<string>("0");
+  const [hidePublished, setHidePublished] = useState(true);
 
   const { data: sources } = useNewsSources();
   const { data: suggestions, isLoading } = useNewsSuggestions({
