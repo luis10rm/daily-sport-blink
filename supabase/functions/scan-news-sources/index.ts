@@ -343,17 +343,61 @@ Zwróć WYŁĄCZNIE JSON:
 
 // ===================== Helpers =====================
 
+const STOPWORDS_PL_EN = new Set([
+  // PL
+  "i","oraz","ale","lub","albo","aby","bo","by","bym","czy","gdy","gdyz","jak","jako","juz","jeszcze",
+  "ja","ty","on","ona","ono","my","wy","oni","one","to","ta","ten","te","tego","tej","tym","tych",
+  "w","we","z","ze","na","do","od","po","za","u","o","przy","pod","nad","bez","dla","przez","ku","wg",
+  "sie","nie","tak","tez","tylko","czyli","lecz","jesli","ich","jego","jej","jest","byl","byla","bylo","byly",
+  "bedzie","beda","maja","miec","mozna","moze","mogl","mogla",
+  // EN
+  "the","and","but","for","with","this","that","these","those","from","into","than","then","not",
+  "are","was","were","been","being","its","via","new","news",
+]);
+
 const normalizeTitle = (s: string): string =>
   s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+
 const tokenSet = (s: string): Set<string> =>
-  new Set(normalizeTitle(s).split(" ").filter((w) => w.length >= 4));
+  new Set(
+    normalizeTitle(s)
+      .split(" ")
+      .filter((w) => w.length >= 4 && !STOPWORDS_PL_EN.has(w)),
+  );
+
+// Łączy tytuł + excerpt, czyści, odsiewa stop-words i krótkie wyrazy.
+const contentTokens = (title: string, excerpt?: string): Set<string> => {
+  const text = `${title || ""} ${excerpt || ""}`.slice(0, 1200);
+  return tokenSet(text);
+};
+
+// Wyciąga nazwy własne: słowa zaczynające się wielką literą w oryginalnym tekście.
+const extractEntities = (text: string): Set<string> => {
+  if (!text) return new Set();
+  const entities = new Set<string>();
+  const re = /(?:^|[\s„"\-(\[])([A-ZĄĆĘŁŃÓŚŹŻ][a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ0-9]{2,})/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text)) !== null) {
+    const base = m[1].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (base.length >= 3 && !STOPWORDS_PL_EN.has(base)) entities.add(base);
+  }
+  return entities;
+};
+
 const jaccard = (a: Set<string>, b: Set<string>): number => {
   if (a.size === 0 || b.size === 0) return 0;
   let inter = 0;
   for (const t of a) if (b.has(t)) inter++;
   return inter / (a.size + b.size - inter);
 };
+
+const intersectSize = (a: Set<string>, b: Set<string>): number => {
+  let n = 0;
+  for (const t of a) if (b.has(t)) n++;
+  return n;
+};
+
 const normalizeUrl = (u: string): string => {
   try {
     const url = new URL(u);
@@ -362,6 +406,50 @@ const normalizeUrl = (u: string): string => {
     return u.toLowerCase();
   }
 };
+
+// ===================== Semantic AI dedup (warstwa 3) =====================
+
+async function aiSameStory(
+  a: { title: string; excerpt?: string },
+  b: { title: string; excerpt?: string },
+): Promise<boolean> {
+  if (!LOVABLE_API_KEY) return false;
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": LOVABLE_API_KEY,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content:
+              "Oceniasz czy dwa newsy sportowe opisują DOKŁADNIE TO SAMO wydarzenie/fakt. Odpowiadasz wyłącznie 'TAK' albo 'NIE'.",
+          },
+          {
+            role: "user",
+            content:
+              `NEWS A:\nTytuł: ${a.title}\nLead: ${(a.excerpt || "").slice(0, 300)}\n\n` +
+              `NEWS B:\nTytuł: ${b.title}\nLead: ${(b.excerpt || "").slice(0, 300)}\n\n` +
+              `Czy A i B opisują to samo wydarzenie? Odpowiedz TAK lub NIE.`,
+          },
+        ],
+        temperature: 0,
+        max_tokens: 5,
+      }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    const txt = String(data?.choices?.[0]?.message?.content || "").trim().toUpperCase();
+    return txt.startsWith("TAK");
+  } catch (e) {
+    console.error("[ai-dedup] error", e instanceof Error ? e.message : String(e));
+    return false;
+  }
+}
 
 // ===================== Main handler =====================
 
