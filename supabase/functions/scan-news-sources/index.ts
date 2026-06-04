@@ -579,37 +579,48 @@ Deno.serve(async (req) => {
       // ===== Fallback: homepage scrape + map =====
       if (discovered.length === 0) {
         firecrawlCalls++;
-        let links = await firecrawlScrapeHomepageLinks(source.url);
-        let filtered = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url))));
-        console.log(`[scan] ${source.name} homepage_links=${links.length} filtered=${filtered.length}`);
+        const links = await firecrawlScrapeHomepageLinks(source.url);
         const pathRules = (source.url_path_includes || []).filter((r) => typeof r === "string" && r.length > 0);
-        if (pathRules.length > 0) {
-          const before = filtered.length;
-          filtered = filtered.filter((l) => {
-            try {
-              const p = new URL(l).pathname;
-              return pathRules.some((r) => p.includes(r));
-            } catch { return false; }
-          });
-          console.log(`[scan] ${source.name} path_filtered=${filtered.length}/${before} (rules=${pathRules.join(",")})`);
+        const trusted = pathRules.length > 0;
+
+        const sameHostNotAsset = (l: string) => {
+          try {
+            const u = new URL(l);
+            const src = new URL(source.url);
+            if (u.hostname !== src.hostname) return false;
+            const p = u.pathname;
+            if (p === "/" || p.length < 8) return false;
+            if (/\.(jpg|jpeg|png|gif|webp|css|js|pdf|xml|rss|atom|ico|svg)(\?|$)/i.test(p)) return false;
+            if (/sitemap/i.test(p)) return false;
+            return true;
+          } catch { return false; }
+        };
+        const passesPath = (l: string) => {
+          try { const p = new URL(l).pathname; return pathRules.some((r) => p.includes(r)); }
+          catch { return false; }
+        };
+
+        let filtered: string[];
+        if (trusted) {
+          filtered = Array.from(new Set(links.filter((l) => sameHostNotAsset(l) && passesPath(l))));
+          console.log(`[scan] ${source.name} homepage_links=${links.length} filtered=${filtered.length} path_mode=trusted (rules=${pathRules.join(",")})`);
+        } else {
+          filtered = Array.from(new Set(links.filter((l) => isLikelyArticleUrl(l, source.url))));
+          console.log(`[scan] ${source.name} homepage_links=${links.length} filtered=${filtered.length} path_mode=heuristic`);
         }
+
         if (filtered.length < 10) {
           firecrawlCalls++;
           const mapLinks = await firecrawlMap(source.url, 100);
-          let mapFiltered = mapLinks.filter((l) => isLikelyArticleUrl(l, source.url));
-          if (pathRules.length > 0) {
-            mapFiltered = mapFiltered.filter((l) => {
-              try {
-                const p = new URL(l).pathname;
-                return pathRules.some((r) => p.includes(r));
-              } catch { return false; }
-            });
-          }
+          const mapFiltered = trusted
+            ? mapLinks.filter((l) => sameHostNotAsset(l) && passesPath(l))
+            : mapLinks.filter((l) => isLikelyArticleUrl(l, source.url));
           filtered = Array.from(new Set([...filtered, ...mapFiltered]));
         }
         discovered = filtered.slice(0, 30).map((u) => ({ url: u, fromFeed: false }));
 
       }
+
 
       // ===== Dedup vs existing suggestions =====
       const urls = discovered.map((d) => d.url);
