@@ -114,6 +114,13 @@ export default function SourcesList() {
                   <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.sport.pl" />
                 </div>
                 <div>
+                  <Label>RSS / Atom feed URL (opcjonalnie, zalecane)</Label>
+                  <Input value={feedUrl} onChange={(e) => setFeedUrl(e.target.value)} placeholder="https://www.sport.pl/rss.xml" />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Gdy podany, skan użyje feeda zamiast scrapowania – pewna data publikacji, dużo mniej wywołań Firecrawl.
+                  </p>
+                </div>
+                <div>
                   <Label>Selektor CSS listy (opcjonalnie)</Label>
                   <Input value={selector} onChange={(e) => setSelector(e.target.value)} placeholder=".article-list a" />
                 </div>
