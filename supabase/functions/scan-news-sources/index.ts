@@ -342,6 +342,13 @@ async function firecrawlScrapeMeta(url: string): Promise<{
       }
     }
 
+    // Fallback 1: data wprost w URL (np. /2026/06/05/ albo ,20260605,)
+    if (!publishedAt) publishedAt = dateFromUrl(url);
+    // Fallback 2: polski tekst daty w treści (np. "5 czerwca 2026" lub "05.06.2026 14:32")
+    if (!publishedAt) {
+      publishedAt = dateFromPolishText(rawHtml) || dateFromPolishText(markdown);
+    }
+
     return {
       title: meta.title || meta.ogTitle,
       excerpt: (meta.description || meta.ogDescription || markdown.slice(0, 300))?.toString().slice(0, 500),
