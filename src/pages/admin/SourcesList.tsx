@@ -239,6 +239,14 @@ export default function SourcesList() {
                         <Button
                           size="sm"
                           variant="ghost"
+                          onClick={() => handleEditFeed(s)}
+                          title="Edytuj RSS / Atom feed URL"
+                        >
+                          <Rss className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => handleEditPaths(s)}
                           title="Edytuj filtr ścieżek URL"
                         >
