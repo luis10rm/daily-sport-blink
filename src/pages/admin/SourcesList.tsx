@@ -203,6 +203,11 @@ export default function SourcesList() {
                         <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           {s.url}
                         </a>
+                        {s.feed_url && (
+                          <div className="text-xs text-emerald-500 mt-0.5 flex items-center gap-1">
+                            <Rss className="h-3 w-3" /> RSS
+                          </div>
+                        )}
                         {s.url_path_includes && s.url_path_includes.length > 0 && (
                           <div className="text-xs text-muted-foreground mt-0.5">
                             filtr: {s.url_path_includes.join(", ")}
