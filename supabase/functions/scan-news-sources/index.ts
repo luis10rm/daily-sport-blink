@@ -12,6 +12,67 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const CONCURRENCY = 4;
 const EARLY_ABORT_NO_DATE_STREAK = 10;
+const EARLY_ABORT_OLD_STREAK = 8;
+
+// ===================== Polish date heuristics =====================
+
+const PL_MONTHS: Record<string, number> = {
+  stycznia: 1, lutego: 2, marca: 3, kwietnia: 4, maja: 5, czerwca: 6,
+  lipca: 7, sierpnia: 8, września: 9, wrzesnia: 9, października: 10, pazdziernika: 10,
+  listopada: 11, grudnia: 12,
+};
+
+/** Try to extract an ISO date from the URL path (e.g. /2026/06/05/, ,20260605, ). */
+function dateFromUrl(url: string): string | undefined {
+  try {
+    const p = new URL(url).pathname;
+    let m = p.match(/\/(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\/|$)/);
+    if (m) {
+      const [_, y, mo, d] = m;
+      return new Date(`${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}T12:00:00Z`).toISOString();
+    }
+    m = p.match(/[,/](\d{4})(\d{2})(\d{2})(?:[,/]|$)/);
+    if (m) {
+      const [_, y, mo, d] = m;
+      return new Date(`${y}-${mo}-${d}T12:00:00Z`).toISOString();
+    }
+  } catch { /* ignore */ }
+  return undefined;
+}
+
+/** Try to extract a date written in Polish ("5 czerwca 2026" or "05.06.2026 14:32"). */
+function dateFromPolishText(html: string): string | undefined {
+  if (!html) return undefined;
+  const snippet = html.slice(0, 6000);
+  // "5 czerwca 2026" (optional time HH:MM)
+  const mMonth = snippet.match(/(\d{1,2})\s+(stycznia|lutego|marca|kwietnia|maja|czerwca|lipca|sierpnia|wrze(?:ś|s)nia|pa(?:ź|z)dziernika|listopada|grudnia)\s+(\d{4})(?:[,\s]+(\d{1,2}):(\d{2}))?/i);
+  if (mMonth) {
+    const day = Number(mMonth[1]);
+    const monthName = mMonth[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const month = PL_MONTHS[monthName];
+    const year = Number(mMonth[3]);
+    const hh = mMonth[4] ? Number(mMonth[4]) : 12;
+    const mm = mMonth[5] ? Number(mMonth[5]) : 0;
+    if (month) {
+      const d = new Date(Date.UTC(year, month - 1, day, hh, mm));
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+  }
+  // "05.06.2026" or "05.06.2026 14:32" (DD.MM.YYYY) — common on Flashscore
+  const mDot = snippet.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if (mDot) {
+    const day = Number(mDot[1]);
+    const month = Number(mDot[2]);
+    const year = Number(mDot[3]);
+    const hh = mDot[4] ? Number(mDot[4]) : 12;
+    const mm = mDot[5] ? Number(mDot[5]) : 0;
+    if (year >= 2020 && year <= 2099 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const d = new Date(Date.UTC(year, month - 1, day, hh, mm));
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+  }
+  return undefined;
+}
 
 interface NewsSource {
   id: string;
@@ -279,6 +340,13 @@ async function firecrawlScrapeMeta(url: string): Promise<{
         const m = rawHtml.match(/<time[^>]+datetime=["']([^"']+)["']/i);
         if (m) publishedAt = m[1];
       }
+    }
+
+    // Fallback 1: data wprost w URL (np. /2026/06/05/ albo ,20260605,)
+    if (!publishedAt) publishedAt = dateFromUrl(url);
+    // Fallback 2: polski tekst daty w treści (np. "5 czerwca 2026" lub "05.06.2026 14:32")
+    if (!publishedAt) {
+      publishedAt = dateFromPolishText(rawHtml) || dateFromPolishText(markdown);
     }
 
     return {
@@ -629,6 +697,13 @@ Deno.serve(async (req) => {
         : { data: [] as { article_url: string }[] };
       const existingSet = new Set((existing || []).map((r: { article_url: string }) => r.article_url));
       const fresh = discovered.filter((d) => !existingSet.has(d.url));
+      // Sortuj najnowsze pierwsze, gdy znamy datę (głównie RSS) — by szybciej trafić w „dzisiejsze"
+      // i wcześniej wystrzelić early-abort dla starych.
+      fresh.sort((a, b) => {
+        const ta = a.publishedAt ? Date.parse(a.publishedAt) : 0;
+        const tb = b.publishedAt ? Date.parse(b.publishedAt) : 0;
+        return tb - ta;
+      });
       console.log(`[scan] ${source.name} discovered=${discovered.length} fresh=${fresh.length} used_rss=${usedRss}`);
 
       let added = 0;
@@ -637,6 +712,7 @@ Deno.serve(async (req) => {
       let skippedNoDate = 0;
       let analyzed = 0;
       let noDateStreak = 0;
+      let oldStreak = 0;
       let earlyAbort: string | undefined;
 
       // ===== Process in parallel batches =====
@@ -753,7 +829,17 @@ Deno.serve(async (req) => {
             continue;
           }
           noDateStreak = 0;
-          if (r.kind === "skipped_old") { skippedNotToday++; continue; }
+          if (r.kind === "skipped_old") {
+            skippedNotToday++;
+            oldStreak++;
+            if (oldStreak >= EARLY_ABORT_OLD_STREAK && added === 0) {
+              earlyAbort = `stale_source (${oldStreak} stare z rzędu, brak nowych)`;
+              console.log(`[scan] ${source.name} EARLY ABORT: ${earlyAbort}`);
+              break outer;
+            }
+            continue;
+          }
+          oldStreak = 0;
 
           // ===== Warstwa 2: cross-source dedup w obrębie tego skanu =====
           let crossDupReason: string | undefined;

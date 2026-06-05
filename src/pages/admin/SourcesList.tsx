@@ -18,7 +18,7 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, RefreshCw, Trash2, Filter } from "lucide-react";
+import { Plus, RefreshCw, Trash2, Filter, Rss } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -33,6 +33,7 @@ export default function SourcesList() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [selector, setSelector] = useState("");
+  const [feedUrl, setFeedUrl] = useState("");
   const [pathIncludes, setPathIncludes] = useState("");
   const [maxPerSource, setMaxPerSource] = useState(5);
   const [todayOnly, setTodayOnly] = useState(true);
@@ -58,9 +59,19 @@ export default function SourcesList() {
       name,
       url,
       list_selector: selector || undefined,
+      feed_url: feedUrl.trim() || null,
       url_path_includes: rules,
     });
-    setName(""); setUrl(""); setSelector(""); setPathIncludes(""); setOpen(false);
+    setName(""); setUrl(""); setSelector(""); setFeedUrl(""); setPathIncludes(""); setOpen(false);
+  };
+
+  const handleEditFeed = (s: { id: string; name: string; feed_url: string | null }) => {
+    const next = prompt(
+      `RSS / Atom feed URL dla "${s.name}"\n\nGdy podany, skan używa feeda zamiast scrapowania strony głównej.\nPuste = wyłącz RSS.`,
+      s.feed_url || "",
+    );
+    if (next === null) return;
+    update.mutate({ id: s.id, feed_url: next.trim() || null });
   };
 
   const handleEditPaths = (s: { id: string; name: string; url_path_includes: string[] | null }) => {
@@ -101,6 +112,13 @@ export default function SourcesList() {
                 <div>
                   <Label>URL strony głównej / sekcji</Label>
                   <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.sport.pl" />
+                </div>
+                <div>
+                  <Label>RSS / Atom feed URL (opcjonalnie, zalecane)</Label>
+                  <Input value={feedUrl} onChange={(e) => setFeedUrl(e.target.value)} placeholder="https://www.sport.pl/rss.xml" />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Gdy podany, skan użyje feeda zamiast scrapowania – pewna data publikacji, dużo mniej wywołań Firecrawl.
+                  </p>
                 </div>
                 <div>
                   <Label>Selektor CSS listy (opcjonalnie)</Label>
@@ -185,6 +203,11 @@ export default function SourcesList() {
                         <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                           {s.url}
                         </a>
+                        {s.feed_url && (
+                          <div className="text-xs text-emerald-500 mt-0.5 flex items-center gap-1">
+                            <Rss className="h-3 w-3" /> RSS
+                          </div>
+                        )}
                         {s.url_path_includes && s.url_path_includes.length > 0 && (
                           <div className="text-xs text-muted-foreground mt-0.5">
                             filtr: {s.url_path_includes.join(", ")}
@@ -212,6 +235,14 @@ export default function SourcesList() {
                           title="Skanuj to źródło"
                         >
                           <RefreshCw className={`h-4 w-4 ${scan.isPending ? "animate-spin" : ""}`} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditFeed(s)}
+                          title="Edytuj RSS / Atom feed URL"
+                        >
+                          <Rss className="h-4 w-4" />
                         </Button>
                         <Button
                           size="sm"

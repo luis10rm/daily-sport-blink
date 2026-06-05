@@ -7,6 +7,7 @@ export interface NewsSource {
   name: string;
   url: string;
   list_selector: string | null;
+  feed_url: string | null;
   url_path_includes: string[] | null;
   is_active: boolean;
   last_scanned_at: string | null;
@@ -50,7 +51,7 @@ export const useNewsSources = () => {
 export const useCreateNewsSource = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; url: string; list_selector?: string; url_path_includes?: string[] | null }) => {
+    mutationFn: async (input: { name: string; url: string; list_selector?: string; feed_url?: string | null; url_path_includes?: string[] | null }) => {
       const { data, error } = await supabase.from("news_sources").insert(input).select().single();
       if (error) throw error;
       return data;
@@ -194,14 +195,14 @@ export const useScanNewsSources = () => {
       if (typeof options.useSemanticDedup === "boolean") body.use_semantic_dedup = options.useSemanticDedup;
       const { data, error } = await supabase.functions.invoke("scan-news-sources", { body });
       if (error) throw error;
-      return data as { ok: boolean; new_suggestions?: number; duplicates?: number; ai_dedup_calls?: number; details?: Array<{ source: string; new: number; duplicates: number; analyzed?: number; skipped_old?: number; skipped_no_date?: number }> };
+      return data as { ok: boolean; new_suggestions?: number; duplicates?: number; ai_dedup_calls?: number; details?: Array<{ source: string; new: number; duplicates: number; analyzed?: number; skipped_old?: number; skipped_no_date?: number; used_rss?: boolean; early_abort?: string }> };
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["news_suggestions"] });
       qc.invalidateQueries({ queryKey: ["news_sources"] });
       qc.invalidateQueries({ queryKey: ["news_suggestions_pending_count"] });
       const breakdown = (data?.details || [])
-        .map((d) => `• ${d.source}: ${d.new} nowych${d.skipped_old ? `, ${d.skipped_old} starych` : ""}${d.skipped_no_date ? `, ${d.skipped_no_date} bez daty` : ""}`)
+        .map((d) => `• ${d.source}: ${d.new} nowych${d.used_rss ? " [RSS]" : ""}${d.skipped_old ? `, ${d.skipped_old} starych` : ""}${d.skipped_no_date ? `, ${d.skipped_no_date} bez daty` : ""}${d.early_abort ? ` ⛔ ${d.early_abort}` : ""}`)
         .join("\n");
       toast.success(`Skan zakończony — ${data?.new_suggestions ?? 0} nowych, ${data?.duplicates ?? 0} duplikatów`, {
         description: breakdown || undefined,
