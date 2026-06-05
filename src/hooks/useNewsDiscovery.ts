@@ -51,7 +51,7 @@ export const useNewsSources = () => {
 export const useCreateNewsSource = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; url: string; list_selector?: string; url_path_includes?: string[] | null }) => {
+    mutationFn: async (input: { name: string; url: string; list_selector?: string; feed_url?: string | null; url_path_includes?: string[] | null }) => {
       const { data, error } = await supabase.from("news_sources").insert(input).select().single();
       if (error) throw error;
       return data;
