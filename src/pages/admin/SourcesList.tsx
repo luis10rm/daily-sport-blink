@@ -33,6 +33,7 @@ export default function SourcesList() {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [selector, setSelector] = useState("");
+  const [feedUrl, setFeedUrl] = useState("");
   const [pathIncludes, setPathIncludes] = useState("");
   const [maxPerSource, setMaxPerSource] = useState(5);
   const [todayOnly, setTodayOnly] = useState(true);
