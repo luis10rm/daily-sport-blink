@@ -697,6 +697,13 @@ Deno.serve(async (req) => {
         : { data: [] as { article_url: string }[] };
       const existingSet = new Set((existing || []).map((r: { article_url: string }) => r.article_url));
       const fresh = discovered.filter((d) => !existingSet.has(d.url));
+      // Sortuj najnowsze pierwsze, gdy znamy datę (głównie RSS) — by szybciej trafić w „dzisiejsze"
+      // i wcześniej wystrzelić early-abort dla starych.
+      fresh.sort((a, b) => {
+        const ta = a.publishedAt ? Date.parse(a.publishedAt) : 0;
+        const tb = b.publishedAt ? Date.parse(b.publishedAt) : 0;
+        return tb - ta;
+      });
       console.log(`[scan] ${source.name} discovered=${discovered.length} fresh=${fresh.length} used_rss=${usedRss}`);
 
       let added = 0;
@@ -705,6 +712,7 @@ Deno.serve(async (req) => {
       let skippedNoDate = 0;
       let analyzed = 0;
       let noDateStreak = 0;
+      let oldStreak = 0;
       let earlyAbort: string | undefined;
 
       // ===== Process in parallel batches =====
