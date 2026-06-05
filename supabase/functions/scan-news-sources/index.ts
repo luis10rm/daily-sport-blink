@@ -12,6 +12,67 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const CONCURRENCY = 4;
 const EARLY_ABORT_NO_DATE_STREAK = 10;
+const EARLY_ABORT_OLD_STREAK = 8;
+
+// ===================== Polish date heuristics =====================
+
+const PL_MONTHS: Record<string, number> = {
+  stycznia: 1, lutego: 2, marca: 3, kwietnia: 4, maja: 5, czerwca: 6,
+  lipca: 7, sierpnia: 8, września: 9, wrzesnia: 9, października: 10, pazdziernika: 10,
+  listopada: 11, grudnia: 12,
+};
+
+/** Try to extract an ISO date from the URL path (e.g. /2026/06/05/, ,20260605, ). */
+function dateFromUrl(url: string): string | undefined {
+  try {
+    const p = new URL(url).pathname;
+    let m = p.match(/\/(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\/|$)/);
+    if (m) {
+      const [_, y, mo, d] = m;
+      return new Date(`${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}T12:00:00Z`).toISOString();
+    }
+    m = p.match(/[,/](\d{4})(\d{2})(\d{2})(?:[,/]|$)/);
+    if (m) {
+      const [_, y, mo, d] = m;
+      return new Date(`${y}-${mo}-${d}T12:00:00Z`).toISOString();
+    }
+  } catch { /* ignore */ }
+  return undefined;
+}
+
+/** Try to extract a date written in Polish ("5 czerwca 2026" or "05.06.2026 14:32"). */
+function dateFromPolishText(html: string): string | undefined {
+  if (!html) return undefined;
+  const snippet = html.slice(0, 6000);
+  // "5 czerwca 2026" (optional time HH:MM)
+  const mMonth = snippet.match(/(\d{1,2})\s+(stycznia|lutego|marca|kwietnia|maja|czerwca|lipca|sierpnia|wrze(?:ś|s)nia|pa(?:ź|z)dziernika|listopada|grudnia)\s+(\d{4})(?:[,\s]+(\d{1,2}):(\d{2}))?/i);
+  if (mMonth) {
+    const day = Number(mMonth[1]);
+    const monthName = mMonth[2].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const month = PL_MONTHS[monthName];
+    const year = Number(mMonth[3]);
+    const hh = mMonth[4] ? Number(mMonth[4]) : 12;
+    const mm = mMonth[5] ? Number(mMonth[5]) : 0;
+    if (month) {
+      const d = new Date(Date.UTC(year, month - 1, day, hh, mm));
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+  }
+  // "05.06.2026" or "05.06.2026 14:32" (DD.MM.YYYY) — common on Flashscore
+  const mDot = snippet.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if (mDot) {
+    const day = Number(mDot[1]);
+    const month = Number(mDot[2]);
+    const year = Number(mDot[3]);
+    const hh = mDot[4] ? Number(mDot[4]) : 12;
+    const mm = mDot[5] ? Number(mDot[5]) : 0;
+    if (year >= 2020 && year <= 2099 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const d = new Date(Date.UTC(year, month - 1, day, hh, mm));
+      if (!isNaN(d.getTime())) return d.toISOString();
+    }
+  }
+  return undefined;
+}
 
 interface NewsSource {
   id: string;
