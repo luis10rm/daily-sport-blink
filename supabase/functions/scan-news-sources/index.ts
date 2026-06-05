@@ -829,7 +829,17 @@ Deno.serve(async (req) => {
             continue;
           }
           noDateStreak = 0;
-          if (r.kind === "skipped_old") { skippedNotToday++; continue; }
+          if (r.kind === "skipped_old") {
+            skippedNotToday++;
+            oldStreak++;
+            if (oldStreak >= EARLY_ABORT_OLD_STREAK && added === 0) {
+              earlyAbort = `stale_source (${oldStreak} stare z rzędu, brak nowych)`;
+              console.log(`[scan] ${source.name} EARLY ABORT: ${earlyAbort}`);
+              break outer;
+            }
+            continue;
+          }
+          oldStreak = 0;
 
           // ===== Warstwa 2: cross-source dedup w obrębie tego skanu =====
           let crossDupReason: string | undefined;
