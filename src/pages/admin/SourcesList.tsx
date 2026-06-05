@@ -59,9 +59,19 @@ export default function SourcesList() {
       name,
       url,
       list_selector: selector || undefined,
+      feed_url: feedUrl.trim() || null,
       url_path_includes: rules,
     });
-    setName(""); setUrl(""); setSelector(""); setPathIncludes(""); setOpen(false);
+    setName(""); setUrl(""); setSelector(""); setFeedUrl(""); setPathIncludes(""); setOpen(false);
+  };
+
+  const handleEditFeed = (s: { id: string; name: string; feed_url: string | null }) => {
+    const next = prompt(
+      `RSS / Atom feed URL dla "${s.name}"\n\nGdy podany, skan używa feeda zamiast scrapowania strony głównej.\nPuste = wyłącz RSS.`,
+      s.feed_url || "",
+    );
+    if (next === null) return;
+    update.mutate({ id: s.id, feed_url: next.trim() || null });
   };
 
   const handleEditPaths = (s: { id: string; name: string; url_path_includes: string[] | null }) => {
