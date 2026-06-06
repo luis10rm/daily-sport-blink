@@ -28,11 +28,11 @@ export function useBulkPrepareSuggestions() {
         toast.success(`Opublikowano ${ok} ${pluralize(ok)}`);
       } else if (ok > 0 && fail > 0) {
         toast.warning(`Opublikowano ${ok} z ${data.total}. Błędy: ${fail}`, {
-          description: data.failed.map((f) => `• ${f.error}`).join("\n").slice(0, 300),
+          description: data.failed.map((f) => `• ${friendlyError(f.error)}`).join("\n").slice(0, 400),
         });
       } else {
         toast.error("Nie udało się opublikować żadnego artykułu", {
-          description: data.failed[0]?.error,
+          description: friendlyError(data.failed[0]?.error),
         });
       }
       qc.invalidateQueries({ queryKey: ["news_suggestions"] });
@@ -52,4 +52,25 @@ function pluralize(n: number) {
   if (lastTwo >= 12 && lastTwo <= 14) return "artykułów";
   if (last >= 2 && last <= 4) return "artykuły";
   return "artykułów";
+}
+
+function friendlyError(msg?: string): string {
+  if (!msg) return "Nieznany błąd";
+  const m = msg.toLowerCase();
+  if (m.includes("statement timeout") || m.includes("deadlock")) {
+    return "Baza była przeciążona — spróbuj ponownie dla tych pozycji.";
+  }
+  if (m.includes("extract-article") && /5\d\d/.test(m)) {
+    return "Nie udało się wyciągnąć treści ze źródła (błąd serwera).";
+  }
+  if (m.includes("extract-article")) {
+    return "Nie udało się wyciągnąć treści ze źródła.";
+  }
+  if (m.includes("ai nie zwróciło")) {
+    return "AI nie zwróciło tytułu/opisu — spróbuj ponownie.";
+  }
+  if (m.includes("brak kategorii")) {
+    return "Brak kategorii dla tego artykułu (i brak domyślnej).";
+  }
+  return msg;
 }

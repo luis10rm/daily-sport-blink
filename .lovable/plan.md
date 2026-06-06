@@ -1,78 +1,73 @@
+## Diagnoza
 
-## Diagnoza efektywności (ostatni pełny skan, todayOnly=true)
+W logach `bulk-prepare-suggestions` powtarza się dokładnie ten sam błąd:
 
-| Źródło | filtered | analyzed | new | problem |
-|---|---:|---:|---:|---|
-| RMF SPORT | 35 | 5 | **5** | ✅ 100% – wzorzec |
-| WP SPORT | 183 | 10 | 5 | połowa = `skipped_no_date` |
-| TVP sport | 22 | 30 | 3 | 23× `skipped_old` – marnujemy Firecrawl |
-| RMPL | 64 | 30 | 0 | 30× `skipped_old` – źródło rzadko publikuje newsy w stylu „Szortsy" |
-| Flashscore | 52 | 10 | 0 | 10× `skipped_no_date` – brak `article:published_time` |
-| Interia sport | 175 | 10 | 0 | 10× `skipped_no_date` – data renderowana JS |
+```
+Insert posta: canceling statement due to statement timeout
+```
 
-**Wnioski:** dwie główne „dziury" to (1) brak wykrycia daty na Flashscore/Interia/część WP i (2) skanowanie starych artykułów w TVP/RMPL, co zżera limity Firecrawl bez efektu. RSS nie jest używany w żadnym źródle, choć wszystkie 6 portali je mają.
+Czyli **AI generuje treść poprawnie**, ale wywala się dopiero `INSERT INTO posts`. Dlaczego pojedynczy insert pada na timeout?
 
----
+Sprawdziłem triggery na `posts`:
 
-## Propozycja usprawnień (kolejność = priorytet)
+```
+sync_tags_on_post_change  AFTER INSERT OR DELETE OR UPDATE  FOR EACH STATEMENT  EXECUTE sync_tags()
+```
 
-### 1. Wpiąć RSS dla wszystkich źródeł (największy zysk)
-Funkcja już obsługuje `feed_url` z RSS/Atom — wystarczy uzupełnić w DB. RSS daje pewną datę publikacji i ucina problem `skipped_no_date`.
+A funkcja `sync_tags()`:
+1. Robi `SELECT … FROM posts, unnest(tags)` po **wszystkich opublikowanych postach** (z każdym dniem coraz większy zbiór).
+2. Dla każdego unikalnego tagu wykonuje `INSERT … ON CONFLICT … UPDATE`.
+3. Na koniec robi `UPDATE tags SET post_count = (SELECT count(*) FROM posts WHERE name = ANY(tags))` — czyli **N razy pełny skan tabeli posts** (jeden subselect per wiersz w `tags`).
 
-Kandydaci do weryfikacji i wpisania:
-- Interia sport → `https://sport.interia.pl/feed`
-- RMF SPORT → `https://www.rmf24.pl/sport/feed`
-- TVP sport → `https://sport.tvp.pl/rss.xml`
-- WP SPORT → `https://sportowefakty.wp.pl/rss.xml`
-- RMPL → `https://www.realmadryt.pl/rss/aktualnosci/`
-- Flashscore → brak publicznego RSS, zostawiamy homepage + osobny fix dat (pkt 2).
+Czyli każdy pojedynczy INSERT do `posts` triggeruje pełny przeskan ~setek postów i kilkuset tagów. Plus `bulk-prepare` puszcza **3 wstawki równolegle** (`CONCURRENCY = 3`), więc trzy ciężkie sync_tags() łapią się nawzajem za locki na tabeli `tags` → statement timeout.
 
-**UI:** dodać pole „Feed URL (RSS)" w formularzu `SourcesList.tsx` (obok „Selektor CSS").
-**DB:** kolumna `feed_url` już istnieje w typach? — sprawdzić; jeśli nie, migracja `alter table news_sources add column feed_url text`.
+To wyjaśnia wzorzec, który widać w logach: pierwsza wstawka czasem przechodzi (`✓`), a druga/trzecia z tej samej trójki padają (`✗ statement timeout`). Im więcej postów w DB, tym częściej.
 
-### 2. Lepsze wykrywanie daty PL w `firecrawlScrapeMeta`
-Dla Flashscore/Interia (brak meta tagów) dodać fallbacki w kolejności:
-1. URL slug zawiera `/YYYY/MM/DD/` lub `,YYYYMMDD,` → użyj jako data.
-2. Pierwsze 2000 znaków `rawHtml`: regex polskich miesięcy (`5 czerwca 2026`, `wczoraj`, `dziś 14:32`) → mapowanie na ISO.
-3. Heurystyka „artykuł z homepage" – jeżeli URL został znaleziony na świeżo zescrapowanej stronie głównej i nie ma daty, traktować jako „dziś" tylko gdy `trusted` ścieżka (jak Flashscore `/wiadomosci/`), żeby nie zalać śmieciami.
+## Plan naprawy
 
-### 3. Sortowanie + early-abort dla `skipped_old`
-Obecnie jest tylko early-abort dla `no_date`. Dodać identyczny dla `skipped_old`: gdy `EARLY_ABORT_OLD_STREAK = 8` z rzędu i `added=0` → przerwij. To natychmiast obetnie marnotrawstwo na RMPL/TVP (oszczędność ~30 wywołań Firecrawl/skan).
+### 1. Przepisać `sync_tags()` na inkrementalny per-row trigger (główny fix)
 
-Dodatkowo, gdy źródło ma RSS – sortować `discovered` malejąco po `publishedAt` przed pętlą, żeby najnowsze leciały pierwsze.
+Zamiast pełnego skanu wszystkich postów po każdym INSERT, trigger powinien przetwarzać tylko tagi z `NEW`/`OLD` aktualnego wiersza:
 
-### 4. Per-source `url_path_includes` dla Interia i RMPL
-Filtr heurystyczny przepuszcza 175 (Interia) / 64 (RMPL) linków, ale dużo z nich to archiwum/tagi. Po szybkim oględzinach proponuję:
-- Interia: `/news-` (artykuły mają w slugu `news-...,nId,XXXX`)
-- RMPL: `/aktualnosci/`
+- Zmiana trigger z `FOR EACH STATEMENT` → `FOR EACH ROW`.
+- Nowa funkcja `sync_tags_for_row(NEW, OLD)`:
+  - Dla każdego tagu w `NEW.tags` (jeśli `published_at <= now()`): `INSERT … ON CONFLICT (name) DO UPDATE SET post_count = post_count + 1`.
+  - Dla każdego tagu w `OLD.tags` którego nie ma w `NEW.tags` (lub przy DELETE): `UPDATE tags SET post_count = post_count - 1` (i ewentualnie `DELETE WHERE post_count <= 0`).
+- Funkcja `sync_tags()` zostaje jako narzędzie do ręcznego pełnego rebuildu (admin może wywołać po imporcie), ale **nie jest** już wołana z triggera.
 
-To zmniejszy „filtered" do realnej puli newsów dnia i podniesie hit-rate AI scoringu.
+Zysk: INSERT do `posts` przestaje być O(N²) i wykonuje się w milisekundach niezależnie od liczby postów.
 
-### 5. Drobne porządki w logach/UI
-- Log końcowy: dorzucić `early_abort` do toasta w `useNewsDiscovery.ts` (już zwracamy w details? – sprawdzić, dodać do UI).
-- W tabeli źródeł pokazać „ostatni wynik" (np. `5 nowych / 10 analiz`) z `last_scan_stats` jsonb – pomaga adminowi widzieć, które źródło padło bez wchodzenia w logi.
+### 2. Zmniejszyć `CONCURRENCY` w bulk-prepare (defensywnie)
 
----
+W `supabase/functions/bulk-prepare-suggestions/index.ts`:
+- `CONCURRENCY = 3` → `CONCURRENCY = 2`. Trzymanie 3 równoległych wywołań do `extract-article` (które samo woła Gemini + Firecrawl) i jednoczesnych INSERT-ów do tej samej tabeli to dodatkowy presja na locki i na limit Lovable AI. Po fixie #1 wąskim gardłem stanie się AI, więc 2 wystarczy i da bardziej przewidywalne timingi.
+
+### 3. Retry na timeout w bulk-prepare
+
+Wokół samego `admin.from("posts").insert(...)` dodać 1 ponowienie, gdy `insertErr.message` zawiera `statement timeout` albo `deadlock detected`. Po fixie #1 nie powinno się zdarzać, ale to tani safety net — usuwa losowe „znikające" pozycje z listy zaznaczonych.
+
+### 4. Czytelniejszy komunikat błędu w UI
+
+W `useBulkPrepareSuggestions.ts` (`onSuccess`, gałąź „część się nie udała") obecnie pokazuje surowe `Insert posta: canceling statement due to statement timeout`, co adminowi nic nie mówi. Zmapować typowe błędy na PL:
+- `statement timeout` → „Baza była przeciążona, spróbuj ponownie dla tych pozycji."
+- `extract-article` 5xx → „Nie udało się wyciągnąć treści ze źródła."
+
+Mapowanie po stronie hooka, bez dotykania edge funkcji.
 
 ## Pliki do zmiany
 
-- `supabase/functions/scan-news-sources/index.ts` – pkt 2, 3 (date heuristics PL, sort, early-abort skipped_old).
-- `src/pages/admin/SourcesList.tsx` + `src/hooks/useNewsDiscovery.ts` – pole `feed_url` w formie i edycji.
-- Migracja (opcjonalnie) – kolumna `feed_url` + `last_scan_stats jsonb`.
-- DB seed: ręczne UPDATE wpisujące `feed_url` dla 5 źródeł (po weryfikacji URL-i).
+- **Migracja SQL** — nowa funkcja `sync_tags_for_row()`, podmiana triggera `sync_tags_on_post_change` (`FOR EACH STATEMENT` → `FOR EACH ROW` + nowa funkcja). `sync_tags()` zostaje jako helper.
+- `supabase/functions/bulk-prepare-suggestions/index.ts` — `CONCURRENCY = 2`, retry na timeout w insert.
+- `src/hooks/useBulkPrepareSuggestions.ts` — mapowanie komunikatów błędów na PL.
 
 ## Test po wdrożeniu
 
-Klik „Skanuj wszystkie" powinien dać:
-- Interia/RMF/TVP/WP/RMPL: `used_rss=true`, `skipped_no_date≈0`, `efficiency ≥ 60%`.
-- Flashscore: `skipped_no_date < 50%` (dzięki heurystykom PL).
-- TVP/RMPL: `firecrawl_calls` spadnie o ~60% dzięki early-abort.
+1. Zaznaczyć 6 propozycji i kliknąć „Opublikuj zaznaczone". Wszystkie 6 powinno przejść w `✓`.
+2. Sprawdzić w `tags`, że `post_count` zgadza się z `SELECT count(*) FROM posts WHERE name = ANY(tags)` dla paru próbek.
+3. W logach edge-funkcji: brak `statement timeout`, czas pojedynczego inserta < 500 ms.
 
 ## Zakres pominięty
 
-- Nie ruszamy modelu AI, dedup semantycznego, ani logiki publikacji.
-- Nie dodajemy nowych źródeł — najpierw uzdrowić obecne.
-
----
-
-**Pytanie:** mam wdrożyć wszystko (1–5), czy zaczynamy od pkt 1+3 (najwyższy ROI, najmniej zmian) i resztę dorzucamy po pomiarach?
+- Nie dotykamy logiki ekstrakcji/AI ani `scan-news-sources`.
+- Nie zwiększamy `MAX_BATCH` — najpierw stabilizujemy obecne 6.
+- Nie kasujemy starej `sync_tags()` — zostaje jako narzędzie ręczne dla admina.
