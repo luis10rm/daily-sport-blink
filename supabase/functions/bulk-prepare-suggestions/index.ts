@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const MAX_BATCH = 6;
-const CONCURRENCY = 3;
+const CONCURRENCY = 2;
 
 type SuccessResult = {
   suggestion_id: string;
@@ -158,13 +158,24 @@ serve(async (req) => {
           author_id: currentAuthorId,
         };
 
-        const { data: newPost, error: insertErr } = await admin
-          .from("posts")
-          .insert(insertPayload)
-          .select("id, slug, title")
-          .single();
-
-        if (insertErr) throw new Error(`Insert posta: ${insertErr.message}`);
+        let newPost: { id: string; slug: string; title: string } | null = null;
+        let insertErr: { message: string } | null = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const res = await admin
+            .from("posts")
+            .insert(insertPayload)
+            .select("id, slug, title")
+            .single();
+          newPost = res.data as typeof newPost;
+          insertErr = res.error;
+          if (!insertErr) break;
+          const m = insertErr.message || "";
+          const transient = /statement timeout|deadlock detected|could not serialize/i.test(m);
+          if (!transient) break;
+          console.warn(`[bulk-prepare] insert transient error, retrying: ${m}`);
+          await new Promise((r) => setTimeout(r, 400));
+        }
+        if (insertErr || !newPost) throw new Error(`Insert posta: ${insertErr?.message ?? "unknown"}`);
 
         await admin
           .from("news_suggestions")
