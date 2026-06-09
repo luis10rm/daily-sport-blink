@@ -283,3 +283,75 @@
     display: none;
   }
 }
+
+/* ============================================================
+   TOURNAMENT MODE — FIFA World Cup 2026 re-skin
+   Activated by adding `tournament-worldcup` class on <html>.
+   Removing the class instantly reverts to the normal Szortsy theme.
+   ============================================================ */
+.tournament-worldcup {
+  /* Light mode overrides */
+  --primary: 43 96% 50%;
+  --primary-foreground: 36 60% 12%;
+  --accent: 150 55% 28%;
+  --accent-foreground: 0 0% 100%;
+  --ring: 43 96% 50%;
+  --news-of-day: 43 96% 50%;
+  --news-of-day-foreground: 36 60% 12%;
+  --sport-football: 150 55% 30%;
+}
+
+.tournament-worldcup.dark,
+.dark .tournament-worldcup {
+  /* Dark mode overrides — deeper navy with warmer undertone */
+  --background: 215 35% 7%;
+  --card: 215 30% 12%;
+  --popover: 215 30% 12%;
+  --primary: 43 96% 56%;
+  --primary-foreground: 36 60% 10%;
+  --accent: 150 55% 35%;
+  --accent-foreground: 0 0% 100%;
+  --ring: 43 96% 56%;
+  --news-of-day: 43 96% 56%;
+  --news-of-day-foreground: 36 60% 10%;
+  --border: 215 25% 20%;
+  --input: 215 25% 20%;
+}
+
+/* Stadium glow on body in tournament mode */
+.tournament-worldcup body {
+  background-image:
+    radial-gradient(ellipse at top, hsl(43 96% 50% / 0.06), transparent 60%),
+    radial-gradient(ellipse at bottom, hsl(150 55% 28% / 0.05), transparent 60%);
+  background-attachment: fixed;
+}
+
+.tournament-worldcup.dark body,
+.dark .tournament-worldcup body {
+  background-image:
+    radial-gradient(ellipse at top, hsl(43 96% 56% / 0.08), transparent 60%),
+    radial-gradient(ellipse at bottom, hsl(150 55% 35% / 0.06), transparent 60%);
+}
+
+/* Header gets a subtle golden bottom highlight */
+.tournament-worldcup header {
+  box-shadow: inset 0 -1px 0 hsl(43 96% 50% / 0.25);
+}
+
+/* Article cards get a soft golden ring (all NewsCard articles are <article>) */
+.tournament-worldcup main article {
+  box-shadow: 0 0 0 1px hsl(43 96% 50% / 0.15);
+  transition: box-shadow 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tournament-worldcup main article:hover {
+    box-shadow: 0 0 0 1px hsl(43 96% 50% / 0.5), 0 10px 30px -10px hsl(43 96% 50% / 0.25);
+  }
+}
+
+/* News of the Day in tournament mode — gold-on-gold premium feel */
+.tournament-worldcup [data-news-of-day] {
+  border-color: hsl(43 96% 50% / 0.5);
+}
+

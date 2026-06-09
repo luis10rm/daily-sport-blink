@@ -42,6 +42,7 @@ import InstallPage from "./pages/InstallPage";
 import NotFound from "./pages/NotFound";
 import WorldCup2026 from "./pages/WorldCup2026";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
+import { TournamentTheme } from "@/components/TournamentTheme";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ function App() {
             <Sonner />
             <BrowserRouter>
               <Analytics />
+              <TournamentTheme />
               <ConditionalWallpaper />
               <PWAInstallBanner />
               <Routes>

@@ -12,6 +12,7 @@ import { StoriesRow } from "@/components/StoriesRow";
 import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
 import { FeedbackBox } from "@/components/FeedbackBox";
 import { WorldCupHomeBanner } from "@/components/WorldCupHomeBanner";
+import { TodaysMatchesBanner } from "@/components/TodaysMatchesBanner";
 import { MultiSEO, getWebsiteSEO, getRichItemListSEO } from "@/components/SEO";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts";
@@ -84,6 +85,9 @@ const Index = () => {
             className="mb-8"
           />
         )}
+
+        {/* Today's World Cup matches (only in tournament mode) */}
+        <TodaysMatchesBanner />
 
         {/* Todays News Banner */}
         <TodaysNewsBanner count={todaysPosts.length} isLoading={postsLoading} />
