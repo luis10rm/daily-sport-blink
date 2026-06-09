@@ -3,6 +3,9 @@ import { DynamicStoriesCircle, StoryCategoryData } from "@/components/DynamicSto
 import { StoriesViewer } from "@/components/StoriesViewer";
 import { useRecentPosts, Post } from "@/hooks/usePosts";
 import { useSportCategories } from "@/hooks/useSportCategories";
+import { useTournamentMode } from "@/hooks/useTournamentMode";
+import { WorldCupStoryCircle } from "@/components/worldcup/WorldCupStoryCircle";
+import { WorldCupStoryPanels } from "@/components/worldcup/WorldCupStoryPanels";
 import {
   Carousel,
   CarouselContent,
@@ -60,6 +63,8 @@ const mapCategoryToStoryCategory = (cat: {
 
 export const StoriesRow = () => {
   const [activeCategory, setActiveCategory] = useState<StoryCategoryData | null>(null);
+  const [wcOpen, setWcOpen] = useState(false);
+  const { isWorldCup } = useTournamentMode();
   const { data: recentDbPosts = [] } = useRecentPosts();
   const { data: allDbCategories = [] } = useSportCategories();
 
@@ -105,7 +110,7 @@ export const StoriesRow = () => {
     setActiveCategory(null);
   };
 
-  if (availableCategories.length === 0) return null;
+  if (availableCategories.length === 0 && !isWorldCup) return null;
 
   return (
     <>
@@ -120,6 +125,11 @@ export const StoriesRow = () => {
           className="w-full"
         >
           <CarouselContent className="-ml-2 md:-ml-3">
+            {isWorldCup && (
+              <CarouselItem className="basis-auto pl-2 md:pl-3">
+                <WorldCupStoryCircle onClick={() => setWcOpen(true)} />
+              </CarouselItem>
+            )}
             {availableCategories.map((category) => (
               <CarouselItem
                 key={category.id}
