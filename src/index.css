@@ -299,6 +299,11 @@
   --news-of-day: 43 96% 50%;
   --news-of-day-foreground: 36 60% 12%;
   --sport-football: 150 55% 30%;
+  /* Czytelność tekstu na jasnej murawie */
+  --foreground: 150 40% 8%;
+  --muted-foreground: 150 20% 28%;
+  --card: 0 0% 100%;
+  --popover: 0 0% 100%;
 }
 
 .tournament-worldcup.dark,
@@ -318,21 +323,22 @@
   --input: 150 25% 18%;
 }
 
-/* Stadium turf background — light mode (jasna murawa dla czytelności ciemnego tekstu) */
+/* Stadium turf background — light mode (bardzo jasna murawa, mocny kontrast tekstu) */
 .tournament-worldcup body {
   background-image:
-    /* Reflektory u góry */
-    radial-gradient(ellipse 60% 30% at 50% 0%, hsl(43 96% 56% / 0.18), transparent 70%),
-    /* Pasy koszenia — kontrast między jasną a średnią zielenią */
+    /* Delikatny reflektor u góry */
+    radial-gradient(ellipse 60% 30% at 50% 0%, hsl(43 96% 56% / 0.10), transparent 70%),
+    /* Pasy koszenia — subtelny efekt, bliski bieli */
     repeating-linear-gradient(
       100deg,
-      hsl(140 45% 78%) 0px,
-      hsl(140 45% 78%) 110px,
-      hsl(140 50% 68%) 110px,
-      hsl(140 50% 68%) 220px
+      hsl(140 35% 90%) 0px,
+      hsl(140 35% 90%) 110px,
+      hsl(140 40% 84%) 110px,
+      hsl(140 40% 84%) 220px
     );
   background-attachment: fixed;
 }
+
 
 
 .tournament-worldcup.dark body,
