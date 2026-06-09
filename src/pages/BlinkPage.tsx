@@ -231,6 +231,11 @@ const BlinkPage = () => {
             )}
           </div>
 
+          {/* World Cup Match Center (only for WC posts with team tags) */}
+          {isWorldCup && <WorldCupMatchCenter tags={post.tags || []} />}
+
+
+
           {/* Source box */}
           <div className="bg-muted/50 border rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between flex-wrap gap-4">
