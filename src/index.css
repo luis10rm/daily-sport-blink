@@ -318,23 +318,22 @@
   --input: 150 25% 18%;
 }
 
-/* Stadium turf background — light mode */
+/* Stadium turf background — light mode (jasna murawa dla czytelności ciemnego tekstu) */
 .tournament-worldcup body {
   background-image:
     /* Reflektory u góry */
-    radial-gradient(ellipse 60% 30% at 50% 0%, hsl(43 96% 56% / 0.10), transparent 70%),
-    /* Pasy koszenia */
+    radial-gradient(ellipse 60% 30% at 50% 0%, hsl(43 96% 56% / 0.18), transparent 70%),
+    /* Pasy koszenia — kontrast między jasną a średnią zielenią */
     repeating-linear-gradient(
       100deg,
-      transparent 0px,
-      transparent 110px,
-      hsl(150 55% 22% / 0.18) 110px,
-      hsl(150 55% 22% / 0.18) 220px
-    ),
-    /* Baza murawy */
-    linear-gradient(180deg, hsl(150 40% 22%), hsl(150 45% 14%));
+      hsl(140 45% 78%) 0px,
+      hsl(140 45% 78%) 110px,
+      hsl(140 50% 68%) 110px,
+      hsl(140 50% 68%) 220px
+    );
   background-attachment: fixed;
 }
+
 
 .tournament-worldcup.dark body,
 .dark .tournament-worldcup body {
