@@ -43,6 +43,7 @@ import NotFound from "./pages/NotFound";
 import WorldCup2026 from "./pages/WorldCup2026";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { TournamentTheme } from "@/components/TournamentTheme";
+import { TournamentMascot } from "@/components/TournamentMascot";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +61,7 @@ function App() {
               <TournamentTheme />
               <ConditionalWallpaper />
               <PWAInstallBanner />
+              <TournamentMascot />
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/start" element={<StartPage />} />

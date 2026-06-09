@@ -18,6 +18,7 @@ import { Footer } from "@/components/Footer";
 import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
 import { WorldCupRibbon } from "@/components/WorldCupRibbon";
+import { WorldCupMatchCenter } from "@/components/worldcup/WorldCupMatchCenter";
 
 // Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string): string => {
@@ -229,6 +230,11 @@ const BlinkPage = () => {
               <p className="text-lg leading-relaxed">{post.excerpt}</p>
             )}
           </div>
+
+          {/* World Cup Match Center (only for WC posts with team tags) */}
+          {isWorldCup && <WorldCupMatchCenter tags={post.tags || []} />}
+
+
 
           {/* Source box */}
           <div className="bg-muted/50 border rounded-lg p-4 mb-6">

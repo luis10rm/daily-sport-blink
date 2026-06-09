@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
+import { useStadiumNight } from "@/hooks/useStadiumNight";
 
 /**
  * Adds/removes the `tournament-worldcup` class on <html> based on the
@@ -8,6 +9,7 @@ import { useTournamentMode } from "@/hooks/useTournamentMode";
  */
 export const TournamentTheme = () => {
   const { isWorldCup } = useTournamentMode();
+  useStadiumNight();
 
   useEffect(() => {
     const root = document.documentElement;

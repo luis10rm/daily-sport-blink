@@ -13,6 +13,7 @@ import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
 import { FeedbackBox } from "@/components/FeedbackBox";
 import { WorldCupHomeBanner } from "@/components/WorldCupHomeBanner";
 import { TodaysMatchesBanner } from "@/components/TodaysMatchesBanner";
+import { MatchOfTheDay } from "@/components/MatchOfTheDay";
 import { MultiSEO, getWebsiteSEO, getRichItemListSEO } from "@/components/SEO";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { usePostsFeed, useNewsOfTheDay, useTodaysPosts } from "@/hooks/usePosts";
@@ -106,6 +107,9 @@ const Index = () => {
             className="mb-8" 
           />
         )}
+
+        {/* World Cup Match of the Day (only in tournament mode) */}
+        <MatchOfTheDay />
 
         {/* Feedback Box */}
         <FeedbackBox className="mb-10" />
