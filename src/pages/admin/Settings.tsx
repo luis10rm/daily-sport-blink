@@ -14,6 +14,7 @@ import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2, Facebook, Image } f
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { LogoGenerator } from "@/components/admin/LogoGenerator";
+import { TournamentModeCard } from "@/components/admin/TournamentModeCard";
 
 const DEFAULT_EXTRACTION_PROMPT = `Jesteś asystentem redakcji sportowej Daily Sport Blink. Na podstawie podanego artykułu wygeneruj dane do publikacji.
 
@@ -399,6 +400,9 @@ const Settings = () => {
             Zarządzaj ustawieniami aplikacji
           </p>
         </div>
+
+        {/* Tournament Mode - Only for admins */}
+        {isAdmin && <TournamentModeCard />}
 
         {/* Logo Generator - Only for admins */}
         {isAdmin && <LogoGenerator />}
