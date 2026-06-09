@@ -108,6 +108,9 @@ const Index = () => {
           />
         )}
 
+        {/* World Cup Match of the Day (only in tournament mode) */}
+        <MatchOfTheDay />
+
         {/* Feedback Box */}
         <FeedbackBox className="mb-10" />
 
