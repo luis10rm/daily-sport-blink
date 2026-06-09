@@ -161,6 +161,8 @@ export const StoriesRow = () => {
           onClose={handleCloseStory}
         />
       )}
+
+      {wcOpen && <WorldCupStoryPanels onClose={() => setWcOpen(false)} />}
     </>
   );
 };

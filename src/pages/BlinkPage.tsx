@@ -18,6 +18,7 @@ import { Footer } from "@/components/Footer";
 import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
 import { WorldCupRibbon } from "@/components/WorldCupRibbon";
+import { WorldCupMatchCenter } from "@/components/worldcup/WorldCupMatchCenter";
 
 // Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string): string => {
