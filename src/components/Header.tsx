@@ -90,6 +90,7 @@ export const Header = () => {
           <ThemeToggle />
         </nav>
       </div>
+      <MatchTicker />
     </header>
     </>
   );
