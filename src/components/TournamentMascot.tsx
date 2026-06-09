@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const TIPS = [
   { text: "Witaj w Strefie MŚ 2026! Sprawdź mecz dnia na stronie głównej.", cta: { label: "Hub MŚ", to: "/mistrzostwa-swiata-2026" } },
-  { text: "Klikaj na złoty bąbel „Strefa MŚ" w Stories — masz tam terminarz, grupę i strzelców.", cta: null },
+  { text: "Klikaj na złoty bąbel „Strefa MŚ” w Stories — masz tam terminarz, grupę i strzelców.", cta: null },
   { text: "Wieczorem serwis wchodzi w tryb stadion nocą — zauważyłeś reflektory?", cta: null },
   { text: "W artykułach z tagami drużyn znajdziesz Match Center z najbliższym meczem.", cta: null },
 ];
