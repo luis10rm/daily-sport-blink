@@ -82,23 +82,10 @@ export const TodaysMatchesBanner = ({ className }: Props) => {
     );
   }
 
-  if (!todays.length) {
-    return (
-      <Link
-        to="/mistrzostwa-swiata-2026"
-        className={cn(
-          "flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-transparent px-5 py-4 mb-6 hover:from-amber-500/20 transition-colors",
-          className,
-        )}
-      >
-        <CalendarDays className="h-5 w-5 text-amber-500 shrink-0" />
-        <div className="flex-1">
-          <div className="text-sm font-semibold text-foreground">Dziś bez meczu MŚ</div>
-          <div className="text-xs text-muted-foreground">Zobacz tabele grup i terminarz →</div>
-        </div>
-      </Link>
-    );
-  }
+  // Brak meczu dziś → nic nie renderujemy. Wejście do strefy MŚ zapewnia
+  // WorldCupHomeBanner; pusty pasek tylko dublował CTA i zwiększał szum nad foldem.
+  if (!todays.length) return null;
+
 
   return (
     <section className={cn("mb-6", className)} aria-label="Mecze dnia – MŚ 2026">
