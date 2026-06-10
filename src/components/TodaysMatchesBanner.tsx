@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Trophy, Radio, CalendarDays } from "lucide-react";
+import { Trophy, Radio } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
 import { cn } from "@/lib/utils";
