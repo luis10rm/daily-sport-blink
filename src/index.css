@@ -308,19 +308,26 @@
 
 .tournament-worldcup.dark,
 .dark .tournament-worldcup {
-  /* Dark mode overrides — deep stadium turf */
-  --background: 150 35% 6%;
-  --card: 150 30% 10%;
-  --popover: 150 30% 10%;
-  --primary: 43 96% 56%;
+  /* Dark mode overrides — deep stadium turf, wysoki kontrast */
+  --background: 158 42% 7%;
+  --foreground: 45 35% 96%;
+  --card: 158 32% 11%;
+  --card-foreground: 45 30% 97%;
+  --popover: 158 32% 11%;
+  --popover-foreground: 45 30% 97%;
+  --secondary: 158 25% 16%;
+  --secondary-foreground: 45 25% 94%;
+  --muted: 158 22% 14%;
+  --muted-foreground: 45 25% 80%;
+  --primary: 43 96% 58%;
   --primary-foreground: 36 60% 10%;
-  --accent: 150 55% 35%;
+  --accent: 150 60% 40%;
   --accent-foreground: 0 0% 100%;
-  --ring: 43 96% 56%;
-  --news-of-day: 43 96% 56%;
+  --ring: 43 96% 58%;
+  --news-of-day: 43 96% 58%;
   --news-of-day-foreground: 36 60% 10%;
-  --border: 150 25% 18%;
-  --input: 150 25% 18%;
+  --border: 158 28% 22%;
+  --input: 158 28% 22%;
 }
 
 /* Stadium turf background — light mode (bardzo jasna murawa, mocny kontrast tekstu) */
@@ -344,17 +351,18 @@
 .tournament-worldcup.dark body,
 .dark .tournament-worldcup body {
   background-image:
-    radial-gradient(ellipse 60% 30% at 50% 0%, hsl(43 96% 60% / 0.14), transparent 70%),
+    radial-gradient(ellipse 70% 35% at 50% 0%, hsl(43 96% 60% / 0.10), transparent 70%),
     repeating-linear-gradient(
       100deg,
-      transparent 0px,
-      transparent 110px,
-      hsl(150 60% 14% / 0.55) 110px,
-      hsl(150 60% 14% / 0.55) 220px
+      hsl(158 40% 10%) 0px,
+      hsl(158 40% 10%) 110px,
+      hsl(158 35% 13%) 110px,
+      hsl(158 35% 13%) 220px
     ),
-    linear-gradient(180deg, hsl(150 40% 9%), hsl(150 45% 5%));
+    linear-gradient(180deg, hsl(158 45% 8%), hsl(158 50% 5%));
   background-attachment: fixed;
 }
+
 
 /* Header gets a subtle golden bottom highlight */
 .tournament-worldcup header {
