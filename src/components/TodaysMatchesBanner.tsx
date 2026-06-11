@@ -30,8 +30,10 @@ const Team = ({ team, align = "left" }: { team: FDMatch["homeTeam"]; align?: "le
 const MatchCard = ({ match }: { match: FDMatch }) => {
   const live = ["IN_PLAY", "PAUSED"].includes(match.status);
   const finished = match.status === "FINISHED";
-  const h = match.score?.fullTime?.home;
-  const a = match.score?.fullTime?.away;
+  const ft = match.score?.fullTime;
+  const ht = match.score?.halfTime;
+  const h = ft?.home ?? ht?.home ?? (live ? 0 : null);
+  const a = ft?.away ?? ht?.away ?? (live ? 0 : null);
   const hasScore = h !== null && a !== null && h !== undefined && a !== undefined;
 
   return (
