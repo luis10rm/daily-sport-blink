@@ -59,8 +59,10 @@ export const MatchOfTheDay = ({ className }: Props) => {
 
   const live = ["IN_PLAY", "PAUSED"].includes(pick.status);
   const finished = pick.status === "FINISHED";
-  const h = pick.score?.fullTime?.home;
-  const a = pick.score?.fullTime?.away;
+  const ft = pick.score?.fullTime;
+  const ht = pick.score?.halfTime;
+  const h = ft?.home ?? ht?.home ?? (live ? 0 : null);
+  const a = ft?.away ?? ht?.away ?? (live ? 0 : null);
   const hasScore = h !== null && a !== null && h !== undefined && a !== undefined;
   const isPolMatch = POLAND_TLAS.includes(pick.homeTeam.tla || "") || POLAND_TLAS.includes(pick.awayTeam.tla || "");
 
