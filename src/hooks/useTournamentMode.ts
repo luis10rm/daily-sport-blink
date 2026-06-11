@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { WORLD_CUP_END } from "@/lib/worldCupTheme";
 
@@ -10,6 +11,7 @@ export type TournamentMode = "off" | "worldcup_2026";
  * even if admin forgets to flip the switch.
  */
 export const useTournamentMode = () => {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["settings", "tournament_mode"],
     queryFn: async (): Promise<TournamentMode> => {
@@ -27,9 +29,28 @@ export const useTournamentMode = () => {
       if (raw === "worldcup_2026") return "worldcup_2026";
       return "off";
     },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 60_000,
   });
+
+  // Live updates: react instantly when admin flips the switch in another tab/device.
+  useEffect(() => {
+    const channel = supabase
+      .channel("settings-tournament-mode")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "settings", filter: "key=eq.tournament_mode" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["settings", "tournament_mode"] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Safety: auto-disable after the tournament ends
   const now = new Date();
