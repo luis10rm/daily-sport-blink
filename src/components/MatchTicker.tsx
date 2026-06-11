@@ -47,8 +47,10 @@ export const MatchTicker = () => {
 
   const live = ["IN_PLAY", "PAUSED"].includes(match.status);
   const finished = match.status === "FINISHED";
-  const scoreH = match.score?.fullTime?.home;
-  const scoreA = match.score?.fullTime?.away;
+  const ft = match.score?.fullTime;
+  const ht = match.score?.halfTime;
+  const scoreH = ft?.home ?? ht?.home ?? (live ? 0 : null);
+  const scoreA = ft?.away ?? ht?.away ?? (live ? 0 : null);
   const hasScore = scoreH !== null && scoreA !== null && scoreH !== undefined && scoreA !== undefined;
 
   return (
