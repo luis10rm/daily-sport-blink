@@ -1,48 +1,26 @@
-## Co naprawiamy
+# Klikalny ribbon „MŚ 2026 • NA ŻYWO" + brak double-tap
 
-Na iPhonie po publikacji zmian nie widzisz ich od razu — ani w Chrome (karta web), ani w Safari dodanym na ekran główny (PWA). Działa tylko Chrome PWA. To klasyczny problem **starego app shella w service workerze**: Safari (i WKWebView) bardzo agresywnie trzyma starą wersję, a obecna konfiguracja PWA czeka, aż wszystkie karty się zamkną — co na telefonie praktycznie nigdy się nie dzieje.
+## Problem
+Ribbon na `/blink/:slug` („Mistrzostwa Świata 2026 • NA ŻYWO") wygląda jak baner, ale jest zwykłym `<div>` — nic się nie dzieje po dotknięciu. Naturalna ścieżka to hub `/mistrzostwa-swiata-2026` (tam, gdzie prowadzą wszystkie inne elementy MŚ: TodaysMatchesBanner, MatchTicker, WorldCupHomeBanner, MatchOfTheDay, WorldCupBadge).
 
-Efekt: nawet nowy switch "Tryb mundialowy" w adminie nie pojawia się na Twoim iPhonie, bo telefon serwuje stary HTML/JS sprzed publikacji.
+Drugi wymóg: brak „double-tap" — efekty hover na iOS aktywują się przy pierwszym dotknięciu zamiast nawigować. Trzeba tego uniknąć tu i we wszystkich nowych elementach.
 
-## Co zrobimy
+## Zmiana
+Plik: `src/components/WorldCupRibbon.tsx`
 
-1. **Wymusimy natychmiastowe przejęcie nowej wersji** zaraz po jej wykryciu — bez czekania, aż użytkownik zamknie wszystkie karty/aplikację.
-2. **HTML zawsze z sieci** (z krótkim fallbackiem do cache, jeśli offline), żeby świeży kod nigdy nie był blokowany przez stary cache.
-3. **Auto-reload karty**, gdy nowa wersja faktycznie przejmie kontrolę — użytkownik nie musi nic robić.
-4. **„Kill switch" `?sw=off`** + wrapper rejestracji, który nie odpala SW w Lovable preview/iframe (zgodnie z naszą skill PWA), żeby przy najgorszym wypadku każdy mógł szybko odblokować swoją instancję jednym linkiem.
-5. **Jednorazowe „samoczyszczenie" obecnych zainstalowanych instancji** — przy pierwszym wejściu po wdrożeniu stary worker usuwa swoje cache i się przeładuje, więc Twój iPhone i innych użytkowników po prostu „obudzi się" na nowej wersji.
+1. Zamiana zewnętrznego `<div>` na `<Link to="/mistrzostwa-swiata-2026">` z react-router-dom.
+2. Dodać `ArrowRight` po prawej (jak w `WorldCupHomeBanner`) + `aria-label` „Przejdź do strefy MŚ 2026".
+3. W fazie `live` strzałka + tekst; w fazie `pre` analogicznie. Faza `post` dalej `null`.
 
-Zmiany dotyczą tylko opakowania PWA — żadnej logiki biznesowej, danych ani UI nie ruszamy. Po wdrożeniu i jednym otwarciu strony (lub aplikacji z ekranu głównego) iPhone Safari i Chrome web powinny już dostawać zmiany w ciągu sekund.
+## Reguła „no double-tap" (dla tego i każdego nowego klikalnego elementu)
+- Klasa `touch-manipulation` na elemencie interaktywnym.
+- Hover tylko przez `@media (hover: hover)` — w Tailwind używać `[@media(hover:hover)]:hover:...` zamiast samego `hover:...` na efektach kolor/tło, które na iOS „zjadają" pierwszy tap.
+- Bez `transform`/`scale` na hover na mobile (na desktopie OK pod `@media (hover: hover)`).
+- Cały klikalny obszar to JEDEN `<Link>`/`<button>` — nie zagnieżdżamy stopPropagation hacków.
+- Bez `onMouseEnter` triggerujących stan, który blokuje nawigację.
 
-## Co użytkownik zobaczy
+Zastosować to konkretnie w ribbonie: `touch-manipulation`, hover na border/tło tylko pod `[@media(hover:hover)]:hover:...`, `transition-colors` bez `scale`.
 
-- Telefon po publikacji w ciągu chwili sam podmieni stronę na nową wersję (bez „odśwież").
-- Wersja zainstalowana na ekranie głównym (Safari PWA) dogoni tak samo szybko po pierwszym jej otwarciu po wdrożeniu — bez ręcznego odinstalowywania.
-- Jeśli ktokolwiek kiedyś znów utknie, wystarczy otworzyć `https://szortsy.pl/?sw=off` raz — to wyczyści jego service workera.
-
-## Szczegóły techniczne
-
-`vite.config.ts` — w `VitePWA`:
-- `workbox.skipWaiting: true`, `workbox.clientsClaim: true` (parowane razem; bez tego nowy SW śpi w `waiting` na iOS tygodniami).
-- `workbox.cleanupOutdatedCaches: true`.
-- `workbox.navigateFallbackDenylist` zostaje; dodatkowo `runtimeCaching` dla nawigacji HTML: `NetworkFirst` z `networkTimeoutSeconds: 3` (nigdy CacheFirst dla HTML).
-- `injectRegister: null` — rejestracja tylko z naszego wrappera.
-- `devOptions.enabled: false`.
-
-Nowy wrapper `src/pwa/registerSW.ts` (jedyny rejestrator), używany w `main.tsx`:
-- Odmawia rejestracji w dev, w iframe, na hostach `id-preview--*`, `preview--*`, `*.lovableproject.com`, `*.lovableproject-dev.com`, `*.beta.lovable.dev`, oraz gdy URL ma `?sw=off`.
-- W każdym „odmownym" przypadku robi `getRegistrations()` → `unregister()` dla `/sw.js`.
-- Używa `virtual:pwa-register` z `{ immediate: true, onRegisteredSW, onNeedRefresh: () => updateSW(true) }`.
-- Nasłuchuje `navigator.serviceWorker.addEventListener('controllerchange', () => location.reload())` — to wymusza odświeżenie karty dokładnie wtedy, gdy nowy SW przejmie kontrolę (kluczowe dla iOS, bo prompt mode tam bywa niemy).
-
-`main.tsx` — jedno wywołanie `registerSW()` po `createRoot(...).render(...)`.
-
-`src/main.tsx` typings — dodać `/// <reference types="vite-plugin-pwa/client" />` w `src/vite-env.d.ts`.
-
-Po wdrożeniu nic nie usuwamy ręcznie — `skipWaiting + clientsClaim + controllerchange reload` plus `cleanupOutdatedCaches` zrobią migrację dla wszystkich obecnie zainstalowanych klientów przy ich najbliższym otwarciu.
-
-## Czego nie robimy
-
-- Nie zmieniamy logiki `tournament_mode` ani hooka `useTournamentMode` — on jest już dobrze podpięty pod realtime i odświeżanie. Problem nie był w danych, tylko w tym, że telefon dostawał stary JS.
-- Nie dotykamy danych w bazie, RLS-ów, edge functions.
-- Nie zmieniamy manifestu (`start_url`, `id`, `scope`, `display`) — iOS cache'uje to przy instalacji i nieostrożna zmiana zmusiłaby ludzi do reinstalacji aplikacji z ekranu głównego.
+## Poza zakresem
+- Nie ruszam `BlinkPage.tsx`, logiki fazy MŚ, dat ani backendu.
+- Audyt istniejących elementów pod kątem double-tap — tylko jeśli poprosisz osobno.
