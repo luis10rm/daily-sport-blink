@@ -227,6 +227,57 @@ ABSOLUTNIE KRYTYCZNE - bez wyjątków:
 4. Jeśli żaden powiązany artykuł NIE pasuje tematycznie do tego newsa → CAŁKOWICIE pomiń sekcję "Przeczytaj również". Lepiej brak linku niż zły link.
 5. Linkuj wyłącznie do artykułów, które rzeczywiście rozwijają temat (np. ten sam zawodnik, drużyna, turniej, wydarzenie).`;
 
+/**
+ * Validates AI-generated <a href="/blink/SLUG">TEXT</a> links against the allow-list
+ * of related posts. Strips any link whose slug is unknown OR whose anchor text
+ * doesn't share at least one meaningful word (>=4 chars) with the target post title.
+ * Also removes leftover empty <ul></ul> and orphan "Przeczytaj również" headers.
+ */
+function validateInternalLinks(
+  content: string,
+  relatedPosts: Array<{ title: string; slug: string }>,
+): string {
+  const allowed = new Map(relatedPosts.map((p) => [p.slug, p.title]));
+  let stripped = 0;
+
+  let result = content.replace(
+    /<a\s+[^>]*href="\/blink\/([^"]+)"[^>]*>([\s\S]*?)<\/a>/g,
+    (_full, slug: string, inner: string) => {
+      const targetTitle = allowed.get(slug);
+      if (!targetTitle) {
+        stripped++;
+        console.warn(`[link-validator] Unknown slug "/blink/${slug}" - stripping link.`);
+        return inner;
+      }
+      const plainAnchor = inner.replace(/<[^>]+>/g, "").toLowerCase();
+      const titleLower = targetTitle.toLowerCase();
+      const words = plainAnchor.match(/[\p{L}\p{N}]{4,}/gu) || [];
+      const matches = words.filter((w) => titleLower.includes(w)).length;
+      if (matches < 1) {
+        stripped++;
+        console.warn(
+          `[link-validator] Anchor "${plainAnchor.slice(0, 60)}" doesn't match target title "${targetTitle.slice(0, 60)}" - stripping link.`,
+        );
+        return inner;
+      }
+      return _full;
+    },
+  );
+
+  if (stripped > 0) {
+    result = result.replace(/<ul>\s*(<li>\s*<\/li>\s*)*<\/ul>/g, "");
+    result = result.replace(
+      /<p>\s*<strong>\s*Przeczytaj również:?\s*<\/strong>\s*<\/p>\s*(?!<ul)/gi,
+      "",
+    );
+    console.log(`[link-validator] Stripped ${stripped} bad internal link(s).`);
+  }
+
+  return result;
+}
+
+
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
