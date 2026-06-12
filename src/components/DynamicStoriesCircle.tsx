@@ -86,9 +86,11 @@ export const DynamicStoriesCircle = ({
 
   return (
     <button
+      type="button"
       onClick={onClick}
+      onTouchEnd={(e) => { e.preventDefault(); onClick(); }}
       className={cn(
-        "flex flex-col items-center gap-1.5 group flex-shrink-0",
+        "flex flex-col items-center gap-1.5 group flex-shrink-0 touch-manipulation",
         className
       )}
     >
