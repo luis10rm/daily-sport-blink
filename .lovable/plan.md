@@ -1,26 +1,20 @@
-# Klikalny ribbon „MŚ 2026 • NA ŻYWO" + brak double-tap
+## Cel
+Naprawić błąd, przez który posty z kategorii Mistrzostw Świata pokazują krótki przebłysk treści, a potem pustą stronę.
 
-## Problem
-Ribbon na `/blink/:slug` („Mistrzostwa Świata 2026 • NA ŻYWO") wygląda jak baner, ale jest zwykłym `<div>` — nic się nie dzieje po dotknięciu. Naturalna ścieżka to hub `/mistrzostwa-swiata-2026` (tam, gdzie prowadzą wszystkie inne elementy MŚ: TodaysMatchesBanner, MatchTicker, WorldCupHomeBanner, MatchOfTheDay, WorldCupBadge).
+## Co wdrożę
+1. Uodpornię komponent `WorldCupMatchCenter` na niepełne dane z API meczów i z tagów posta.
+2. Zablokuję możliwość wywalenia całej strony artykułu, jeśli dane meczu są niepełne lub niepasujące.
+3. Zweryfikuję, że posty mundialowe dalej pokazują Match Center tam, gdzie dane są poprawne, a w pozostałych przypadkach po prostu go ukrywają zamiast crashować widok.
 
-Drugi wymóg: brak „double-tap" — efekty hover na iOS aktywują się przy pierwszym dotknięciu zamiast nawigować. Trzeba tego uniknąć tu i we wszystkich nowych elementach.
+## Zakres zmian
+- `src/components/worldcup/WorldCupMatchCenter.tsx`
+- ewentualnie drobne zabezpieczenie w `src/pages/BlinkPage.tsx` tylko jeśli będzie potrzebne do bezpiecznego renderu
 
-## Zmiana
-Plik: `src/components/WorldCupRibbon.tsx`
+## Szczegóły techniczne
+- `normalize(...)` zostanie zmienione na null-safe, żeby nie wywoływać `.toLowerCase()` na `null` lub `undefined`.
+- Przed dopasowaniem drużyn odfiltruję puste i niepoprawne tagi.
+- Dopasowanie drużyn będzie działało także wtedy, gdy `team.name`, `shortName` albo `tla` są brakujące.
+- Jeśli po filtracji nie da się wiarygodnie wskazać meczu, komponent zwróci `null` zamiast wysadzać cały render artykułu.
 
-1. Zamiana zewnętrznego `<div>` na `<Link to="/mistrzostwa-swiata-2026">` z react-router-dom.
-2. Dodać `ArrowRight` po prawej (jak w `WorldCupHomeBanner`) + `aria-label` „Przejdź do strefy MŚ 2026".
-3. W fazie `live` strzałka + tekst; w fazie `pre` analogicznie. Faza `post` dalej `null`.
-
-## Reguła „no double-tap" (dla tego i każdego nowego klikalnego elementu)
-- Klasa `touch-manipulation` na elemencie interaktywnym.
-- Hover tylko przez `@media (hover: hover)` — w Tailwind używać `[@media(hover:hover)]:hover:...` zamiast samego `hover:...` na efektach kolor/tło, które na iOS „zjadają" pierwszy tap.
-- Bez `transform`/`scale` na hover na mobile (na desktopie OK pod `@media (hover: hover)`).
-- Cały klikalny obszar to JEDEN `<Link>`/`<button>` — nie zagnieżdżamy stopPropagation hacków.
-- Bez `onMouseEnter` triggerujących stan, który blokuje nawigację.
-
-Zastosować to konkretnie w ribbonie: `touch-manipulation`, hover na border/tło tylko pod `[@media(hover:hover)]:hover:...`, `transition-colors` bez `scale`.
-
-## Poza zakresem
-- Nie ruszam `BlinkPage.tsx`, logiki fazy MŚ, dat ani backendu.
-- Audyt istniejących elementów pod kątem double-tap — tylko jeśli poprosisz osobno.
+## Efekt
+Posty z kategorii MŚ 2026 przestaną znikać po załadowaniu; artykuł będzie się normalnie renderował, a Match Center pokaże się tylko wtedy, gdy dane są bezpieczne i kompletne.
