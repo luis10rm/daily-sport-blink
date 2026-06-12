@@ -60,6 +60,11 @@ export const SponsorBanner = ({
     }
   };
 
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    handleClick();
+  };
+
   // Fire impression tag pixel on first render
   useEffect(() => {
     if (impressionTag && !impressionFiredRef.current && !previewMode) {
