@@ -4,19 +4,26 @@ import { Radio, Calendar, Trophy } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { cn } from "@/lib/utils";
 
-const normalize = (s: string) =>
-  s.toLowerCase()
+const normalize = (s?: string | null) =>
+  (s ?? "")
+    .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z]/g, "");
 
-const teamMatchesTag = (team: { name: string; shortName?: string; tla?: string }, tag: string) => {
+const teamMatchesTag = (
+  team: { name?: string | null; shortName?: string | null; tla?: string | null } | null | undefined,
+  tag: string
+) => {
   const t = normalize(tag);
-  if (!t) return false;
+  if (!t || !team) return false;
+  const name = normalize(team.name);
+  const short = normalize(team.shortName);
+  const tla = normalize(team.tla);
   return (
-    normalize(team.name).includes(t) ||
-    (team.shortName && normalize(team.shortName).includes(t)) ||
-    (team.tla && normalize(team.tla) === t)
+    (!!name && name.includes(t)) ||
+    (!!short && short.includes(t)) ||
+    (!!tla && tla === t)
   );
 };
 
@@ -32,23 +39,28 @@ export const WorldCupMatchCenter = ({ tags = [], className }: Props) => {
   const { data } = useWorldCupMatches();
 
   const match = useMemo<FDMatch | null>(() => {
-    const all = data?.data?.matches || [];
-    if (!all.length || !tags.length) return null;
-    const candidates = all.filter((m) =>
-      tags.some((tg) => teamMatchesTag(m.homeTeam, tg) || teamMatchesTag(m.awayTeam, tg))
-    );
-    if (!candidates.length) return null;
-    const now = Date.now();
-    // Prefer live, then next upcoming, then last finished
-    const live = candidates.find((m) => ["IN_PLAY", "PAUSED"].includes(m.status));
-    if (live) return live;
-    const upcoming = candidates
-      .filter((m) => new Date(m.utcDate).getTime() >= now - 2 * 3600 * 1000 && m.status !== "FINISHED")
-      .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime())[0];
-    if (upcoming) return upcoming;
-    return [...candidates]
-      .filter((m) => m.status === "FINISHED")
-      .sort((a, b) => new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime())[0] || null;
+    try {
+      const all = data?.data?.matches || [];
+      const safeTags = (tags || []).filter((t): t is string => typeof t === "string" && t.length > 0);
+      if (!all.length || !safeTags.length) return null;
+      const candidates = all.filter((m) =>
+        safeTags.some((tg) => teamMatchesTag(m?.homeTeam, tg) || teamMatchesTag(m?.awayTeam, tg))
+      );
+      if (!candidates.length) return null;
+      const now = Date.now();
+      const live = candidates.find((m) => ["IN_PLAY", "PAUSED"].includes(m.status));
+      if (live) return live;
+      const upcoming = candidates
+        .filter((m) => new Date(m.utcDate).getTime() >= now - 2 * 3600 * 1000 && m.status !== "FINISHED")
+        .sort((a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime())[0];
+      if (upcoming) return upcoming;
+      return [...candidates]
+        .filter((m) => m.status === "FINISHED")
+        .sort((a, b) => new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime())[0] || null;
+    } catch (e) {
+      console.error("[WorldCupMatchCenter] match selection failed", e);
+      return null;
+    }
   }, [data, tags]);
 
   if (!match) return null;
