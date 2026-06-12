@@ -215,13 +215,17 @@ FORMATOWANIE (OBOWIĄZKOWE):
 - Każdy akapit otocz tagiem <p>...</p>
 - Oddzielaj akapity pustą linią dla czytelności
 
-LINKOWANIE WEWNĘTRZNE (SEO - OBOWIĄZKOWE):
-- Jeśli otrzymasz listę powiązanych artykułów, MUSISZ dodać sekcję "Przeczytaj również" na końcu
-- Format sekcji: <p><strong>Przeczytaj również:</strong></p> a następnie lista <ul> z 1-2 linkami
-- Format linku: <a href="/blink/slug-artykulu">tekst kotwicy</a>
-- Linkuj TYLKO do artykułów tematycznie powiązanych z aktualnym newsem
-- Tekst kotwicy powinien być naturalny - skrócony tytuł lub kluczowa fraza
-- Jeśli brak powiązanych artykułów w kontekście - nie dodawaj sekcji`;
+LINKOWANIE WEWNĘTRZNE (SEO - OBOWIĄZKOWE, RYGORYSTYCZNE):
+- Jeśli otrzymasz listę powiązanych artykułów, MOŻESZ dodać sekcję "Przeczytaj również" na końcu (1-2 linki).
+- Format sekcji: <p><strong>Przeczytaj również:</strong></p> a następnie <ul> z linkami <li>.
+- Format linku: <a href="/blink/SLUG">TEKST</a>
+
+ABSOLUTNIE KRYTYCZNE - bez wyjątków:
+1. SLUG i TEKST MUSZĄ pochodzić z TEJ SAMEJ pozycji listy "POWIĄZANE ARTYKUŁY". Każdy wiersz listy ma format: - "TYTUŁ" → /blink/SLUG.
+2. TEKST kotwicy MUSI być dosłownym tytułem (lub jego skróconą wersją zawierającą min. 3 kluczowe słowa z tytułu). NIE WOLNO wymyślać własnych tytułów, parafrazować ani łączyć tematów.
+3. NIE WOLNO mieszać: tekst z jednej linii listy + slug z innej. To bug krytyczny.
+4. Jeśli żaden powiązany artykuł NIE pasuje tematycznie do tego newsa → CAŁKOWICIE pomiń sekcję "Przeczytaj również". Lepiej brak linku niż zły link.
+5. Linkuj wyłącznie do artykułów, które rzeczywiście rozwijają temat (np. ten sam zawodnik, drużyna, turniej, wydarzenie).`;
 
 serve(async (req) => {
   // Handle CORS preflight
