@@ -577,6 +577,11 @@ ${articleText}`
       console.error("Content generation failed:", contentResponse.status, errText);
     }
 
+    // Step 2.5: Validate internal /blink/ links to prevent AI hallucinating wrong slug<->anchor pairs
+    if (generatedContent && generatedContent.includes('href="/blink/')) {
+      generatedContent = validateInternalLinks(generatedContent, relatedPosts);
+    }
+
     // Add extraction quality metadata for frontend warnings
     const QUALITY_WARNING_THRESHOLD = 500;
     
