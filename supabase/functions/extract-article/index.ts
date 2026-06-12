@@ -251,7 +251,9 @@ function validateInternalLinks(
       }
       const plainAnchor = inner.replace(/<[^>]+>/g, "").toLowerCase();
       const titleLower = targetTitle.toLowerCase();
-      const words = plainAnchor.match(/[\p{L}\p{N}]{4,}/gu) || [];
+      // Letters only (>=4 chars). Excludes pure-number tokens like "2026" which
+      // would otherwise cause false matches across many sports articles.
+      const words = plainAnchor.match(/[\p{L}]{4,}/gu) || [];
       const matches = words.filter((w) => titleLower.includes(w)).length;
       if (matches < 1) {
         stripped++;
