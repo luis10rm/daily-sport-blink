@@ -215,13 +215,70 @@ FORMATOWANIE (OBOWIĄZKOWE):
 - Każdy akapit otocz tagiem <p>...</p>
 - Oddzielaj akapity pustą linią dla czytelności
 
-LINKOWANIE WEWNĘTRZNE (SEO - OBOWIĄZKOWE):
-- Jeśli otrzymasz listę powiązanych artykułów, MUSISZ dodać sekcję "Przeczytaj również" na końcu
-- Format sekcji: <p><strong>Przeczytaj również:</strong></p> a następnie lista <ul> z 1-2 linkami
-- Format linku: <a href="/blink/slug-artykulu">tekst kotwicy</a>
-- Linkuj TYLKO do artykułów tematycznie powiązanych z aktualnym newsem
-- Tekst kotwicy powinien być naturalny - skrócony tytuł lub kluczowa fraza
-- Jeśli brak powiązanych artykułów w kontekście - nie dodawaj sekcji`;
+LINKOWANIE WEWNĘTRZNE (SEO - OBOWIĄZKOWE, RYGORYSTYCZNE):
+- Jeśli otrzymasz listę powiązanych artykułów, MOŻESZ dodać sekcję "Przeczytaj również" na końcu (1-2 linki).
+- Format sekcji: <p><strong>Przeczytaj również:</strong></p> a następnie <ul> z linkami <li>.
+- Format linku: <a href="/blink/SLUG">TEKST</a>
+
+ABSOLUTNIE KRYTYCZNE - bez wyjątków:
+1. SLUG i TEKST MUSZĄ pochodzić z TEJ SAMEJ pozycji listy "POWIĄZANE ARTYKUŁY". Każdy wiersz listy ma format: - "TYTUŁ" → /blink/SLUG.
+2. TEKST kotwicy MUSI być dosłownym tytułem (lub jego skróconą wersją zawierającą min. 3 kluczowe słowa z tytułu). NIE WOLNO wymyślać własnych tytułów, parafrazować ani łączyć tematów.
+3. NIE WOLNO mieszać: tekst z jednej linii listy + slug z innej. To bug krytyczny.
+4. Jeśli żaden powiązany artykuł NIE pasuje tematycznie do tego newsa → CAŁKOWICIE pomiń sekcję "Przeczytaj również". Lepiej brak linku niż zły link.
+5. Linkuj wyłącznie do artykułów, które rzeczywiście rozwijają temat (np. ten sam zawodnik, drużyna, turniej, wydarzenie).`;
+
+/**
+ * Validates AI-generated <a href="/blink/SLUG">TEXT</a> links against the allow-list
+ * of related posts. Strips any link whose slug is unknown OR whose anchor text
+ * doesn't share at least one meaningful word (>=4 chars) with the target post title.
+ * Also removes leftover empty <ul></ul> and orphan "Przeczytaj również" headers.
+ */
+function validateInternalLinks(
+  content: string,
+  relatedPosts: Array<{ title: string; slug: string }>,
+): string {
+  const allowed = new Map(relatedPosts.map((p) => [p.slug, p.title]));
+  let stripped = 0;
+
+  let result = content.replace(
+    /<a\s+[^>]*href="\/blink\/([^"]+)"[^>]*>([\s\S]*?)<\/a>/g,
+    (_full, slug: string, inner: string) => {
+      const targetTitle = allowed.get(slug);
+      if (!targetTitle) {
+        stripped++;
+        console.warn(`[link-validator] Unknown slug "/blink/${slug}" - stripping link.`);
+        return inner;
+      }
+      const plainAnchor = inner.replace(/<[^>]+>/g, "").toLowerCase();
+      const titleLower = targetTitle.toLowerCase();
+      // Letters only (>=4 chars). Excludes pure-number tokens like "2026" which
+      // would otherwise cause false matches across many sports articles.
+      const words = plainAnchor.match(/[\p{L}]{4,}/gu) || [];
+      const matches = words.filter((w) => titleLower.includes(w)).length;
+      if (matches < 1) {
+        stripped++;
+        console.warn(
+          `[link-validator] Anchor "${plainAnchor.slice(0, 60)}" doesn't match target title "${targetTitle.slice(0, 60)}" - stripping link.`,
+        );
+        return inner;
+      }
+      return _full;
+    },
+  );
+
+  if (stripped > 0) {
+    result = result.replace(/<ul>\s*(<li>\s*<\/li>\s*)*<\/ul>/g, "");
+    result = result.replace(
+      /<p>\s*<strong>\s*Przeczytaj również:?\s*<\/strong>\s*<\/p>\s*(?!<ul)/gi,
+      "",
+    );
+    console.log(`[link-validator] Stripped ${stripped} bad internal link(s).`);
+  }
+
+  return result;
+}
+
+
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -507,6 +564,7 @@ FORMATOWANIE (OBOWIĄZKOWE):
 
     // Step 1.5: Fetch related posts from the same category for internal linking
     let relatedContext = "";
+    let relatedPosts: Array<{ title: string; slug: string }> = [];
     try {
       // First, get category ID from slug
       const { data: categoryData } = await supabase
@@ -516,14 +574,15 @@ FORMATOWANIE (OBOWIĄZKOWE):
         .single();
 
       if (categoryData?.id) {
-        const { data: relatedPosts } = await supabase
+        const { data: fetched } = await supabase
           .from("posts")
           .select("title, slug")
           .eq("category_id", categoryData.id)
           .order("published_at", { ascending: false })
           .limit(10);
 
-        if (relatedPosts && relatedPosts.length > 0) {
+        if (fetched && fetched.length > 0) {
+          relatedPosts = fetched;
           relatedContext = relatedPosts
             .map((p) => `- "${p.title}" → /blink/${p.slug}`)
             .join("\n");
@@ -569,6 +628,11 @@ ${articleText}`
     } else {
       const errText = await contentResponse.text();
       console.error("Content generation failed:", contentResponse.status, errText);
+    }
+
+    // Step 2.5: Validate internal /blink/ links to prevent AI hallucinating wrong slug<->anchor pairs
+    if (generatedContent && generatedContent.includes('href="/blink/')) {
+      generatedContent = validateInternalLinks(generatedContent, relatedPosts);
     }
 
     // Add extraction quality metadata for frontend warnings

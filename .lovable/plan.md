@@ -1,72 +1,76 @@
-# Plan: audyt i naprawa double-tap na iPhonie
+# Problem
 
-## Co już ustaliłem
-- `onTouchEnd` **nie jest dodany wszędzie** — występuje tylko w kilku miejscach krytycznych, m.in.:
-  - `src/components/NewsCard.tsx`
-  - `src/components/NewsOfTheDay.tsx`
-  - `src/components/TodaysNewsBanner.tsx`
-  - `src/components/PWAInstallBanner.tsx`
-  - `src/pages/StartPage.tsx`
-  - `src/pages/InstallPage.tsx`
-  - viewerach stories (`StoriesViewer`, `WorldCupStoryPanels`) tylko do pauzowania
-- Wiele ważnych mobilnych CTA nadal działa wyłącznie przez `Link` / `onClick` bez dotykowego fallbacku.
+W artykule `/blink/10-mlodych-talentow-na-mundial-2026...` na końcu znajduje się link:
 
-## Najbardziej podejrzane elementy
-1. **`src/components/WorldCupHomeBanner.tsx`**
-   - baner „MŚ 2026 LIVE — zobacz wyniki dnia” jest cały oparty o `Link`
-   - brak `onTouchEnd`
-   - to jest bardzo mocny kandydat do problemu na iPhonie
+> **Nowy format Mistrzostw Świata 2026: Wszystko, co musisz wiedzieć**
 
-2. **`src/components/MatchTicker.tsx`**
-   - górny ticker MŚ 2026 to też sam `Link`
-   - brak `onTouchEnd`
+prowadzący do `/blink/ms-2026-kontrowersyjne-czerwone-kartki-w-meczu-meksyk---rpa-629dbb25` — czyli do artykułu o czerwonych kartkach, nie o formacie MŚ.
 
-3. **`src/components/Header.tsx` / `ThemeToggle.tsx`**
-   - ikony w headerze działają przez `Link`/`Button`, ale bez dodatkowego touch fallbacku
-   - jeśli użytkownik zgłasza problem „jak kiedyś”, header jest wart objęcia tą samą strategią
+## Przyczyna
 
-4. **Stories circles**
-   - `src/components/DynamicStoriesCircle.tsx`
-   - `src/components/worldcup/WorldCupStoryCircle.tsx`
-   - oba mają tylko `onClick`
+W `supabase/functions/extract-article/index.ts` (linie 508-536) podczas generowania treści AI dostaje listę 10 powiązanych artykułów z tej samej kategorii w formacie:
 
-5. **`src/components/SponsorBanner.tsx`**
-   - CTA i cała powierzchnia bannera opierają się na `onClick`/`window.open`
-   - brak `onTouchEnd`
+```
+- "Tytuł artykułu" → /blink/slug-artykulu
+```
 
-## Wniosek
-To nie wygląda na problem typu „wszystko musi mieć `onTouchEnd`”, tylko raczej na to, że **część kluczowych elementów mobilnych nie dostała tego samego zabezpieczenia, które wcześniej dodawaliśmy do wybranych CTA**. Samo globalne dodanie `onTouchEnd` wszędzie byłoby ryzykowne i mogłoby dublować akcje.
+Model (Gemini/GPT) wstawia sekcję "Przeczytaj również", ale **halucynuje**: wymyśla atrakcyjny anchor text (np. "Nowy format MŚ 2026...") i **paruje go z losowym slugiem** z listy zamiast użyć dokładnego tytułu odpowiadającego temu slugowi. Efekt: link wygląda sensownie, ale prowadzi do zupełnie innego artykułu.
 
-## Proponowany zakres fixu
-### 1) Ujednolicić mobilne CTA w najważniejszych komponentach
-Dodać bezpieczny schemat `onTouchEnd` + `onClick` tam, gdzie dziś są tylko `Link`/`onClick`, zaczynając od:
-- `src/components/WorldCupHomeBanner.tsx`
-- `src/components/MatchTicker.tsx`
-- `src/components/DynamicStoriesCircle.tsx`
-- `src/components/worldcup/WorldCupStoryCircle.tsx`
-- `src/components/SponsorBanner.tsx`
-- opcjonalnie wybrane elementy z headera (`ThemeToggle`, główne linki), jeśli chcesz objąć to szerzej
+Problem dotyczy potencjalnie wszystkich artykułów MŚ (i innych kategorii) wygenerowanych przez `extract-article`.
 
-### 2) Nie robić ślepego `onTouchEnd` na wszystkich elementach
-Zamiast tego użyć spójnego wzorca tylko dla interakcji, które:
-- nawigują,
-- otwierają modal/story,
-- otwierają link zewnętrzny,
-- są zgłaszane jako wymagające drugiego tapnięcia.
+# Plan naprawy
 
-### 3) Zachować istniejące mobile safeguards
-Nie ruszać obecnych reguł typu:
-- `touch-manipulation`
-- `@media (hover: hover)`
-bo one są poprawne i już pomagają ograniczać iOS hover/double-tap side effects.
+## 1. Wzmocnić prompt w `extract-article/index.ts`
 
-## Techniczne detale
-- Dla nawigacji wewnętrznej: najlepiej użyć `useNavigate()` i jednego handlera dotykowego, zamiast polegać wyłącznie na `Link`.
-- Dla modali/stories: `onTouchEnd={(e) => { e.preventDefault(); action(); }}` + ochrona przed podwójnym wywołaniem.
-- Dla linków zewnętrznych: `window.open(...)` w dotykowym handlerze, tak jak już robicie w części komponentów.
-- Trzeba uważać na podwójne odpalenie `touchend` + `click`, więc fix powinien być zrobiony jednym wspólnym wzorcem, nie kopiuj-wklej bez guardów.
+W `DEFAULT_CONTENT_PROMPT` (linie 218-224) dodać twarde reguły:
+- Anchor text MUSI być dosłownym (lub niemal dosłownym) skrótem tytułu z listy — nie wolno wymyślać nowego tytułu.
+- Każda para (tekst, slug) musi pochodzić z TEJ SAMEJ linii z listy powiązanych artykułów.
+- Jeśli żaden artykuł z listy nie pasuje tematycznie — pominąć sekcję "Przeczytaj również".
 
-## Efekt po wdrożeniu
-- najważniejsze mobilne CTA będą reagować na pierwszy tap na iPhonie,
-- usuniemy niespójność między kartami/newsami a banerami/tickerem/stories,
-- ograniczymy ryzyko nawrotu starego problemu w nowych komponentach.
+## 2. Walidacja po stronie serwera (krytyczne)
+
+Po wygenerowaniu treści, przed zapisem, w `extract-article` przeparsować wszystkie `<a href="/blink/SLUG">TEXT</a>`:
+
+- Jeśli `SLUG` nie istnieje na liście `relatedPosts` → usunąć cały tag `<a>` (zostawić sam tekst lub usunąć całe `<li>`).
+- Jeśli `SLUG` istnieje, ale `TEXT` nie zawiera żadnego znaczącego słowa (≥4 znaki) z `relatedPosts[slug].title` → usunąć link (mismatch).
+- Jeśli po czyszczeniu sekcja `<ul>` jest pusta → usunąć całą sekcję "Przeczytaj również".
+
+To gwarantuje, że nawet jeśli AI dalej halucynuje, błędne linki nigdy nie trafią do bazy.
+
+## 3. Jednorazowy fix istniejących artykułów
+
+Stworzyć skrypt SQL/edge function `fix-internal-links` (uruchamiany ręcznie z admina), który:
+- Pobiera wszystkie posty z `content` zawierającym `href="/blink/`.
+- Dla każdego linku sprawdza, czy slug istnieje w `posts` i czy anchor text pasuje do `posts.title` (heurystyka: wspólne słowa kluczowe ≥2).
+- Mismatch → usuwa `<a>` (zostawia goły tekst) i loguje do tabeli/konsoli.
+- Update kolumny `content`.
+
+Alternatywa minimalna: ręczny UPDATE SQL tylko dla zgłoszonego artykułu — szybkie, ale nie rozwiązuje pozostałych potencjalnie zepsutych linków.
+
+# Szczegóły techniczne
+
+Walidacja w TS (uproszczona):
+
+```ts
+const allowed = new Map(relatedPosts.map(p => [p.slug, p.title]));
+content = content.replace(
+  /<a\s+href="\/blink\/([^"]+)"[^>]*>([\s\S]*?)<\/a>/g,
+  (full, slug, text) => {
+    if (!allowed.has(slug)) return text; // unknown slug -> strip link
+    const title = allowed.get(slug)!.toLowerCase();
+    const words = text.toLowerCase().match(/\p{L}{4,}/gu) || [];
+    const match = words.filter(w => title.includes(w)).length;
+    return match >= 1 ? full : text; // mismatch -> strip link
+  }
+);
+// then remove empty <ul></ul> and orphan "Przeczytaj również" header
+```
+
+# Pliki do zmiany
+
+- `supabase/functions/extract-article/index.ts` — wzmocniony prompt + walidacja linków przed zapisem.
+- (Opcjonalnie) `supabase/functions/fix-internal-links/index.ts` — nowa funkcja do jednorazowego sprzątania bazy + przycisk w `src/pages/admin/Settings.tsx` lub `PostsList.tsx`.
+
+# Pytanie do decyzji
+
+Czy chcesz pełny pakiet (1+2+3 z masowym fixem istniejących artykułów), czy minimum (1+2 — naprawa na przyszłość + ręczny UPDATE tego jednego artykułu)?
