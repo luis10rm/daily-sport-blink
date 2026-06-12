@@ -511,6 +511,7 @@ FORMATOWANIE (OBOWIĄZKOWE):
 
     // Step 1.5: Fetch related posts from the same category for internal linking
     let relatedContext = "";
+    let relatedPosts: Array<{ title: string; slug: string }> = [];
     try {
       // First, get category ID from slug
       const { data: categoryData } = await supabase
@@ -520,14 +521,15 @@ FORMATOWANIE (OBOWIĄZKOWE):
         .single();
 
       if (categoryData?.id) {
-        const { data: relatedPosts } = await supabase
+        const { data: fetched } = await supabase
           .from("posts")
           .select("title, slug")
           .eq("category_id", categoryData.id)
           .order("published_at", { ascending: false })
           .limit(10);
 
-        if (relatedPosts && relatedPosts.length > 0) {
+        if (fetched && fetched.length > 0) {
+          relatedPosts = fetched;
           relatedContext = relatedPosts
             .map((p) => `- "${p.title}" → /blink/${p.slug}`)
             .join("\n");
