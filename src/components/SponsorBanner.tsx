@@ -111,7 +111,7 @@ export const SponsorBanner = ({
             <>
               <span className="text-xs text-muted-foreground/40">·</span>
               <button
-                onClick={handleClick}
+                onClick={handleClick} onTouchEnd={handleTouchEnd}
                 type="button"
                 className="text-xs font-semibold text-primary hover:underline underline-offset-2 transition-colors"
               >
@@ -144,7 +144,7 @@ export const SponsorBanner = ({
         {/* Borderless banner - no bg, no frame */}
         <div
           ref={bannerRef}
-          onClick={handleClick}
+          onClick={handleClick} onTouchEnd={handleTouchEnd}
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
@@ -224,7 +224,7 @@ export const SponsorBanner = ({
           {/* Banner image slot - fixed dimensions */}
           {/* Using div with onClick instead of <a href> to bypass AdBlock */}
           <div
-            onClick={handleClick}
+            onClick={handleClick} onTouchEnd={handleTouchEnd}
             onKeyDown={handleKeyDown}
             role="link"
             tabIndex={0}
@@ -308,7 +308,7 @@ export const SponsorBanner = ({
           {ctaText && (
             <div className="bg-muted/50 px-4 py-3 border-t border-border">
               <button
-                onClick={handleClick}
+                onClick={handleClick} onTouchEnd={handleTouchEnd}
                 type="button"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
               >
@@ -336,7 +336,7 @@ export const SponsorBanner = ({
 
         {/* Desktop slot: 970x250 */}
         <div
-          onClick={handleClick}
+          onClick={handleClick} onTouchEnd={handleTouchEnd}
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
@@ -366,7 +366,7 @@ export const SponsorBanner = ({
 
         {/* Mobile slot: 300x250 */}
         <div
-          onClick={handleClick}
+          onClick={handleClick} onTouchEnd={handleTouchEnd}
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
@@ -398,7 +398,7 @@ export const SponsorBanner = ({
         {ctaText && (
           <div className="bg-muted/50 px-4 py-3 border-t border-border">
             <button
-              onClick={handleClick}
+              onClick={handleClick} onTouchEnd={handleTouchEnd}
               type="button"
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
             >
