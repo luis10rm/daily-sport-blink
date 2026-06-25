@@ -138,12 +138,7 @@ export const MatchTicker = () => {
           </span>
           <TeamLabel team={match.awayTeam} />
           {showCountdown && (
-            <span className="ml-1 hidden xs:inline rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] md:text-xs font-semibold text-amber-700 dark:text-amber-300 tabular-nums whitespace-nowrap shrink-0">
-              {formatCountdown(countdownMs)}
-            </span>
-          )}
-          {showCountdown && (
-            <span className="ml-1 xs:hidden text-[10px] font-semibold text-amber-700 dark:text-amber-300 tabular-nums whitespace-nowrap shrink-0">
+            <span className="ml-1 rounded-full bg-amber-500/15 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] md:text-xs font-semibold text-amber-700 dark:text-amber-300 tabular-nums whitespace-nowrap shrink-0">
               {formatCountdown(countdownMs)}
             </span>
           )}
