@@ -147,6 +147,7 @@ export const MatchTicker = () => {
               {formatCountdown(countdownMs)}
             </span>
           )}
+          {live && match.minute != null && (
             <span className="hidden sm:inline text-red-500 font-semibold tabular-nums">
               {match.minute}'
             </span>
