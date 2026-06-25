@@ -87,9 +87,10 @@ export const MatchTicker = () => {
   const navigate = useNavigate();
   const { isWorldCup } = useTournamentMode();
   const { data } = useWorldCupMatches();
+  const match = pickMatch(data?.data?.matches || []);
+  const countdownMs = useCountdown(match?.utcDate);
 
   if (!isWorldCup) return null;
-  const match = pickMatch(data?.data?.matches || []);
   if (!match) return null;
 
   const live = ["IN_PLAY", "PAUSED"].includes(match.status);
@@ -99,8 +100,10 @@ export const MatchTicker = () => {
   const scoreH = ft?.home ?? ht?.home ?? (live ? 0 : null);
   const scoreA = ft?.away ?? ht?.away ?? (live ? 0 : null);
   const hasScore = scoreH !== null && scoreA !== null && scoreH !== undefined && scoreA !== undefined;
+  const showCountdown = !live && !finished && !hasScore;
 
   const go = () => navigate("/mistrzostwa-swiata-2026");
+
 
   return (
     <a
