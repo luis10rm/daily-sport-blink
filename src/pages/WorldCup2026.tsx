@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { WorldCupHero } from "@/components/worldcup/WorldCupHero";
+import { NextMatchCountdown } from "@/components/worldcup/NextMatchCountdown";
 import { WorldCupMatchesWidget } from "@/components/worldcup/WorldCupMatchesWidget";
 import { WorldCupStandings } from "@/components/worldcup/WorldCupStandings";
 import { WorldCupTopScorers } from "@/components/worldcup/WorldCupTopScorers";
