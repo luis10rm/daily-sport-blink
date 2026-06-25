@@ -56,6 +56,8 @@ const WorldCup2026 = () => {
       <PatronBar />
       <main id="main-content" className="container py-6 md:py-10">
         <WorldCupHero />
+        <NextMatchCountdown />
+        <div id="terminarz" />
         <WorldCupMatchesWidget />
         <WorldCupStandings />
         <WorldCupTopScorers />
