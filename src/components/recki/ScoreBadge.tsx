@@ -8,7 +8,7 @@ interface Props {
 
 const colorFor = (s: number) => {
   if (s >= 8.5) return "from-emerald-500 to-emerald-600";
-  if (s >= 7) return "from-purple-500 to-fuchsia-500";
+  if (s >= 7) return "from-fuchsia-600 to-pink-600";
   if (s >= 5) return "from-amber-500 to-orange-500";
   return "from-rose-500 to-rose-600";
 };
