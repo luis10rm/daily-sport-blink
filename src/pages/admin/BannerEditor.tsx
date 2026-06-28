@@ -57,9 +57,13 @@ import {
 import { SponsorBanner } from "@/components/SponsorBanner";
 
 const positions: { value: BannerPosition; label: string }[] = [
-  { value: "home_top", label: "Góra strony głównej" },
-  { value: "home_middle", label: "Środek strony głównej" },
-  { value: "home_bottom", label: "Dół strony głównej" },
+  { value: "home_top", label: "Sport · Góra strony głównej" },
+  { value: "home_middle", label: "Sport · Środek strony głównej" },
+  { value: "home_bottom", label: "Sport · Dół strony głównej" },
+  { value: "recki_home_top", label: "Recki · Góra strony głównej" },
+  { value: "recki_home_middle", label: "Recki · Środek strony głównej" },
+  { value: "recki_home_bottom", label: "Recki · Dół strony głównej" },
+  { value: "recki_inline", label: "Recki · W treści recenzji" },
 ];
 
 const targetDevices: { value: BannerTargetDevice; label: string; description: string }[] = [
