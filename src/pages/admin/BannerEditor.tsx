@@ -91,7 +91,7 @@ const bannerSchema = z.object({
     .or(z.literal("")),
   image_desktop_url: z.string().optional().or(z.literal("")),
   image_mobile_url: z.string().optional().or(z.literal("")),
-  position: z.enum(["home_top", "home_middle", "home_bottom"]),
+  position: z.enum(["home_top", "home_middle", "home_bottom", "recki_home_top", "recki_home_middle", "recki_home_bottom", "recki_inline"]),
   target_device: z.enum(["all", "desktop", "mobile"]),
   is_active: z.boolean(),
   start_date: z.date().optional().nullable(),
