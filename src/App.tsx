@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { WallpaperProvider } from "@/contexts/WallpaperContext";
@@ -51,6 +51,15 @@ import { TournamentMascot } from "@/components/TournamentMascot";
 
 const queryClient = new QueryClient();
 
+const RedirectReckiCategory = () => {
+  const { slug } = useParams();
+  return <Navigate to={`/tech/kategoria/${slug ?? ""}`} replace />;
+};
+const RedirectReckiReview = () => {
+  const { category, slug } = useParams();
+  return <Navigate to={`/tech/${category ?? "wszystkie"}/${slug ?? ""}`} replace />;
+};
+
 function App() {
   return (
   <QueryClientProvider client={queryClient}>
@@ -74,9 +83,13 @@ function App() {
               <Route path="/blink/:slug" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
               <Route path="/mistrzostwa-swiata-2026" element={<WorldCup2026 />} />
-              <Route path="/recki" element={<ReckiHome />} />
-              <Route path="/recki/kategoria/:slug" element={<ReckiHome />} />
-              <Route path="/recki/:category/:slug" element={<ReckiReview />} />
+              <Route path="/tech" element={<ReckiHome />} />
+              <Route path="/tech/kategoria/:slug" element={<ReckiHome />} />
+              <Route path="/tech/:category/:slug" element={<ReckiReview />} />
+              {/* 301-style redirects: /recki/* → /tech/* */}
+              <Route path="/recki" element={<Navigate to="/tech" replace />} />
+              <Route path="/recki/kategoria/:slug" element={<RedirectReckiCategory />} />
+              <Route path="/recki/:category/:slug" element={<RedirectReckiReview />} />
               <Route path="/kategoria/:slug" element={<CategoryPage />} />
               <Route path="/tagi" element={<TagsListPage />} />
               <Route path="/tag/:slug" element={<TagPage />} />

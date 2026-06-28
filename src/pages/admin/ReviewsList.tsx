@@ -47,12 +47,12 @@ const ReviewsList = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold font-heading">Recki</h1>
-            <p className="text-muted-foreground">Recenzje technologii — osobny dział</p>
+            <h1 className="text-3xl font-bold font-heading">Tech</h1>
+            <p className="text-muted-foreground">Recenzje i newsy technologiczne</p>
           </div>
           <Link to="/admin/recki/new">
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Nowa recenzja
+              <Plus className="mr-2 h-4 w-4" /> Nowy wpis
             </Button>
           </Link>
         </div>
@@ -79,6 +79,7 @@ const ReviewsList = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Tytuł</TableHead>
+                  <TableHead>Typ</TableHead>
                   <TableHead>Kategoria</TableHead>
                   <TableHead>Ocena</TableHead>
                   <TableHead>Status</TableHead>
@@ -89,8 +90,8 @@ const ReviewsList = () => {
               <TableBody>
                 {filtered?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                      Brak recenzji
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      Brak wpisów
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -103,6 +104,11 @@ const ReviewsList = () => {
                             {[r.product_brand, r.product_name].filter(Boolean).join(" · ")}
                           </div>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={r.content_type === "news" ? "outline" : "secondary"}>
+                          {r.content_type === "news" ? "News" : "Recenzja"}
+                        </Badge>
                       </TableCell>
                       <TableCell>{r.category?.name ?? "—"}</TableCell>
                       <TableCell>
@@ -131,7 +137,7 @@ const ReviewsList = () => {
                             title="Otwórz publicznie"
                           >
                             <a
-                              href={`/recki/${r.category?.slug ?? "wszystkie"}/${r.slug}`}
+                              href={`/tech/${r.category?.slug ?? "wszystkie"}/${r.slug}`}
                               target="_blank"
                               rel="noopener noreferrer"
                             >
