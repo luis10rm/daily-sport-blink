@@ -299,29 +299,31 @@ const ReviewEditor = () => {
                 onChange={(e) => set("excerpt", e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3">
-              <div>
-                <Label>Werdykt</Label>
-                <Textarea
-                  rows={3}
-                  value={form.verdict ?? ""}
-                  onChange={(e) => set("verdict", e.target.value)}
-                />
+            {isReview && (
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3">
+                <div>
+                  <Label>Werdykt</Label>
+                  <Textarea
+                    rows={3}
+                    value={form.verdict ?? ""}
+                    onChange={(e) => set("verdict", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Ocena 0–10</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.1}
+                    value={form.score ?? ""}
+                    onChange={(e) =>
+                      set("score", e.target.value === "" ? null : Number(e.target.value))
+                    }
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Ocena 0–10</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={10}
-                  step={0.1}
-                  value={form.score ?? ""}
-                  onChange={(e) =>
-                    set("score", e.target.value === "" ? null : Number(e.target.value))
-                  }
-                />
-              </div>
-            </div>
+            )}
             <div>
               <Label>URL źródła (opcjonalnie)</Label>
               <Input value={form.source_url ?? ""} onChange={(e) => set("source_url", e.target.value)} />
@@ -391,6 +393,7 @@ const ReviewEditor = () => {
         </Card>
 
         {/* Pros / Cons */}
+        {isReview && (
         <Card>
           <CardHeader>
             <CardTitle>Plusy i minusy</CardTitle>
