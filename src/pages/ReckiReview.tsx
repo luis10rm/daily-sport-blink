@@ -19,6 +19,9 @@ const ReckiReview = () => {
   const isMobile = useIsMobile();
   const device = isMobile ? "mobile" : "desktop";
   const { data: inlineBanner } = useActiveBannerForDevice("recki_inline" as any, device);
+  const { data: articleTopBanner } = useActiveBannerForDevice("recki_article_top" as any, device);
+  const { data: articleBottomBanner } = useActiveBannerForDevice("recki_article_bottom" as any, device);
+  const { data: stickyMobileBanner } = useActiveBannerForDevice("recki_sticky_mobile" as any, "mobile");
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
