@@ -231,6 +231,21 @@ const ReviewEditor = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
+              <Label>Typ wpisu</Label>
+              <Select
+                value={form.content_type ?? "review"}
+                onValueChange={(v) => set("content_type", v as "review" | "news")}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="review">Recenzja (z oceną, plusami i minusami)</SelectItem>
+                  <SelectItem value="news">News / artykuł (bez oceny)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>Tytuł</Label>
               <Input value={form.title ?? ""} onChange={(e) => set("title", e.target.value)} />
             </div>
@@ -264,16 +279,18 @@ const ReviewEditor = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label>Marka</Label>
-                <Input value={form.product_brand ?? ""} onChange={(e) => set("product_brand", e.target.value)} />
+            {isReview && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Marka</Label>
+                  <Input value={form.product_brand ?? ""} onChange={(e) => set("product_brand", e.target.value)} />
+                </div>
+                <div>
+                  <Label>Nazwa produktu</Label>
+                  <Input value={form.product_name ?? ""} onChange={(e) => set("product_name", e.target.value)} />
+                </div>
               </div>
-              <div>
-                <Label>Nazwa produktu</Label>
-                <Input value={form.product_name ?? ""} onChange={(e) => set("product_name", e.target.value)} />
-              </div>
-            </div>
+            )}
             <div>
               <Label>Krótki opis (excerpt)</Label>
               <Textarea
