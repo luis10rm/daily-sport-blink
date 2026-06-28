@@ -82,7 +82,7 @@ const ReckiReview = () => {
 
           <header className="mb-6">
             {review.category && (
-              <span className="inline-block rounded-full bg-purple-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-purple-700 dark:text-purple-300">
+              <span className="inline-block rounded-full bg-fuchsia-600/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-fuchsia-700 dark:text-fuchsia-300">
                 {review.category.name}
               </span>
             )}
@@ -108,7 +108,7 @@ const ReckiReview = () => {
                 </div>
               )}
               <div className="flex-1">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-purple-600 dark:text-purple-300">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-fuchsia-600 dark:text-fuchsia-300">
                   Werdykt
                 </h2>
                 <p className="mt-1 leading-relaxed text-foreground">

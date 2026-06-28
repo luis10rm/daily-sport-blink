@@ -25,7 +25,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
               loading="lazy"
             />
           ) : (
-            <div className="h-full w-full bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20" />
+            <div className="h-full w-full bg-gradient-to-br from-fuchsia-600/20 to-pink-600/20" />
           )}
           {review.score !== null && (
             <div className="absolute right-4 top-4">
@@ -34,7 +34,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-5">
             {review.category && (
-              <span className="inline-block rounded-full bg-purple-500/90 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+              <span className="inline-block rounded-full bg-fuchsia-600/90 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
                 {review.category.name}
               </span>
             )}
@@ -88,7 +88,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
             loading="lazy"
           />
         ) : (
-          <div className="h-full w-full bg-gradient-to-br from-purple-500/20 to-fuchsia-500/20" />
+          <div className="h-full w-full bg-gradient-to-br from-fuchsia-600/20 to-pink-600/20" />
         )}
         {review.score !== null && (
           <div className="absolute right-3 top-3">
@@ -98,7 +98,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
       </div>
       <div className="p-4">
         {review.category && (
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-300">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-fuchsia-600 dark:text-fuchsia-300">
             {review.category.name}
           </span>
         )}

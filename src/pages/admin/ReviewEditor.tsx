@@ -102,16 +102,30 @@ const ReviewEditor = () => {
   };
 
   const generateAI = async () => {
-    if (!aiPrompt.trim()) {
-      toast.error('Podaj produkt do recenzji (np. „iPhone 16 Pro Max")');
+    if (!aiPrompt.trim() && !form.source_url) {
+      toast.error("Podaj produkt lub URL źródła");
       return;
     }
     setAiLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-review", {
-        body: { product: aiPrompt, category: categories.find((c) => c.id === form.category_id)?.name },
+        body: {
+          product: aiPrompt || form.product_name || form.title,
+          category: categories.find((c) => c.id === form.category_id)?.name,
+          source_url: form.source_url || undefined,
+        },
       });
       if (error) throw error;
+      const suggested: string[] = Array.isArray(data.gallery_suggestions) ? data.gallery_suggestions : [];
+      const existingGallery = form.gallery ?? [];
+      const existingCover = form.cover_image_url;
+      // Only auto-fill images if user hasn't provided own
+      const mergedGallery = existingGallery.length > 0
+        ? existingGallery
+        : suggested.slice(0, 8);
+      const nextCover = existingCover && existingCover.trim()
+        ? existingCover
+        : suggested[0] ?? existingCover;
       setForm((f) => ({
         ...f,
         title: data.title ?? f.title,
@@ -124,16 +138,22 @@ const ReviewEditor = () => {
         cons: data.cons ?? f.cons,
         product_name: data.product_name ?? f.product_name,
         product_brand: data.product_brand ?? f.product_brand,
+        cover_image_url: nextCover,
+        gallery: mergedGallery,
         is_ai_generated: true,
       }));
       setSlugTouched(true);
-      toast.success("Wygenerowano treść AI — edytuj i opublikuj");
+      const imgInfo = suggested.length
+        ? ` (+${existingGallery.length ? 0 : Math.min(suggested.length, 8)} obrazków ze źródła)`
+        : "";
+      toast.success(`Wygenerowano treść AI${imgInfo} — edytuj i opublikuj`);
     } catch (e: any) {
       toast.error(e.message ?? "Błąd generowania");
     } finally {
       setAiLoading(false);
     }
   };
+
 
   const uploadGalleryImage = async (file: File) => {
     const ext = file.name.split(".").pop() || "jpg";
@@ -168,26 +188,38 @@ const ReviewEditor = () => {
         <h1 className="text-3xl font-bold">{isNew ? "Nowa recenzja" : "Edycja recenzji"}</h1>
 
         {/* AI generator */}
-        <Card className="border-purple-500/30">
+        <Card className="border-fuchsia-600/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-purple-500" /> Generator AI
+              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Input
-              placeholder="np. iPhone 16 Pro Max — codzienne użytkowanie"
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-            />
+            <div>
+              <Label className="text-xs text-muted-foreground">Produkt</Label>
+              <Input
+                placeholder="np. iPhone 16 Pro Max — codzienne użytkowanie"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">URL źródła (opcjonalnie)</Label>
+              <Input
+                placeholder="https://… — AI przeczyta artykuł i pobierze obrazki"
+                value={form.source_url ?? ""}
+                onChange={(e) => set("source_url", e.target.value)}
+              />
+            </div>
             <Button onClick={generateAI} disabled={aiLoading}>
               {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Wygeneruj recenzję
             </Button>
             <p className="text-xs text-muted-foreground">
-              AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść HTML. Zawsze weryfikuj przed publikacją.
+              AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne).
             </p>
           </CardContent>
+
         </Card>
 
         {/* Basic info */}
