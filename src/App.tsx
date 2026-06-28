@@ -74,6 +74,9 @@ function App() {
               <Route path="/blink/:slug" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
               <Route path="/mistrzostwa-swiata-2026" element={<WorldCup2026 />} />
+              <Route path="/recki" element={<ReckiHome />} />
+              <Route path="/recki/kategoria/:slug" element={<ReckiHome />} />
+              <Route path="/recki/:category/:slug" element={<ReckiReview />} />
               <Route path="/kategoria/:slug" element={<CategoryPage />} />
               <Route path="/tagi" element={<TagsListPage />} />
               <Route path="/tag/:slug" element={<TagPage />} />
