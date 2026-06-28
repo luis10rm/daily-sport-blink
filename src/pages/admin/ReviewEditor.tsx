@@ -103,7 +103,7 @@ const ReviewEditor = () => {
 
   const generateAI = async () => {
     if (!aiPrompt.trim()) {
-      toast.error("Podaj produkt do recenzji (np. „iPhone 16 Pro Max")");
+      toast.error('Podaj produkt do recenzji (np. „iPhone 16 Pro Max")');
       return;
     }
     setAiLoading(true);
