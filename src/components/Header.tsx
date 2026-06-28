@@ -87,6 +87,7 @@ export const Header = () => {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Autorzy</span>
           </Link>
+          <ModeSwitcher />
           <ThemeToggle />
         </nav>
       </div>
