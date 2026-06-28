@@ -260,8 +260,29 @@ const ReckiReview = () => {
               </div>
             </section>
           )}
+
+          {renderBanner(articleBottomBanner, "mt-10")}
         </article>
       </main>
+
+      {/* Sticky mobile banner */}
+      {stickyMobileBanner && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur sm:hidden">
+          <div className="container py-2">
+            <SponsorBanner
+              bannerId={stickyMobileBanner.id}
+              title={stickyMobileBanner.title}
+              description={stickyMobileBanner.description ?? undefined}
+              ctaText={stickyMobileBanner.cta_text}
+              ctaUrl={stickyMobileBanner.click_tag}
+              imageDesktopUrl={stickyMobileBanner.image_desktop_url ?? undefined}
+              imageMobileUrl={stickyMobileBanner.image_mobile_url ?? undefined}
+              impressionTag={stickyMobileBanner.impression_tag ?? undefined}
+            />
+          </div>
+        </div>
+      )}
+
 
       {/* Lightbox */}
       {lightboxIdx !== null && gallery[lightboxIdx] && (
