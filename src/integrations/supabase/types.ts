@@ -875,6 +875,9 @@ export type Database = {
         | "recki_home_middle"
         | "recki_home_bottom"
         | "recki_inline"
+        | "recki_article_top"
+        | "recki_article_bottom"
+        | "recki_sticky_mobile"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1011,6 +1014,9 @@ export const Constants = {
         "recki_home_middle",
         "recki_home_bottom",
         "recki_inline",
+        "recki_article_top",
+        "recki_article_bottom",
+        "recki_sticky_mobile",
       ],
     },
   },
