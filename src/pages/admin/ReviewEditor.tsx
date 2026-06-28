@@ -409,7 +409,7 @@ const ReviewEditor = () => {
           </CardHeader>
           <CardContent>
             <RichTextEditor
-              value={form.content ?? ""}
+              content={form.content ?? ""}
               onChange={(v) => set("content", v)}
             />
           </CardContent>
