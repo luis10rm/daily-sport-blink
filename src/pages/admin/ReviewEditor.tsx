@@ -194,14 +194,16 @@ const ReviewEditor = () => {
         <Card className="border-fuchsia-600/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI
+              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI — {isReview ? "Recenzja" : "News"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground">Produkt</Label>
+              <Label className="text-xs text-muted-foreground">{isReview ? "Produkt" : "Temat newsa"}</Label>
               <Input
-                placeholder="np. iPhone 16 Pro Max — codzienne użytkowanie"
+                placeholder={isReview
+                  ? "np. iPhone 16 Pro Max — codzienne użytkowanie"
+                  : "np. Apple ogłasza iOS 19 z nowym AI"}
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
               />
@@ -216,10 +218,12 @@ const ReviewEditor = () => {
             </div>
             <Button onClick={generateAI} disabled={aiLoading}>
               {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Wygeneruj recenzję
+              {isReview ? "Wygeneruj recenzję" : "Wygeneruj news"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne).
+              {isReview
+                ? "AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne)."
+                : "AI napisze krótki, rzeczowy news (400–800 słów) bez oceny i plusów/minusów. Najpierw wybierz typ wpisu poniżej, by przełączyć tryb."}
             </p>
           </CardContent>
 
