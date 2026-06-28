@@ -115,6 +115,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/admin/recki" element={<ProtectedRoute><ReviewsList /></ProtectedRoute>} />
+            <Route path="/admin/recki/new" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
+            <Route path="/admin/recki/:id/edit" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
             <Route
               path="/admin/banners"
               element={
