@@ -9,7 +9,10 @@ export type BannerPosition =
   | "recki_home_top"
   | "recki_home_middle"
   | "recki_home_bottom"
-  | "recki_inline";
+  | "recki_inline"
+  | "recki_article_top"
+  | "recki_article_bottom"
+  | "recki_sticky_mobile";
 export type BannerTargetDevice = "all" | "desktop" | "mobile";
 
 export interface Banner {

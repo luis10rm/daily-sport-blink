@@ -19,6 +19,9 @@ const ReckiReview = () => {
   const isMobile = useIsMobile();
   const device = isMobile ? "mobile" : "desktop";
   const { data: inlineBanner } = useActiveBannerForDevice("recki_inline" as any, device);
+  const { data: articleTopBanner } = useActiveBannerForDevice("recki_article_top" as any, device);
+  const { data: articleBottomBanner } = useActiveBannerForDevice("recki_article_bottom" as any, device);
+  const { data: stickyMobileBanner } = useActiveBannerForDevice("recki_sticky_mobile" as any, "mobile");
 
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
 
@@ -63,6 +66,22 @@ const ReckiReview = () => {
 
   const gallery = review.gallery ?? [];
 
+  const renderBanner = (b: any, className = "my-8") =>
+    b ? (
+      <div className={className}>
+        <SponsorBanner
+          bannerId={b.id}
+          title={b.title}
+          description={b.description ?? undefined}
+          ctaText={b.cta_text}
+          ctaUrl={b.click_tag}
+          imageDesktopUrl={b.image_desktop_url ?? undefined}
+          imageMobileUrl={b.image_mobile_url ?? undefined}
+          impressionTag={b.impression_tag ?? undefined}
+        />
+      </div>
+    ) : null;
+
   return (
     <div className="min-h-screen flex flex-col">
       <ReckiHeader />
@@ -79,6 +98,9 @@ const ReckiReview = () => {
               </>
             )}
           </nav>
+
+          {renderBanner(articleTopBanner, "mb-6")}
+
 
           <header className="mb-6">
             {review.category && (
@@ -238,8 +260,29 @@ const ReckiReview = () => {
               </div>
             </section>
           )}
+
+          {renderBanner(articleBottomBanner, "mt-10")}
         </article>
       </main>
+
+      {/* Sticky mobile banner */}
+      {stickyMobileBanner && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95 backdrop-blur sm:hidden">
+          <div className="container py-2">
+            <SponsorBanner
+              bannerId={stickyMobileBanner.id}
+              title={stickyMobileBanner.title}
+              description={stickyMobileBanner.description ?? undefined}
+              ctaText={stickyMobileBanner.cta_text}
+              ctaUrl={stickyMobileBanner.click_tag}
+              imageDesktopUrl={stickyMobileBanner.image_desktop_url ?? undefined}
+              imageMobileUrl={stickyMobileBanner.image_mobile_url ?? undefined}
+              impressionTag={stickyMobileBanner.impression_tag ?? undefined}
+            />
+          </div>
+        </div>
+      )}
+
 
       {/* Lightbox */}
       {lightboxIdx !== null && gallery[lightboxIdx] && (

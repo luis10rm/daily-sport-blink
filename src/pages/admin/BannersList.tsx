@@ -43,6 +43,9 @@ const positionLabels: Record<BannerPosition, string> = {
   recki_home_middle: "Recki · Środek",
   recki_home_bottom: "Recki · Dół",
   recki_inline: "Recki · W treści",
+  recki_article_top: "Recki · Nad artykułem",
+  recki_article_bottom: "Recki · Pod artykułem",
+  recki_sticky_mobile: "Recki · Mobile sticky",
 };
 
 const BannersList = () => {
