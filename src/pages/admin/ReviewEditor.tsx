@@ -60,7 +60,9 @@ const ReviewEditor = () => {
     status: "draft",
     source_url: "",
     is_ai_generated: false,
+    content_type: "review",
   });
+  const isReview = (form.content_type ?? "review") === "review";
   const [slugTouched, setSlugTouched] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
