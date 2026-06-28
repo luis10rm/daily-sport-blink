@@ -105,14 +105,16 @@ const ReviewEditor = () => {
 
   const generateAI = async () => {
     if (!aiPrompt.trim() && !form.source_url) {
-      toast.error("Podaj produkt lub URL źródła");
+      toast.error(isReview ? "Podaj produkt lub URL źródła" : "Podaj temat newsa lub URL źródła");
       return;
     }
     setAiLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-review", {
         body: {
-          product: aiPrompt || form.product_name || form.title,
+          content_type: form.content_type ?? "review",
+          product: isReview ? (aiPrompt || form.product_name || form.title) : undefined,
+          topic: !isReview ? (aiPrompt || form.title) : undefined,
           category: categories.find((c) => c.id === form.category_id)?.name,
           source_url: form.source_url || undefined,
         },
@@ -121,7 +123,6 @@ const ReviewEditor = () => {
       const suggested: string[] = Array.isArray(data.gallery_suggestions) ? data.gallery_suggestions : [];
       const existingGallery = form.gallery ?? [];
       const existingCover = form.cover_image_url;
-      // Only auto-fill images if user hasn't provided own
       const mergedGallery = existingGallery.length > 0
         ? existingGallery
         : suggested.slice(0, 8);
@@ -134,12 +135,12 @@ const ReviewEditor = () => {
         slug: f.slug || slugify(data.title ?? ""),
         excerpt: data.excerpt ?? f.excerpt,
         content: data.content ?? f.content,
-        verdict: data.verdict ?? f.verdict,
-        score: data.score ?? f.score,
-        pros: data.pros ?? f.pros,
-        cons: data.cons ?? f.cons,
-        product_name: data.product_name ?? f.product_name,
-        product_brand: data.product_brand ?? f.product_brand,
+        verdict: isReview ? (data.verdict ?? f.verdict) : f.verdict,
+        score: isReview ? (data.score ?? f.score) : f.score,
+        pros: isReview ? (data.pros ?? f.pros) : f.pros,
+        cons: isReview ? (data.cons ?? f.cons) : f.cons,
+        product_name: isReview ? (data.product_name ?? f.product_name) : f.product_name,
+        product_brand: isReview ? (data.product_brand ?? f.product_brand) : f.product_brand,
         cover_image_url: nextCover,
         gallery: mergedGallery,
         is_ai_generated: true,
@@ -148,7 +149,7 @@ const ReviewEditor = () => {
       const imgInfo = suggested.length
         ? ` (+${existingGallery.length ? 0 : Math.min(suggested.length, 8)} obrazków ze źródła)`
         : "";
-      toast.success(`Wygenerowano treść AI${imgInfo} — edytuj i opublikuj`);
+      toast.success(`Wygenerowano ${isReview ? "recenzję" : "news"} AI${imgInfo} — edytuj i opublikuj`);
     } catch (e: any) {
       toast.error(e.message ?? "Błąd generowania");
     } finally {
@@ -193,14 +194,16 @@ const ReviewEditor = () => {
         <Card className="border-fuchsia-600/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI
+              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI — {isReview ? "Recenzja" : "News"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground">Produkt</Label>
+              <Label className="text-xs text-muted-foreground">{isReview ? "Produkt" : "Temat newsa"}</Label>
               <Input
-                placeholder="np. iPhone 16 Pro Max — codzienne użytkowanie"
+                placeholder={isReview
+                  ? "np. iPhone 16 Pro Max — codzienne użytkowanie"
+                  : "np. Apple ogłasza iOS 19 z nowym AI"}
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
               />
@@ -215,10 +218,12 @@ const ReviewEditor = () => {
             </div>
             <Button onClick={generateAI} disabled={aiLoading}>
               {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              Wygeneruj recenzję
+              {isReview ? "Wygeneruj recenzję" : "Wygeneruj news"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne).
+              {isReview
+                ? "AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne)."
+                : "AI napisze krótki, rzeczowy news (400–800 słów) bez oceny i plusów/minusów. Najpierw wybierz typ wpisu poniżej, by przełączyć tryb."}
             </p>
           </CardContent>
 

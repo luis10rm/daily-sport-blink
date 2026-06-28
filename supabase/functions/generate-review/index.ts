@@ -29,7 +29,7 @@ async function authenticate(req: Request) {
   return { ok: true };
 }
 
-const SYSTEM_PROMPT = `Jesteś doświadczonym recenzentem technologii dla polskiego portalu "Szortsy Recki". Piszesz uczciwe, konkretne i rzeczowe recenzje produktów (sprzęt, gadżety, aplikacje, gry).
+const REVIEW_SYSTEM_PROMPT = `Jesteś doświadczonym recenzentem technologii dla polskiego portalu "Szortsy Tech". Piszesz uczciwe, konkretne i rzeczowe recenzje produktów (sprzęt, gadżety, aplikacje, gry).
 
 Zawsze zwracaj WYŁĄCZNIE poprawny JSON o strukturze:
 {
@@ -51,6 +51,23 @@ Reguły:
 - Nie używaj emoji w polu content.
 - Jeśli dostaniesz źródłowy artykuł, opieraj recenzję na faktach z niego; nie cytuj dosłownie.`;
 
+const NEWS_SYSTEM_PROMPT = `Jesteś dziennikarzem technologicznym polskiego portalu "Szortsy Tech". Piszesz krótkie, rzeczowe newsy o świecie technologii (premiery, aktualizacje, branża, AI, gadżety, software).
+
+Zawsze zwracaj WYŁĄCZNIE poprawny JSON o strukturze:
+{
+  "title": "Tytuł newsa (max 90 zn., konkretny, bez clickbaitu)",
+  "excerpt": "1-2 zdania streszczenia (max 220 zn.) — esencja newsa",
+  "content": "<p>HTML treści 400-800 słów. Używaj <h2>, <h3>, <p>, <ul>, <li>, <strong>. Struktura: Co się stało / Kontekst / Dlaczego to ważne / Co dalej. NIE używaj nagłówka 'Wprowadzenie'."
+}
+
+Reguły:
+- Pisz po polsku, neutralnie i faktograficznie — bez marketingu, bez hype'u.
+- Bez ocen, plusów, minusów, werdyktów — to news, nie recenzja.
+- Nie wymyślaj liczb ani dat. Jeśli źródło ich nie podaje, pomiń.
+- Jeśli dostaniesz źródłowy artykuł, opieraj się na faktach z niego; parafrazuj, nie cytuj dosłownie.
+- Nie używaj emoji.
+- NIE dodawaj pól score, pros, cons, verdict, product_brand, product_name — to news.`;
+
 // Extract <img src="..."> + markdown ![](url) — return absolute URLs only
 function extractImages(html: string, markdown: string, baseUrl?: string): string[] {
   const urls = new Set<string>();
@@ -65,7 +82,6 @@ function extractImages(html: string, markdown: string, baseUrl?: string): string
   while ((m = imgRe.exec(html))) push(m[1]);
   const mdRe = /!\[[^\]]*\]\(([^)\s]+)/g;
   while ((m = mdRe.exec(markdown))) push(m[1]);
-  // filter junk: tiny icons, svgs, data URIs, tracking pixels
   return [...urls].filter((u) => {
     const lower = u.toLowerCase();
     if (lower.endsWith(".svg")) return false;
@@ -107,9 +123,12 @@ serve(async (req) => {
     const auth = await authenticate(req);
     if (auth.error) return auth.error;
 
-    const { product, category, source_url } = await req.json();
-    if ((!product || typeof product !== "string") && !source_url) {
-      return new Response(JSON.stringify({ error: "Podaj 'product' lub 'source_url'" }), {
+    const body = await req.json();
+    const { product, topic, category, source_url } = body;
+    const content_type: "review" | "news" = body.content_type === "news" ? "news" : "review";
+    const subject = (topic ?? product ?? "").toString().trim();
+    if (!subject && !source_url) {
+      return new Response(JSON.stringify({ error: "Podaj temat/produkt lub 'source_url'" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -128,8 +147,14 @@ serve(async (req) => {
       scraped = await scrapeSource(source_url);
     }
 
+    const isNews = content_type === "news";
+    const systemPrompt = isNews ? NEWS_SYSTEM_PROMPT : REVIEW_SYSTEM_PROMPT;
+    const intro = isNews
+      ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
+      : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);
+
     const userPrompt = [
-      product ? `Napisz recenzję: ${product}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`,
+      intro,
       category ? `Kategoria: ${category}.` : "",
       scraped?.text ? `\n\n--- Artykuł źródłowy ---\n${scraped.text}\n--- koniec ---` : "",
     ].filter(Boolean).join(" ");
@@ -143,7 +168,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-pro",
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
         response_format: { type: "json_object" },
@@ -178,12 +203,22 @@ serve(async (req) => {
       throw new Error("AI zwróciło niepoprawny JSON");
     }
 
-    parsed.pros = Array.isArray(parsed.pros) ? parsed.pros : [];
-    parsed.cons = Array.isArray(parsed.cons) ? parsed.cons : [];
-    if (typeof parsed.score === "string") parsed.score = parseFloat(parsed.score);
-    if (typeof parsed.score === "number") parsed.score = Math.max(0, Math.min(10, parsed.score));
+    if (isNews) {
+      // Strip review-specific fields if AI accidentally returned them
+      parsed.score = null;
+      parsed.pros = [];
+      parsed.cons = [];
+      parsed.verdict = null;
+      parsed.product_brand = null;
+      parsed.product_name = null;
+    } else {
+      parsed.pros = Array.isArray(parsed.pros) ? parsed.pros : [];
+      parsed.cons = Array.isArray(parsed.cons) ? parsed.cons : [];
+      if (typeof parsed.score === "string") parsed.score = parseFloat(parsed.score);
+      if (typeof parsed.score === "number") parsed.score = Math.max(0, Math.min(10, parsed.score));
+    }
 
-    // Attach scraped images as suggestions (frontend decides whether to use them)
+    parsed.content_type = content_type;
     parsed.gallery_suggestions = scraped?.images ?? [];
 
     return new Response(JSON.stringify(parsed), {

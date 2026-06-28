@@ -1,34 +1,32 @@
-## Problem
-Na `/recki` widać murawę w pasach — to globalny background z `.tournament-worldcup` (ustawiony na `<html>` dla trybu MŚ). `.mode-recki` definiuje własne tło, ale tournament-worldcup ma silniejszą specyficzność dla `body` i wygrywa, więc gradient recków nigdy się nie pokazuje.
+## Cel
+Generator AI w `/admin/recki/*` ma działać dwutrybowo: inaczej dla **Recenzji** (z oceną, plusami/minusami, werdyktem, marką/produktem), inaczej dla **Newsa technologicznego** (czysty artykuł bez oceny).
 
-## Rozwiązanie
+## Zmiany
 
-### 1. Neutralizacja tła mundialowego na trybie recki
-W `src/index.css` dodać reguły, które na `.mode-recki` (nawet jeśli równocześnie jest `.tournament-worldcup`) wyłączają pasy murawy i ustawiają jednolite, minimalistyczne tło.
+### 1. Edge function `supabase/functions/generate-review/index.ts`
+- Dodać przyjmowanie pola `content_type: "review" | "news"` w body.
+- Rozdzielić system prompt na dwa warianty:
+  - **REVIEW_SYSTEM_PROMPT** (obecny prompt — produkt, ocena 1–10, plusy/minusy, werdykt, sekcje: Wprowadzenie/Wykonanie/Wydajność/Codzienne użytkowanie/Cena).
+  - **NEWS_SYSTEM_PROMPT** (nowy): krótszy JSON: `title`, `excerpt`, `content` (HTML 400–800 słów, sekcje: Co się stało / Kontekst / Dlaczego to ważne / Co dalej), bez pól `score`, `pros`, `cons`, `verdict`, `product_brand`, `product_name`. Styl: technologiczny news, neutralny, faktyczny, bez marketingu.
+- W obu trybach nadal scrapować `source_url` przez Firecrawl i zwracać `gallery_suggestions`.
+- Walidacja: dla `news` ignorować/zerować pola recenzyjne, dla `review` — bez zmian.
 
-### 2. Nowe tło — minimalistyczne, modernistyczne
-Inspiracja: OneTech / Linear / Vercel.
+### 2. `src/pages/admin/ReviewEditor.tsx`
+- W panelu Generatora AI:
+  - Zmienić nagłówek dynamicznie: "Wygeneruj recenzję" / "Wygeneruj news" zależnie od `form.content_type`.
+  - Zmienić placeholder pola pierwszego: dla `news` → "Temat newsa (np. Apple ogłasza iOS 19 z nowym AI)", label "Temat" zamiast "Produkt".
+  - Zmienić opis pod przyciskiem zależnie od trybu.
+- W wywołaniu `supabase.functions.invoke("generate-review", ...)`:
+  - przekazać `content_type: form.content_type ?? "review"`.
+  - klucz body przemianować na neutralne (np. `topic`) lub wysyłać oba (`product`, `topic`) — backend obsłuży.
+- W `setForm` po odpowiedzi:
+  - dla `news` nie nadpisywać `score/pros/cons/verdict/product_*` (zostawić puste).
 
-**Light mode:**
-- Baza: prawie biała (`hsl(300 20% 99%)`), bez gradientów radialnych pasujących do sportu.
-- Jedna delikatna mgła magenta w prawym górnym rogu (bardzo subtelna, ~5% opacity) — sygnatura brandu Recki, nie dekoracja.
-- `background-attachment: fixed`, brak pasów, brak powtórzeń.
+### 3. UX
+- Przełącznik typu wpisu (Recenzja/News) jest już w sekcji „Podstawowe". Generator AI czyta z `form.content_type`, więc kolejność: najpierw wybierz typ → potem generuj.
+- Toast informacyjny: "Wygenerowano recenzję AI" / "Wygenerowano news AI".
 
-**Dark mode:**
-- Baza: głęboki neutralny grafit z lekko magentowym podtonem (`hsl(290 15% 7%)`).
-- Jedna mgła magenta w rogu (~12% opacity).
-- Bez gradientów liniowych, bez tekstur.
-
-### 3. Header/Footer/Cards
-- Header recki: usunąć `bg-card/60` z gradientem murawowym pod spodem; ustawić `bg-background/80` z `backdrop-blur` żeby zlał się z nowym tłem.
-- Karty recenzji (`ReviewCard`) zostają na `bg-card` — kontrastują z prawie-białym tłem przez minimalny border, bez cieni.
-
-### 4. Pewność izolacji
-Dodać `html.mode-recki body { background-image: none !important; background-color: hsl(var(--background)); }` plus warstwa pseudo-element `::before` z mgłą magenta (`position: fixed; inset: 0; z-index: -1; pointer-events: none`). To gwarantuje, że tournament-worldcup i ewentualny stadium-night nie przebiją się przez tło recków.
-
-## Pliki do zmiany
-- `src/index.css` — sekcja `.mode-recki` (rewrite tła + override tournament).
-- `src/components/recki/ReckiHeader.tsx` — drobny tweak tła headera.
-
-## Wyłączone z zakresu
-Pasek PatronBar, banery, kolory primary/accent (zostają magenta/róż jak w poprzedniej iteracji).
+## Co zostaje bez zmian
+- Pobieranie obrazków z Firecrawl (działa identycznie w obu trybach).
+- Logika scalania galerii i okładki.
+- Schemat tabeli `reviews` (pole `content_type` już istnieje).
