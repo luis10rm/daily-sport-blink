@@ -469,6 +469,7 @@ export type Database = {
           category_id: string | null
           cons: string[]
           content: string | null
+          content_type: string
           cover_image_url: string | null
           created_at: string
           created_by: string | null
@@ -493,6 +494,7 @@ export type Database = {
           category_id?: string | null
           cons?: string[]
           content?: string | null
+          content_type?: string
           cover_image_url?: string | null
           created_at?: string
           created_by?: string | null
@@ -517,6 +519,7 @@ export type Database = {
           category_id?: string | null
           cons?: string[]
           content?: string | null
+          content_type?: string
           cover_image_url?: string | null
           created_at?: string
           created_by?: string | null

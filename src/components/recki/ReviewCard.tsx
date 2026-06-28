@@ -8,7 +8,7 @@ interface Props {
 }
 
 export const ReviewCard = ({ review, variant = "default" }: Props) => {
-  const to = `/recki/${review.category?.slug ?? "wszystkie"}/${review.slug}`;
+  const to = `/tech/${review.category?.slug ?? "wszystkie"}/${review.slug}`;
 
   if (variant === "hero") {
     return (

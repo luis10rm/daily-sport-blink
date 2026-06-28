@@ -60,7 +60,9 @@ const ReviewEditor = () => {
     status: "draft",
     source_url: "",
     is_ai_generated: false,
+    content_type: "review",
   });
+  const isReview = (form.content_type ?? "review") === "review";
   const [slugTouched, setSlugTouched] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -229,6 +231,21 @@ const ReviewEditor = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
+              <Label>Typ wpisu</Label>
+              <Select
+                value={form.content_type ?? "review"}
+                onValueChange={(v) => set("content_type", v as "review" | "news")}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="review">Recenzja (z oceną, plusami i minusami)</SelectItem>
+                  <SelectItem value="news">News / artykuł (bez oceny)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>Tytuł</Label>
               <Input value={form.title ?? ""} onChange={(e) => set("title", e.target.value)} />
             </div>
@@ -262,16 +279,18 @@ const ReviewEditor = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label>Marka</Label>
-                <Input value={form.product_brand ?? ""} onChange={(e) => set("product_brand", e.target.value)} />
+            {isReview && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Marka</Label>
+                  <Input value={form.product_brand ?? ""} onChange={(e) => set("product_brand", e.target.value)} />
+                </div>
+                <div>
+                  <Label>Nazwa produktu</Label>
+                  <Input value={form.product_name ?? ""} onChange={(e) => set("product_name", e.target.value)} />
+                </div>
               </div>
-              <div>
-                <Label>Nazwa produktu</Label>
-                <Input value={form.product_name ?? ""} onChange={(e) => set("product_name", e.target.value)} />
-              </div>
-            </div>
+            )}
             <div>
               <Label>Krótki opis (excerpt)</Label>
               <Textarea
@@ -280,29 +299,31 @@ const ReviewEditor = () => {
                 onChange={(e) => set("excerpt", e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3">
-              <div>
-                <Label>Werdykt</Label>
-                <Textarea
-                  rows={3}
-                  value={form.verdict ?? ""}
-                  onChange={(e) => set("verdict", e.target.value)}
-                />
+            {isReview && (
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3">
+                <div>
+                  <Label>Werdykt</Label>
+                  <Textarea
+                    rows={3}
+                    value={form.verdict ?? ""}
+                    onChange={(e) => set("verdict", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Ocena 0–10</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={10}
+                    step={0.1}
+                    value={form.score ?? ""}
+                    onChange={(e) =>
+                      set("score", e.target.value === "" ? null : Number(e.target.value))
+                    }
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Ocena 0–10</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={10}
-                  step={0.1}
-                  value={form.score ?? ""}
-                  onChange={(e) =>
-                    set("score", e.target.value === "" ? null : Number(e.target.value))
-                  }
-                />
-              </div>
-            </div>
+            )}
             <div>
               <Label>URL źródła (opcjonalnie)</Label>
               <Input value={form.source_url ?? ""} onChange={(e) => set("source_url", e.target.value)} />
@@ -372,6 +393,7 @@ const ReviewEditor = () => {
         </Card>
 
         {/* Pros / Cons */}
+        {isReview && (
         <Card>
           <CardHeader>
             <CardTitle>Plusy i minusy</CardTitle>
@@ -433,11 +455,12 @@ const ReviewEditor = () => {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Content */}
         <Card>
           <CardHeader>
-            <CardTitle>Treść recenzji (HTML)</CardTitle>
+            <CardTitle>Treść {isReview ? "recenzji" : "wpisu"} (HTML)</CardTitle>
           </CardHeader>
           <CardContent>
             <RichTextEditor

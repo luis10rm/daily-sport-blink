@@ -38,10 +38,10 @@ const ReckiHome = () => {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                  <span className="recki-gradient-text">Recki</span> — recenzje technologii
+                  <span className="recki-gradient-text">Tech</span> — technologie krótko i konkretnie
                 </h1>
                 <p className="mt-1 text-muted-foreground">
-                  Smartfony, audio, gaming i smart home. Krótko, konkretnie, z oceną.
+                  Recenzje, newsy i analizy: smartfony, audio, gaming, smart home, AI.
                 </p>
               </div>
             </div>
@@ -51,7 +51,7 @@ const ReckiHome = () => {
                 {categories.map((c) => (
                   <Link
                     key={c.id}
-                    to={`/recki/kategoria/${c.slug}`}
+                    to={`/tech/kategoria/${c.slug}`}
                     className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors"
                   >
                     {c.name}
@@ -86,7 +86,7 @@ const ReckiHome = () => {
 
           {!isLoading && reviews.length === 0 && (
             <div className="rounded-xl border border-dashed border-border p-10 text-center text-muted-foreground">
-              Jeszcze nie ma opublikowanych recenzji. Zajrzyj wkrótce!
+              Jeszcze nic nie opublikowaliśmy w Tech. Zajrzyj wkrótce!
             </div>
           )}
 
@@ -118,7 +118,7 @@ const ReckiHome = () => {
 
           {rest.length > 0 && (
             <section>
-              <h2 className="text-xl font-bold mb-4">Wszystkie recenzje</h2>
+              <h2 className="text-xl font-bold mb-4">Wszystko z Tech</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {rest.map((r) => (
                   <ReviewCard key={r.id} review={r} />
