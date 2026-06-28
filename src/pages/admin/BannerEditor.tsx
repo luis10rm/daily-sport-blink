@@ -64,6 +64,9 @@ const positions: { value: BannerPosition; label: string }[] = [
   { value: "recki_home_middle", label: "Recki · Środek strony głównej" },
   { value: "recki_home_bottom", label: "Recki · Dół strony głównej" },
   { value: "recki_inline", label: "Recki · W treści recenzji" },
+  { value: "recki_article_top", label: "Recki · Nad artykułem recenzji" },
+  { value: "recki_article_bottom", label: "Recki · Pod artykułem recenzji" },
+  { value: "recki_sticky_mobile", label: "Recki · Mobile sticky (dół ekranu)" },
 ];
 
 const targetDevices: { value: BannerTargetDevice; label: string; description: string }[] = [
@@ -91,7 +94,7 @@ const bannerSchema = z.object({
     .or(z.literal("")),
   image_desktop_url: z.string().optional().or(z.literal("")),
   image_mobile_url: z.string().optional().or(z.literal("")),
-  position: z.enum(["home_top", "home_middle", "home_bottom", "recki_home_top", "recki_home_middle", "recki_home_bottom", "recki_inline"]),
+  position: z.enum(["home_top", "home_middle", "home_bottom", "recki_home_top", "recki_home_middle", "recki_home_bottom", "recki_inline", "recki_article_top", "recki_article_bottom", "recki_sticky_mobile"]),
   target_device: z.enum(["all", "desktop", "mobile"]),
   is_active: z.boolean(),
   start_date: z.date().optional().nullable(),
