@@ -102,16 +102,30 @@ const ReviewEditor = () => {
   };
 
   const generateAI = async () => {
-    if (!aiPrompt.trim()) {
-      toast.error('Podaj produkt do recenzji (np. „iPhone 16 Pro Max")');
+    if (!aiPrompt.trim() && !form.source_url) {
+      toast.error("Podaj produkt lub URL źródła");
       return;
     }
     setAiLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-review", {
-        body: { product: aiPrompt, category: categories.find((c) => c.id === form.category_id)?.name },
+        body: {
+          product: aiPrompt || form.product_name || form.title,
+          category: categories.find((c) => c.id === form.category_id)?.name,
+          source_url: form.source_url || undefined,
+        },
       });
       if (error) throw error;
+      const suggested: string[] = Array.isArray(data.gallery_suggestions) ? data.gallery_suggestions : [];
+      const existingGallery = form.gallery ?? [];
+      const existingCover = form.cover_image_url;
+      // Only auto-fill images if user hasn't provided own
+      const mergedGallery = existingGallery.length > 0
+        ? existingGallery
+        : suggested.slice(0, 8);
+      const nextCover = existingCover && existingCover.trim()
+        ? existingCover
+        : suggested[0] ?? existingCover;
       setForm((f) => ({
         ...f,
         title: data.title ?? f.title,
@@ -124,16 +138,22 @@ const ReviewEditor = () => {
         cons: data.cons ?? f.cons,
         product_name: data.product_name ?? f.product_name,
         product_brand: data.product_brand ?? f.product_brand,
+        cover_image_url: nextCover,
+        gallery: mergedGallery,
         is_ai_generated: true,
       }));
       setSlugTouched(true);
-      toast.success("Wygenerowano treść AI — edytuj i opublikuj");
+      const imgInfo = suggested.length
+        ? ` (+${existingGallery.length ? 0 : Math.min(suggested.length, 8)} obrazków ze źródła)`
+        : "";
+      toast.success(`Wygenerowano treść AI${imgInfo} — edytuj i opublikuj`);
     } catch (e: any) {
       toast.error(e.message ?? "Błąd generowania");
     } finally {
       setAiLoading(false);
     }
   };
+
 
   const uploadGalleryImage = async (file: File) => {
     const ext = file.name.split(".").pop() || "jpg";
