@@ -455,11 +455,12 @@ const ReviewEditor = () => {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Content */}
         <Card>
           <CardHeader>
-            <CardTitle>Treść recenzji (HTML)</CardTitle>
+            <CardTitle>Treść {isReview ? "recenzji" : "wpisu"} (HTML)</CardTitle>
           </CardHeader>
           <CardContent>
             <RichTextEditor
