@@ -28,6 +28,7 @@ import {
   MessageSquare,
   Sparkles,
   Globe,
+  Star,
 } from "lucide-react";
 
 interface AdminLayoutProps {
