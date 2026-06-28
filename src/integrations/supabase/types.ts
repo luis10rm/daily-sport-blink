@@ -427,6 +427,139 @@ export type Database = {
         }
         Relationships: []
       }
+      review_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon_url: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          author_id: string | null
+          category_id: string | null
+          cons: string[]
+          content: string | null
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          excerpt: string | null
+          gallery: string[]
+          id: string
+          is_ai_generated: boolean
+          product_brand: string | null
+          product_name: string | null
+          pros: string[]
+          published_at: string | null
+          score: number | null
+          slug: string
+          source_url: string | null
+          status: string
+          title: string
+          updated_at: string
+          verdict: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          category_id?: string | null
+          cons?: string[]
+          content?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string | null
+          gallery?: string[]
+          id?: string
+          is_ai_generated?: boolean
+          product_brand?: string | null
+          product_name?: string | null
+          pros?: string[]
+          published_at?: string | null
+          score?: number | null
+          slug: string
+          source_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          verdict?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          category_id?: string | null
+          cons?: string[]
+          content?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          excerpt?: string | null
+          gallery?: string[]
+          id?: string
+          is_ai_generated?: boolean
+          product_brand?: string | null
+          product_name?: string | null
+          pros?: string[]
+          published_at?: string | null
+          score?: number | null
+          slug?: string
+          source_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          verdict?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "review_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       settings: {
         Row: {
           key: string
@@ -734,7 +867,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "editor" | "viewer"
-      banner_position: "home_top" | "home_middle" | "home_bottom"
+      banner_position:
+        | "home_top"
+        | "home_middle"
+        | "home_bottom"
+        | "recki_home_top"
+        | "recki_home_middle"
+        | "recki_home_bottom"
+        | "recki_inline"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -863,7 +1003,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "editor", "viewer"],
-      banner_position: ["home_top", "home_middle", "home_bottom"],
+      banner_position: [
+        "home_top",
+        "home_middle",
+        "home_bottom",
+        "recki_home_top",
+        "recki_home_middle",
+        "recki_home_bottom",
+        "recki_inline",
+      ],
     },
   },
 } as const
