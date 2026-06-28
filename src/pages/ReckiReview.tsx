@@ -66,6 +66,22 @@ const ReckiReview = () => {
 
   const gallery = review.gallery ?? [];
 
+  const renderBanner = (b: any, className = "my-8") =>
+    b ? (
+      <div className={className}>
+        <SponsorBanner
+          bannerId={b.id}
+          title={b.title}
+          description={b.description ?? undefined}
+          ctaText={b.cta_text}
+          ctaUrl={b.click_tag}
+          imageDesktopUrl={b.image_desktop_url ?? undefined}
+          imageMobileUrl={b.image_mobile_url ?? undefined}
+          impressionTag={b.impression_tag ?? undefined}
+        />
+      </div>
+    ) : null;
+
   return (
     <div className="min-h-screen flex flex-col">
       <ReckiHeader />
@@ -82,6 +98,9 @@ const ReckiReview = () => {
               </>
             )}
           </nav>
+
+          {renderBanner(articleTopBanner, "mb-6")}
+
 
           <header className="mb-6">
             {review.category && (
