@@ -40,7 +40,7 @@ const navItems = [
   { href: "/admin/suggestions", label: "Propozycje newsów", icon: Sparkles, badge: "pendingSuggestions" as const },
   { href: "/admin/sources", label: "Źródła", icon: Globe },
   { href: "/admin/posts", label: "Posty", icon: FileText },
-  { href: "/admin/recki", label: "Recki", icon: Star },
+  { href: "/admin/recki", label: "Tech", icon: Star },
   { href: "/admin/banners", label: "Banery", icon: Megaphone },
   { href: "/admin/authors", label: "Autorzy", icon: UserPen },
   { href: "/admin/feedback", label: "Feedback", icon: MessageSquare },

@@ -57,8 +57,8 @@ const ReckiReview = () => {
       <div className="min-h-screen flex flex-col">
         <ReckiHeader />
         <main className="flex-1 container py-12 text-center">
-          <h1 className="text-2xl font-bold">Recenzja nie znaleziona</h1>
-          <Link to="/recki" className="text-primary mt-4 inline-block">← Wróć do Recków</Link>
+          <h1 className="text-2xl font-bold">Nie znaleziono wpisu</h1>
+          <Link to="/tech" className="text-primary mt-4 inline-block">← Wróć do Tech</Link>
         </main>
       </div>
     );
@@ -88,11 +88,11 @@ const ReckiReview = () => {
       <main className="flex-1">
         <article className="container max-w-4xl py-6">
           <nav className="mb-3 text-sm text-muted-foreground">
-            <Link to="/recki" className="hover:text-foreground">Recki</Link>
+            <Link to="/tech" className="hover:text-foreground">Tech</Link>
             {review.category && (
               <>
                 {" · "}
-                <Link to={`/recki/kategoria/${review.category.slug}`} className="hover:text-foreground">
+                <Link to={`/tech/kategoria/${review.category.slug}`} className="hover:text-foreground">
                   {review.category.name}
                 </Link>
               </>
@@ -252,7 +252,7 @@ const ReckiReview = () => {
 
           {related.length > 0 && (
             <section>
-              <h2 className="text-xl font-bold mb-3">Podobne recenzje</h2>
+              <h2 className="text-xl font-bold mb-3">Podobne wpisy</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {related.map((r) => (
                   <ReviewCard key={r.id} review={r} />

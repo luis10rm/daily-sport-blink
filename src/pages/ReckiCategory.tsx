@@ -22,7 +22,7 @@ const ReckiCategory = () => {
       <ReckiHeader />
       <main className="flex-1 container py-6">
         <nav className="mb-3 text-sm text-muted-foreground">
-          <Link to="/recki" className="hover:text-foreground">Recki</Link> · {category?.name ?? slug}
+          <Link to="/tech" className="hover:text-foreground">Tech</Link> · {category?.name ?? slug}
         </nav>
         <h1 className="text-3xl font-bold mb-6">{category?.name ?? "Kategoria"}</h1>
 
@@ -33,7 +33,7 @@ const ReckiCategory = () => {
             ))}
           </div>
         ) : reviews.length === 0 ? (
-          <p className="text-muted-foreground">Brak recenzji w tej kategorii.</p>
+          <p className="text-muted-foreground">Brak wpisów w tej kategorii.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {reviews.map((r) => (
