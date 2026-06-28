@@ -168,10 +168,10 @@ const ReviewEditor = () => {
         <h1 className="text-3xl font-bold">{isNew ? "Nowa recenzja" : "Edycja recenzji"}</h1>
 
         {/* AI generator */}
-        <Card className="border-purple-500/30">
+        <Card className="border-fuchsia-600/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-purple-500" /> Generator AI
+              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">

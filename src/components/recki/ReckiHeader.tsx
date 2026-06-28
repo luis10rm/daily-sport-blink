@@ -17,7 +17,7 @@ export const ReckiHeader = () => {
     <header className="border-b border-border bg-card/95 md:bg-card/60 md:backdrop-blur-sm sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
         <Link to="/recki" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-fuchsia-500 text-white shadow-md">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-600 to-pink-600 text-white shadow-md">
             <Cpu className="h-5 w-5" />
           </div>
           <div className="flex flex-col leading-none">
