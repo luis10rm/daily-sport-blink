@@ -3,14 +3,14 @@ import { Cpu, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Toggles between Sport (default) and Recki (tech reviews) sub-brands.
- * Visible in both headers. On Sport pages routes to /recki, on Recki routes to /.
+ * Toggles between Sport (default) and Tech sub-brands.
  */
 export const ModeSwitcher = () => {
   const location = useLocation();
-  const inRecki = location.pathname.startsWith("/recki");
+  const inTech =
+    location.pathname.startsWith("/tech") || location.pathname.startsWith("/recki");
 
-  if (inRecki) {
+  if (inTech) {
     return (
       <Link
         to="/"
@@ -28,12 +28,12 @@ export const ModeSwitcher = () => {
 
   return (
     <Link
-      to="/recki"
+      to="/tech"
       className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-600/40 bg-fuchsia-600/10 px-3 py-1.5 text-xs font-semibold text-fuchsia-600 transition-colors dark:text-fuchsia-300"
-      aria-label="Przełącz na Recki"
+      aria-label="Przełącz na Tech"
     >
       <Cpu className="h-3.5 w-3.5" />
-      <span>Recki</span>
+      <span>Tech</span>
     </Link>
   );
 };
