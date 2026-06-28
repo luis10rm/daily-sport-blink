@@ -195,19 +195,31 @@ const ReviewEditor = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Input
-              placeholder="np. iPhone 16 Pro Max — codzienne użytkowanie"
-              value={aiPrompt}
-              onChange={(e) => setAiPrompt(e.target.value)}
-            />
+            <div>
+              <Label className="text-xs text-muted-foreground">Produkt</Label>
+              <Input
+                placeholder="np. iPhone 16 Pro Max — codzienne użytkowanie"
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">URL źródła (opcjonalnie)</Label>
+              <Input
+                placeholder="https://… — AI przeczyta artykuł i pobierze obrazki"
+                value={form.source_url ?? ""}
+                onChange={(e) => set("source_url", e.target.value)}
+              />
+            </div>
             <Button onClick={generateAI} disabled={aiLoading}>
               {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
               Wygeneruj recenzję
             </Button>
             <p className="text-xs text-muted-foreground">
-              AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść HTML. Zawsze weryfikuj przed publikacją.
+              AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne).
             </p>
           </CardContent>
+
         </Card>
 
         {/* Basic info */}
