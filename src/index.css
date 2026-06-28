@@ -457,11 +457,7 @@
   --accent: 330 85% 55%;
   --accent-foreground: 0 0% 100%;
   --ring: 295 85% 50%;
-  background:
-    radial-gradient(1200px 600px at 80% -10%, hsl(295 85% 50% / 0.10), transparent 60%),
-    radial-gradient(900px 500px at 0% 0%, hsl(330 85% 55% / 0.08), transparent 55%),
-    linear-gradient(180deg, hsl(0 0% 99%), hsl(300 15% 96%));
-  background-attachment: fixed;
+  --background: 300 20% 99%;
 }
 
 .dark.mode-recki,
@@ -469,11 +465,34 @@
   --primary: 295 90% 60%;
   --accent: 330 90% 62%;
   --ring: 295 90% 60%;
+  --background: 290 15% 7%;
+}
+
+/* Hard reset of any inherited textured backgrounds (e.g. tournament turf) */
+html.mode-recki,
+html.mode-recki body {
+  background-image: none !important;
+  background-color: hsl(var(--background)) !important;
+  background-attachment: initial !important;
+}
+
+/* Subtle magenta signature fog — fixed, behind content */
+html.mode-recki body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
-    radial-gradient(1200px 600px at 80% -10%, hsl(295 85% 45% / 0.18), transparent 60%),
-    radial-gradient(900px 500px at 0% 0%, hsl(330 85% 45% / 0.16), transparent 55%),
-    linear-gradient(180deg, hsl(290 20% 9%), hsl(290 20% 6%));
-  background-attachment: fixed;
+    radial-gradient(900px 600px at 100% 0%, hsl(295 85% 50% / 0.06), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, hsl(330 85% 55% / 0.04), transparent 60%);
+}
+
+html.dark.mode-recki body::before,
+html.mode-recki.dark body::before {
+  background:
+    radial-gradient(900px 600px at 100% 0%, hsl(295 85% 50% / 0.14), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, hsl(330 85% 55% / 0.10), transparent 60%);
 }
 
 .recki-gradient-text {
@@ -482,4 +501,5 @@
   background-clip: text;
   color: transparent;
 }
+
 
