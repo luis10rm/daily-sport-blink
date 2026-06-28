@@ -41,6 +41,10 @@ import StartPage from "./pages/StartPage";
 import InstallPage from "./pages/InstallPage";
 import NotFound from "./pages/NotFound";
 import WorldCup2026 from "./pages/WorldCup2026";
+import ReckiHome from "./pages/ReckiHome";
+import ReckiReview from "./pages/ReckiReview";
+import ReviewsList from "./pages/admin/ReviewsList";
+import ReviewEditor from "./pages/admin/ReviewEditor";
 import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { TournamentTheme } from "@/components/TournamentTheme";
 import { TournamentMascot } from "@/components/TournamentMascot";
@@ -70,6 +74,9 @@ function App() {
               <Route path="/blink/:slug" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
               <Route path="/mistrzostwa-swiata-2026" element={<WorldCup2026 />} />
+              <Route path="/recki" element={<ReckiHome />} />
+              <Route path="/recki/kategoria/:slug" element={<ReckiHome />} />
+              <Route path="/recki/:category/:slug" element={<ReckiReview />} />
               <Route path="/kategoria/:slug" element={<CategoryPage />} />
               <Route path="/tagi" element={<TagsListPage />} />
               <Route path="/tag/:slug" element={<TagPage />} />
@@ -108,6 +115,9 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/admin/recki" element={<ProtectedRoute><ReviewsList /></ProtectedRoute>} />
+            <Route path="/admin/recki/new" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
+            <Route path="/admin/recki/:id/edit" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
             <Route
               path="/admin/banners"
               element={

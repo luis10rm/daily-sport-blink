@@ -2,7 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export type BannerPosition = "home_top" | "home_middle" | "home_bottom";
+export type BannerPosition =
+  | "home_top"
+  | "home_middle"
+  | "home_bottom"
+  | "recki_home_top"
+  | "recki_home_middle"
+  | "recki_home_bottom"
+  | "recki_inline";
 export type BannerTargetDevice = "all" | "desktop" | "mobile";
 
 export interface Banner {

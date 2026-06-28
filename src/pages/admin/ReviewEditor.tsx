@@ -1,0 +1,437 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ImageUploader } from "@/components/admin/ImageUploader";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { ArrowLeft, Loader2, Plus, Save, Sparkles, Trash2, X } from "lucide-react";
+import {
+  useReviewById,
+  useUpsertReview,
+  useReviewCategories,
+  type Review,
+} from "@/hooks/useReviews";
+import { supabase } from "@/integrations/supabase/client";
+
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+const ReviewEditor = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isNew = !id;
+  const { data: existing } = useReviewById(id);
+  const { data: categories = [] } = useReviewCategories();
+  const upsert = useUpsertReview();
+
+  const [form, setForm] = useState<Partial<Review>>({
+    title: "",
+    slug: "",
+    excerpt: "",
+    content: "",
+    verdict: "",
+    score: null,
+    pros: [],
+    cons: [],
+    gallery: [],
+    cover_image_url: "",
+    product_name: "",
+    product_brand: "",
+    category_id: null,
+    status: "draft",
+    source_url: "",
+    is_ai_generated: false,
+  });
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
+  useEffect(() => {
+    if (existing) {
+      setForm(existing);
+      setSlugTouched(true);
+    }
+  }, [existing]);
+
+  useEffect(() => {
+    if (!slugTouched && form.title) {
+      setForm((f) => ({ ...f, slug: slugify(f.title || "") }));
+    }
+  }, [form.title, slugTouched]);
+
+  const set = <K extends keyof Review>(key: K, value: Review[K]) =>
+    setForm((f) => ({ ...f, [key]: value }));
+
+  const addPro = () => set("pros", [...(form.pros ?? []), ""]);
+  const addCon = () => set("cons", [...(form.cons ?? []), ""]);
+
+  const handleSubmit = async (publish?: boolean) => {
+    if (!form.title || !form.slug) {
+      toast.error("Tytuł i slug są wymagane");
+      return;
+    }
+    const payload: any = {
+      ...form,
+      id: id ?? undefined,
+      pros: (form.pros ?? []).filter((p) => p && p.trim()),
+      cons: (form.cons ?? []).filter((c) => c && c.trim()),
+      status: publish ? "published" : form.status ?? "draft",
+    };
+    delete payload.category;
+    const saved = await upsert.mutateAsync(payload);
+    navigate(`/admin/recki/${saved.id}/edit`);
+  };
+
+  const generateAI = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error('Podaj produkt do recenzji (np. „iPhone 16 Pro Max")');
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-review", {
+        body: { product: aiPrompt, category: categories.find((c) => c.id === form.category_id)?.name },
+      });
+      if (error) throw error;
+      setForm((f) => ({
+        ...f,
+        title: data.title ?? f.title,
+        slug: f.slug || slugify(data.title ?? ""),
+        excerpt: data.excerpt ?? f.excerpt,
+        content: data.content ?? f.content,
+        verdict: data.verdict ?? f.verdict,
+        score: data.score ?? f.score,
+        pros: data.pros ?? f.pros,
+        cons: data.cons ?? f.cons,
+        product_name: data.product_name ?? f.product_name,
+        product_brand: data.product_brand ?? f.product_brand,
+        is_ai_generated: true,
+      }));
+      setSlugTouched(true);
+      toast.success("Wygenerowano treść AI — edytuj i opublikuj");
+    } catch (e: any) {
+      toast.error(e.message ?? "Błąd generowania");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const uploadGalleryImage = async (file: File) => {
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `reviews/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("post-images").upload(path, file);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const { data } = supabase.storage.from("post-images").getPublicUrl(path);
+    set("gallery", [...(form.gallery ?? []), data.publicUrl]);
+  };
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6 max-w-5xl">
+        <div className="flex items-center justify-between gap-3">
+          <Button variant="ghost" onClick={() => navigate("/admin/recki")}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Wróć
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => handleSubmit(false)} disabled={upsert.isPending}>
+              {upsert.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+              Zapisz szkic
+            </Button>
+            <Button onClick={() => handleSubmit(true)} disabled={upsert.isPending}>
+              Opublikuj
+            </Button>
+          </div>
+        </div>
+
+        <h1 className="text-3xl font-bold">{isNew ? "Nowa recenzja" : "Edycja recenzji"}</h1>
+
+        {/* AI generator */}
+        <Card className="border-purple-500/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-4 w-4 text-purple-500" /> Generator AI
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              placeholder="np. iPhone 16 Pro Max — codzienne użytkowanie"
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+            />
+            <Button onClick={generateAI} disabled={aiLoading}>
+              {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              Wygeneruj recenzję
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść HTML. Zawsze weryfikuj przed publikacją.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Basic info */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Podstawowe</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Tytuł</Label>
+              <Input value={form.title ?? ""} onChange={(e) => set("title", e.target.value)} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Slug (URL)</Label>
+                <Input
+                  value={form.slug ?? ""}
+                  onChange={(e) => {
+                    setSlugTouched(true);
+                    set("slug", slugify(e.target.value));
+                  }}
+                />
+              </div>
+              <div>
+                <Label>Kategoria</Label>
+                <Select
+                  value={form.category_id ?? undefined}
+                  onValueChange={(v) => set("category_id", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz kategorię" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Marka</Label>
+                <Input value={form.product_brand ?? ""} onChange={(e) => set("product_brand", e.target.value)} />
+              </div>
+              <div>
+                <Label>Nazwa produktu</Label>
+                <Input value={form.product_name ?? ""} onChange={(e) => set("product_name", e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <Label>Krótki opis (excerpt)</Label>
+              <Textarea
+                rows={2}
+                value={form.excerpt ?? ""}
+                onChange={(e) => set("excerpt", e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3">
+              <div>
+                <Label>Werdykt</Label>
+                <Textarea
+                  rows={3}
+                  value={form.verdict ?? ""}
+                  onChange={(e) => set("verdict", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Ocena 0–10</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={0.1}
+                  value={form.score ?? ""}
+                  onChange={(e) =>
+                    set("score", e.target.value === "" ? null : Number(e.target.value))
+                  }
+                />
+              </div>
+            </div>
+            <div>
+              <Label>URL źródła (opcjonalnie)</Label>
+              <Input value={form.source_url ?? ""} onChange={(e) => set("source_url", e.target.value)} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cover */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Zdjęcie główne</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ImageUploader
+              value={form.cover_image_url ?? ""}
+              onChange={(url) => set("cover_image_url", url)}
+              onRemove={() => set("cover_image_url", "")}
+              storageBucket="post-images"
+              storagePath="reviews/cover"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Gallery */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Galeria zdjęć</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(form.gallery ?? []).map((url, idx) => (
+                <div key={idx} className="relative aspect-square overflow-hidden rounded-md border">
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="destructive"
+                    className="absolute right-1 top-1 h-7 w-7"
+                    onClick={() =>
+                      set(
+                        "gallery",
+                        (form.gallery ?? []).filter((_, i) => i !== idx)
+                      )
+                    }
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ))}
+              <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary">
+                <Plus className="h-6 w-6" />
+                <span className="mt-1 text-xs">Dodaj</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    for (const f of files) await uploadGalleryImage(f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Pros / Cons */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Plusy i minusy</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Plusy</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={addPro}>
+                  <Plus className="mr-1 h-3 w-3" /> Dodaj
+                </Button>
+              </div>
+              {(form.pros ?? []).map((p, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input
+                    value={p}
+                    onChange={(e) => {
+                      const next = [...(form.pros ?? [])];
+                      next[i] = e.target.value;
+                      set("pros", next);
+                    }}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => set("pros", (form.pros ?? []).filter((_, j) => j !== i))}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Minusy</Label>
+                <Button type="button" variant="ghost" size="sm" onClick={addCon}>
+                  <Plus className="mr-1 h-3 w-3" /> Dodaj
+                </Button>
+              </div>
+              {(form.cons ?? []).map((c, i) => (
+                <div key={i} className="flex gap-2">
+                  <Input
+                    value={c}
+                    onChange={(e) => {
+                      const next = [...(form.cons ?? [])];
+                      next[i] = e.target.value;
+                      set("cons", next);
+                    }}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => set("cons", (form.cons ?? []).filter((_, j) => j !== i))}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Content */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Treść recenzji (HTML)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RichTextEditor
+              content={form.content ?? ""}
+              onChange={(v) => set("content", v)}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="flex items-center justify-between pt-6">
+            <div>
+              <Label className="text-base">Status: {form.status === "published" ? "Opublikowana" : "Szkic"}</Label>
+              <p className="text-xs text-muted-foreground">
+                Włącz, by oznaczyć jako opublikowaną (data pub. = teraz).
+              </p>
+            </div>
+            <Switch
+              checked={form.status === "published"}
+              onCheckedChange={(v) => set("status", v ? "published" : "draft")}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
+  );
+};
+
+export default ReviewEditor;

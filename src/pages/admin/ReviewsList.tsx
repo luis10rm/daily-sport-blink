@@ -1,0 +1,189 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { useAllReviewsAdmin, useDeleteReview } from "@/hooks/useReviews";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Search, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { format } from "date-fns";
+import { pl } from "date-fns/locale";
+
+const ReviewsList = () => {
+  const { data: reviews, isLoading } = useAllReviewsAdmin();
+  const del = useDeleteReview();
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const filtered = reviews?.filter(
+    (r) =>
+      r.title.toLowerCase().includes(search.toLowerCase()) ||
+      (r.product_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (r.product_brand ?? "").toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold font-heading">Recki</h1>
+            <p className="text-muted-foreground">Recenzje technologii — osobny dział</p>
+          </div>
+          <Link to="/admin/recki/new">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Nowa recenzja
+            </Button>
+          </Link>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Szukaj po tytule, produkcie lub marce..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full" />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tytuł</TableHead>
+                  <TableHead>Kategoria</TableHead>
+                  <TableHead>Ocena</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Akcje</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      Brak recenzji
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filtered?.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell>
+                        <div className="font-medium">{r.title}</div>
+                        {(r.product_brand || r.product_name) && (
+                          <div className="text-xs text-muted-foreground">
+                            {[r.product_brand, r.product_name].filter(Boolean).join(" · ")}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{r.category?.name ?? "—"}</TableCell>
+                      <TableCell>
+                        {r.score !== null ? (
+                          <Badge variant="secondary">{Number(r.score).toFixed(1)}/10</Badge>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={r.status === "published" ? "default" : "outline"}>
+                          {r.status === "published" ? "Opublikowana" : "Szkic"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {r.published_at
+                          ? format(new Date(r.published_at), "d MMM yyyy", { locale: pl })
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-right space-x-1">
+                        {r.status === "published" && (
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="icon"
+                            title="Otwórz publicznie"
+                          >
+                            <a
+                              href={`/recki/${r.category?.slug ?? "wszystkie"}/${r.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => navigate(`/admin/recki/${r.id}/edit`)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteId(r.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć recenzję?</AlertDialogTitle>
+            <AlertDialogDescription>Tej operacji nie można cofnąć.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteId) del.mutate(deleteId);
+                setDeleteId(null);
+              }}
+            >
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </AdminLayout>
+  );
+};
+
+export default ReviewsList;

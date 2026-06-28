@@ -4,6 +4,7 @@ import { useSportCategories } from "@/hooks/useSportCategories";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { ThemeToggle } from "./ThemeToggle";
+import { ModeSwitcher } from "./recki/ModeSwitcher";
 import { MatchTicker } from "./MatchTicker";
 import logoIcon from "@/assets/logo-icon.png";
 import logoText from "@/assets/logo-text.png";
@@ -87,6 +88,7 @@ export const Header = () => {
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Autorzy</span>
           </Link>
+          <ModeSwitcher />
           <ThemeToggle />
         </nav>
       </div>
