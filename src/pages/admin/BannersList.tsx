@@ -36,9 +36,13 @@ import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
 const positionLabels: Record<BannerPosition, string> = {
-  home_top: "Góra strony",
-  home_middle: "Środek strony",
-  home_bottom: "Dół strony",
+  home_top: "Sport · Góra",
+  home_middle: "Sport · Środek",
+  home_bottom: "Sport · Dół",
+  recki_home_top: "Recki · Góra",
+  recki_home_middle: "Recki · Środek",
+  recki_home_bottom: "Recki · Dół",
+  recki_inline: "Recki · W treści",
 };
 
 const BannersList = () => {
