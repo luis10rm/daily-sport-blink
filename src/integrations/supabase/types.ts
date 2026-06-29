@@ -115,6 +115,7 @@ export type Database = {
           impression_tag: string | null
           is_active: boolean
           position: Database["public"]["Enums"]["banner_position"]
+          sections: string[]
           show_on_tech: boolean
           start_date: string | null
           target_device: string
@@ -134,6 +135,7 @@ export type Database = {
           impression_tag?: string | null
           is_active?: boolean
           position?: Database["public"]["Enums"]["banner_position"]
+          sections?: string[]
           show_on_tech?: boolean
           start_date?: string | null
           target_device?: string
@@ -153,6 +155,7 @@ export type Database = {
           impression_tag?: string | null
           is_active?: boolean
           position?: Database["public"]["Enums"]["banner_position"]
+          sections?: string[]
           show_on_tech?: boolean
           start_date?: string | null
           target_device?: string
