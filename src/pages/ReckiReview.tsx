@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { ReckiHeader } from "@/components/recki/ReckiHeader";
 import { ReckiFooter } from "@/components/recki/ReckiFooter";
 import { ReviewCard } from "@/components/recki/ReviewCard";
+import { ReviewBasisBadge } from "@/components/recki/ReviewBasisBadge";
 import { ScoreBadge } from "@/components/recki/ScoreBadge";
 import { useReviewBySlug, usePublishedReviews } from "@/hooks/useReviews";
 import { Skeleton } from "@/components/ui/skeleton";
