@@ -147,6 +147,7 @@ const BannerEditor = () => {
       position: "home_middle",
       target_device: "all",
       is_active: false,
+      show_on_tech: false,
       start_date: null,
       end_date: null,
     },
