@@ -14,7 +14,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
     return (
       <Link
         to={to}
-        className="group relative block overflow-hidden rounded-2xl border border-border bg-card shadow-md transition-all hover:shadow-xl"
+        className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-md transition-all hover:shadow-xl"
       >
         <div className="relative aspect-[16/9] overflow-hidden bg-muted">
           {review.cover_image_url ? (
@@ -32,23 +32,24 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
               <ScoreBadge score={review.score} size="lg" />
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-5">
-            {review.category && (
-              <span className="inline-block rounded-full bg-fuchsia-600/90 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
-                {review.category.name}
-              </span>
-            )}
-            <h2 className="mt-2 text-2xl font-bold leading-tight text-white">
-              {review.title}
-            </h2>
-            {review.excerpt && (
-              <p className="mt-1 line-clamp-2 text-sm text-white/85">{review.excerpt}</p>
-            )}
-          </div>
+        </div>
+        <div className="flex flex-1 flex-col p-5">
+          {review.category && (
+            <span className="inline-block w-fit rounded-full bg-fuchsia-600/90 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+              {review.category.name}
+            </span>
+          )}
+          <h2 className="mt-2 text-2xl font-bold leading-tight text-foreground group-hover:text-primary">
+            {review.title}
+          </h2>
+          {review.excerpt && (
+            <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{review.excerpt}</p>
+          )}
         </div>
       </Link>
     );
   }
+
 
   if (variant === "compact") {
     return (
