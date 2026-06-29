@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ExternalLink, Sparkles, Snowflake } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
@@ -64,6 +64,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
     },
     ref,
   ) => {
+    const navigate = useNavigate();
     // Determine if this post has AI-generated content (link to /blink/:slug)
     const hasContent = Boolean(content);
     const blinkUrl = `/blink/${slug}`;
@@ -165,8 +166,10 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
 
           {/* Conditional link: internal blink page if content exists, otherwise external source */}
           {hasContent ? (
-            <Link
-              to={blinkUrl}
+            <a
+              href={blinkUrl}
+              onClick={(e) => { e.preventDefault(); navigate(blinkUrl); }}
+              onTouchEnd={(e) => { e.preventDefault(); navigate(blinkUrl); }}
               className={cn(
                 "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold cursor-pointer",
                 isSponsored
@@ -175,7 +178,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
               )}
             >
               Przeczytaj więcej
-            </Link>
+            </a>
           ) : (
             <a
               href={sourceUrl}
