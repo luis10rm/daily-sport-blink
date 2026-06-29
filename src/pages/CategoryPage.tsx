@@ -24,6 +24,7 @@ const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: category, isLoading: categoryLoading } = useSportCategoryBySlug(slug);
   const { data: posts = [], isLoading: postsLoading } = usePostsByCategory(slug);
+  const navLink = useNavLink();
 
   // SEO meta tags
   useCategorySEOMeta({
@@ -89,7 +90,7 @@ const CategoryPage = () => {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/">Strona główna</Link>
+                <a {...navLink("/")}>Strona główna</a>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
