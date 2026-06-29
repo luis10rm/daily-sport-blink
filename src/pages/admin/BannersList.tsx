@@ -122,6 +122,7 @@ const BannersList = () => {
                 <TableHead>Podgląd</TableHead>
                 <TableHead>Nazwa</TableHead>
                 <TableHead>Pozycja</TableHead>
+                <TableHead>Sekcje</TableHead>
                 <TableHead>Daty</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aktywny</TableHead>
