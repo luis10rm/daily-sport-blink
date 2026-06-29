@@ -1009,6 +1009,120 @@ const Settings = () => {
           </Card>
         )}
 
+        {/* TECH Prompts - Only for admins */}
+        {isAdmin && (
+          <Card className="border-fuchsia-500/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Cpu className="h-5 w-5 text-fuchsia-600" />
+                Prompty AI — Szortsy TECH
+              </CardTitle>
+              <CardDescription>
+                Systemowe prompty używane przez generator treści w sekcji recenzji.
+                Zaprojektowane pod SEO (długość tytułu/excerptu, struktura nagłówków H2)
+                i poprawny HTML w polu content.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {/* Tech Review Prompt */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-fuchsia-600" />
+                  <Label htmlFor="tech-review-prompt">Prompt — Recenzje TECH</Label>
+                </div>
+                {isLoadingTechReviewPrompt ? (
+                  <Skeleton className="h-64 w-full" />
+                ) : (
+                  <Textarea
+                    id="tech-review-prompt"
+                    value={localTechReviewPrompt}
+                    onChange={(e) => setLocalTechReviewPrompt(e.target.value)}
+                    rows={18}
+                    className="font-mono text-sm"
+                    placeholder="Prompt systemowy dla generatora recenzji..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Używany dla typu „review". Definiuje strukturę (H2), długość (700-1200 słów),
+                  zasady SEO i format JSON z polami score, pros, cons, verdict.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveTechReviewPrompt}
+                    disabled={!hasTechReviewPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleResetTechReviewPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
+              </div>
+
+              {/* Tech News Prompt */}
+              <div className="space-y-2 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Newspaper className="h-4 w-4 text-fuchsia-600" />
+                  <Label htmlFor="tech-news-prompt">Prompt — Newsy TECH</Label>
+                </div>
+                {isLoadingTechNewsPrompt ? (
+                  <Skeleton className="h-64 w-full" />
+                ) : (
+                  <Textarea
+                    id="tech-news-prompt"
+                    value={localTechNewsPrompt}
+                    onChange={(e) => setLocalTechNewsPrompt(e.target.value)}
+                    rows={16}
+                    className="font-mono text-sm"
+                    placeholder="Prompt systemowy dla generatora newsów..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Używany dla typu „news". Krótsza forma (300-600 słów), lead odwróconej piramidy,
+                  bez pól score/pros/cons. Zasady SEO i struktura H2 wbudowane.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveTechNewsPrompt}
+                    disabled={!hasTechNewsPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleResetTechNewsPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+
+
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
