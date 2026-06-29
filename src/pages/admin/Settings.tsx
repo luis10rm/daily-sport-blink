@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useSetting, useUpdateSetting } from "@/hooks/useSettings";
 import { usePatronSettings, useUpdatePatronSettings, PatronSettings } from "@/hooks/usePatronSettings";
-import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2, Facebook, Image } from "lucide-react";
+import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2, Facebook, Image, Cpu, Newspaper } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { LogoGenerator } from "@/components/admin/LogoGenerator";
