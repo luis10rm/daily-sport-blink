@@ -204,14 +204,41 @@ const ReviewEditor = () => {
         <Card className="border-fuchsia-600/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI — {isReview ? "Recenzja" : "News"}
+              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI — {aiIsReview ? "Recenzja" : "News"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground">{isReview ? "Produkt" : "Temat newsa"}</Label>
+              <Label className="text-xs text-muted-foreground">Tryb generowania</Label>
+              <div className="mt-1 inline-flex rounded-md border border-border bg-muted p-1">
+                <button
+                  type="button"
+                  onClick={() => setAiMode("review")}
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    aiMode === "review"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Recenzja
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiMode("news")}
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                    aiMode === "news"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  News
+                </button>
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">{aiIsReview ? "Produkt" : "Temat newsa"}</Label>
               <Input
-                placeholder={isReview
+                placeholder={aiIsReview
                   ? "np. iPhone 16 Pro Max — codzienne użytkowanie"
                   : "np. Apple ogłasza iOS 19 z nowym AI"}
                 value={aiPrompt}
@@ -228,16 +255,17 @@ const ReviewEditor = () => {
             </div>
             <Button onClick={generateAI} disabled={aiLoading}>
               {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              {isReview ? "Wygeneruj recenzję" : "Wygeneruj news"}
+              {aiIsReview ? "Wygeneruj recenzję" : "Wygeneruj news"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              {isReview
+              {aiIsReview
                 ? "AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne)."
-                : "AI napisze krótki, rzeczowy news (400–800 słów) bez oceny i plusów/minusów. Najpierw wybierz typ wpisu poniżej, by przełączyć tryb."}
+                : "AI napisze krótki, rzeczowy news (400–800 słów) bez oceny i plusów/minusów. Typ wpisu zostanie automatycznie ustawiony na News."}
             </p>
           </CardContent>
 
         </Card>
+
 
         {/* Basic info */}
         <Card>
