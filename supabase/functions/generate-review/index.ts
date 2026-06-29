@@ -235,27 +235,32 @@ serve(async (req) => {
       ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
       : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);
 
-    const userPrompt = [
+    const buildUserPrompt = (textLimit: number) => [
       intro,
       category ? `Kategoria: ${category}.` : "",
-      scraped?.text ? `\n\n--- Artykuł źródłowy ---\n${scraped.text}\n--- koniec ---` : "",
+      scraped?.text ? `\n\n--- Artykuł źródłowy ---\n${scraped.text.slice(0, textLimit)}\n--- koniec ---` : "",
     ].filter(Boolean).join(" ");
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
-    });
+    const callAi = async (textLimit: number) => {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: buildUserPrompt(textLimit) },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      });
+      return res;
+    };
+
+    let aiResponse = await callAi(8000);
 
     if (!aiResponse.ok) {
       const text = await aiResponse.text();
@@ -275,8 +280,36 @@ serve(async (req) => {
       throw new Error(`AI error ${aiResponse.status}`);
     }
 
-    const aiJson = await aiResponse.json();
-    const raw = aiJson?.choices?.[0]?.message?.content ?? "{}";
+    let aiJson = await aiResponse.json();
+    let choice = aiJson?.choices?.[0];
+    let raw: string | null = choice?.message?.content ?? null;
+    let finishReason = choice?.finish_reason;
+    console.log(`[ai] finish_reason=${finishReason}, content_len=${raw?.length ?? 0}, usage=`, aiJson?.usage);
+
+    // Retry once with shorter context if model errored/timed out or returned empty content
+    const isEmpty = !raw || raw.trim() === "" || raw.trim() === "{}";
+    if ((finishReason === "error" || finishReason === "length" || isEmpty) && scraped?.text) {
+      console.warn("[ai] retrying with shorter context (5000 chars)");
+      aiResponse = await callAi(5000);
+      if (aiResponse.ok) {
+        aiJson = await aiResponse.json();
+        choice = aiJson?.choices?.[0];
+        raw = choice?.message?.content ?? null;
+        finishReason = choice?.finish_reason;
+        console.log(`[ai retry] finish_reason=${finishReason}, content_len=${raw?.length ?? 0}`);
+      }
+    }
+
+    if (!raw || raw.trim() === "" || raw.trim() === "{}") {
+      const errMsg = finishReason === "error"
+        ? "Model AI przekroczył limit czasu i nie wygenerował treści. Spróbuj ponownie lub użyj krótszego/innego źródła."
+        : "Model AI nie zwrócił treści. Spróbuj ponownie.";
+      return new Response(JSON.stringify({ error: errMsg, finish_reason: finishReason }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     let parsed: any;
     try {
       parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
