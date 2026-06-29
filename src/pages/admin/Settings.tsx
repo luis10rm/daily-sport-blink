@@ -333,6 +333,22 @@ const Settings = () => {
   }, [imagePromptValue]);
 
   useEffect(() => {
+    if (techReviewPromptValue) setLocalTechReviewPrompt(techReviewPromptValue);
+  }, [techReviewPromptValue]);
+
+  useEffect(() => {
+    if (techNewsPromptValue) setLocalTechNewsPrompt(techNewsPromptValue);
+  }, [techNewsPromptValue]);
+
+  useEffect(() => {
+    setHasTechReviewPromptChanges(localTechReviewPrompt !== techReviewPromptValue && localTechReviewPrompt !== "");
+  }, [localTechReviewPrompt, techReviewPromptValue]);
+
+  useEffect(() => {
+    setHasTechNewsPromptChanges(localTechNewsPrompt !== techNewsPromptValue && localTechNewsPrompt !== "");
+  }, [localTechNewsPrompt, techNewsPromptValue]);
+
+  useEffect(() => {
     if (makeWebhookValue !== undefined) {
       setLocalMakeWebhook(makeWebhookValue || "");
     }
