@@ -27,12 +27,20 @@ export interface Banner {
   position: BannerPosition;
   target_device: BannerTargetDevice;
   is_active: boolean;
+  show_on_tech: boolean;
   start_date: string | null;
   end_date: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
 }
+
+// Map a Tech slot to the equivalent Sport slot whose banners may be mirrored (via show_on_tech)
+const TECH_SPORT_EQUIVALENT: Partial<Record<BannerPosition, BannerPosition>> = {
+  recki_home_top: "home_top",
+  recki_home_middle: "home_middle",
+  recki_home_bottom: "home_bottom",
+};
 
 export type BannerInsert = Omit<Banner, "id" | "created_at" | "updated_at">;
 export type BannerUpdate = Partial<BannerInsert>;
