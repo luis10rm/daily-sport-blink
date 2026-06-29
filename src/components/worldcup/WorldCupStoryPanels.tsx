@@ -265,13 +265,14 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
               ) : (
                 <p className="text-white/70">Brak wpisów z MŚ. Wkrótce zacznie się dziać.</p>
               )}
-              <Link
-                to="/mistrzostwa-swiata-2026"
-                onClick={(e) => e.stopPropagation()}
+              <a
+                href="/mistrzostwa-swiata-2026"
+                onClick={goTo("/mistrzostwa-swiata-2026")}
+                onTouchEnd={goTo("/mistrzostwa-swiata-2026")}
                 className="mt-4 inline-flex items-center gap-2 bg-amber-400 text-amber-950 px-4 py-2 rounded-full text-sm font-bold"
               >
                 Przejdź do hubu MŚ
-              </Link>
+              </a>
             </div>
           )}
         </div>
