@@ -265,7 +265,9 @@ function App() {
               <Route path="/news/*" element={<NewsGone />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
+
         </TooltipProvider>
       </WallpaperProvider>
     </AuthProvider>
