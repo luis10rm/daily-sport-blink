@@ -248,9 +248,10 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
                 <h3 className="text-lg font-bold">Top z MŚ</h3>
               </div>
               {topPost ? (
-                <Link
-                  to={`/blink/${topPost.slug}`}
-                  onClick={(e) => e.stopPropagation()}
+                <a
+                  href={`/blink/${topPost.slug}`}
+                  onClick={goTo(`/blink/${topPost.slug}`)}
+                  onTouchEnd={goTo(`/blink/${topPost.slug}`)}
                   className="block bg-white/5 rounded-xl overflow-hidden hover:bg-white/10 transition-colors"
                 >
                   {topPost.image_url && (
@@ -260,7 +261,7 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
                     <h4 className="font-bold text-base leading-tight mb-2">{topPost.title}</h4>
                     <p className="text-sm text-white/70 line-clamp-3">{topPost.excerpt}</p>
                   </div>
-                </Link>
+                </a>
               ) : (
                 <p className="text-white/70">Brak wpisów z MŚ. Wkrótce zacznie się dziać.</p>
               )}
