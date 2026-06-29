@@ -198,6 +198,29 @@ const BannersList = () => {
                         {positionLabels[banner.position]}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {((banner as any).sections as string[] | null | undefined)?.length
+                          ? ((banner as any).sections as string[]).map((s) => (
+                              <Badge
+                                key={s}
+                                variant="secondary"
+                                className={
+                                  s === "tech"
+                                    ? "bg-pink-100 text-pink-900 dark:bg-pink-950 dark:text-pink-200"
+                                    : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+                                }
+                              >
+                                {s === "tech" ? "Tech" : "Sport"}
+                              </Badge>
+                            ))
+                          : (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              {banner.position.startsWith("recki_") ? "Tech" : "Sport"}
+                            </Badge>
+                          )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {banner.start_date
                         ? format(new Date(banner.start_date), "dd MMM yyyy", {
