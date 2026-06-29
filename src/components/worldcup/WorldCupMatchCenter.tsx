@@ -37,6 +37,7 @@ const fmtDateTime = (iso: string) =>
 
 export const WorldCupMatchCenter = ({ tags = [], className }: Props) => {
   const { data } = useWorldCupMatches();
+  const navLink = useNavLink();
 
   const match = useMemo<FDMatch | null>(() => {
     try {
@@ -121,9 +122,9 @@ export const WorldCupMatchCenter = ({ tags = [], className }: Props) => {
 
       <div className="mt-4 pt-3 border-t border-amber-500/20 flex items-center justify-between text-xs text-muted-foreground">
         <span>{match.group || match.stage?.replace(/_/g, " ")}</span>
-        <Link to="/mistrzostwa-swiata-2026" className="font-semibold text-amber-600 dark:text-amber-400 hover:underline">
+        <a {...navLink("/mistrzostwa-swiata-2026")} className="font-semibold text-amber-600 dark:text-amber-400 hover:underline">
           Pełny terminarz →
-        </Link>
+        </a>
       </div>
     </aside>
   );
