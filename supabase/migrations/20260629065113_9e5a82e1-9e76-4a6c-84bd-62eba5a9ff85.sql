@@ -1,0 +1,1 @@
+ALTER TABLE public.banners ADD COLUMN IF NOT EXISTS show_on_tech BOOLEAN NOT NULL DEFAULT false;
