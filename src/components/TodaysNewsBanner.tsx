@@ -168,13 +168,15 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
         </span>
 
         {/* Briefing button */}
-        <Link
-          to={`/dzien/${todayStr}`}
+        <a
+          href={`/dzien/${todayStr}`}
+          onClick={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
+          onTouchEnd={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
           className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Zobacz briefing
           <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
+        </a>
       </div>
 
       {/* Date below */}
