@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
 import type { Review } from "@/hooks/useReviews";
+import { useNavLink } from "@/hooks/useNavLink";
 import { ScoreBadge } from "./ScoreBadge";
 
 interface Props {
