@@ -215,6 +215,14 @@ serve(async (req) => {
     let scraped: { text: string; images: string[] } | null = null;
     if (source_url && typeof source_url === "string") {
       scraped = await scrapeSource(source_url);
+      if (!subject && (!scraped || (scraped.text?.length ?? 0) < 200)) {
+        return new Response(JSON.stringify({
+          error: "Nie udało się pobrać treści ze źródła (strona blokuje boty lub zwraca pustą treść). Wpisz temat ręcznie lub spróbuj inny URL.",
+        }), {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const isNews = content_type === "news";
