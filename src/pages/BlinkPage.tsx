@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavLink } from "@/hooks/useNavLink";
 import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
@@ -48,6 +49,7 @@ const SITE_URL = "https://szortsy.pl";
 const BlinkPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = usePostBySlug(slug || "");
+  const navLink = useNavLink();
 
   // Use new SEO meta hook for all meta tags
   useArticleSEOMeta(post ? {
@@ -93,10 +95,10 @@ const BlinkPage = () => {
             Przepraszamy, nie udało się znaleźć tego artykułu.
           </p>
           <Button asChild>
-            <Link to="/">
+            <a {...navLink("/")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Wróć na stronę główną
-            </Link>
+            </a>
           </Button>
         </main>
       </div>
@@ -165,13 +167,13 @@ const BlinkPage = () => {
       <main className="container mx-auto px-4 py-8">
         <article className={cn("max-w-3xl mx-auto", isOlympic && "relative")}>
           {/* Back button */}
-          <Link 
-            to="/" 
+          <a 
+            {...navLink("/")} 
             className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Powrót do strony głównej
-          </Link>
+          </a>
 
           {/* Olympic winter banner */}
           {isOlympic && (
@@ -267,13 +269,13 @@ const BlinkPage = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <Tag className="h-4 w-4 text-muted-foreground" />
               {post.tags.map((tag) => (
-                <Link
+                <a
                   key={tag}
-                  to={`/tag/${generateSlug(tag)}`}
+                  {...navLink(`/tag/${generateSlug(tag)}`)}
                   className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                 >
                   #{tag}
-                </Link>
+                </a>
               ))}
             </div>
           )}

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useNavLink } from "@/hooks/useNavLink";
 import { Trophy, Radio } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
@@ -69,6 +69,7 @@ interface Props {
 export const TodaysMatchesBanner = ({ className }: Props) => {
   const { isWorldCup } = useTournamentMode();
   const { data, isLoading } = useWorldCupMatches();
+  const navLink = useNavLink();
 
   if (!isWorldCup) return null;
 
@@ -96,12 +97,12 @@ export const TodaysMatchesBanner = ({ className }: Props) => {
         <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
           Dziś gra…
         </h2>
-        <Link
-          to="/mistrzostwa-swiata-2026"
+        <a
+          {...navLink("/mistrzostwa-swiata-2026")}
           className="ml-auto text-xs text-muted-foreground hover:text-foreground"
         >
           Cały terminarz →
-        </Link>
+        </a>
       </div>
       <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x">
         {todays.map((m) => (

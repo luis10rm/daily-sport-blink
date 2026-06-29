@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { X, Trophy, Calendar, Users, Goal, Newspaper } from "lucide-react";
 import { useWorldCupMatches, useWorldCupStandings, useWorldCupScorers } from "@/hooks/useWorldCupData";
 import { useWorldCupPosts } from "@/hooks/useWorldCupPosts";
@@ -20,6 +20,15 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
+  const navigate = useNavigate();
+  const goTo = useCallback(
+    (to: string) => (e: React.MouseEvent | React.TouchEvent) => {
+      e.stopPropagation();
+      if ("preventDefault" in e) e.preventDefault();
+      navigate(to);
+    },
+    [navigate]
+  );
 
   const { data: matchesRes } = useWorldCupMatches();
   const { data: standingsRes } = useWorldCupStandings();
@@ -239,9 +248,10 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
                 <h3 className="text-lg font-bold">Top z MŚ</h3>
               </div>
               {topPost ? (
-                <Link
-                  to={`/blink/${topPost.slug}`}
-                  onClick={(e) => e.stopPropagation()}
+                <a
+                  href={`/blink/${topPost.slug}`}
+                  onClick={goTo(`/blink/${topPost.slug}`)}
+                  onTouchEnd={goTo(`/blink/${topPost.slug}`)}
                   className="block bg-white/5 rounded-xl overflow-hidden hover:bg-white/10 transition-colors"
                 >
                   {topPost.image_url && (
@@ -251,17 +261,18 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
                     <h4 className="font-bold text-base leading-tight mb-2">{topPost.title}</h4>
                     <p className="text-sm text-white/70 line-clamp-3">{topPost.excerpt}</p>
                   </div>
-                </Link>
+                </a>
               ) : (
                 <p className="text-white/70">Brak wpisów z MŚ. Wkrótce zacznie się dziać.</p>
               )}
-              <Link
-                to="/mistrzostwa-swiata-2026"
-                onClick={(e) => e.stopPropagation()}
+              <a
+                href="/mistrzostwa-swiata-2026"
+                onClick={goTo("/mistrzostwa-swiata-2026")}
+                onTouchEnd={goTo("/mistrzostwa-swiata-2026")}
                 className="mt-4 inline-flex items-center gap-2 bg-amber-400 text-amber-950 px-4 py-2 rounded-full text-sm font-bold"
               >
                 Przejdź do hubu MŚ
-              </Link>
+              </a>
             </div>
           )}
         </div>

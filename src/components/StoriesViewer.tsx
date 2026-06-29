@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StoryPost } from "@/components/StoriesRow";
@@ -26,6 +26,7 @@ export const StoriesViewer = ({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [progress, setProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const navigate = useNavigate();
 
   const currentPost = posts[currentIndex];
 
@@ -199,13 +200,23 @@ export const StoriesViewer = ({
 
           {/* Read more link */}
           {currentPost.hasContent ? (
-            <Link
-              to={`/blink/${currentPost.slug}`}
-              onClick={(e) => e.stopPropagation()}
+            <a
+              href={`/blink/${currentPost.slug}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                e.preventDefault();
+                navigate(`/blink/${currentPost.slug}`);
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                navigate(`/blink/${currentPost.slug}`);
+              }}
               className="inline-flex items-center gap-2 bg-white text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-white/90 transition-colors"
             >
               Czytaj więcej
-            </Link>
+            </a>
           ) : (
             <a
               href={currentPost.sourceUrl}

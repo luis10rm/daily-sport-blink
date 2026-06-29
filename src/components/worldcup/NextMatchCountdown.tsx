@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Trophy, Radio, CalendarDays, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavLink } from "@/hooks/useNavLink";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useCountdown, splitCountdown } from "@/hooks/useCountdown";
@@ -61,6 +61,7 @@ export const NextMatchCountdown = () => {
   const { data, isLoading } = useWorldCupMatches();
   const match = useMemo(() => pickMatch(data?.data?.matches || []), [data]);
   const ms = useCountdown(match?.utcDate);
+  const navLink = useNavLink();
 
   if (isLoading) {
     return <Skeleton className="h-56 rounded-2xl mb-10" />;
@@ -143,12 +144,12 @@ export const NextMatchCountdown = () => {
             <CalendarDays className="h-3.5 w-3.5" />
             <span className="capitalize">{fmtKickoff(match.utcDate)}</span>
           </span>
-          <Link
-            to="/mistrzostwa-swiata-2026#terminarz"
+          <a
+            {...navLink("/mistrzostwa-swiata-2026#terminarz")}
             className="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400"
           >
             Pełny terminarz <ArrowRight className="h-3 w-3" />
-          </Link>
+          </a>
         </div>
       </div>
     </section>
