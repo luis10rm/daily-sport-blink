@@ -47,7 +47,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           <div className="mt-4 flex justify-end">
             <a
               {...navLink(to)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-fuchsia-700"
+              className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-600 px-5 py-2.5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-fuchsia-700"
             >
               Czytaj więcej <ArrowRight className="h-4 w-4" />
             </a>
@@ -71,7 +71,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           </h3>
           <a
             {...navLink(to)}
-            className="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-fuchsia-600 hover:text-fuchsia-700 dark:text-fuchsia-300"
+            className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-fuchsia-600 hover:text-fuchsia-700 dark:text-fuchsia-300"
           >
             Czytaj <ArrowRight className="h-3 w-3" />
           </a>
@@ -115,7 +115,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
         <div className="mt-3 pt-1">
           <a
             {...navLink(to)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-fuchsia-600/40 px-3 py-1.5 text-xs font-semibold text-fuchsia-600 transition-colors hover:bg-fuchsia-600 hover:text-white dark:text-fuchsia-300 dark:hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-md border border-fuchsia-600/40 px-4 py-2.5 text-sm font-semibold text-fuchsia-600 transition-colors hover:bg-fuchsia-600 hover:text-white dark:text-fuchsia-300 dark:hover:text-white"
           >
             Czytaj więcej <ArrowRight className="h-3.5 w-3.5" />
           </a>
