@@ -691,24 +691,51 @@ const BannerEditor = () => {
 
                     <FormField
                       control={form.control}
-                      name="show_on_tech"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Wyświetlaj też w sekcji Tech</FormLabel>
-                            <FormDescription>
-                              Sportowy slot (góra/środek/dół) zostanie zduplikowany na <code>/tech</code> w odpowiadającym mu miejscu.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={!!field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                      name="sections"
+                      render={({ field }) => {
+                        const value = (field.value || []) as ("sport" | "tech")[];
+                        const toggle = (s: "sport" | "tech", checked: boolean) => {
+                          const next = checked
+                            ? Array.from(new Set([...value, s]))
+                            : value.filter((v) => v !== s);
+                          field.onChange(next);
+                        };
+                        const items: { id: "sport" | "tech"; label: string; hint: string }[] = [
+                          { id: "sport", label: "Sport (szortsy.pl)", hint: "Strony i artykuły sekcji sportowej" },
+                          { id: "tech", label: "Tech (/tech)", hint: "Strony i artykuły sekcji Tech" },
+                        ];
+                        return (
+                          <FormItem className="rounded-lg border p-4 space-y-3">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Sekcje emisji</FormLabel>
+                              <FormDescription>
+                                Baner pojawi się w odpowiadającym slocie (góra/środek/dół) w każdej zaznaczonej sekcji.
+                                Sloty bez odpowiednika (np. inline, sticky) emitują tylko w swojej natywnej sekcji.
+                              </FormDescription>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {items.map((it) => (
+                                <label
+                                  key={it.id}
+                                  className="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-accent/50"
+                                >
+                                  <Checkbox
+                                    checked={value.includes(it.id)}
+                                    onCheckedChange={(c) => toggle(it.id, c === true)}
+                                  />
+                                  <div className="space-y-0.5">
+                                    <div className="text-sm font-medium leading-none">{it.label}</div>
+                                    <div className="text-xs text-muted-foreground">{it.hint}</div>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
+
                   </CardContent>
                 </Card>
               </div>
