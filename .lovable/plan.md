@@ -1,30 +1,40 @@
-# Redesign paska patrona — Inline condensed
+## Diagnoza
 
-## Co się zmienia
-Na mobile pasek patrona przestaje „rozwalać" CTA poza pasek. Layout staje się jednolinijkowy, z czytelnym podziałem na strefę informacji (lewa) i strefę akcji (prawa).
+Tak — masz rację. W `src/components/Header.tsx` i `src/components/recki/ReckiHeader.tsx` używane są standardowe `<Link>` z React Router. To dokładnie ten sam wzorzec, który wcześniej naprawialiśmy w `NewsCard`, `NewsOfTheDay` i `TodaysNewsBanner`, gdzie iOS Safari wymagał podwójnego tapnięcia (first tap = focus, second = click).
 
-## Implementacja — `src/components/PatronBar.tsx`
+Elementy w nagłówku z tym problemem:
+- **Header (Sport)**: logo `Link to="/"`, `Archiwum`, `Autorzy`, pozycje w dropdownie `Kategorie` (`Link to="/kategoria/:slug"`)
+- **ReckiHeader (Tech)**: logo `Link to="/tech"`, pozycje w dropdownie kategorii
+- **ModeSwitcher**: pigułka `Sport` ↔ `Tech`
 
-Przebuduję wewnętrzną zawartość paska na układ `justify-between` zamiast `justify-center`:
+Działają od pierwszego tapnięcia (bo używają natywnych mechanizmów): `ThemeToggle` (button), trigger dropdownu (Radix), `MatchTicker` (już ma `onTouchEnd` + `navigate`).
 
-**Strefa lewa** (`flex items-center gap-2 overflow-hidden`):
-- Gwiazdka (3.5×3.5)
-- Prefix `Patron serwisu` — `text-[10px] uppercase opacity-70`, ukryty gdy brak miejsca (`hidden xs:inline`)
-- Nazwa patrona — `text-[12px] sm:text-sm font-bold truncate`
-- Logo patrona (jeśli jest) — `h-4 sm:h-5`
+## Plan naprawy
 
-**Strefa prawa** (`flex items-center gap-2 shrink-0`):
-- Pigułka CTA — `text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap active:scale-95`
-- Przycisk X (jeśli `dismissible`) — `w-4 h-4 opacity-40 hover:opacity-100`
+Zastosować ten sam, sprawdzony wzorzec co w `NewsCard`/`NewsOfTheDay`/`TodaysNewsBanner`:
 
-## Szczegóły techniczne
-- Wysokość paska: zostaje `h-10` na mobile, `sm:h-10` na desktopie (bez zmian, by nie ruszać sticky offsetu headera).
-- Usuwam wrapper `container` z `justify-center` — był źródłem problemu: środkowanie + truncate + absolutnie pozycjonowany X powodowało nakładanie się.
-- Zachowuję cały dotychczasowy behavior: A/B variant, sticky, dismiss do sessionStorage, `onTouchEnd` z `preventDefault`, `cursor-pointer` na całym pasku.
-- Kolory CTA pigułki nadal pochodzą z `patron.text_color` / `patron.background_color` (admin może je zmieniać).
-- Truncate działa na nazwie patrona — w skrajnym wypadku obetnie się `…`, ale CTA nigdy nie wypadnie.
+1. **`src/components/Header.tsx`** — zamienić `Link` na `<a href>` + `onClick` + `onTouchEnd` wywołujące `navigate()` z `useNavigate()`:
+   - logo `/`
+   - `Archiwum` → `/archiwum`
+   - `Autorzy` → `/autorzy`
+   - elementy `DropdownMenuItem asChild` → `Link` (kategorie). Trzymamy `asChild`, ale w środku `<a>` z handlerami.
 
-## Pliki
-- `src/components/PatronBar.tsx` — przebudowa JSX (jeden plik, ~30 linii zmian).
+2. **`src/components/recki/ReckiHeader.tsx`** — to samo dla:
+   - logo `/tech`
+   - elementy dropdownu kategorii Tech (`/tech/kategoria/:slug`)
 
-Brak zmian w bazie, hookach, innych komponentach.
+3. **`src/components/recki/ModeSwitcher.tsx`** — przepisać oba warianty pigułki (Sport ↔ Tech) na `<a>` + `onClick`/`onTouchEnd` + `navigate()`.
+
+W każdym przypadku:
+- zachować `href` (SEO, prawe kliknięcie „otwórz w nowej karcie", Cmd/Ctrl+klik)
+- w `onTouchEnd`: `e.preventDefault()` + `navigate(path)`
+- w `onClick`: jeśli nie modyfikator (`metaKey`/`ctrlKey`/`shiftKey`) → `e.preventDefault()` + `navigate(path)`
+- pozostawić wszystkie istniejące klasy CSS bez zmian
+- nie ruszać `ontouchstart=""` w `index.html` ani globalnej reguły `touch-action: manipulation`
+
+## Czego NIE zmieniam
+
+- `ThemeToggle` (czysty button — działa)
+- triggery `DropdownMenu` (Radix obsługuje touch poprawnie)
+- `MatchTicker` (już ma wzorzec)
+- żadnej logiki biznesowej / danych
