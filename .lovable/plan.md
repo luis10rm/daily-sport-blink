@@ -1,49 +1,48 @@
-## Dlaczego obecny układ zawodzi
+## Cel
 
-Hero (lewa kolumna, 1/2) + 3 standardowe karty (prawa, 1/2) z `items-stretch` wymusza, by hero miał wysokość 3 kart pionowo (~900px). Hero z obrazem 16:9 + krótki tekst nie wypełnia tej wysokości — stąd "dziura" lub (po ostatniej zmianie) sztucznie rozciągnięty obraz, który nie wygląda jak hero portalu tylko jak baner.
+Dodać w sekcji TECH oznaczenie, czy recenzja powstała na podstawie **researchu** (kompilacja źródeł) czy **własnych testów** (hands-on redakcji). Pole edytowalne w CMS + widoczna plakietka na stronie artykułu.
 
-## Nowy układ (wybór B)
+## Zakres zmian
 
-```text
-┌──────────────────────────────────────────┬───────────────┐
-│                                          │ [img] tytuł   │
-│        HERO 2/3 szerokości               │       kategoria│
-│        obraz 16:9 + meta + tytuł         ├───────────────┤
-│        + excerpt POD obrazem             │ [img] tytuł   │
-│        (klasyczny układ kolumnowy)       │       kategoria│
-│                                          ├───────────────┤
-│                                          │ [img] tytuł   │
-│                                          │       kategoria│
-└──────────────────────────────────────────┴───────────────┘
-```
+### 1. Baza (`reviews`)
+- Nowa kolumna `review_basis text` z CHECK (`research` | `hands_on`), `NULL` dozwolony (pokazujemy badge tylko gdy ustawione, dla starych artykułów).
+- Domyślnie `research` dla nowych AI-generated, `hands_on` ustawiane ręcznie przez redakcję.
+- Dotyczy tylko `content_type = 'review'` — dla newsów ignorowane.
 
-Hero jest wizualnie **najszerszy** (dominuje horyzontalnie), a sidebar to wąska lista 3 kompaktowych pozycji, która naturalnie dopasowuje się do wysokości hero. Zero dziur, zero rozciągania obrazu.
+### 2. CMS — `src/pages/admin/ReviewEditor.tsx`
+- Widoczne tylko gdy `content_type === 'review'`.
+- RadioGroup z 2 opcjami:
+  - **Research** (ikona 📚 / `BookOpen`) — "Na podstawie publicznie dostępnych źródeł i specyfikacji"
+  - **Własne testy** (ikona 🔬 / `FlaskConical`) — "Produkt testowany przez redakcję"
+- Przy generowaniu AI domyślnie zaznacza się `research` (bo AI nie ma w ręku produktu).
 
-## Zmiany
+### 3. Frontend — plakietka
 
-### `src/pages/ReckiHome.tsx` — sekcja hero
-- Grid: `lg:grid-cols-3` zamiast `lg:grid-cols-2`.
-- Hero: `lg:col-span-2` (2/3 szerokości).
-- Sidebar: `lg:col-span-1`, `flex flex-col gap-3`, 3 karty `variant="compact"`.
-- Usuwam `items-stretch` i `min-h-[480px]` — niepotrzebne.
+**`src/components/recki/ReviewBasisBadge.tsx`** (nowy):
+- `research`: szary outline badge, ikona BookOpen, tekst "Na podstawie researchu"
+- `hands_on`: pełny magenta/zielony badge, ikona FlaskConical, tekst "Test redakcji"
+- Tooltip z dłuższym wyjaśnieniem przy hover.
 
-### `src/components/recki/ReviewCard.tsx` — wariant `hero`
-Wracam do klasycznego układu kolumnowego (obraz nad tekstem), bo teraz hero nie musi już udawać pełnej wysokości — sidebar dopasuje się do niego:
-- `flex flex-col`, obraz `aspect-[16/9]` na górze (object-cover, naturalne proporcje).
-- Pod obrazem: kategoria (badge magenta), duży tytuł (text-2xl md:text-3xl), excerpt (line-clamp-3), opcjonalnie meta (data/autor).
-- Score badge w prawym górnym rogu obrazu (jak teraz).
-- Usuwam `absolute inset-0` overlay, `min-h-[480px]`, `aspect-[16/10]` fallback — wszystko zbędne.
+**`src/pages/ReckiReview.tsx`**:
+- Plakietka pod tytułem, obok meta (autor / data / kategoria) — w jednej linii nad coverem lub pod nim.
+- Druga, dyskretna instancja przy końcu artykułu nad werdyktem (kontekst dla czytelnika scrollującego do oceny).
 
-### Wariant `compact` w sidebarze
-Już istnieje (`variant="compact"`: miniatura 64×64 + tytuł 2 linie + kategoria + score). Używam go bez zmian. Ewentualnie powiększę miniaturę do 80×80 dla lepszej wagi wizualnej obok hero.
+**`src/components/recki/ReviewCard.tsx`** (opcjonalnie):
+- Mini-ikona (sam ikon bez tekstu) na karcie hero w prawym dolnym rogu obrazu — żeby już z listingu było widać status. Pomijamy w wariantach `default`/`compact` żeby nie zaśmiecać.
 
-## Mobile
+### 4. Typy
+- Po migracji wygenerują się typy Supabase. `useReviews` hook nie wymaga zmian (zwraca cały rekord).
 
-Na `<lg` grid składa się do jednej kolumny: hero (pełna szerokość), pod nim 3 compact-karty jedna pod drugą — naturalna lista. Bez specjalnych breakpointów.
+## Nie zmieniamy
 
-## Zakres
+- Edge function `generate-review` — pole ustawia człowiek w CMS po wygenerowaniu szkicu (domyślnie `research`, łatwo zmienić).
+- Tabela posts / sekcja Sport — to wyłącznie dla TECH.
+- RLS / GRANTy — nowa kolumna dziedziczy istniejące polityki tabeli.
 
-- `src/pages/ReckiHome.tsx` — przebudowa sekcji hero (grid 3 kolumn).
-- `src/components/recki/ReviewCard.tsx` — uproszczenie wariantu `hero` z powrotem do układu kolumnowego, drobne tuning wariantu `compact`.
+## Pliki
 
-Bez zmian w bazie, hookach, innych komponentach.
+- migracja: `ALTER TABLE reviews ADD COLUMN review_basis text CHECK (review_basis IN ('research','hands_on'))`
+- `src/pages/admin/ReviewEditor.tsx` — sekcja "Podstawa recenzji" w formularzu
+- `src/components/recki/ReviewBasisBadge.tsx` — nowy komponent
+- `src/pages/ReckiReview.tsx` — render plakietki (2 miejsca)
+- `src/components/recki/ReviewCard.tsx` — mini-ikona w wariancie `hero` (opcjonalne, do potwierdzenia)

@@ -487,6 +487,7 @@ export type Database = {
           product_name: string | null
           pros: string[]
           published_at: string | null
+          review_basis: string | null
           score: number | null
           slug: string
           source_url: string | null
@@ -512,6 +513,7 @@ export type Database = {
           product_name?: string | null
           pros?: string[]
           published_at?: string | null
+          review_basis?: string | null
           score?: number | null
           slug: string
           source_url?: string | null
@@ -537,6 +539,7 @@ export type Database = {
           product_name?: string | null
           pros?: string[]
           published_at?: string | null
+          review_basis?: string | null
           score?: number | null
           slug?: string
           source_url?: string | null
