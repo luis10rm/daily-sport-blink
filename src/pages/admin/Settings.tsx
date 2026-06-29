@@ -450,6 +450,18 @@ const Settings = () => {
     setLocalImagePrompt(DEFAULT_IMAGE_PROMPT);
   };
 
+  const handleSaveTechReviewPrompt = async () => {
+    await updateSetting.mutateAsync({ key: "tech_review_prompt", value: localTechReviewPrompt });
+    setHasTechReviewPromptChanges(false);
+  };
+  const handleResetTechReviewPrompt = () => setLocalTechReviewPrompt(DEFAULT_TECH_REVIEW_PROMPT);
+
+  const handleSaveTechNewsPrompt = async () => {
+    await updateSetting.mutateAsync({ key: "tech_news_prompt", value: localTechNewsPrompt });
+    setHasTechNewsPromptChanges(false);
+  };
+  const handleResetTechNewsPrompt = () => setLocalTechNewsPrompt(DEFAULT_TECH_NEWS_PROMPT);
+
   const handleSaveMakeWebhook = async () => {
     await updateSetting.mutateAsync({
       key: "make_webhook_url",
