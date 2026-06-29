@@ -92,8 +92,10 @@ const ReckiHome = () => {
           )}
 
           {hero && (
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-              <ReviewCard review={hero} variant="hero" />
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8 items-stretch">
+              <div className="h-full [&>a]:h-full [&>a]:flex [&>a]:flex-col">
+                <ReviewCard review={hero} variant="hero" />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
                 {secondary.map((r) => (
                   <ReviewCard key={r.id} review={r} />
@@ -119,7 +121,7 @@ const ReckiHome = () => {
 
           {rest.length > 0 && (
             <section>
-              <h2 className="text-xl font-bold mb-4">Wszystko z Tech</h2>
+              {useHeroLayout && <h2 className="text-xl font-bold mb-4">Wszystko z Tech</h2>}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {rest.map((r) => (
                   <ReviewCard key={r.id} review={r} />
@@ -127,6 +129,7 @@ const ReckiHome = () => {
               </div>
             </section>
           )}
+
 
           {bottomBanner && (
             <div className="mt-8">
