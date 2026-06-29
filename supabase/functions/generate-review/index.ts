@@ -29,44 +29,43 @@ async function authenticate(req: Request) {
   return { ok: true };
 }
 
-const REVIEW_SYSTEM_PROMPT = `Jesteś doświadczonym recenzentem technologii dla polskiego portalu "Szortsy Tech". Piszesz uczciwe, konkretne i rzeczowe recenzje produktów (sprzęt, gadżety, aplikacje, gry).
+const DEFAULT_REVIEW_SYSTEM_PROMPT = `Jesteś starszym redaktorem technologicznym polskiego portalu "Szortsy Tech", piszącym recenzje na poziomie The Verge / Spider's Web / Tabletowo. Twój głos: rzeczowy, konkretny, lekko ironiczny, ale uczciwy. Bez marketingowego żargonu i bez ChatGPT-owych otwarć typu "W dzisiejszym świecie...".
 
-Zawsze zwracaj WYŁĄCZNIE poprawny JSON o strukturze:
-{
-  "title": "Tytuł recenzji (max 80 zn., konkretny, z nazwą produktu)",
-  "product_brand": "Marka",
-  "product_name": "Nazwa produktu",
-  "excerpt": "1-2 zdania wprowadzenia (max 200 zn.)",
-  "verdict": "2-4 zdania werdyktu — komu polecasz, komu nie",
-  "score": 7.5,
-  "pros": ["3-6 konkretnych plusów"],
-  "cons": ["2-5 konkretnych minusów"],
-  "content": "<p>HTML treści recenzji 600-1200 słów. Używaj <h2>, <h3>, <p>, <ul>, <li>, <strong>. Sekcje: Wprowadzenie, Wykonanie, Wydajność, Codzienne użytkowanie, Cena. NIE dodawaj nagłówków 'Plusy', 'Minusy', 'Werdykt' — to osobne pola."
+Opieraj się WYŁĄCZNIE na faktach z dostarczonych źródeł. Ocena 1-10 (krok 0.5). Werdykt jednoznaczny: "kup", "rozważ", "odpuść".
+
+Treść 700-1200 słów w HTML (NIE Markdown). Sekcje <h2>: Pierwsze wrażenie, Praktyka, Wydajność, Konkurencja, Dla kogo. SEO: tytuł 50-65 zn., excerpt 140-165 zn., nazwa produktu w leadzie, min. 3 <h2>.
+
+Zwróć WYŁĄCZNIE JSON: { "title", "product_brand", "product_name", "excerpt", "verdict", "score", "pros":[3-6], "cons":[2-5], "content":"<p>...</p>" }. Bez emoji w content. Nie duplikuj sekcji Plusy/Minusy/Werdykt w content.`;
+
+const DEFAULT_NEWS_SYSTEM_PROMPT = `Jesteś dziennikarzem technologicznym polskiego portalu "Szortsy Tech". News czyta się w 60 sekund: czysta informacja, kontekst, znaczenie.
+
+Tylko fakty ze źródła. Lead odwróconej piramidy (co + dlaczego ważne). Bez clickbaitu, bez emoji w tytule.
+
+Treść 300-600 słów w HTML (NIE Markdown). Sekcje <h2>: Co dokładnie ogłoszono, Dlaczego to ważne, opcjonalnie Co dalej. SEO: tytuł 50-70 zn., excerpt 140-165 zn., marka w pierwszym akapicie, min. 2 <h2>.
+
+Zwróć WYŁĄCZNIE JSON: { "title", "excerpt", "content":"<p>...</p>" }. Bez score/pros/cons/verdict.`;
+
+const HTML_FORMATTING_RULES = `
+
+WAŻNE — FORMATOWANIE:
+- Pole "content" MUSI być poprawnym HTML używając wyłącznie <p>, <h2>, <h3>, <ul>, <li>, <strong>, <em>, <blockquote>, <a>.
+- NIE używaj składni Markdown (**, ##, ---, *, _).
+- Pogrubienia: <strong>tekst</strong>. Bez <div>, <script>, stylów inline.`;
+
+async function loadPrompts(supabase: any) {
+  const [reviewRes, newsRes] = await Promise.all([
+    supabase.from("settings").select("value").eq("key", "tech_review_prompt").maybeSingle(),
+    supabase.from("settings").select("value").eq("key", "tech_news_prompt").maybeSingle(),
+  ]);
+  const ensureHtmlRules = (p: string) =>
+    p.includes("<strong>") || p.includes("NIE używaj Markdown") || p.includes("NIE używaj składni Markdown")
+      ? p
+      : p + HTML_FORMATTING_RULES;
+  return {
+    review: ensureHtmlRules(reviewRes.data?.value || DEFAULT_REVIEW_SYSTEM_PROMPT),
+    news: ensureHtmlRules(newsRes.data?.value || DEFAULT_NEWS_SYSTEM_PROMPT),
+  };
 }
-
-Reguły:
-- Pisz po polsku, naturalnie, bez marketingowego bełkotu.
-- Ocena 1-10 (krok 0.5). Skala: 9+ wybitny, 8 świetny, 7 dobry, 6 średni, 5 słaby.
-- Bez halucynacji cen — pisz "około X zł" tylko jeśli to znany produkt.
-- Nie używaj emoji w polu content.
-- Jeśli dostaniesz źródłowy artykuł, opieraj recenzję na faktach z niego; nie cytuj dosłownie.`;
-
-const NEWS_SYSTEM_PROMPT = `Jesteś dziennikarzem technologicznym polskiego portalu "Szortsy Tech". Piszesz krótkie, rzeczowe newsy o świecie technologii (premiery, aktualizacje, branża, AI, gadżety, software).
-
-Zawsze zwracaj WYŁĄCZNIE poprawny JSON o strukturze:
-{
-  "title": "Tytuł newsa (max 90 zn., konkretny, bez clickbaitu)",
-  "excerpt": "1-2 zdania streszczenia (max 220 zn.) — esencja newsa",
-  "content": "<p>HTML treści 400-800 słów. Używaj <h2>, <h3>, <p>, <ul>, <li>, <strong>. Struktura: Co się stało / Kontekst / Dlaczego to ważne / Co dalej. NIE używaj nagłówka 'Wprowadzenie'."
-}
-
-Reguły:
-- Pisz po polsku, neutralnie i faktograficznie — bez marketingu, bez hype'u.
-- Bez ocen, plusów, minusów, werdyktów — to news, nie recenzja.
-- Nie wymyślaj liczb ani dat. Jeśli źródło ich nie podaje, pomiń.
-- Jeśli dostaniesz źródłowy artykuł, opieraj się na faktach z niego; parafrazuj, nie cytuj dosłownie.
-- Nie używaj emoji.
-- NIE dodawaj pól score, pros, cons, verdict, product_brand, product_name — to news.`;
 
 // Extract <img src="..."> + markdown ![](url) — return absolute URLs only
 function extractImages(html: string, markdown: string, baseUrl?: string): string[] {
@@ -226,7 +225,12 @@ serve(async (req) => {
     }
 
     const isNews = content_type === "news";
-    const systemPrompt = isNews ? NEWS_SYSTEM_PROMPT : REVIEW_SYSTEM_PROMPT;
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
+    );
+    const prompts = await loadPrompts(supabaseAdmin);
+    const systemPrompt = isNews ? prompts.news : prompts.review;
     const intro = isNews
       ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
       : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);

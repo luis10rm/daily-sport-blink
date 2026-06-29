@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useSetting, useUpdateSetting } from "@/hooks/useSettings";
 import { usePatronSettings, useUpdatePatronSettings, PatronSettings } from "@/hooks/usePatronSettings";
-import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2, Facebook, Image } from "lucide-react";
+import { Loader2, Save, RotateCcw, Star, X, Calendar, Link2, Facebook, Image, Cpu, Newspaper } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { LogoGenerator } from "@/components/admin/LogoGenerator";
@@ -121,6 +121,65 @@ EMOJI KATEGORII:
 - mma: 🥊
 - other: 🏆`;
 
+const DEFAULT_TECH_REVIEW_PROMPT = `Jesteś starszym redaktorem technologicznym polskiego portalu "Szortsy Tech", piszącym recenzje na poziomie The Verge / Spider's Web / Tabletowo. Twój głos: rzeczowy, konkretny, lekko ironiczny, ale uczciwy. Bez marketingowego żargonu ("rewolucyjny", "przełomowy", "game-changer") i bez ChatGPT-owych otwarć typu "W dzisiejszym świecie...".
+
+ZASADY MERYTORYCZNE
+- Opieraj się WYŁĄCZNIE na faktach z dostarczonych źródeł. Nie zmyślaj liczb, cen, dat ani specyfikacji.
+- Zawsze dawaj kontekst: do kogo produkt jest skierowany, z czym konkuruje, ile kosztuje (w PLN jeśli znane).
+- Werdykt jednoznaczny: "kup", "rozważ", "odpuść" — z uzasadnieniem.
+- Ocena 1-10 (krok 0.5) zgodna z treścią. 9+ wybitny, 8 świetny, 7 dobry, 6 średni, 5 słaby.
+
+STRUKTURA TREŚCI (HTML, NIE Markdown), 700-1200 słów
+1. Lead — 1 akapit, 2-3 zdania: kto, co, za ile, główna teza.
+2. <h2>Pierwsze wrażenie i wykonanie</h2>
+3. <h2>Jak to działa w praktyce</h2>
+4. <h2>Wydajność i jakość</h2>
+5. <h2>Co konkurencja robi lepiej</h2>
+6. <h2>Dla kogo to jest, a dla kogo nie</h2>
+Pola pros (3-6) i cons (2-5) — konkretne, bez ogólników.
+verdict — 2-3 zdania domykające + jasna rekomendacja.
+
+SEO (TWARDE WYMAGANIA)
+- Tytuł 50-65 znaków, zawiera markę + nazwę produktu + intencję ("recenzja", "test", "opinia", "czy warto").
+- Excerpt 140-165 znaków, samodzielne streszczenie zawierające nazwę produktu.
+- Pierwszy akapit zawiera pełną nazwę produktu i kategorię (BEZ keyword stuffing).
+- Minimum 3 <h2>, logiczna hierarchia.
+- <strong> przy nazwie produktu i cenie w leadzie.
+
+FORMAT HTML
+- Treść w polu content: <p>, <h2>, <h3>, <ul>, <li>, <strong>, <em>, <blockquote>.
+- NIE używaj Markdown (**, ##, ---). Bez <div>, <script>, stylów inline, emoji w content.
+- NIE dubluj sekcji "Plusy", "Minusy", "Werdykt" w content — to osobne pola JSON.
+
+Zwróć WYŁĄCZNIE poprawny JSON: { "title", "product_brand", "product_name", "excerpt", "verdict", "score", "pros":[], "cons":[], "content":"<p>...</p>" }`;
+
+const DEFAULT_TECH_NEWS_PROMPT = `Jesteś dziennikarzem technologicznym polskiego portalu "Szortsy Tech". Twoje newsy czyta się w 60 sekund: czysta informacja, kontekst, znaczenie.
+
+ZASADY
+- Tylko fakty z dostarczonego źródła. Bez spekulacji "prawdopodobnie", "eksperci twierdzą" jeśli nie ma tego w źródle.
+- Pierwsze zdanie = pełna odpowiedź na "co się stało" (lead odwróconej piramidy). Drugie zdanie = dlaczego to istotne.
+- Bez clickbaitu, bez emoji w tytule, bez WIELKICH liter w środku zdania.
+- Jeśli źródło podaje cenę/datę/wersję — zacytuj dokładnie.
+
+STRUKTURA (HTML, NIE Markdown), 300-600 słów
+1. Lead <p> — 2 zdania, 35-55 słów.
+2. <h2>Co dokładnie ogłoszono</h2>
+3. <h2>Dlaczego to ważne</h2>
+4. Opcjonalnie <h2>Co dalej</h2> — premiera, dostępność w Polsce, cena.
+
+SEO
+- Tytuł 50-70 znaków, marka + konkret ("Apple ogłasza...", "Samsung obniża cenę..."). Bez "NEWS:", "UWAGA:".
+- Excerpt 140-165 znaków, samodzielnie zrozumiały.
+- Marka i nazwa produktu w pierwszym akapicie.
+- <strong> wokół nazwy produktu i ceny w leadzie.
+- Minimum 2 <h2>.
+
+FORMAT HTML
+- Treść w polu content: <p>, <h2>, <h3>, <ul>, <li>, <strong>, <em>.
+- NIE używaj Markdown. Bez <div>, <script>, stylów inline, emoji.
+
+Zwróć WYŁĄCZNIE poprawny JSON: { "title", "excerpt", "content":"<p>...</p>" }`;
+
 const DEFAULT_PATRON: PatronSettings = {
   enabled: false,
   prefix_text: "Głównym patronem serwisu jest",
@@ -203,6 +262,8 @@ const Settings = () => {
   const { data: summaryPromptValue, isLoading: isLoadingSummaryPrompt } = useSetting("daily_summary_prompt");
   const { data: facebookPromptValue, isLoading: isLoadingFacebookPrompt } = useSetting("facebook_post_prompt");
   const { data: imagePromptValue, isLoading: isLoadingImagePrompt } = useSetting("article_image_prompt");
+  const { data: techReviewPromptValue, isLoading: isLoadingTechReviewPrompt } = useSetting("tech_review_prompt");
+  const { data: techNewsPromptValue, isLoading: isLoadingTechNewsPrompt } = useSetting("tech_news_prompt");
   const { data: makeWebhookValue, isLoading: isLoadingMakeWebhook } = useSetting("make_webhook_url");
   const { data: patronData, isLoading: isLoadingPatron } = usePatronSettings();
   const updateSetting = useUpdateSetting();
@@ -227,6 +288,12 @@ const Settings = () => {
   // Image prompt state
   const [localImagePrompt, setLocalImagePrompt] = useState("");
   const [hasImagePromptChanges, setHasImagePromptChanges] = useState(false);
+
+  // Tech prompts state
+  const [localTechReviewPrompt, setLocalTechReviewPrompt] = useState("");
+  const [hasTechReviewPromptChanges, setHasTechReviewPromptChanges] = useState(false);
+  const [localTechNewsPrompt, setLocalTechNewsPrompt] = useState("");
+  const [hasTechNewsPromptChanges, setHasTechNewsPromptChanges] = useState(false);
   
   // Make webhook state
   const [localMakeWebhook, setLocalMakeWebhook] = useState("");
@@ -264,6 +331,22 @@ const Settings = () => {
       setLocalImagePrompt(imagePromptValue);
     }
   }, [imagePromptValue]);
+
+  useEffect(() => {
+    if (techReviewPromptValue) setLocalTechReviewPrompt(techReviewPromptValue);
+  }, [techReviewPromptValue]);
+
+  useEffect(() => {
+    if (techNewsPromptValue) setLocalTechNewsPrompt(techNewsPromptValue);
+  }, [techNewsPromptValue]);
+
+  useEffect(() => {
+    setHasTechReviewPromptChanges(localTechReviewPrompt !== techReviewPromptValue && localTechReviewPrompt !== "");
+  }, [localTechReviewPrompt, techReviewPromptValue]);
+
+  useEffect(() => {
+    setHasTechNewsPromptChanges(localTechNewsPrompt !== techNewsPromptValue && localTechNewsPrompt !== "");
+  }, [localTechNewsPrompt, techNewsPromptValue]);
 
   useEffect(() => {
     if (makeWebhookValue !== undefined) {
@@ -366,6 +449,18 @@ const Settings = () => {
   const handleResetImagePrompt = () => {
     setLocalImagePrompt(DEFAULT_IMAGE_PROMPT);
   };
+
+  const handleSaveTechReviewPrompt = async () => {
+    await updateSetting.mutateAsync({ key: "tech_review_prompt", value: localTechReviewPrompt });
+    setHasTechReviewPromptChanges(false);
+  };
+  const handleResetTechReviewPrompt = () => setLocalTechReviewPrompt(DEFAULT_TECH_REVIEW_PROMPT);
+
+  const handleSaveTechNewsPrompt = async () => {
+    await updateSetting.mutateAsync({ key: "tech_news_prompt", value: localTechNewsPrompt });
+    setHasTechNewsPromptChanges(false);
+  };
+  const handleResetTechNewsPrompt = () => setLocalTechNewsPrompt(DEFAULT_TECH_NEWS_PROMPT);
 
   const handleSaveMakeWebhook = async () => {
     await updateSetting.mutateAsync({
@@ -913,6 +1008,120 @@ const Settings = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* TECH Prompts - Only for admins */}
+        {isAdmin && (
+          <Card className="border-fuchsia-500/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Cpu className="h-5 w-5 text-fuchsia-600" />
+                Prompty AI — Szortsy TECH
+              </CardTitle>
+              <CardDescription>
+                Systemowe prompty używane przez generator treści w sekcji recenzji.
+                Zaprojektowane pod SEO (długość tytułu/excerptu, struktura nagłówków H2)
+                i poprawny HTML w polu content.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {/* Tech Review Prompt */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Star className="h-4 w-4 text-fuchsia-600" />
+                  <Label htmlFor="tech-review-prompt">Prompt — Recenzje TECH</Label>
+                </div>
+                {isLoadingTechReviewPrompt ? (
+                  <Skeleton className="h-64 w-full" />
+                ) : (
+                  <Textarea
+                    id="tech-review-prompt"
+                    value={localTechReviewPrompt}
+                    onChange={(e) => setLocalTechReviewPrompt(e.target.value)}
+                    rows={18}
+                    className="font-mono text-sm"
+                    placeholder="Prompt systemowy dla generatora recenzji..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Używany dla typu „review". Definiuje strukturę (H2), długość (700-1200 słów),
+                  zasady SEO i format JSON z polami score, pros, cons, verdict.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveTechReviewPrompt}
+                    disabled={!hasTechReviewPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleResetTechReviewPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
+              </div>
+
+              {/* Tech News Prompt */}
+              <div className="space-y-2 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Newspaper className="h-4 w-4 text-fuchsia-600" />
+                  <Label htmlFor="tech-news-prompt">Prompt — Newsy TECH</Label>
+                </div>
+                {isLoadingTechNewsPrompt ? (
+                  <Skeleton className="h-64 w-full" />
+                ) : (
+                  <Textarea
+                    id="tech-news-prompt"
+                    value={localTechNewsPrompt}
+                    onChange={(e) => setLocalTechNewsPrompt(e.target.value)}
+                    rows={16}
+                    className="font-mono text-sm"
+                    placeholder="Prompt systemowy dla generatora newsów..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Używany dla typu „news". Krótsza forma (300-600 słów), lead odwróconej piramidy,
+                  bez pól score/pros/cons. Zasady SEO i struktura H2 wbudowane.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveTechNewsPrompt}
+                    disabled={!hasTechNewsPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleResetTechNewsPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+
 
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
