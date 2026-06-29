@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavLink } from "@/hooks/useNavLink";
 import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
