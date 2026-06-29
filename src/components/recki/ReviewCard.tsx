@@ -8,12 +8,13 @@ interface Props {
 }
 
 export const ReviewCard = ({ review, variant = "default" }: Props) => {
+  const navLink = useNavLink();
   const to = `/tech/${review.category?.slug ?? "wszystkie"}/${review.slug}`;
 
   if (variant === "hero") {
     return (
-      <Link
-        to={to}
+      <a
+        {...navLink(to)}
         className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-md transition-all hover:shadow-xl"
       >
         <div className="relative aspect-[16/9] overflow-hidden bg-muted">
@@ -46,15 +47,15 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
             <p className="mt-2 line-clamp-3 text-sm md:text-base text-muted-foreground">{review.excerpt}</p>
           )}
         </div>
-      </Link>
+      </a>
     );
   }
 
 
   if (variant === "compact") {
     return (
-      <Link
-        to={to}
+      <a
+        {...navLink(to)}
         className="group flex items-center gap-3 rounded-lg border border-border bg-card p-2 transition-colors hover:bg-muted/50"
       >
         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
@@ -71,13 +72,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           )}
         </div>
         <ScoreBadge score={review.score} size="sm" />
-      </Link>
+      </a>
     );
   }
 
   return (
-    <Link
-      to={to}
+    <a
+      {...navLink(to)}
       className="group relative block overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-lg"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
@@ -110,6 +111,6 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{review.excerpt}</p>
         )}
       </div>
-    </Link>
+    </a>
   );
 };
