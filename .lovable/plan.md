@@ -1,20 +1,48 @@
-## Problem
+# Diagnoza
 
-Na `/tech` (ReckiHome) sekcja hero używa siatki 2-kolumnowej z `items-stretch`. Lewa kolumna ma 1 kartę hero (tylko obraz 16:9 z tekstem w overlay), prawa ma 3 ułożone pionowo karty. Wrapper `h-full [&>a]:h-full` rozciąga kartę hero do wysokości prawej kolumny, ale jej zawartość (image 16:9) zachowuje proporcje — pod spodem zostaje pusty ciemny prostokąt tła karty. To jest „dziwna lewa kolumna" ze screena.
+Przetestowałem URL i logi:
 
-## Naprawa
+- `curl` bez User-Agenta → **HTTP 204, 0 bajtów** (benchmark.pl ma bot-wall ustawiający cookie `STabid` przy pierwszej wizycie i odrzuca requesty bez UA / bez JS).
+- `curl` z UA Chrome → HTTP 200, 157 KB, pełna treść.
+- Ostatni log AI Gateway dla `generate-review` (07:21:03): trwał **130 s** i zwrócił tylko **495 tokenów** outputu — to symptom „AI nic nie ma o czym pisać", bo Firecrawl prawdopodobnie dostał pustą/blokerską stronę.
+- W `supabase/functions/generate-review/index.ts` funkcja `scrapeSource` wywołuje Firecrawl bez `proxy: "stealth"` i bez fallbacku. Gdy Firecrawl zwróci pustkę albo interstitial, edge function i tak woła AI z pustym `text`, więc Gemini generuje stub lub się gubi i nie zwraca poprawnego JSON-a → frontend pokazuje brak rezultatu.
 
-Dwie zmiany, obie w warstwie prezentacyjnej:
+# Plan naprawy
 
-1. **`src/components/recki/ReviewCard.tsx` — wariant `hero`**: przebudować na układ kolumnowy `flex flex-col h-full`:
-   - górą obraz 16:9 z badge'em ocen (bez overlay tekstu),
-   - pod spodem `flex-1` blok z kategorią, tytułem (text-2xl) i excerpt,
-   - dzięki `flex-1` body wypełnia pozostałą wysokość, gdy karta jest rozciągnięta przez grid.
+## 1. `supabase/functions/generate-review/index.ts`
 
-2. **`src/pages/ReckiHome.tsx`**: uprościć wrapper hero — usunąć hacki `[&>a]:h-full [&>a]:flex [&>a]:flex-col` (karta sama się rozciąga przez `h-full` w komponencie). Zachować `items-stretch` na gridzie, żeby obie kolumny miały tę samą wysokość bez dziur.
+- W `scrapeSource` użyć Firecrawl v2 z opcją `proxy: "stealth"` (omija bot-walle typu benchmark.pl) i `waitFor: 2500`.
+- Po Firecrawl: jeżeli `text.length < 400`, wykonać **fallback** — bezpośredni `fetch` z realistycznym User-Agentem (`Mozilla/5.0 ... Chrome/120`), `Accept-Language: pl-PL`, wyciągnąć tekst z `<article>`/`<main>` (regex strip tagów, limit 12 000 zn.), a obrazy z `<meta property="og:image">` + pierwszych `<img>` w treści.
+- Dodać `console.log` z długością scrapowanego tekstu i liczbą obrazów (do edge function logs — łatwa diagnoza w przyszłości).
+- Jeżeli po obu próbach `text.length < 200` **przerwać przed wywołaniem AI** i zwrócić `502` z komunikatem `"Nie udało się pobrać treści ze źródła (bot-wall)."` zamiast palić 130 s i kredyty.
 
-Efekt: brak pustego ciemnego pasa pod obrazem hero; lewa kolumna wygląda jak pełnoprawna karta z obrazem + tekstem dopasowanym do wysokości stosu 3 kart po prawej.
+## 2. `src/pages/admin/ReviewEditor.tsx`
 
-## Co NIE zmieniam
+- Wyświetlić toast z komunikatem zwróconym przez edge function (`error`) zamiast generycznego „Nie udało się wygenerować".
 
-- Logika danych, breakpointy, kolory/tokeny, warianty `default`/`compact`, banery i sticky mobile — bez zmian.
+## 3. Walidacja
+
+Po wdrożeniu — ponowny test tego samego URL benchmark.pl przez panel; sprawdzić w logach że `scraped text length` > 1000 i że AI dostaje pełny artykuł.
+
+# Szczegóły techniczne (Firecrawl v2)
+
+Body `POST /v2/scrape`:
+```json
+{
+  "url": "...",
+  "formats": ["markdown", "html"],
+  "onlyMainContent": true,
+  "waitFor": 2500,
+  "proxy": "stealth",
+  "location": { "country": "PL", "languages": ["pl"] }
+}
+```
+
+Fallback fetch headers:
+```text
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml
+Accept-Language: pl-PL,pl;q=0.9,en;q=0.8
+```
+
+Bez zmian w bazie danych, bez zmian w innych funkcjach.
