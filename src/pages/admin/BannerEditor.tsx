@@ -97,6 +97,7 @@ const bannerSchema = z.object({
   position: z.enum(["home_top", "home_middle", "home_bottom", "recki_home_top", "recki_home_middle", "recki_home_bottom", "recki_inline", "recki_article_top", "recki_article_bottom", "recki_sticky_mobile"]),
   target_device: z.enum(["all", "desktop", "mobile"]),
   is_active: z.boolean(),
+  show_on_tech: z.boolean().optional(),
   start_date: z.date().optional().nullable(),
   end_date: z.date().optional().nullable(),
 }).refine((data) => {
@@ -146,6 +147,7 @@ const BannerEditor = () => {
       position: "home_middle",
       target_device: "all",
       is_active: false,
+      show_on_tech: false,
       start_date: null,
       end_date: null,
     },
@@ -164,6 +166,7 @@ const BannerEditor = () => {
         position: banner.position,
         target_device: banner.target_device || "all",
         is_active: banner.is_active,
+        show_on_tech: (banner as any).show_on_tech ?? false,
         start_date: banner.start_date ? new Date(banner.start_date) : null,
         end_date: banner.end_date ? new Date(banner.end_date) : null,
       });
@@ -182,6 +185,7 @@ const BannerEditor = () => {
       position: data.position,
       target_device: data.target_device,
       is_active: data.is_active,
+      show_on_tech: data.show_on_tech ?? false,
       start_date: data.start_date?.toISOString() || null,
       end_date: data.end_date?.toISOString() || null,
       created_by: null,
@@ -666,6 +670,27 @@ const BannerEditor = () => {
                           <FormControl>
                             <Switch
                               checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="show_on_tech"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Wyświetlaj też w sekcji Tech</FormLabel>
+                            <FormDescription>
+                              Sportowy slot (góra/środek/dół) zostanie zduplikowany na <code>/tech</code> w odpowiadającym mu miejscu.
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={!!field.value}
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>

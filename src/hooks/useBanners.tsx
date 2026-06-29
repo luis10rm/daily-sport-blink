@@ -27,12 +27,20 @@ export interface Banner {
   position: BannerPosition;
   target_device: BannerTargetDevice;
   is_active: boolean;
+  show_on_tech: boolean;
   start_date: string | null;
   end_date: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
 }
+
+// Map a Tech slot to the equivalent Sport slot whose banners may be mirrored (via show_on_tech)
+const TECH_SPORT_EQUIVALENT: Partial<Record<BannerPosition, BannerPosition>> = {
+  recki_home_top: "home_top",
+  recki_home_middle: "home_middle",
+  recki_home_bottom: "home_bottom",
+};
 
 export type BannerInsert = Omit<Banner, "id" | "created_at" | "updated_at">;
 export type BannerUpdate = Partial<BannerInsert>;
@@ -110,30 +118,31 @@ export const useActiveBannerForDevice = (position: BannerPosition, device: "desk
     gcTime: 0,
     queryFn: async () => {
       const now = new Date().toISOString();
-      
+      const sportMirror = TECH_SPORT_EQUIVALENT[position];
+      const positions = sportMirror ? [position, sportMirror] : [position];
+
       const { data, error } = await supabase
         .from("banners")
         .select("*")
-        .eq("position", position)
+        .in("position", positions)
         .eq("is_active", true)
         .or(`target_device.eq.all,target_device.eq.${device}`)
-        .limit(20);
+        .limit(40);
 
       if (error) throw error;
-      
-      // Filter by dates and require valid image for this device
-      const validBanners = (data || []).filter(banner => {
+
+      // Filter by dates, image availability, and tech-mirror flag for sport equivalents
+      const validBanners = (data || []).filter((banner: any) => {
         if (banner.start_date && new Date(banner.start_date) > new Date(now)) return false;
         if (banner.end_date && new Date(banner.end_date) < new Date(now)) return false;
-        if (device === "desktop") {
-          return !!banner.image_desktop_url;
-        } else {
-          return !!banner.image_mobile_url;
-        }
+        if (device === "desktop" ? !banner.image_desktop_url : !banner.image_mobile_url) return false;
+        // For the mirrored sport slot, require the explicit opt-in
+        if (sportMirror && banner.position === sportMirror && !banner.show_on_tech) return false;
+        return true;
       });
-      
+
       if (validBanners.length === 0) return null;
-      
+
       // Even rotation: random pick from all eligible banners
       const picked = validBanners[Math.floor(Math.random() * validBanners.length)];
       return picked as Banner;
