@@ -78,8 +78,8 @@ export const PatronBar = () => {
   );
 
   const innerContent = (
-    <div className="w-full flex items-center justify-between gap-2 px-3 sm:px-4">
-      <div className="flex items-center gap-2 overflow-hidden mr-1 min-w-0">
+    <div className="relative w-full flex items-center justify-center gap-2 px-3 sm:px-4">
+      <div className="flex items-center gap-2 overflow-hidden min-w-0">
         <Star className="h-3.5 w-3.5 shrink-0 fill-current" />
 
         <div className="flex items-baseline gap-1.5 overflow-hidden whitespace-nowrap min-w-0">
@@ -126,7 +126,7 @@ export const PatronBar = () => {
               e.stopPropagation();
               handleDismiss();
             }}
-            className="p-1 rounded-full opacity-40 hover:opacity-100 transition-opacity"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full opacity-40 hover:opacity-100 transition-opacity"
             aria-label="Zamknij pasek patrona"
             style={{ color: patron.text_color }}
           >
