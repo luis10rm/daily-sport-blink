@@ -47,7 +47,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           <div className="mt-4 flex justify-end">
             <a
               {...navLink(to)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-fuchsia-700"
+              className="inline-flex items-center gap-1.5 rounded-full bg-fuchsia-600 px-5 py-2.5 text-base font-semibold text-white shadow-sm transition-colors hover:bg-fuchsia-700"
             >
               Czytaj więcej <ArrowRight className="h-4 w-4" />
             </a>
