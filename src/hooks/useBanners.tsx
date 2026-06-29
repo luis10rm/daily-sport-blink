@@ -14,6 +14,8 @@ export type BannerPosition =
   | "recki_article_bottom"
   | "recki_sticky_mobile";
 export type BannerTargetDevice = "all" | "desktop" | "mobile";
+export type BannerSection = "sport" | "tech";
+export const ALL_SECTIONS: BannerSection[] = ["sport", "tech"];
 
 export interface Banner {
   id: string;
@@ -28,6 +30,7 @@ export interface Banner {
   target_device: BannerTargetDevice;
   is_active: boolean;
   show_on_tech: boolean;
+  sections: BannerSection[];
   start_date: string | null;
   end_date: string | null;
   created_by: string | null;
@@ -35,12 +38,22 @@ export interface Banner {
   updated_at: string;
 }
 
-// Map a Tech slot to the equivalent Sport slot whose banners may be mirrored (via show_on_tech)
-const TECH_SPORT_EQUIVALENT: Partial<Record<BannerPosition, BannerPosition>> = {
+// Equivalence between Sport and Tech slots. A banner emitted in one slot can be mirrored
+// into its equivalent in the other section if its `sections` array contains that section.
+const SLOT_EQUIVALENT: Partial<Record<BannerPosition, BannerPosition>> = {
+  // sport -> tech
+  home_top: "recki_home_top",
+  home_middle: "recki_home_middle",
+  home_bottom: "recki_home_bottom",
+  // tech -> sport
   recki_home_top: "home_top",
   recki_home_middle: "home_middle",
   recki_home_bottom: "home_bottom",
 };
+
+// Which section does a position natively belong to?
+const positionSection = (pos: BannerPosition): BannerSection =>
+  pos.startsWith("recki_") ? "tech" : "sport";
 
 export type BannerInsert = Omit<Banner, "id" | "created_at" | "updated_at">;
 export type BannerUpdate = Partial<BannerInsert>;
