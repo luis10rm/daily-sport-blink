@@ -127,7 +127,23 @@ const ReviewEditor = () => {
           source_url: form.source_url || undefined,
         },
       });
-      if (error) throw error;
+      if (error) {
+        // supabase.functions.invoke wraps non-2xx in FunctionsHttpError; extract body error
+        let msg = error.message;
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx?.json) {
+            const j = await ctx.json();
+            if (j?.error) msg = j.error;
+          } else if (ctx?.text) {
+            const t = await ctx.text();
+            const j = JSON.parse(t);
+            if (j?.error) msg = j.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
+      if (data?.error) throw new Error(data.error);
       const suggested: string[] = Array.isArray(data.gallery_suggestions) ? data.gallery_suggestions : [];
       const existingGallery = form.gallery ?? [];
       const existingCover = form.cover_image_url;
