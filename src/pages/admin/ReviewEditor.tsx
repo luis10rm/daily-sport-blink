@@ -304,6 +304,45 @@ const ReviewEditor = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="rounded-lg border border-fuchsia-600/30 bg-fuchsia-600/5 p-3">
+              <Label className="text-sm font-semibold">Skąd pochodzi treść?</Label>
+              <p className="text-xs text-muted-foreground mt-0.5 mb-2">
+                Określa plakietkę widoczną w nagłówku artykułu Tech.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  { value: "research", label: "Na podstawie researchu", desc: "Kompilacja źródeł, specyfikacji i opinii — bez fizycznego testu." },
+                  { value: "hands_on", label: "Test redakcji", desc: "Produkt fizycznie testowany przez redakcję Tech." },
+                ].map((opt) => {
+                  const active = (form as any).review_basis === opt.value;
+                  return (
+                    <button
+                      type="button"
+                      key={opt.value}
+                      onClick={() => set("review_basis" as any, opt.value as any)}
+                      className={`text-left rounded-lg border p-3 transition-colors ${
+                        active
+                          ? "border-fuchsia-600 bg-fuchsia-600/10"
+                          : "border-border hover:border-fuchsia-600/50"
+                      }`}
+                    >
+                      <div className="text-sm font-semibold">{opt.label}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              {(form as any).review_basis && (
+                <button
+                  type="button"
+                  onClick={() => set("review_basis" as any, null as any)}
+                  className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Wyczyść (nie pokazuj plakietki)
+                </button>
+              )}
+            </div>
+
             <div>
               <Label>Tytuł</Label>
               <Input value={form.title ?? ""} onChange={(e) => set("title", e.target.value)} />
