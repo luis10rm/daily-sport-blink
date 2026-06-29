@@ -422,43 +422,6 @@ const ReviewEditor = () => {
                 </div>
               </div>
             )}
-            {isReview && (
-              <div>
-                <Label>Podstawa recenzji</Label>
-                <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    { value: "research", label: "Na podstawie researchu", desc: "Kompilacja źródeł, specyfikacji i opinii — bez fizycznego testu." },
-                    { value: "hands_on", label: "Test redakcji", desc: "Produkt fizycznie testowany przez redakcję Tech." },
-                  ].map((opt) => {
-                    const active = (form as any).review_basis === opt.value;
-                    return (
-                      <button
-                        type="button"
-                        key={opt.value}
-                        onClick={() => set("review_basis" as any, opt.value as any)}
-                        className={`text-left rounded-lg border p-3 transition-colors ${
-                          active
-                            ? "border-fuchsia-600 bg-fuchsia-600/10"
-                            : "border-border hover:border-fuchsia-600/50"
-                        }`}
-                      >
-                        <div className="text-sm font-semibold">{opt.label}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-                {(form as any).review_basis && (
-                  <button
-                    type="button"
-                    onClick={() => set("review_basis" as any, null as any)}
-                    className="mt-2 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    Wyczyść (nie pokazuj plakietki)
-                  </button>
-                )}
-              </div>
-            )}
             <div>
               <Label>URL źródła (opcjonalnie)</Label>
               <Input value={form.source_url ?? ""} onChange={(e) => set("source_url", e.target.value)} />
