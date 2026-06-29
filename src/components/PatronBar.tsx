@@ -70,95 +70,96 @@ export const PatronBar = () => {
   const ctaUrl = useB ? patron.cta_url_b : patron.cta_url;
   const activeVariant = useB ? "B" : "A";
 
-  const handleBarClick = () => {
-    if (ctaUrl) window.open(ctaUrl, "_blank", "noopener,noreferrer");
-  };
+  const commonClassName = cn(
+    "sticky top-16 z-40 w-full h-10 flex items-center justify-center transition-all duration-300 no-underline",
+    ctaUrl && "cursor-pointer",
+    getStyleClasses(),
+    isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
+  );
 
-  const handleBarTouchEnd = (e: React.TouchEvent) => {
-    if (!ctaUrl) return;
-    e.preventDefault();
-    handleBarClick();
-  };
+  const innerContent = (
+    <div className="w-full flex items-center justify-between gap-2 px-3 sm:px-4">
+      <div className="flex items-center gap-2 overflow-hidden mr-1 min-w-0">
+        <Star className="h-3.5 w-3.5 shrink-0 fill-current" />
 
-  return (
-    <div
-      role={ctaUrl ? "link" : undefined}
-      tabIndex={ctaUrl ? 0 : undefined}
-      onClick={ctaUrl ? handleBarClick : undefined}
-      onTouchEnd={ctaUrl ? handleBarTouchEnd : undefined}
-      onKeyDown={(e) => {
-        if (ctaUrl && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          handleBarClick();
-        }
-      }}
-      data-patron-variant={activeVariant}
-      aria-label={ctaUrl ? `${patron.patron_name} — ${ctaText ?? "Sprawdź"}` : undefined}
-      className={cn(
-        "sticky top-16 z-40 w-full h-10 flex items-center justify-center transition-all duration-300",
-        ctaUrl && "cursor-pointer",
-        getStyleClasses(),
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
-      )}
-      style={backgroundStyle}
-    >
-      <div className="w-full flex items-center justify-between gap-2 px-3 sm:px-4">
-        <div className="flex items-center gap-2 overflow-hidden mr-1 min-w-0">
-          <Star className="h-3.5 w-3.5 shrink-0 fill-current" />
+        <div className="flex items-baseline gap-1.5 overflow-hidden whitespace-nowrap min-w-0">
+          <span className="hidden xs:inline text-[10px] font-medium uppercase tracking-tight opacity-70 shrink-0">
+            {patron.prefix_text}
+          </span>
 
-          <div className="flex items-baseline gap-1.5 overflow-hidden whitespace-nowrap min-w-0">
-            <span className="hidden xs:inline text-[10px] font-medium uppercase tracking-tight opacity-70 shrink-0">
-              {patron.prefix_text}
-            </span>
-
-            {patron.patron_logo_url && (
-              <img
-                src={patron.patron_logo_url}
-                alt={patron.patron_name}
-                className="h-4 sm:h-5 w-auto object-contain shrink-0"
-              />
-            )}
-
-            <span className="text-[12px] sm:text-sm font-bold truncate">
-              {patron.patron_name}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {ctaText && ctaUrl && (
-            <span
-              className="inline-flex px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold whitespace-nowrap pointer-events-none active:scale-95 transition-transform"
-              style={{
-                backgroundColor: patron.text_color,
-                color: patron.background_color,
-              }}
-            >
-              {ctaText}
-            </span>
+          {patron.patron_logo_url && (
+            <img
+              src={patron.patron_logo_url}
+              alt={patron.patron_name}
+              className="h-4 sm:h-5 w-auto object-contain shrink-0"
+            />
           )}
 
-          {patron.dismissible && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDismiss();
-              }}
-              onTouchEnd={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                handleDismiss();
-              }}
-              className="p-1 rounded-full opacity-40 hover:opacity-100 transition-opacity"
-              aria-label="Zamknij pasek patrona"
-              style={{ color: patron.text_color }}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+          <span className="text-[12px] sm:text-sm font-bold truncate">
+            {patron.patron_name}
+          </span>
         </div>
       </div>
 
+      <div className="flex items-center gap-2 shrink-0">
+        {ctaText && ctaUrl && (
+          <span
+            className="inline-flex px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold whitespace-nowrap pointer-events-none active:scale-95 transition-transform"
+            style={{
+              backgroundColor: patron.text_color,
+              color: patron.background_color,
+            }}
+          >
+            {ctaText}
+          </span>
+        )}
+
+        {patron.dismissible && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleDismiss();
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleDismiss();
+            }}
+            className="p-1 rounded-full opacity-40 hover:opacity-100 transition-opacity"
+            aria-label="Zamknij pasek patrona"
+            style={{ color: patron.text_color }}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  if (ctaUrl) {
+    return (
+      <a
+        href={ctaUrl}
+        target="_blank"
+        rel="sponsored noopener noreferrer"
+        aria-label={`${patron.patron_name} — ${ctaText ?? "Sprawdź"}`}
+        data-patron-variant={activeVariant}
+        className={commonClassName}
+        style={backgroundStyle}
+      >
+        {innerContent}
+      </a>
+    );
+  }
+
+  return (
+    <div
+      data-patron-variant={activeVariant}
+      className={commonClassName}
+      style={backgroundStyle}
+    >
+      {innerContent}
     </div>
   );
 };
