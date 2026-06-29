@@ -225,7 +225,12 @@ serve(async (req) => {
     }
 
     const isNews = content_type === "news";
-    const systemPrompt = isNews ? NEWS_SYSTEM_PROMPT : REVIEW_SYSTEM_PROMPT;
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
+    );
+    const prompts = await loadPrompts(supabaseAdmin);
+    const systemPrompt = isNews ? prompts.news : prompts.review;
     const intro = isNews
       ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
       : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);
