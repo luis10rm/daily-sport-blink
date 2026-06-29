@@ -95,7 +95,7 @@ export const PatronBar = () => {
       data-patron-variant={activeVariant}
       aria-label={ctaUrl ? `${patron.patron_name} — ${ctaText ?? "Sprawdź"}` : undefined}
       className={cn(
-        "sticky top-16 z-40 w-full h-10 flex items-center justify-center transition-all duration-300 touch-manipulation",
+        "sticky top-16 z-40 w-full h-10 flex items-center justify-center transition-all duration-300",
         ctaUrl && "cursor-pointer",
         getStyleClasses(),
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"

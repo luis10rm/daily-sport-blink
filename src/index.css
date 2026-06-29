@@ -121,11 +121,9 @@
   }
 
   /* Disable 300ms tap delay on all interactive elements for iOS */
-  /* 
   a, button, [role="button"], input, textarea, select, summary {
     touch-action: manipulation;
   }
-  */
 }
 
 @layer components {

@@ -53,7 +53,7 @@ const InstallPage = () => {
           <button
             onClick={() => navigate(-1)}
             onTouchEnd={(e) => { e.preventDefault(); navigate(-1); }}
-            className="p-2 -ml-2 text-muted-foreground transition-colors touch-manipulation"
+            className="p-2 -ml-2 text-muted-foreground transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>

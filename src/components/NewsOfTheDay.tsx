@@ -99,7 +99,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
           {post.content ? (
             <Link
               to={`/blink/${post.slug}`}
-              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover touch-manipulation"
+              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover"
             >
               Przeczytaj więcej
             </Link>
@@ -108,7 +108,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
               href={post.source_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover touch-manipulation"
+              className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover"
             >
               Przeczytaj więcej
               <ExternalLink className="h-5 w-5" />

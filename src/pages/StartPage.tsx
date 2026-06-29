@@ -62,7 +62,7 @@ const StartPage = () => {
       <button
         onClick={goHome}
         onTouchEnd={(e) => { e.preventDefault(); goHome(); }}
-        className="fixed top-4 right-4 z-10 rounded-full p-2 text-white/60 transition-colors touch-manipulation"
+        className="fixed top-4 right-4 z-10 rounded-full p-2 text-white/60 transition-colors"
         style={{ top: 'calc(1rem + env(safe-area-inset-top))' }}
         aria-label="Zamknij"
       >
