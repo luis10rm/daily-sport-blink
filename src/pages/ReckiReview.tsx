@@ -104,11 +104,14 @@ const ReckiReview = () => {
 
 
           <header className="mb-6">
-            {review.category && (
-              <span className="inline-block rounded-full bg-fuchsia-600/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-fuchsia-700 dark:text-fuchsia-300">
-                {review.category.name}
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {review.category && (
+                <span className="inline-block rounded-full bg-fuchsia-600/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-fuchsia-700 dark:text-fuchsia-300">
+                  {review.category.name}
+                </span>
+              )}
+              <ReviewBasisBadge basis={(review as any).review_basis} />
+            </div>
             <h1 className="mt-3 text-3xl sm:text-4xl font-bold leading-tight">{review.title}</h1>
             {review.product_brand || review.product_name ? (
               <p className="mt-2 text-muted-foreground">
