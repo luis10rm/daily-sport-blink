@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
@@ -98,6 +99,7 @@ const bannerSchema = z.object({
   target_device: z.enum(["all", "desktop", "mobile"]),
   is_active: z.boolean(),
   show_on_tech: z.boolean().optional(),
+  sections: z.array(z.enum(["sport", "tech"])).min(1, "Wybierz co najmniej jedną sekcję"),
   start_date: z.date().optional().nullable(),
   end_date: z.date().optional().nullable(),
 }).refine((data) => {
@@ -148,6 +150,7 @@ const BannerEditor = () => {
       target_device: "all",
       is_active: false,
       show_on_tech: false,
+      sections: ["sport"],
       start_date: null,
       end_date: null,
     },
@@ -155,6 +158,12 @@ const BannerEditor = () => {
 
   useEffect(() => {
     if (banner) {
+      const rawSections = (banner as any).sections as string[] | null | undefined;
+      const sections = (rawSections && rawSections.length > 0
+        ? rawSections.filter((s): s is "sport" | "tech" => s === "sport" || s === "tech")
+        : banner.position.startsWith("recki_")
+          ? ["tech" as const]
+          : ["sport" as const]);
       form.reset({
         title: banner.title,
         description: banner.description || "",
@@ -166,7 +175,8 @@ const BannerEditor = () => {
         position: banner.position,
         target_device: banner.target_device || "all",
         is_active: banner.is_active,
-        show_on_tech: (banner as any).show_on_tech ?? false,
+        show_on_tech: (banner as any).show_on_tech ?? sections.includes("tech"),
+        sections: sections.length > 0 ? sections : ["sport"],
         start_date: banner.start_date ? new Date(banner.start_date) : null,
         end_date: banner.end_date ? new Date(banner.end_date) : null,
       });
@@ -185,7 +195,9 @@ const BannerEditor = () => {
       position: data.position,
       target_device: data.target_device,
       is_active: data.is_active,
-      show_on_tech: data.show_on_tech ?? false,
+      // Keep legacy flag in sync with new sections array for any older readers
+      show_on_tech: data.sections.includes("tech"),
+      sections: data.sections,
       start_date: data.start_date?.toISOString() || null,
       end_date: data.end_date?.toISOString() || null,
       created_by: null,
@@ -679,24 +691,51 @@ const BannerEditor = () => {
 
                     <FormField
                       control={form.control}
-                      name="show_on_tech"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Wyświetlaj też w sekcji Tech</FormLabel>
-                            <FormDescription>
-                              Sportowy slot (góra/środek/dół) zostanie zduplikowany na <code>/tech</code> w odpowiadającym mu miejscu.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={!!field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                      name="sections"
+                      render={({ field }) => {
+                        const value = (field.value || []) as ("sport" | "tech")[];
+                        const toggle = (s: "sport" | "tech", checked: boolean) => {
+                          const next = checked
+                            ? Array.from(new Set([...value, s]))
+                            : value.filter((v) => v !== s);
+                          field.onChange(next);
+                        };
+                        const items: { id: "sport" | "tech"; label: string; hint: string }[] = [
+                          { id: "sport", label: "Sport (szortsy.pl)", hint: "Strony i artykuły sekcji sportowej" },
+                          { id: "tech", label: "Tech (/tech)", hint: "Strony i artykuły sekcji Tech" },
+                        ];
+                        return (
+                          <FormItem className="rounded-lg border p-4 space-y-3">
+                            <div className="space-y-0.5">
+                              <FormLabel className="text-base">Sekcje emisji</FormLabel>
+                              <FormDescription>
+                                Baner pojawi się w odpowiadającym slocie (góra/środek/dół) w każdej zaznaczonej sekcji.
+                                Sloty bez odpowiednika (np. inline, sticky) emitują tylko w swojej natywnej sekcji.
+                              </FormDescription>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {items.map((it) => (
+                                <label
+                                  key={it.id}
+                                  className="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-accent/50"
+                                >
+                                  <Checkbox
+                                    checked={value.includes(it.id)}
+                                    onCheckedChange={(c) => toggle(it.id, c === true)}
+                                  />
+                                  <div className="space-y-0.5">
+                                    <div className="text-sm font-medium leading-none">{it.label}</div>
+                                    <div className="text-xs text-muted-foreground">{it.hint}</div>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
+
                   </CardContent>
                 </Card>
               </div>

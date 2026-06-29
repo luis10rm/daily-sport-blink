@@ -122,6 +122,7 @@ const BannersList = () => {
                 <TableHead>Podgląd</TableHead>
                 <TableHead>Nazwa</TableHead>
                 <TableHead>Pozycja</TableHead>
+                <TableHead>Sekcje</TableHead>
                 <TableHead>Daty</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aktywny</TableHead>
@@ -142,6 +143,9 @@ const BannersList = () => {
                       <Skeleton className="h-4 w-24" />
                     </TableCell>
                     <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
                     <TableCell>
@@ -157,7 +161,7 @@ const BannersList = () => {
                 ))
               ) : filteredBanners?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     <p className="text-muted-foreground">
                       {search
                         ? "Nie znaleziono banerów pasujących do wyszukiwania"
@@ -193,6 +197,29 @@ const BannersList = () => {
                       <Badge variant="outline">
                         {positionLabels[banner.position]}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {((banner as any).sections as string[] | null | undefined)?.length
+                          ? ((banner as any).sections as string[]).map((s) => (
+                              <Badge
+                                key={s}
+                                variant="secondary"
+                                className={
+                                  s === "tech"
+                                    ? "bg-pink-100 text-pink-900 dark:bg-pink-950 dark:text-pink-200"
+                                    : "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+                                }
+                              >
+                                {s === "tech" ? "Tech" : "Sport"}
+                              </Badge>
+                            ))
+                          : (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              {banner.position.startsWith("recki_") ? "Tech" : "Sport"}
+                            </Badge>
+                          )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {banner.start_date

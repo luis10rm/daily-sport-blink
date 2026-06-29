@@ -14,6 +14,8 @@ export type BannerPosition =
   | "recki_article_bottom"
   | "recki_sticky_mobile";
 export type BannerTargetDevice = "all" | "desktop" | "mobile";
+export type BannerSection = "sport" | "tech";
+export const ALL_SECTIONS: BannerSection[] = ["sport", "tech"];
 
 export interface Banner {
   id: string;
@@ -28,6 +30,7 @@ export interface Banner {
   target_device: BannerTargetDevice;
   is_active: boolean;
   show_on_tech: boolean;
+  sections: BannerSection[];
   start_date: string | null;
   end_date: string | null;
   created_by: string | null;
@@ -35,12 +38,22 @@ export interface Banner {
   updated_at: string;
 }
 
-// Map a Tech slot to the equivalent Sport slot whose banners may be mirrored (via show_on_tech)
-const TECH_SPORT_EQUIVALENT: Partial<Record<BannerPosition, BannerPosition>> = {
+// Equivalence between Sport and Tech slots. A banner emitted in one slot can be mirrored
+// into its equivalent in the other section if its `sections` array contains that section.
+const SLOT_EQUIVALENT: Partial<Record<BannerPosition, BannerPosition>> = {
+  // sport -> tech
+  home_top: "recki_home_top",
+  home_middle: "recki_home_middle",
+  home_bottom: "recki_home_bottom",
+  // tech -> sport
   recki_home_top: "home_top",
   recki_home_middle: "home_middle",
   recki_home_bottom: "home_bottom",
 };
+
+// Which section does a position natively belong to?
+const positionSection = (pos: BannerPosition): BannerSection =>
+  pos.startsWith("recki_") ? "tech" : "sport";
 
 export type BannerInsert = Omit<Banner, "id" | "created_at" | "updated_at">;
 export type BannerUpdate = Partial<BannerInsert>;
@@ -110,40 +123,44 @@ export const useActiveBanner = (position: BannerPosition) => {
 };
 
 // Fetch active banner for a specific position AND device (desktop/mobile)
-// When multiple banners are eligible, picks one at random per query (even rotation)
-export const useActiveBannerForDevice = (position: BannerPosition, device: "desktop" | "mobile") => {
+// `section` indicates the section currently being rendered ("sport" | "tech").
+// Banners are matched by their native slot OR by their cross-section equivalent slot
+// as long as their `sections` array contains the requested section.
+export const useActiveBannerForDevice = (
+  position: BannerPosition,
+  device: "desktop" | "mobile",
+  section?: BannerSection,
+) => {
+  const effectiveSection: BannerSection = section ?? positionSection(position);
   return useQuery({
-    queryKey: ["banners", "active", position, device],
+    queryKey: ["banners", "active", position, device, effectiveSection],
     staleTime: 0,
     gcTime: 0,
     queryFn: async () => {
       const now = new Date().toISOString();
-      const sportMirror = TECH_SPORT_EQUIVALENT[position];
-      const positions = sportMirror ? [position, sportMirror] : [position];
+      const mirror = SLOT_EQUIVALENT[position];
+      const positions = mirror ? [position, mirror] : [position];
 
       const { data, error } = await supabase
         .from("banners")
         .select("*")
         .in("position", positions)
         .eq("is_active", true)
+        .contains("sections", [effectiveSection])
         .or(`target_device.eq.all,target_device.eq.${device}`)
         .limit(40);
 
       if (error) throw error;
 
-      // Filter by dates, image availability, and tech-mirror flag for sport equivalents
       const validBanners = (data || []).filter((banner: any) => {
         if (banner.start_date && new Date(banner.start_date) > new Date(now)) return false;
         if (banner.end_date && new Date(banner.end_date) < new Date(now)) return false;
         if (device === "desktop" ? !banner.image_desktop_url : !banner.image_mobile_url) return false;
-        // For the mirrored sport slot, require the explicit opt-in
-        if (sportMirror && banner.position === sportMirror && !banner.show_on_tech) return false;
         return true;
       });
 
       if (validBanners.length === 0) return null;
 
-      // Even rotation: random pick from all eligible banners
       const picked = validBanners[Math.floor(Math.random() * validBanners.length)];
       return picked as Banner;
     },
