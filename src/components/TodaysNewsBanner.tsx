@@ -37,6 +37,7 @@ const getNewsLabel = (count: number) => {
 };
 
 export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBannerProps) => {
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { isTakeoverActive } = useWallpaperContext();
   const [displayCount, setDisplayCount] = useState(0);
