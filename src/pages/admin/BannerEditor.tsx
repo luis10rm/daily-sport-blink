@@ -676,6 +676,27 @@ const BannerEditor = () => {
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={form.control}
+                      name="show_on_tech"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Wyświetlaj też w sekcji Tech</FormLabel>
+                            <FormDescription>
+                              Sportowy slot (góra/środek/dół) zostanie zduplikowany na <code>/tech</code> w odpowiadającym mu miejscu.
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={!!field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                   </CardContent>
                 </Card>
               </div>
