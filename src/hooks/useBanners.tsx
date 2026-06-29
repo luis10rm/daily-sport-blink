@@ -123,40 +123,44 @@ export const useActiveBanner = (position: BannerPosition) => {
 };
 
 // Fetch active banner for a specific position AND device (desktop/mobile)
-// When multiple banners are eligible, picks one at random per query (even rotation)
-export const useActiveBannerForDevice = (position: BannerPosition, device: "desktop" | "mobile") => {
+// `section` indicates the section currently being rendered ("sport" | "tech").
+// Banners are matched by their native slot OR by their cross-section equivalent slot
+// as long as their `sections` array contains the requested section.
+export const useActiveBannerForDevice = (
+  position: BannerPosition,
+  device: "desktop" | "mobile",
+  section?: BannerSection,
+) => {
+  const effectiveSection: BannerSection = section ?? positionSection(position);
   return useQuery({
-    queryKey: ["banners", "active", position, device],
+    queryKey: ["banners", "active", position, device, effectiveSection],
     staleTime: 0,
     gcTime: 0,
     queryFn: async () => {
       const now = new Date().toISOString();
-      const sportMirror = TECH_SPORT_EQUIVALENT[position];
-      const positions = sportMirror ? [position, sportMirror] : [position];
+      const mirror = SLOT_EQUIVALENT[position];
+      const positions = mirror ? [position, mirror] : [position];
 
       const { data, error } = await supabase
         .from("banners")
         .select("*")
         .in("position", positions)
         .eq("is_active", true)
+        .contains("sections", [effectiveSection])
         .or(`target_device.eq.all,target_device.eq.${device}`)
         .limit(40);
 
       if (error) throw error;
 
-      // Filter by dates, image availability, and tech-mirror flag for sport equivalents
       const validBanners = (data || []).filter((banner: any) => {
         if (banner.start_date && new Date(banner.start_date) > new Date(now)) return false;
         if (banner.end_date && new Date(banner.end_date) < new Date(now)) return false;
         if (device === "desktop" ? !banner.image_desktop_url : !banner.image_mobile_url) return false;
-        // For the mirrored sport slot, require the explicit opt-in
-        if (sportMirror && banner.position === sportMirror && !banner.show_on_tech) return false;
         return true;
       });
 
       if (validBanners.length === 0) return null;
 
-      // Even rotation: random pick from all eligible banners
       const picked = validBanners[Math.floor(Math.random() * validBanners.length)];
       return picked as Banner;
     },
