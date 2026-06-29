@@ -71,7 +71,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           </h3>
           <a
             {...navLink(to)}
-            className="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-fuchsia-600 hover:text-fuchsia-700 dark:text-fuchsia-300"
+            className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-fuchsia-600 hover:text-fuchsia-700 dark:text-fuchsia-300"
           >
             Czytaj <ArrowRight className="h-3 w-3" />
           </a>
