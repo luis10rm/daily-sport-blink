@@ -21,8 +21,6 @@ import TagsListPage from "./pages/TagsListPage";
 import BlinkPage from "./pages/BlinkPage";
 import DailyPage from "./pages/DailyPage";
 import NewsGone from "./pages/NewsGone";
-import StartPage from "./pages/StartPage";
-import InstallPage from "./pages/InstallPage";
 import NotFound from "./pages/NotFound";
 import WorldCup2026 from "./pages/WorldCup2026";
 import ReckiHome from "./pages/ReckiHome";
@@ -45,9 +43,7 @@ const SuggestionsList = lazy(() => import("./pages/admin/SuggestionsList"));
 const SourcesList = lazy(() => import("./pages/admin/SourcesList"));
 const ReviewsList = lazy(() => import("./pages/admin/ReviewsList"));
 const ReviewEditor = lazy(() => import("./pages/admin/ReviewEditor"));
-import { PWAInstallBanner } from "@/components/PWAInstallBanner";
 import { TournamentTheme } from "@/components/TournamentTheme";
-import { TournamentMascot } from "@/components/TournamentMascot";
 
 
 const queryClient = new QueryClient();
@@ -74,14 +70,10 @@ function App() {
               <Analytics />
               <TournamentTheme />
               <ConditionalWallpaper />
-              <PWAInstallBanner />
-              <TournamentMascot />
               <Suspense fallback={<div className="min-h-screen" />}>
               <Routes>
 
               <Route path="/" element={<Index />} />
-              <Route path="/start" element={<StartPage />} />
-              <Route path="/zainstaluj" element={<InstallPage />} />
               <Route path="/dzien/:date" element={<DailyPage />} />
               <Route path="/blink/:slug" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
