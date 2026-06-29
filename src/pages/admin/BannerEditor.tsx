@@ -185,6 +185,7 @@ const BannerEditor = () => {
       position: data.position,
       target_device: data.target_device,
       is_active: data.is_active,
+      show_on_tech: data.show_on_tech ?? false,
       start_date: data.start_date?.toISOString() || null,
       end_date: data.end_date?.toISOString() || null,
       created_by: null,
