@@ -124,6 +124,14 @@
   a, button, [role="button"], input, textarea, select, summary {
     touch-action: manipulation;
   }
+
+  /* iOS Safari: disable focus-first-tap heuristic and gray tap highlight */
+  @media (hover: none) and (pointer: coarse) {
+    a, button, [role="button"] {
+      -webkit-tap-highlight-color: transparent;
+      cursor: default;
+    }
+  }
 }
 
 @layer components {
