@@ -125,7 +125,7 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
         <div className="px-4 pb-4 pt-1">
           <Link
             to={`/dzien/${todayStr}`}
-            className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground touch-manipulation active:scale-[0.98] transition-transform"
+            className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground active:scale-[0.98] transition-transform"
           >
             <Newspaper className="h-4 w-4" />
             Zobacz dzienny briefing

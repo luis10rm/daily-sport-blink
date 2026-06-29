@@ -19,7 +19,7 @@ const HUB_PATH = "/mistrzostwa-swiata-2026";
  * - post: ukryty
  *
  * Mobile UX (no double-tap):
- * - `touch-manipulation` — szybsza reakcja na tap
+ * - Global touch-action: manipulation zapewnia szybszą reakcję na tap
  * - hover efekty TYLKO pod `@media (hover: hover)` — iOS nie „zjada" pierwszego dotknięcia
  */
 export const WorldCupRibbon = ({ className }: WorldCupRibbonProps) => {
@@ -35,7 +35,7 @@ export const WorldCupRibbon = ({ className }: WorldCupRibbonProps) => {
       to={HUB_PATH}
       aria-label="Przejdź do strefy Mistrzostw Świata 2026"
       className={cn(
-        "group flex items-center gap-3 rounded-lg border border-amber-400/50 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 px-4 py-2.5 mb-6 transition-colors touch-manipulation",
+        "group flex items-center gap-3 rounded-lg border border-amber-400/50 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 px-4 py-2.5 mb-6 transition-colors",
         "dark:border-amber-500/40 dark:from-amber-500/10 dark:via-amber-400/5 dark:to-amber-500/10",
         "[@media(hover:hover)]:hover:border-amber-400/80 [@media(hover:hover)]:hover:from-amber-500/25 [@media(hover:hover)]:hover:via-amber-400/15 [@media(hover:hover)]:hover:to-amber-500/25",
         className,

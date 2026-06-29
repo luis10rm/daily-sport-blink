@@ -79,7 +79,7 @@ export const NextMatchCountdown = () => {
   return (
     <section
       aria-label={live ? "Trwa mecz" : "Odliczanie do kolejnego meczu"}
-      className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-background to-background p-5 md:p-7 mb-10 touch-manipulation"
+      className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-background to-background p-5 md:p-7 mb-10"
     >
       <div
         className="pointer-events-none absolute -top-20 -right-20 h-56 w-56 rounded-full bg-amber-500/15 blur-3xl"
@@ -145,7 +145,7 @@ export const NextMatchCountdown = () => {
           </span>
           <Link
             to="/mistrzostwa-swiata-2026#terminarz"
-            className="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400 touch-manipulation"
+            className="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400"
           >
             Pełny terminarz <ArrowRight className="h-3 w-3" />
           </Link>

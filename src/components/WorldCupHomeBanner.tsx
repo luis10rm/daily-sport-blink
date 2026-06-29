@@ -48,7 +48,7 @@ export const WorldCupHomeBanner = ({ className }: Props) => {
       className={cn(
         "group relative flex items-center gap-3 overflow-hidden rounded-xl border border-amber-500/40",
         "bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent",
-        "px-4 py-3 md:px-5 md:py-3.5 transition-colors hover:border-amber-500/60 touch-manipulation cursor-pointer",
+        "px-4 py-3 md:px-5 md:py-3.5 transition-colors hover:border-amber-500/60 cursor-pointer",
         className,
       )}
     >
@@ -72,7 +72,7 @@ export const WorldCupHomeBanner = ({ className }: Props) => {
         onClick={handleDismiss}
         onTouchEnd={handleDismiss}
         aria-label="Ukryj baner"
-        className="ml-1 hidden sm:inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground touch-manipulation"
+        className="ml-1 hidden sm:inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground"
       >
         <X className="h-3.5 w-3.5" />
       </button>
