@@ -92,13 +92,15 @@ const ReckiHome = () => {
           )}
 
           {hero && (
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8 items-stretch">
-              <ReviewCard review={hero} variant="hero" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-                {secondary.map((r) => (
-                  <ReviewCard key={r.id} review={r} />
-                ))}
+            <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+              <div className="lg:col-span-2">
+                <ReviewCard review={hero} variant="hero" />
               </div>
+              <aside className="lg:col-span-1 flex flex-col gap-3">
+                {secondary.map((r) => (
+                  <ReviewCard key={r.id} review={r} variant="compact" />
+                ))}
+              </aside>
             </section>
           )}
 

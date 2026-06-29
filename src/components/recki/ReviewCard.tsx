@@ -14,38 +14,36 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
     return (
       <Link
         to={to}
-        className="group relative block h-full min-h-[480px] aspect-[16/10] lg:aspect-auto overflow-hidden rounded-2xl border border-border bg-card shadow-md transition-all hover:shadow-xl"
+        className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-md transition-all hover:shadow-xl"
       >
-        {review.cover_image_url ? (
-          <img
-            src={review.cover_image_url}
-            alt={review.title}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-600/30 to-pink-600/30" />
-        )}
-
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-
-        {review.score !== null && (
-          <div className="absolute right-4 top-4">
-            <ScoreBadge score={review.score} size="lg" />
-          </div>
-        )}
-
-        <div className="absolute inset-x-0 bottom-0 p-5 md:p-6">
+        <div className="relative aspect-[16/9] overflow-hidden bg-muted">
+          {review.cover_image_url ? (
+            <img
+              src={review.cover_image_url}
+              alt={review.title}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-full w-full bg-gradient-to-br from-fuchsia-600/30 to-pink-600/30" />
+          )}
+          {review.score !== null && (
+            <div className="absolute right-4 top-4">
+              <ScoreBadge score={review.score} size="lg" />
+            </div>
+          )}
+        </div>
+        <div className="p-5 md:p-6">
           {review.category && (
             <span className="inline-block w-fit rounded-full bg-fuchsia-600/95 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
               {review.category.name}
             </span>
           )}
-          <h2 className="mt-2 text-2xl md:text-3xl font-bold leading-tight text-white drop-shadow-md">
+          <h2 className="mt-2 text-2xl md:text-3xl font-bold leading-tight text-foreground group-hover:text-primary transition-colors">
             {review.title}
           </h2>
           {review.excerpt && (
-            <p className="mt-2 line-clamp-2 text-sm text-white/85 max-w-2xl">{review.excerpt}</p>
+            <p className="mt-2 line-clamp-3 text-sm md:text-base text-muted-foreground">{review.excerpt}</p>
           )}
         </div>
       </Link>
