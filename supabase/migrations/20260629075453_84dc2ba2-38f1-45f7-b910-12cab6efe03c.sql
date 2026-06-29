@@ -1,0 +1,1 @@
+ALTER TABLE public.reviews ADD COLUMN IF NOT EXISTS review_basis text CHECK (review_basis IN ('research','hands_on'));
