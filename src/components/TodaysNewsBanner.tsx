@@ -124,14 +124,16 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
 
         {/* CTA button */}
         <div className="px-4 pb-4 pt-1">
-          <Link
-            to={`/dzien/${todayStr}`}
+          <a
+            href={`/dzien/${todayStr}`}
+            onClick={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
+            onTouchEnd={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
             className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground active:scale-[0.98] transition-transform"
           >
             <Newspaper className="h-4 w-4" />
             Zobacz dzienny briefing
             <ChevronRight className="h-4 w-4 animate-[pulse_2s_ease-in-out_infinite]" />
-          </Link>
+          </a>
         </div>
       </section>
     );
