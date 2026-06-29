@@ -262,6 +262,8 @@ const Settings = () => {
   const { data: summaryPromptValue, isLoading: isLoadingSummaryPrompt } = useSetting("daily_summary_prompt");
   const { data: facebookPromptValue, isLoading: isLoadingFacebookPrompt } = useSetting("facebook_post_prompt");
   const { data: imagePromptValue, isLoading: isLoadingImagePrompt } = useSetting("article_image_prompt");
+  const { data: techReviewPromptValue, isLoading: isLoadingTechReviewPrompt } = useSetting("tech_review_prompt");
+  const { data: techNewsPromptValue, isLoading: isLoadingTechNewsPrompt } = useSetting("tech_news_prompt");
   const { data: makeWebhookValue, isLoading: isLoadingMakeWebhook } = useSetting("make_webhook_url");
   const { data: patronData, isLoading: isLoadingPatron } = usePatronSettings();
   const updateSetting = useUpdateSetting();
