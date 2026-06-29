@@ -165,16 +165,8 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
 
           {/* Conditional link: internal blink page if content exists, otherwise external source */}
           {hasContent ? (
-            <button
-              onTouchEnd={(e) => {
-                e.stopPropagation();
-                window.location.href = blinkUrl;
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                window.location.href = blinkUrl;
-              }}
-              type="button"
+            <Link
+              to={blinkUrl}
               className={cn(
                 "touch-manipulation mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold cursor-pointer",
                 isSponsored
@@ -183,14 +175,12 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
               )}
             >
               Przeczytaj więcej
-            </button>
+            </Link>
           ) : (
-            <button
-              onTouchEnd={(e) => {
-                e.stopPropagation();
-                window.open(sourceUrl, "_blank", "noopener,noreferrer");
-              }}
-              type="button"
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className={cn(
                 "mt-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold cursor-pointer",
                 isSponsored
@@ -200,7 +190,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             >
               Przeczytaj więcej
               <ExternalLink className="h-4 w-4" />
-            </button>
+            </a>
           )}
           <span className="text-xs text-muted-foreground text-center">Źródło: {getSourceName(sourceUrl)}</span>
         </div>
