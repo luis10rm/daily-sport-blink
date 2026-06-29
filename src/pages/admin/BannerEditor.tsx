@@ -150,6 +150,7 @@ const BannerEditor = () => {
       target_device: "all",
       is_active: false,
       show_on_tech: false,
+      sections: ["sport"],
       start_date: null,
       end_date: null,
     },
@@ -157,6 +158,12 @@ const BannerEditor = () => {
 
   useEffect(() => {
     if (banner) {
+      const rawSections = (banner as any).sections as string[] | null | undefined;
+      const sections = (rawSections && rawSections.length > 0
+        ? rawSections.filter((s): s is "sport" | "tech" => s === "sport" || s === "tech")
+        : banner.position.startsWith("recki_")
+          ? ["tech" as const]
+          : ["sport" as const]);
       form.reset({
         title: banner.title,
         description: banner.description || "",
@@ -168,7 +175,8 @@ const BannerEditor = () => {
         position: banner.position,
         target_device: banner.target_device || "all",
         is_active: banner.is_active,
-        show_on_tech: (banner as any).show_on_tech ?? false,
+        show_on_tech: (banner as any).show_on_tech ?? sections.includes("tech"),
+        sections: sections.length > 0 ? sections : ["sport"],
         start_date: banner.start_date ? new Date(banner.start_date) : null,
         end_date: banner.end_date ? new Date(banner.end_date) : null,
       });
@@ -187,7 +195,9 @@ const BannerEditor = () => {
       position: data.position,
       target_device: data.target_device,
       is_active: data.is_active,
-      show_on_tech: data.show_on_tech ?? false,
+      // Keep legacy flag in sync with new sections array for any older readers
+      show_on_tech: data.sections.includes("tech"),
+      sections: data.sections,
       start_date: data.start_date?.toISOString() || null,
       end_date: data.end_date?.toISOString() || null,
       created_by: null,
