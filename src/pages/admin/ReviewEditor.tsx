@@ -66,6 +66,14 @@ const ReviewEditor = () => {
   const [slugTouched, setSlugTouched] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
+  const [aiMode, setAiMode] = useState<"review" | "news">("review");
+
+  useEffect(() => {
+    if (existing?.content_type === "news" || existing?.content_type === "review") {
+      setAiMode(existing.content_type);
+    }
+  }, [existing]);
+  const aiIsReview = aiMode === "review";
 
   useEffect(() => {
     if (existing) {
