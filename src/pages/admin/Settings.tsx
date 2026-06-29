@@ -288,6 +288,12 @@ const Settings = () => {
   // Image prompt state
   const [localImagePrompt, setLocalImagePrompt] = useState("");
   const [hasImagePromptChanges, setHasImagePromptChanges] = useState(false);
+
+  // Tech prompts state
+  const [localTechReviewPrompt, setLocalTechReviewPrompt] = useState("");
+  const [hasTechReviewPromptChanges, setHasTechReviewPromptChanges] = useState(false);
+  const [localTechNewsPrompt, setLocalTechNewsPrompt] = useState("");
+  const [hasTechNewsPromptChanges, setHasTechNewsPromptChanges] = useState(false);
   
   // Make webhook state
   const [localMakeWebhook, setLocalMakeWebhook] = useState("");
