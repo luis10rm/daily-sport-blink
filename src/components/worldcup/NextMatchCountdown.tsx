@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Trophy, Radio, CalendarDays, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavLink } from "@/hooks/useNavLink";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useCountdown, splitCountdown } from "@/hooks/useCountdown";
