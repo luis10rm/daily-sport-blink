@@ -14,6 +14,8 @@ interface NewsOfTheDayProps {
 }
 
 export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
+  const navigate = useNavigate();
+  const blinkUrl = `/blink/${post.slug}`;
   const formattedDate = new Date(post.published_at).toLocaleDateString("pl-PL", {
     day: "numeric",
     month: "long",
