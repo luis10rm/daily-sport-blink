@@ -1,40 +1,31 @@
-## Diagnoza
+## Pozostałe klikalne elementy bez fixu iOS double-tap
 
-Tak — masz rację. W `src/components/Header.tsx` i `src/components/recki/ReckiHeader.tsx` używane są standardowe `<Link>` z React Router. To dokładnie ten sam wzorzec, który wcześniej naprawialiśmy w `NewsCard`, `NewsOfTheDay` i `TodaysNewsBanner`, gdzie iOS Safari wymagał podwójnego tapnięcia (first tap = focus, second = click).
+Audyt wykrył klikalne `<Link>` z `react-router-dom`, które wciąż mogą wymagać podwójnego tapnięcia na iPhonie (pattern: `<a href onClick onTouchEnd → navigate()` jeszcze nie zastosowany).
 
-Elementy w nagłówku z tym problemem:
-- **Header (Sport)**: logo `Link to="/"`, `Archiwum`, `Autorzy`, pozycje w dropdownie `Kategorie` (`Link to="/kategoria/:slug"`)
-- **ReckiHeader (Tech)**: logo `Link to="/tech"`, pozycje w dropdownie kategorii
-- **ModeSwitcher**: pigułka `Sport` ↔ `Tech`
+### High priority — widoczne na public feed / homepage / artykule
+1. `src/components/recki/ReviewCard.tsx` — wszystkie warianty (`hero`, `default`, `compact`) — kafelki Tech na homepage i listingach.
+2. `src/components/AuthorCard.tsx` — karta autora pod artykułem / w widgetach.
+3. `src/components/AuthorProfileCard.tsx` — link do profilu autora.
+4. `src/components/StoriesViewer.tsx` (linia 203) — CTA "Czytaj cały blink" w storiesach.
+5. `src/components/WorldCupBadge.tsx` — złota plakietka "MŚ 2026" na kartach newsów (klikalna do hub).
 
-Działają od pierwszego tapnięcia (bo używają natywnych mechanizmów): `ThemeToggle` (button), trigger dropdownu (Radix), `MatchTicker` (już ma `onTouchEnd` + `navigate`).
+### Medium priority — strefa Mundialu
+6. `src/components/TodaysMatchesBanner.tsx` (l. 100) — link do `/mistrzostwa-swiata-2026`.
+7. `src/components/worldcup/NextMatchCountdown.tsx` (l. 147) — link do `#terminarz`.
+8. `src/components/worldcup/WorldCupMatchCenter.tsx` (l. 124) — link do hub w widgecie artykułu.
+9. `src/components/worldcup/WorldCupStoryPanels.tsx` (l. 259) — CTA w panelu story.
 
-## Plan naprawy
+### Low priority — strony (breadcrumby, mniej krytyczne)
+10. `src/pages/BlinkPage.tsx` (l. 96, 168) — powrót do "/" i nawigacja w błędach.
+11. `src/pages/CategoryPage.tsx` (l. 91) — breadcrumb "Strona główna".
 
-Zastosować ten sam, sprawdzony wzorzec co w `NewsCard`/`NewsOfTheDay`/`TodaysNewsBanner`:
+### Plan zmian
+Dla każdego komponentu z High/Medium stosujemy ten sam wzorzec, co w `Header.tsx` / `NewsCard.tsx`:
+- Zamiana `<Link to=...>` → `<a href=... onClick={navigate} onTouchEnd={navigate} />`.
+- `onClick` respektuje Cmd/Ctrl/Shift (nowa karta).
+- `onTouchEnd` z `preventDefault()`.
 
-1. **`src/components/Header.tsx`** — zamienić `Link` na `<a href>` + `onClick` + `onTouchEnd` wywołujące `navigate()` z `useNavigate()`:
-   - logo `/`
-   - `Archiwum` → `/archiwum`
-   - `Autorzy` → `/autorzy`
-   - elementy `DropdownMenuItem asChild` → `Link` (kategorie). Trzymamy `asChild`, ale w środku `<a>` z handlerami.
+W przypadku `ReviewCard`, `AuthorCard`, `AuthorProfileCard`, `WorldCupBadge` — wyciągnięcie pomocniczego hooka `useNavLink()` (już istnieje w `Header.tsx` / `ReckiHeader.tsx`) do `src/hooks/useNavLink.ts`, żeby uniknąć duplikacji w kolejnych komponentach.
 
-2. **`src/components/recki/ReckiHeader.tsx`** — to samo dla:
-   - logo `/tech`
-   - elementy dropdownu kategorii Tech (`/tech/kategoria/:slug`)
-
-3. **`src/components/recki/ModeSwitcher.tsx`** — przepisać oba warianty pigułki (Sport ↔ Tech) na `<a>` + `onClick`/`onTouchEnd` + `navigate()`.
-
-W każdym przypadku:
-- zachować `href` (SEO, prawe kliknięcie „otwórz w nowej karcie", Cmd/Ctrl+klik)
-- w `onTouchEnd`: `e.preventDefault()` + `navigate(path)`
-- w `onClick`: jeśli nie modyfikator (`metaKey`/`ctrlKey`/`shiftKey`) → `e.preventDefault()` + `navigate(path)`
-- pozostawić wszystkie istniejące klasy CSS bez zmian
-- nie ruszać `ontouchstart=""` w `index.html` ani globalnej reguły `touch-action: manipulation`
-
-## Czego NIE zmieniam
-
-- `ThemeToggle` (czysty button — działa)
-- triggery `DropdownMenu` (Radix obsługuje touch poprawnie)
-- `MatchTicker` (już ma wzorzec)
-- żadnej logiki biznesowej / danych
+### Pytanie
+Czy iść w komplet (High + Medium + Low), czy ograniczyć do **High + Medium** (te realnie tapowane palcem)? Breadcrumby (Low) są rzadziej klikane, ale dla spójności też warto.
