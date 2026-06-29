@@ -1,32 +1,28 @@
 ## Cel
-Generator AI w `/admin/recki/*` ma działać dwutrybowo: inaczej dla **Recenzji** (z oceną, plusami/minusami, werdyktem, marką/produktem), inaczej dla **Newsa technologicznego** (czysty artykuł bez oceny).
+1. Generator AI w `/admin/recki/*` ma mieć **własny przełącznik trybu** (Recenzja / News) bezpośrednio w panelu AI — wybór dokonywany w momencie generowania, niezależnie od selektora "Typ wpisu" w sekcji Podstawowe.
+2. Naprawić layout strony głównej `/tech` (`ReckiHome.tsx`) — przy małej liczbie wpisów pod heroem powstaje duża pusta przestrzeń (zrzut: ciemny prostokąt pod kartą "iOS 27 beta 2").
 
 ## Zmiany
 
-### 1. Edge function `supabase/functions/generate-review/index.ts`
-- Dodać przyjmowanie pola `content_type: "review" | "news"` w body.
-- Rozdzielić system prompt na dwa warianty:
-  - **REVIEW_SYSTEM_PROMPT** (obecny prompt — produkt, ocena 1–10, plusy/minusy, werdykt, sekcje: Wprowadzenie/Wykonanie/Wydajność/Codzienne użytkowanie/Cena).
-  - **NEWS_SYSTEM_PROMPT** (nowy): krótszy JSON: `title`, `excerpt`, `content` (HTML 400–800 słów, sekcje: Co się stało / Kontekst / Dlaczego to ważne / Co dalej), bez pól `score`, `pros`, `cons`, `verdict`, `product_brand`, `product_name`. Styl: technologiczny news, neutralny, faktyczny, bez marketingu.
-- W obu trybach nadal scrapować `source_url` przez Firecrawl i zwracać `gallery_suggestions`.
-- Walidacja: dla `news` ignorować/zerować pola recenzyjne, dla `review` — bez zmian.
+### 1. `src/pages/admin/ReviewEditor.tsx` — toggle w generatorze AI
+- Dodać lokalny stan `aiMode: "review" | "news"`, inicjowany z `form.content_type ?? "review"`.
+- W sekcji "Generator AI" dodać `ToggleGroup` (lub para `Button`/Tabs) z dwiema opcjami: **Recenzja** / **News** — widoczny nad polem "Produkt / Temat".
+- Label, placeholder, opis pod przyciskiem i tekst przycisku ("Wygeneruj recenzję" / "Wygeneruj news") czytają z `aiMode`, nie z `form.content_type`.
+- Funkcja `generateAI` wysyła do edge function `content_type: aiMode` (zamiast `form.content_type`).
+- Po sukcesie: jeśli `aiMode !== form.content_type`, automatycznie ustawić `set("content_type", aiMode)` żeby sekcje formularza (Marka/Produkt/Ocena/Plusy/Minusy) zgadzały się z wygenerowaną treścią.
+- Usunąć z opisu zdanie "Najpierw wybierz typ wpisu poniżej..." — nie jest już prawdziwe.
+- Selektor "Typ wpisu" w sekcji Podstawowe zostaje (dla ręcznej edycji wpisów bez AI).
 
-### 2. `src/pages/admin/ReviewEditor.tsx`
-- W panelu Generatora AI:
-  - Zmienić nagłówek dynamicznie: "Wygeneruj recenzję" / "Wygeneruj news" zależnie od `form.content_type`.
-  - Zmienić placeholder pola pierwszego: dla `news` → "Temat newsa (np. Apple ogłasza iOS 19 z nowym AI)", label "Temat" zamiast "Produkt".
-  - Zmienić opis pod przyciskiem zależnie od trybu.
-- W wywołaniu `supabase.functions.invoke("generate-review", ...)`:
-  - przekazać `content_type: form.content_type ?? "review"`.
-  - klucz body przemianować na neutralne (np. `topic`) lub wysyłać oba (`product`, `topic`) — backend obsłuży.
-- W `setForm` po odpowiedzi:
-  - dla `news` nie nadpisywać `score/pros/cons/verdict/product_*` (zostawić puste).
+### 2. `src/pages/ReckiHome.tsx` — layout strony głównej
+Obecnie sekcja hero używa `grid grid-cols-1 lg:grid-cols-2` z heroem po lewej i kolumną 3 kart po prawej. Gdy karty po prawej są wyższe niż hero, pod heroem powstaje puste tło — dokładnie to widać na zrzucie.
 
-### 3. UX
-- Przełącznik typu wpisu (Recenzja/News) jest już w sekcji „Podstawowe". Generator AI czyta z `form.content_type`, więc kolejność: najpierw wybierz typ → potem generuj.
-- Toast informacyjny: "Wygenerowano recenzję AI" / "Wygenerowano news AI".
+Poprawki:
+- Dodać `items-stretch` do sekcji `grid` oraz `h-full` do hero `ReviewCard` (warianty hero powinny rozciągać się na pełną wysokość rzędu).
+- Sprawdzić `ReviewCard` (wariant `hero`) i upewnić się, że root karty ma `h-full flex flex-col` oraz że obrazek nie wymusza stałego `aspect-ratio` blokującego rozciąganie. Jeśli ma `aspect-[16/10]`, zmienić na `flex-1 min-h-[280px]` w wariancie hero.
+- Fallback dla małej liczby wpisów: gdy `reviews.length <= 4` (czyli `rest` jest puste), całą siatkę spłaszczyć — renderować jednorzędowy `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4` bez wyróżnionego hero, żeby uniknąć asymetrii.
+  - Logika: jeśli `reviews.length < 4` → render prostej siatki kart (bez wariantu `hero`). Jeśli `>= 4` → obecny układ hero + secondary + rest.
 
 ## Co zostaje bez zmian
-- Pobieranie obrazków z Firecrawl (działa identycznie w obu trybach).
-- Logika scalania galerii i okładki.
-- Schemat tabeli `reviews` (pole `content_type` już istnieje).
+- Edge function `generate-review` (już przyjmuje `content_type` w body).
+- Schemat tabeli `reviews`, hooki, reszta UI Tech.
+- Selektor typu w sekcji "Podstawowe" zostaje jako manualny override.

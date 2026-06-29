@@ -24,9 +24,10 @@ const ReckiHome = () => {
     return () => document.documentElement.classList.remove("mode-recki");
   }, []);
 
-  const hero = reviews[0];
-  const secondary = reviews.slice(1, 4);
-  const rest = reviews.slice(4);
+  const useHeroLayout = reviews.length >= 4;
+  const hero = useHeroLayout ? reviews[0] : null;
+  const secondary = useHeroLayout ? reviews.slice(1, 4) : [];
+  const rest = useHeroLayout ? reviews.slice(4) : reviews;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -91,8 +92,10 @@ const ReckiHome = () => {
           )}
 
           {hero && (
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-              <ReviewCard review={hero} variant="hero" />
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8 items-stretch">
+              <div className="h-full [&>a]:h-full [&>a]:flex [&>a]:flex-col">
+                <ReviewCard review={hero} variant="hero" />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
                 {secondary.map((r) => (
                   <ReviewCard key={r.id} review={r} />
@@ -118,7 +121,7 @@ const ReckiHome = () => {
 
           {rest.length > 0 && (
             <section>
-              <h2 className="text-xl font-bold mb-4">Wszystko z Tech</h2>
+              {useHeroLayout && <h2 className="text-xl font-bold mb-4">Wszystko z Tech</h2>}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {rest.map((r) => (
                   <ReviewCard key={r.id} review={r} />
@@ -126,6 +129,7 @@ const ReckiHome = () => {
               </div>
             </section>
           )}
+
 
           {bottomBanner && (
             <div className="mt-8">
