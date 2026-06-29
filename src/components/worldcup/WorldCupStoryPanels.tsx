@@ -20,6 +20,15 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
+  const navigate = useNavigate();
+  const goTo = useCallback(
+    (to: string) => (e: React.MouseEvent | React.TouchEvent) => {
+      e.stopPropagation();
+      if ("preventDefault" in e) e.preventDefault();
+      navigate(to);
+    },
+    [navigate]
+  );
 
   const { data: matchesRes } = useWorldCupMatches();
   const { data: standingsRes } = useWorldCupStandings();
