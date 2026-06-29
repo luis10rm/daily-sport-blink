@@ -64,6 +64,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
     },
     ref,
   ) => {
+    const navigate = useNavigate();
     // Determine if this post has AI-generated content (link to /blink/:slug)
     const hasContent = Boolean(content);
     const blinkUrl = `/blink/${slug}`;
