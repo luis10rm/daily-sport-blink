@@ -24,9 +24,10 @@ const ReckiHome = () => {
     return () => document.documentElement.classList.remove("mode-recki");
   }, []);
 
-  const hero = reviews[0];
-  const secondary = reviews.slice(1, 4);
-  const rest = reviews.slice(4);
+  const useHeroLayout = reviews.length >= 4;
+  const hero = useHeroLayout ? reviews[0] : null;
+  const secondary = useHeroLayout ? reviews.slice(1, 4) : [];
+  const rest = useHeroLayout ? reviews.slice(4) : reviews;
 
   return (
     <div className="min-h-screen flex flex-col">
