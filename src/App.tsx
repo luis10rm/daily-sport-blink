@@ -76,7 +76,9 @@ function App() {
               <ConditionalWallpaper />
               <PWAInstallBanner />
               <TournamentMascot />
+              <Suspense fallback={<div className="min-h-screen" />}>
               <Routes>
+
               <Route path="/" element={<Index />} />
               <Route path="/start" element={<StartPage />} />
               <Route path="/zainstaluj" element={<InstallPage />} />
