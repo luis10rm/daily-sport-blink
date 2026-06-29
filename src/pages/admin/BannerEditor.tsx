@@ -166,6 +166,7 @@ const BannerEditor = () => {
         position: banner.position,
         target_device: banner.target_device || "all",
         is_active: banner.is_active,
+        show_on_tech: (banner as any).show_on_tech ?? false,
         start_date: banner.start_date ? new Date(banner.start_date) : null,
         end_date: banner.end_date ? new Date(banner.end_date) : null,
       });
