@@ -1,48 +1,30 @@
-## Cel
+# Redesign paska patrona — Inline condensed
 
-Dodać w sekcji TECH oznaczenie, czy recenzja powstała na podstawie **researchu** (kompilacja źródeł) czy **własnych testów** (hands-on redakcji). Pole edytowalne w CMS + widoczna plakietka na stronie artykułu.
+## Co się zmienia
+Na mobile pasek patrona przestaje „rozwalać" CTA poza pasek. Layout staje się jednolinijkowy, z czytelnym podziałem na strefę informacji (lewa) i strefę akcji (prawa).
 
-## Zakres zmian
+## Implementacja — `src/components/PatronBar.tsx`
 
-### 1. Baza (`reviews`)
-- Nowa kolumna `review_basis text` z CHECK (`research` | `hands_on`), `NULL` dozwolony (pokazujemy badge tylko gdy ustawione, dla starych artykułów).
-- Domyślnie `research` dla nowych AI-generated, `hands_on` ustawiane ręcznie przez redakcję.
-- Dotyczy tylko `content_type = 'review'` — dla newsów ignorowane.
+Przebuduję wewnętrzną zawartość paska na układ `justify-between` zamiast `justify-center`:
 
-### 2. CMS — `src/pages/admin/ReviewEditor.tsx`
-- Widoczne tylko gdy `content_type === 'review'`.
-- RadioGroup z 2 opcjami:
-  - **Research** (ikona 📚 / `BookOpen`) — "Na podstawie publicznie dostępnych źródeł i specyfikacji"
-  - **Własne testy** (ikona 🔬 / `FlaskConical`) — "Produkt testowany przez redakcję"
-- Przy generowaniu AI domyślnie zaznacza się `research` (bo AI nie ma w ręku produktu).
+**Strefa lewa** (`flex items-center gap-2 overflow-hidden`):
+- Gwiazdka (3.5×3.5)
+- Prefix `Patron serwisu` — `text-[10px] uppercase opacity-70`, ukryty gdy brak miejsca (`hidden xs:inline`)
+- Nazwa patrona — `text-[12px] sm:text-sm font-bold truncate`
+- Logo patrona (jeśli jest) — `h-4 sm:h-5`
 
-### 3. Frontend — plakietka
+**Strefa prawa** (`flex items-center gap-2 shrink-0`):
+- Pigułka CTA — `text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap active:scale-95`
+- Przycisk X (jeśli `dismissible`) — `w-4 h-4 opacity-40 hover:opacity-100`
 
-**`src/components/recki/ReviewBasisBadge.tsx`** (nowy):
-- `research`: szary outline badge, ikona BookOpen, tekst "Na podstawie researchu"
-- `hands_on`: pełny magenta/zielony badge, ikona FlaskConical, tekst "Test redakcji"
-- Tooltip z dłuższym wyjaśnieniem przy hover.
-
-**`src/pages/ReckiReview.tsx`**:
-- Plakietka pod tytułem, obok meta (autor / data / kategoria) — w jednej linii nad coverem lub pod nim.
-- Druga, dyskretna instancja przy końcu artykułu nad werdyktem (kontekst dla czytelnika scrollującego do oceny).
-
-**`src/components/recki/ReviewCard.tsx`** (opcjonalnie):
-- Mini-ikona (sam ikon bez tekstu) na karcie hero w prawym dolnym rogu obrazu — żeby już z listingu było widać status. Pomijamy w wariantach `default`/`compact` żeby nie zaśmiecać.
-
-### 4. Typy
-- Po migracji wygenerują się typy Supabase. `useReviews` hook nie wymaga zmian (zwraca cały rekord).
-
-## Nie zmieniamy
-
-- Edge function `generate-review` — pole ustawia człowiek w CMS po wygenerowaniu szkicu (domyślnie `research`, łatwo zmienić).
-- Tabela posts / sekcja Sport — to wyłącznie dla TECH.
-- RLS / GRANTy — nowa kolumna dziedziczy istniejące polityki tabeli.
+## Szczegóły techniczne
+- Wysokość paska: zostaje `h-10` na mobile, `sm:h-10` na desktopie (bez zmian, by nie ruszać sticky offsetu headera).
+- Usuwam wrapper `container` z `justify-center` — był źródłem problemu: środkowanie + truncate + absolutnie pozycjonowany X powodowało nakładanie się.
+- Zachowuję cały dotychczasowy behavior: A/B variant, sticky, dismiss do sessionStorage, `onTouchEnd` z `preventDefault`, `cursor-pointer` na całym pasku.
+- Kolory CTA pigułki nadal pochodzą z `patron.text_color` / `patron.background_color` (admin może je zmieniać).
+- Truncate działa na nazwie patrona — w skrajnym wypadku obetnie się `…`, ale CTA nigdy nie wypadnie.
 
 ## Pliki
+- `src/components/PatronBar.tsx` — przebudowa JSX (jeden plik, ~30 linii zmian).
 
-- migracja: `ALTER TABLE reviews ADD COLUMN review_basis text CHECK (review_basis IN ('research','hands_on'))`
-- `src/pages/admin/ReviewEditor.tsx` — sekcja "Podstawa recenzji" w formularzu
-- `src/components/recki/ReviewBasisBadge.tsx` — nowy komponent
-- `src/pages/ReckiReview.tsx` — render plakietki (2 miejsca)
-- `src/components/recki/ReviewCard.tsx` — mini-ikona w wariancie `hero` (opcjonalne, do potwierdzenia)
+Brak zmian w bazie, hookach, innych komponentach.

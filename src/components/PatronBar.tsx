@@ -102,52 +102,63 @@ export const PatronBar = () => {
       )}
       style={backgroundStyle}
     >
-      <div className="container flex items-center justify-center gap-2 sm:gap-3 px-4 text-sm sm:text-base">
-        <Star className="h-4 w-4 flex-shrink-0 fill-current" />
+      <div className="w-full flex items-center justify-between gap-2 px-3 sm:px-4">
+        <div className="flex items-center gap-2 overflow-hidden mr-1 min-w-0">
+          <Star className="h-3.5 w-3.5 shrink-0 fill-current" />
 
-        <span className="font-medium truncate">{patron.prefix_text}</span>
+          <div className="flex items-baseline gap-1.5 overflow-hidden whitespace-nowrap min-w-0">
+            <span className="hidden xs:inline text-[10px] font-medium uppercase tracking-tight opacity-70 shrink-0">
+              {patron.prefix_text}
+            </span>
 
-        {patron.patron_logo_url && (
-          <img
-            src={patron.patron_logo_url}
-            alt={patron.patron_name}
-            className="h-5 sm:h-6 w-auto object-contain"
-          />
-        )}
+            {patron.patron_logo_url && (
+              <img
+                src={patron.patron_logo_url}
+                alt={patron.patron_name}
+                className="h-4 sm:h-5 w-auto object-contain shrink-0"
+              />
+            )}
 
-        <span className="font-bold truncate">{patron.patron_name}</span>
+            <span className="text-[12px] sm:text-sm font-bold truncate">
+              {patron.patron_name}
+            </span>
+          </div>
+        </div>
 
-        {ctaText && ctaUrl && (
-          <span
-            className="inline-flex ml-2 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold patron-cta-hover pointer-events-none"
-            style={{
-              backgroundColor: patron.text_color,
-              color: patron.background_color,
-            }}
-          >
-            {ctaText}
-          </span>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {ctaText && ctaUrl && (
+            <span
+              className="inline-flex px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-bold whitespace-nowrap pointer-events-none active:scale-95 transition-transform"
+              style={{
+                backgroundColor: patron.text_color,
+                color: patron.background_color,
+              }}
+            >
+              {ctaText}
+            </span>
+          )}
+
+          {patron.dismissible && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDismiss();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleDismiss();
+              }}
+              className="p-1 rounded-full opacity-40 hover:opacity-100 transition-opacity"
+              aria-label="Zamknij pasek patrona"
+              style={{ color: patron.text_color }}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {patron.dismissible && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDismiss();
-          }}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            handleDismiss();
-          }}
-          className="absolute right-2 sm:right-4 p-1 rounded-full transition-opacity hover:opacity-70"
-          aria-label="Zamknij pasek patrona"
-          style={{ color: patron.text_color }}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
     </div>
   );
 };
