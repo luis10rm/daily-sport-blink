@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useNavLink } from "@/hooks/useNavLink";
 import { Radio, Calendar, Trophy } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { cn } from "@/lib/utils";
