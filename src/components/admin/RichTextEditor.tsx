@@ -2,6 +2,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
+import Youtube from "@tiptap/extension-youtube";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -17,6 +18,7 @@ import {
   Quote,
   Link as LinkIcon,
   Unlink,
+  Youtube as YoutubeIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useCallback } from "react";
