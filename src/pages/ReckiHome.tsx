@@ -45,7 +45,13 @@ const ReckiHome = () => {
                   Recenzje, newsy i analizy: smartfony, audio, gaming, smart home, AI.
                 </p>
               </div>
+              {!isLoading && reviews.length > 0 && (
+                <span className="hidden sm:inline-flex shrink-0 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+                  {reviews.length} {reviews.length === 1 ? "artykuł" : reviews.length < 5 ? "artykuły" : "artykułów"}
+                </span>
+              )}
             </div>
+
 
             {categories.length > 0 && (
               <div className="mt-4 flex flex-wrap gap-2">

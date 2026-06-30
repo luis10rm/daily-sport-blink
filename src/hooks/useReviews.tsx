@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
 
 export interface ReviewCategory {
   id: string;
@@ -54,8 +56,26 @@ export const useReviewCategories = () => {
 };
 
 export const usePublishedReviews = (categorySlug?: string) => {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    const channel = (supabase as any)
+      .channel("reviews-published")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reviews" },
+        () => qc.invalidateQueries({ queryKey: ["reviews", "published"] })
+      )
+      .subscribe();
+    return () => {
+      (supabase as any).removeChannel(channel);
+    };
+  }, [qc]);
+
   return useQuery({
     queryKey: ["reviews", "published", categorySlug ?? "all"],
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       let q = (supabase as any)
         .from("reviews")
@@ -70,6 +90,7 @@ export const usePublishedReviews = (categorySlug?: string) => {
     },
   });
 };
+
 
 export const useReviewBySlug = (slug?: string) => {
   return useQuery({
