@@ -504,8 +504,28 @@ const ReviewEditor = () => {
 
         {/* Gallery */}
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
             <CardTitle>Galeria zdjęć</CardTitle>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const seed =
+                  form.product_name?.trim() ||
+                  [form.product_brand, form.title].filter(Boolean).join(" ").trim() ||
+                  form.title?.trim() ||
+                  "";
+                setImgSearchQuery(seed);
+                setImgSearchResults([]);
+                setImgSearchOpen(true);
+                if (seed.length >= 2) {
+                  void runImageSearch(seed);
+                }
+              }}
+            >
+              <Search className="mr-2 h-4 w-4" /> Szukaj w Google
+            </Button>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
