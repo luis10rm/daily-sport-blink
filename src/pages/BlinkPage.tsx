@@ -23,11 +23,26 @@ import { WorldCupMatchCenter } from "@/components/worldcup/WorldCupMatchCenter";
 
 // Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string): string => {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'h2', 'h3', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'br', 'blockquote', 'u', 's'],
-    ALLOWED_ATTR: ['href', 'target', 'rel'],
+  const clean = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'h2', 'h3', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'br', 'blockquote', 'u', 's', 'iframe', 'div'],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'title', 'class', 'data-youtube-video'],
     ALLOW_DATA_ATTR: false,
+    ADD_ATTR: ['allowfullscreen'],
   });
+  // Whitelist iframe sources to YouTube only
+  if (typeof window !== 'undefined') {
+    const doc = new DOMParser().parseFromString(clean, 'text/html');
+    doc.querySelectorAll('iframe').forEach((iframe) => {
+      const src = iframe.getAttribute('src') || '';
+      try {
+        const u = new URL(src, window.location.origin);
+        const ok = /(^|\.)youtube\.com$|(^|\.)youtube-nocookie\.com$|(^|\.)youtu\.be$/.test(u.hostname);
+        if (!ok) iframe.remove();
+      } catch { iframe.remove(); }
+    });
+    return doc.body.innerHTML;
+  }
+  return clean;
 };
 
 // Parse content - handles HTML, Markdown, and mixed formats with XSS protection
