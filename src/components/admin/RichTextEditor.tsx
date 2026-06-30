@@ -48,6 +48,14 @@ export const RichTextEditor = ({
           class: "text-primary underline",
         },
       }),
+      Youtube.configure({
+        controls: true,
+        nocookie: true,
+        modestBranding: true,
+        HTMLAttributes: {
+          class: "w-full aspect-video rounded-md my-4",
+        },
+      }),
     ],
     content: content || "",
     onUpdate: ({ editor }) => {
