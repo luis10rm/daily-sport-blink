@@ -595,6 +595,85 @@ const ReviewEditor = () => {
           </CardContent>
         </Card>
 
+        {/* Google Image Search Dialog */}
+        <Dialog open={imgSearchOpen} onOpenChange={setImgSearchOpen}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Search className="h-4 w-4" /> Wyszukaj zdjęcia w Google
+              </DialogTitle>
+              <DialogDescription>
+                Wpisz nazwę produktu. Kliknij miniaturę, aby dodać ją do galerii. Źródło: SerpApi (Google Images).
+              </DialogDescription>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void runImageSearch(imgSearchQuery);
+              }}
+              className="flex gap-2"
+            >
+              <Input
+                value={imgSearchQuery}
+                onChange={(e) => setImgSearchQuery(e.target.value)}
+                placeholder="np. Vivo X300 Ultra"
+                autoFocus
+              />
+              <Button type="submit" disabled={imgSearchLoading || imgSearchQuery.trim().length < 2}>
+                {imgSearchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                <span className="ml-2">Szukaj</span>
+              </Button>
+            </form>
+            <div className="flex-1 overflow-y-auto">
+              {imgSearchLoading && imgSearchResults.length === 0 ? (
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Szukam zdjęć…
+                </div>
+              ) : imgSearchResults.length === 0 ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  Wpisz frazę i kliknij „Szukaj”, aby zobaczyć wyniki.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-1">
+                  {imgSearchResults.map((img, idx) => {
+                    const inGallery = (form.gallery ?? []).includes(img.imageUrl);
+                    return (
+                      <button
+                        key={`${img.imageUrl}-${idx}`}
+                        type="button"
+                        onClick={() => addImageFromSearch(img.imageUrl)}
+                        className={`group relative aspect-square overflow-hidden rounded-md border bg-muted transition hover:ring-2 hover:ring-fuchsia-500 ${
+                          inGallery ? "ring-2 ring-emerald-500 opacity-70" : ""
+                        }`}
+                        title={img.title || img.sourceDomain}
+                      >
+                        <img
+                          src={img.thumbnailUrl || img.imageUrl}
+                          alt={img.title || ""}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.opacity = "0.3";
+                          }}
+                        />
+                        <span className="absolute inset-x-0 bottom-0 truncate bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                          {img.sourceDomain || "źródło"}
+                          {img.width && img.height ? ` · ${img.width}×${img.height}` : ""}
+                        </span>
+                        {inGallery && (
+                          <span className="absolute right-1 top-1 rounded bg-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                            W galerii
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
 
         {/* Pros / Cons */}
         {isReview && (
