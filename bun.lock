@@ -30,6 +30,7 @@
         "@tanstack/react-query": "^5.83.0",
         "@tiptap/extension-link": "^3.18.0",
         "@tiptap/extension-underline": "^3.18.0",
+        "@tiptap/extension-youtube": "^3.27.1",
         "@tiptap/react": "^3.18.0",
         "@tiptap/starter-kit": "^3.18.0",
         "@types/dompurify": "^3.0.5",
@@ -607,6 +608,8 @@
     "@tiptap/extension-text": ["@tiptap/extension-text@3.18.0", "", { "peerDependencies": { "@tiptap/core": "^3.18.0" } }, "sha512-9TvctdnBCwK/zyTi9kS7nGFNl5OvGM8xE0u38ZmQw5t79JOqJHgOroyqMjw8LHK/1PWrozfNCmsZbpq4IZuKXw=="],
 
     "@tiptap/extension-underline": ["@tiptap/extension-underline@3.18.0", "", { "peerDependencies": { "@tiptap/core": "^3.18.0" } }, "sha512-009IeXURNJ/sm1pBqbj+2YQgjQaBtNlJR3dbl6xu49C+qExqCmI7klhKQuwsVVGLR7ahsYlp7d9RlftnhCXIcQ=="],
+
+    "@tiptap/extension-youtube": ["@tiptap/extension-youtube@3.27.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@tiptap/extension-youtube/-/extension-youtube-3.27.1.tgz", { "peerDependencies": { "@tiptap/core": "3.27.1" } }, "sha512-3ThjdJ2+oQAq/t1aXDR8fGjRA+L6jJxZoNrOkw/KrysDmoflFd4Vn+7ZctKtop4fkC9GjX8NX6NzkfQoe4lCrQ=="],
 
     "@tiptap/extensions": ["@tiptap/extensions@3.18.0", "", { "peerDependencies": { "@tiptap/core": "^3.18.0", "@tiptap/pm": "^3.18.0" } }, "sha512-uSRIE9HGshBN6NRFR3LX2lZqBLvX92SgU5A9AvUbJD4MqU63E+HdruJnRjsVlX3kPrmbIDowxrzXlUcg3K0USQ=="],
 
