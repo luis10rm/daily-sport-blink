@@ -17,7 +17,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plus, Save, Sparkles, Star, Trash2, X } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Search, Sparkles, Star, Trash2, X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   useReviewById,
   useUpsertReview,
@@ -74,6 +81,51 @@ const ReviewEditor = () => {
     }
   }, [existing]);
   const aiIsReview = aiMode === "review";
+
+  // Image search (SerpApi / Google Images)
+  type SearchedImage = {
+    imageUrl: string;
+    thumbnailUrl: string;
+    sourceDomain: string;
+    sourceUrl: string;
+    title: string;
+    width: number | null;
+    height: number | null;
+  };
+  const [imgSearchOpen, setImgSearchOpen] = useState(false);
+  const [imgSearchQuery, setImgSearchQuery] = useState("");
+  const [imgSearchLoading, setImgSearchLoading] = useState(false);
+  const [imgSearchResults, setImgSearchResults] = useState<SearchedImage[]>([]);
+
+  const runImageSearch = async (q: string) => {
+    const query = q.trim();
+    if (query.length < 2) return;
+    setImgSearchLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("search-product-images", {
+        body: { query, num: 24 },
+      });
+      if (error) throw error;
+      const images = Array.isArray((data as any)?.images) ? (data as any).images : [];
+      setImgSearchResults(images);
+      if (!images.length) toast.info("Brak wyników dla tego zapytania");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Błąd wyszukiwania");
+    } finally {
+      setImgSearchLoading(false);
+    }
+  };
+
+  const addImageFromSearch = (url: string) => {
+    if (!url) return;
+    const current = form.gallery ?? [];
+    if (current.includes(url)) {
+      toast.info("To zdjęcie jest już w galerii");
+      return;
+    }
+    set("gallery", [...current, url]);
+    toast.success("Dodano do galerii");
+  };
 
   useEffect(() => {
     if (existing) {
