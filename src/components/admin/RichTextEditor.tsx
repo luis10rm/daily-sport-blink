@@ -97,6 +97,13 @@ export const RichTextEditor = ({
       .run();
   }, [editor]);
 
+  const addYoutube = useCallback(() => {
+    if (!editor) return;
+    const url = window.prompt("Wklej link do YouTube (np. https://www.youtube.com/watch?v=…):");
+    if (!url) return;
+    editor.chain().focus().setYoutubeVideo({ src: url }).run();
+  }, [editor]);
+
   if (!editor) {
     return null;
   }
