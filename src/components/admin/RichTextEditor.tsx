@@ -2,6 +2,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
+import Youtube from "@tiptap/extension-youtube";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { Separator } from "@/components/ui/separator";
@@ -17,6 +18,7 @@ import {
   Quote,
   Link as LinkIcon,
   Unlink,
+  Youtube as YoutubeIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useCallback } from "react";
@@ -44,6 +46,14 @@ export const RichTextEditor = ({
         openOnClick: false,
         HTMLAttributes: {
           class: "text-primary underline",
+        },
+      }),
+      Youtube.configure({
+        controls: true,
+        nocookie: true,
+        modestBranding: true,
+        HTMLAttributes: {
+          class: "w-full aspect-video rounded-md my-4",
         },
       }),
     ],
@@ -85,6 +95,13 @@ export const RichTextEditor = ({
       .extendMarkRange("link")
       .setLink({ href: url })
       .run();
+  }, [editor]);
+
+  const addYoutube = useCallback(() => {
+    if (!editor) return;
+    const url = window.prompt("Wklej link do YouTube (np. https://www.youtube.com/watch?v=…):");
+    if (!url) return;
+    editor.chain().focus().setYoutubeVideo({ src: url }).run();
   }, [editor]);
 
   if (!editor) {
@@ -211,6 +228,21 @@ export const RichTextEditor = ({
             <Unlink className="h-4 w-4" />
           </Button>
         )}
+
+        <Separator orientation="vertical" className="mx-1 h-6" />
+
+        {/* YouTube embed */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={addYoutube}
+          className="h-8 px-2"
+          aria-label="Osadź film z YouTube"
+          title="Osadź film z YouTube"
+        >
+          <YoutubeIcon className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Editor content */}
