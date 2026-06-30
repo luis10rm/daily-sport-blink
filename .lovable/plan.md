@@ -1,36 +1,27 @@
-## Co ustaliłem
 
-- Baza: **9 opublikowanych wpisów** (`status='published'`, 7 recenzji + 2 newsy).
-- RLS publiczne (`Anyone can view published reviews`) działa poprawnie — nie filtruje nic dodatkowo.
-- Hook `usePublishedReviews()` na `/tech` nie filtruje po kategorii ani typie — pobiera wszystkie 9.
-- Test Playwrightem na świeżej sesji (`http://localhost:8080/tech`): renderuje się **9 kart `<article>`** z poprawnymi tytułami. Layout: 1 hero + 3 compact w sidebarze + 5 w siatce „Wszystko z Tech".
+## Cel
+W edytorze recenzji/newsów TECH (`/admin/recki/:id/edit`) dodać możliwość ustawiania zdjęcia głównego jednym kliknięciem na dowolne zdjęcie z galerii — bez ponownego uploadowania.
 
-Czyli z punktu widzenia kodu i danych — wszystkie 9 wpisów jest dostępnych i renderowanych. Skoro u Ciebie pokazuje się mniej, problem leży **po stronie cache klienta**.
+## Zakres zmian
 
-## Najbardziej prawdopodobna przyczyna
+### 1. Karta „Galeria zdjęć" w `src/pages/admin/ReviewEditor.tsx`
+Na każdym kafelku galerii dodajemy w lewym górnym rogu mały przycisk (ikona gwiazdki / „Ustaw jako główne"):
+- Kliknięcie ustawia `cover_image_url` na URL tej miniatury.
+- Aktywna miniatura (ta sama URL co `cover_image_url`) dostaje złoty ring + plakietkę „Główne".
+- Toast: „Ustawiono jako zdjęcie główne".
 
-Wyłączyliśmy ostatnio PWA (`selfDestroying: true`), ale przeglądarki, które już zarejestrowały starego Service Workera, **wciąż serwują zcacheowaną starszą wersję listy** (np. sprzed publikacji ostatnich wpisów) dopóki SW się nie zderegistruje. Workbox `selfDestroying` deregistruje się dopiero po pełnym przeładowaniu strony przez użytkownika — a `usePublishedReviews` ma w React Query cache, więc nawet po deregistracji pierwszy render może pokazać stare dane z IndexedDB.
+Dodatkowo, dla wygody: jeśli `cover_image_url` jest puste i użytkownik kliknie miniaturę, działa to jak „ustaw jako główne".
 
-Dodatkowo żadne z zapytań do `reviews` nie ma realtime subscription ani `staleTime: 0`, więc widok nie odświeża się sam po publikacji w adminie.
+### 2. Karta „Zdjęcie główne"
+Pod istniejącym `ImageUploaderem` dodajemy podpowiedź: „Możesz też wybrać dowolne zdjęcie z galerii poniżej — kliknij ⭐ na miniaturze." (tylko gdy galeria zawiera ≥1 zdjęcie).
 
-## Plan działania
+## Co zostaje bez zmian
+- `ImageUploader` (wgrywanie / crop / URL) — działa tak jak teraz.
+- Schemat bazy, AI generator, pole `gallery` w bazie — bez zmian.
+- Sekcja sport — bez zmian (poza zakresem).
 
-1. **Twarda weryfikacja u Ciebie (bez zmian w kodzie)**
-   - Otwórz `/tech` w trybie incognito / innej przeglądarce. Jeśli widzisz 9 — to potwierdza, że problem to stale cache w Twojej głównej przeglądarce.
-   - W DevTools → Application → Service Workers → „Unregister", potem hard refresh.
-
-2. **Jeśli incognito też pokazuje mniej** — wykonam dalszą diagnostykę:
-   - Sprawdzę, czy któreś wpisy mają `published_at` w przyszłości w Twojej strefie (RLS porównuje z `now()` UTC) lub czy ostatnio coś zostało odpublikowane.
-   - Dodam tymczasowy log liczby pobranych wpisów w `ReckiHome`.
-
-3. **Niezależnie od diagnozy — utwardzenie cache (proponowane drobne zmiany w `src/hooks/useReviews.tsx`):**
-   - Ustawienie `staleTime: 60_000` + `refetchOnWindowFocus: true` dla `usePublishedReviews`, aby powrót do karty zawsze odświeżał listę.
-   - Dodanie realtime subscription na tabeli `reviews` (analogicznie do `useTournamentMode`), żeby publikacja w adminie natychmiast pojawiała się publicznie bez ręcznego odświeżania.
-   - Dodanie w `ReckiHome` małego nagłówka „X artykułów" (widoczny licznik) — łatwo będzie wzrokowo wyłapać rozjazd w przyszłości.
-
-4. **Sprzątanie po starym Service Workerze** (na wszelki wypadek, dla użytkowników którzy weszli na stronę gdy PWA było aktywne):
-   - Dodanie w `src/pwa/registerSW.ts` jawnego `navigator.serviceWorker.getRegistrations()` + `unregister()` przy starcie aplikacji, żeby przyspieszyć deregistrację u istniejących użytkowników.
-
-## Pytanie do Ciebie przed implementacją
-
-Najpierw potrzebuję jednej informacji: **sprawdź w incognito stronę `/tech` i powiedz, ile kart widzisz**. To rozstrzygnie, czy ruszamy z pkt 3+4 (cache), czy szukać głębiej (pkt 2).
+## Szczegóły techniczne
+- Plik: `src/pages/admin/ReviewEditor.tsx` (sekcja `{/* Gallery */}`).
+- Ikona: `Star` z `lucide-react` (już używany jest stack `lucide-react`).
+- Stan: korzystamy z istniejącego `set("cover_image_url", url)`.
+- Wskaźnik aktywnej miniatury: porównanie `url === form.cover_image_url`.

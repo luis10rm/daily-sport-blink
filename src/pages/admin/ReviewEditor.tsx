@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plus, Save, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Save, Sparkles, Star, Trash2, X } from "lucide-react";
 import {
   useReviewById,
   useUpsertReview,
@@ -434,7 +434,7 @@ const ReviewEditor = () => {
           <CardHeader>
             <CardTitle>Zdjęcie główne</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-2">
             <ImageUploader
               value={form.cover_image_url ?? ""}
               onChange={(url) => set("cover_image_url", url)}
@@ -442,6 +442,11 @@ const ReviewEditor = () => {
               storageBucket="post-images"
               storagePath="reviews/cover"
             />
+            {(form.gallery ?? []).length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Możesz też wybrać dowolne zdjęcie z galerii poniżej — kliknij ⭐ na miniaturze.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -452,25 +457,53 @@ const ReviewEditor = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {(form.gallery ?? []).map((url, idx) => (
-                <div key={idx} className="relative aspect-square overflow-hidden rounded-md border">
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="destructive"
-                    className="absolute right-1 top-1 h-7 w-7"
-                    onClick={() =>
-                      set(
-                        "gallery",
-                        (form.gallery ?? []).filter((_, i) => i !== idx)
-                      )
-                    }
+              {(form.gallery ?? []).map((url, idx) => {
+                const isCover = url === form.cover_image_url && !!url;
+                return (
+                  <div
+                    key={idx}
+                    className={`relative aspect-square overflow-hidden rounded-md border ${
+                      isCover ? "ring-2 ring-amber-400 border-amber-400" : ""
+                    }`}
                   >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
+                    <img src={url} alt="" className="h-full w-full object-cover" />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant={isCover ? "default" : "secondary"}
+                      className={`absolute left-1 top-1 h-7 w-7 ${
+                        isCover ? "bg-amber-400 text-black hover:bg-amber-400" : ""
+                      }`}
+                      title={isCover ? "To jest zdjęcie główne" : "Ustaw jako zdjęcie główne"}
+                      onClick={() => {
+                        set("cover_image_url", url);
+                        toast.success("Ustawiono jako zdjęcie główne");
+                      }}
+                    >
+                      <Star className={`h-3.5 w-3.5 ${isCover ? "fill-current" : ""}`} />
+                    </Button>
+                    {isCover && (
+                      <span className="absolute bottom-1 left-1 rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-semibold text-black">
+                        Główne
+                      </span>
+                    )}
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      className="absolute right-1 top-1 h-7 w-7"
+                      onClick={() =>
+                        set(
+                          "gallery",
+                          (form.gallery ?? []).filter((_, i) => i !== idx)
+                        )
+                      }
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                );
+              })}
               <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary">
                 <Plus className="h-6 w-6" />
                 <span className="mt-1 text-xs">Dodaj</span>
@@ -489,6 +522,7 @@ const ReviewEditor = () => {
             </div>
           </CardContent>
         </Card>
+
 
         {/* Pros / Cons */}
         {isReview && (
