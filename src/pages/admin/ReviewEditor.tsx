@@ -504,35 +504,6 @@ const ReviewEditor = () => {
                   </div>
                 );
               })}
-
-        </Card>
-
-        {/* Gallery */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Galeria zdjęć</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {(form.gallery ?? []).map((url, idx) => (
-                <div key={idx} className="relative aspect-square overflow-hidden rounded-md border">
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="destructive"
-                    className="absolute right-1 top-1 h-7 w-7"
-                    onClick={() =>
-                      set(
-                        "gallery",
-                        (form.gallery ?? []).filter((_, i) => i !== idx)
-                      )
-                    }
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              ))}
               <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary">
                 <Plus className="h-6 w-6" />
                 <span className="mt-1 text-xs">Dodaj</span>
@@ -551,6 +522,7 @@ const ReviewEditor = () => {
             </div>
           </CardContent>
         </Card>
+
 
         {/* Pros / Cons */}
         {isReview && (
