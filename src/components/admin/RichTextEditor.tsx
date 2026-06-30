@@ -228,6 +228,21 @@ export const RichTextEditor = ({
             <Unlink className="h-4 w-4" />
           </Button>
         )}
+
+        <Separator orientation="vertical" className="mx-1 h-6" />
+
+        {/* YouTube embed */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={addYoutube}
+          className="h-8 px-2"
+          aria-label="Osadź film z YouTube"
+          title="Osadź film z YouTube"
+        >
+          <YoutubeIcon className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Editor content */}
