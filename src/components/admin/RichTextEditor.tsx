@@ -273,10 +273,62 @@ export const RichTextEditor = ({
         >
           <YoutubeIcon className="h-4 w-4" />
         </Button>
+
+        {/* Paste HTML */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setHtmlDraft("");
+            setHtmlDialogOpen(true);
+          }}
+          className="h-8 px-2"
+          aria-label="Wklej HTML"
+          title="Wklej HTML"
+        >
+          <CodeIcon className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Editor content */}
       <EditorContent editor={editor} />
+
+      <Dialog open={htmlDialogOpen} onOpenChange={setHtmlDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Wklej HTML</DialogTitle>
+            <DialogDescription>
+              Wklej surowy HTML — zostanie sparsowany i wstawiony w miejscu kursora.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={htmlDraft}
+            onChange={(e) => setHtmlDraft(e.target.value)}
+            placeholder="<h2>Nagłówek</h2><p>Treść…</p>"
+            className="min-h-[240px] font-mono text-xs"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setHtmlDialogOpen(false)}>
+              Anuluj
+            </Button>
+            <Button
+              onClick={() => {
+                const html = htmlDraft.trim();
+                if (!html) return;
+                editor
+                  .chain()
+                  .focus()
+                  .insertContent(html, { parseOptions: { preserveWhitespace: false } })
+                  .run();
+                setHtmlDialogOpen(false);
+              }}
+            >
+              Wstaw
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
