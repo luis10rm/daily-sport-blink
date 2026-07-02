@@ -19,9 +19,21 @@ import {
   Link as LinkIcon,
   Unlink,
   Youtube as YoutubeIcon,
+  Code as CodeIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+
+const looksLikeHtml = (s: string) => /<\/?[a-z][\s\S]*>/i.test(s);
 
 interface RichTextEditorProps {
   content: string;
@@ -66,8 +78,26 @@ export const RichTextEditor = ({
         class:
           "min-h-[250px] w-full rounded-md border-none bg-transparent px-3 py-2 text-sm focus:outline-none prose prose-sm dark:prose-invert max-w-none",
       },
+      handlePaste: (view, event) => {
+        const cd = event.clipboardData;
+        if (!cd) return false;
+        const html = cd.getData("text/html");
+        if (html && html.trim()) return false; // TipTap parses HTML natively
+        const text = cd.getData("text/plain");
+        if (text && looksLikeHtml(text)) {
+          event.preventDefault();
+          editor?.commands.insertContent(text, {
+            parseOptions: { preserveWhitespace: false },
+          });
+          return true;
+        }
+        return false;
+      },
     },
   });
+
+  const [htmlDialogOpen, setHtmlDialogOpen] = useState(false);
+  const [htmlDraft, setHtmlDraft] = useState("");
 
   // Sync external content changes
   useEffect(() => {
@@ -243,10 +273,62 @@ export const RichTextEditor = ({
         >
           <YoutubeIcon className="h-4 w-4" />
         </Button>
+
+        {/* Paste HTML */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setHtmlDraft("");
+            setHtmlDialogOpen(true);
+          }}
+          className="h-8 px-2"
+          aria-label="Wklej HTML"
+          title="Wklej HTML"
+        >
+          <CodeIcon className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Editor content */}
       <EditorContent editor={editor} />
+
+      <Dialog open={htmlDialogOpen} onOpenChange={setHtmlDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Wklej HTML</DialogTitle>
+            <DialogDescription>
+              Wklej surowy HTML — zostanie sparsowany i wstawiony w miejscu kursora.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={htmlDraft}
+            onChange={(e) => setHtmlDraft(e.target.value)}
+            placeholder="<h2>Nagłówek</h2><p>Treść…</p>"
+            className="min-h-[240px] font-mono text-xs"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setHtmlDialogOpen(false)}>
+              Anuluj
+            </Button>
+            <Button
+              onClick={() => {
+                const html = htmlDraft.trim();
+                if (!html) return;
+                editor
+                  .chain()
+                  .focus()
+                  .insertContent(html, { parseOptions: { preserveWhitespace: false } })
+                  .run();
+                setHtmlDialogOpen(false);
+              }}
+            >
+              Wstaw
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
