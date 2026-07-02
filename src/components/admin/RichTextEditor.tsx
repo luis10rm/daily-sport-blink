@@ -19,9 +19,21 @@ import {
   Link as LinkIcon,
   Unlink,
   Youtube as YoutubeIcon,
+  Code as CodeIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+
+const looksLikeHtml = (s: string) => /<\/?[a-z][\s\S]*>/i.test(s);
 
 interface RichTextEditorProps {
   content: string;

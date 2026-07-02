@@ -1,39 +1,36 @@
-## Plan: przejście z Google CSE na SerpApi (Google Images)
+# Problem
 
-### 1. Sekret
-- Wymagam od Ciebie klucza `SERPAPI_KEY` (przez `add_secret`).
-- Klucz wygenerujesz na https://serpapi.com → Dashboard → Your Private API Key.
-- Free plan: 100 zapytań/miesiąc — wystarcza na testy. Płatny od $75/mo (5k zapytań).
+W `RichTextEditor.tsx` (używany w PostEditor i ReviewEditor) TipTap nie ma niestandardowej obsługi wklejania. Gdy wklejasz **surowy HTML jako tekst** (np. `<h2>Ray-Ban Display</h2><p>...</p>` skopiowane ze źródła / edytora kodu), przeglądarka wysyła to jako `text/plain`, więc TipTap traktuje znaczniki jak dosłowny tekst i wyświetla `<h2>` zamiast go sparsować. Dodatkowo StarterKit nie ma rozszerzeń dla `<table>`, `<figure>`, `<img>` itp., więc nawet gdy HTML zostanie rozpoznany, część tagów jest wycinana.
 
-### 2. Edge function
-Refaktor `supabase/functions/search-product-images/index.ts`:
-- Usuwam wywołania do `customsearch.googleapis.com` oraz odwołania do `GOOGLE_CSE_API_KEY` / `GOOGLE_CSE_CX`.
-- Nowe wywołanie:
-  ```
-  GET https://serpapi.com/search.json
-    ?engine=google_images
-    &q={query}
-    &api_key={SERPAPI_KEY}
-    &num=20
-    &hl=pl
-    &gl=pl
-    &safe=active
-  ```
-- Mapuję `images_results[].original` → `imageUrl`, `images_results[].thumbnail` → `thumbnailUrl`, `images_results[].source` → `sourceDomain`, `images_results[].title` → `title`, plus `original_width`/`original_height`.
-- Zachowuję istniejący kontrakt zwrotki (`{ images: [...] }`), żeby frontend `ReviewEditor.tsx` (modal „Szukaj zdjęć produktu") działał bez zmian.
-- Obsługa błędów: 402 (quota) → komunikat „Wyczerpano limit SerpApi", 401 → „Nieprawidłowy klucz", inne → generyczny 502.
-- Retry-once przy timeout (analogicznie jak w `generate-review`).
+# Rozwiązanie
 
-### 3. Czyszczenie
-- Stare sekrety `GOOGLE_CSE_API_KEY` i `GOOGLE_CSE_CX` zostają w panelu (nieaktywne) — możesz je później ręcznie usunąć w Backend → Secrets. Nie kasuję ich automatycznie, żeby nic nie zepsuć w razie rollbacku.
-- README/komentarze w funkcji aktualizuję na SerpApi.
+Dwie uzupełniające się zmiany w `src/components/admin/RichTextEditor.tsx`:
 
-### 4. Walidacja
-- `curl_edge_functions` z testowym query („vivo x300 ultra") → sprawdzam, że wraca ≥10 obrazków z różnych domen.
-- Manualny test w `ReviewEditor.tsx` → modal wyszukiwania pokazuje miniatury, klik dodaje URL do galerii.
+## 1. Automatyczne rozpoznawanie HTML w wklejce tekstowej
 
-### Co dostaniesz
-- W edytorze TECH wyszukiwarka grafik wraca do pełnej funkcjonalności (cała sieć, nie tylko białe listy domen).
-- Możliwość późniejszej łatwej zmiany dostawcy (cała logika w jednym pliku edge function).
+Dodać handler `editorProps.handlePaste`:
+- Jeśli `clipboardData` zawiera `text/html` → domyślne zachowanie TipTap.
+- Jeśli zawiera tylko `text/plain`, ale treść wygląda jak HTML (regex `/<[a-z][\s\S]*>/i`), wywołać `editor.commands.insertContent(text, { parseOptions: { preserveWhitespace: false } })` — TipTap sparsuje string jako HTML.
+- W przeciwnym razie zwrócić `false` (domyślne wklejenie tekstu).
 
-Po akceptacji poproszę Cię o wklejenie `SERPAPI_KEY` w bezpiecznym formularzu.
+## 2. Ręczny przycisk „Wklej HTML"
+
+Nowy przycisk w toolbarze (ikona `Code`) otwierający `Dialog` z `Textarea`:
+- Użytkownik wkleja/edytuje HTML.
+- Po zatwierdzeniu: `editor.chain().focus().insertContent(html).run()`.
+- Zapewnia fallback, gdy autodetekcja zawiedzie i pozwala świadomie wkleić fragment (np. tabelę z Google Docs).
+
+## 3. Rozszerzenie dozwolonych tagów (opcjonalnie, w tej samej iteracji)
+
+- Dodać rozszerzenia `@tiptap/extension-image` i `@tiptap/extension-table` (+ `TableRow`, `TableCell`, `TableHeader`), by zachować obrazki i tabele wklejane z HTML. Bez tego insertContent po cichu je wyrzuca.
+- Zaktualizować sanitizer w `src/pages/BlinkPage.tsx` (`ALLOWED_TAGS`) o `img`, `figure`, `figcaption`, `table`, `thead`, `tbody`, `tr`, `td`, `th` — obecnie są usuwane przy renderowaniu.
+
+# Pliki do zmiany
+
+- `src/components/admin/RichTextEditor.tsx` — handlePaste, przycisk „Wklej HTML", dialog, ewentualne rozszerzenia.
+- `src/pages/BlinkPage.tsx` — rozszerzenie whitelisty w `sanitizeHtml`.
+- `package.json` — `@tiptap/extension-image`, `@tiptap/extension-table*` (jeśli akceptujesz punkt 3).
+
+# Pytanie
+
+Czy dorzucamy punkt 3 (obrazy + tabele w edytorze i sanitizerze), czy na razie tylko autodetekcja + przycisk „Wklej HTML"?
