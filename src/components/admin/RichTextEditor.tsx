@@ -78,8 +78,26 @@ export const RichTextEditor = ({
         class:
           "min-h-[250px] w-full rounded-md border-none bg-transparent px-3 py-2 text-sm focus:outline-none prose prose-sm dark:prose-invert max-w-none",
       },
+      handlePaste: (view, event) => {
+        const cd = event.clipboardData;
+        if (!cd) return false;
+        const html = cd.getData("text/html");
+        if (html && html.trim()) return false; // TipTap parses HTML natively
+        const text = cd.getData("text/plain");
+        if (text && looksLikeHtml(text)) {
+          event.preventDefault();
+          editor?.commands.insertContent(text, {
+            parseOptions: { preserveWhitespace: false },
+          });
+          return true;
+        }
+        return false;
+      },
     },
   });
+
+  const [htmlDialogOpen, setHtmlDialogOpen] = useState(false);
+  const [htmlDraft, setHtmlDraft] = useState("");
 
   // Sync external content changes
   useEffect(() => {
