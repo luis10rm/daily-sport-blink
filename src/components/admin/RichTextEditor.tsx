@@ -89,7 +89,7 @@ export const RichTextEditor = ({
         // — happens when copying from view-source, code blocks, ChatGPT canvas, docs.
         if (looksLikeEncodedHtml(text)) {
           event.preventDefault();
-          const decoded = unescapeHtmlIfEncoded(text);
+          const decoded = sanitizePastedHtml(text);
           editor?.commands.insertContent(decoded, {
             parseOptions: { preserveWhitespace: false },
           });
