@@ -29,6 +29,7 @@ import {
   Sparkles,
   Globe,
   Star,
+  Sun,
 } from "lucide-react";
 
 interface AdminLayoutProps {
