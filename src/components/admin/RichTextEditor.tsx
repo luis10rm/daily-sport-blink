@@ -83,17 +83,29 @@ export const RichTextEditor = ({
         const cd = event.clipboardData;
         if (!cd) return false;
         const text = cd.getData("text/plain");
-        // If plain text looks like HTML markup (copied from a code editor / view-source),
-        // parse it as HTML regardless of what text/html contains (which is often the
-        // escaped rendering of that same code, e.g. `&lt;p&gt;...`).
-        if (text && looksLikeHtml(text)) {
+        if (!text) return false;
+
+        // Case 1: clipboard contains ENCODED HTML entities (e.g. `&lt;p&gt;&lt;strong&gt;...`)
+        // — happens when copying from view-source, code blocks, ChatGPT canvas, docs.
+        if (looksLikeEncodedHtml(text)) {
+          event.preventDefault();
+          const decoded = unescapeHtmlIfEncoded(text);
+          editor?.commands.insertContent(decoded, {
+            parseOptions: { preserveWhitespace: false },
+          });
+          return true;
+        }
+
+        // Case 2: clipboard contains raw HTML markup — parse it as HTML rather than
+        // letting the browser hand us text/html that may be an escaped rendering.
+        if (looksLikeHtml(text)) {
           event.preventDefault();
           editor?.commands.insertContent(text, {
             parseOptions: { preserveWhitespace: false },
           });
           return true;
         }
-        return false; // fall back to TipTap's native handling (incl. text/html)
+        return false; // fall back to TipTap's native handling
       },
     },
   });
