@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
-import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
+import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
