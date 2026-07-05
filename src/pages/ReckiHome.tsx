@@ -102,9 +102,9 @@ const ReckiHome = () => {
               <div className="lg:col-span-2">
                 <ReviewCard review={hero} variant="hero" />
               </div>
-              <aside className="lg:col-span-1 flex flex-col gap-3">
+              <aside className="lg:col-span-1 grid grid-cols-1 gap-3">
                 {secondary.map((r) => (
-                  <ReviewCard key={r.id} review={r} variant="compact" />
+                  <ReviewCard key={r.id} review={r} variant="mini" />
                 ))}
               </aside>
             </section>
