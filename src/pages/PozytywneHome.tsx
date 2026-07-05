@@ -208,8 +208,24 @@ const PozytywneHome = () => {
               </Link>
             </div>
           )}
+
+          {/* Bottom Banner */}
+          {bottomBanner && (
+            <SponsorBanner
+              title={bottomBanner.title}
+              description={bottomBanner.description}
+              ctaText={bottomBanner.cta_text}
+              ctaUrl={bottomBanner.click_tag}
+              imageDesktopUrl={bottomBanner.image_desktop_url || undefined}
+              imageMobileUrl={bottomBanner.image_mobile_url || undefined}
+              impressionTag={bottomBanner.impression_tag || undefined}
+              bannerId={bottomBanner.id}
+              className="mt-10"
+            />
+          )}
         </div>
       </main>
+
 
       <PozytywneFooter />
     </div>
