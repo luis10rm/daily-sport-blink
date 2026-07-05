@@ -208,7 +208,7 @@ const BlinkPage = () => {
             className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Powrót do strony głównej
+            {isPositive ? "Powrót do Pozytywnych" : "Powrót do strony głównej"}
           </a>
 
           {/* Olympic winter banner */}
