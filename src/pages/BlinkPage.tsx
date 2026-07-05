@@ -131,7 +131,7 @@ const BlinkPage = () => {
             Przepraszamy, nie udało się znaleźć tego artykułu.
           </p>
           <Button asChild>
-            <a {...navLink("/")}>
+            <a {...navLink(homeHref)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Wróć na stronę główną
             </a>
@@ -204,7 +204,7 @@ const BlinkPage = () => {
         <article className={cn("max-w-3xl mx-auto", isOlympic && "relative")}>
           {/* Back button */}
           <a 
-            {...navLink("/")} 
+            {...navLink(homeHref)} 
             className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
