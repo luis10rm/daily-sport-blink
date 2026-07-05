@@ -32,7 +32,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { looksLikeEncodedHtml, unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
+import { looksLikeEncodedHtml, sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
 
 const looksLikeHtml = (s: string) => /<\/?[a-z][\s\S]*>/i.test(s);
 
