@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { PozytywneHeader } from "@/components/pozytywne/PozytywneHeader";
 import { PozytywneFooter } from "@/components/pozytywne/PozytywneFooter";
 import { NewsCard } from "@/components/NewsCard";
+import { SponsorBanner } from "@/components/SponsorBanner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Archive, Sun, Sparkles } from "lucide-react";
 import {
@@ -11,6 +12,8 @@ import {
   useTodaysPositivePosts,
 } from "@/hooks/usePositivePosts";
 import { usePositiveCategories, usePositiveCategoryBySlug } from "@/hooks/usePositiveCategories";
+import { useActiveBannerForDevice } from "@/hooks/useBanners";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const PozytywneHome = () => {
