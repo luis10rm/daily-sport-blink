@@ -14,8 +14,8 @@ export type BannerPosition =
   | "recki_article_bottom"
   | "recki_sticky_mobile";
 export type BannerTargetDevice = "all" | "desktop" | "mobile";
-export type BannerSection = "sport" | "tech";
-export const ALL_SECTIONS: BannerSection[] = ["sport", "tech"];
+export type BannerSection = "sport" | "tech" | "positive";
+export const ALL_SECTIONS: BannerSection[] = ["sport", "tech", "positive"];
 
 export interface Banner {
   id: string;

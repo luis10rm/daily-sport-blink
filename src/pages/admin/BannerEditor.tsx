@@ -99,7 +99,7 @@ const bannerSchema = z.object({
   target_device: z.enum(["all", "desktop", "mobile"]),
   is_active: z.boolean(),
   show_on_tech: z.boolean().optional(),
-  sections: z.array(z.enum(["sport", "tech"])).min(1, "Wybierz co najmniej jedną sekcję"),
+  sections: z.array(z.enum(["sport", "tech", "positive"])).min(1, "Wybierz co najmniej jedną sekcję"),
   start_date: z.date().optional().nullable(),
   end_date: z.date().optional().nullable(),
 }).refine((data) => {
@@ -160,7 +160,7 @@ const BannerEditor = () => {
     if (banner) {
       const rawSections = (banner as any).sections as string[] | null | undefined;
       const sections = (rawSections && rawSections.length > 0
-        ? rawSections.filter((s): s is "sport" | "tech" => s === "sport" || s === "tech")
+        ? rawSections.filter((s): s is "sport" | "tech" | "positive" => s === "sport" || s === "tech" || s === "positive")
         : banner.position.startsWith("recki_")
           ? ["tech" as const]
           : ["sport" as const]);
@@ -693,16 +693,17 @@ const BannerEditor = () => {
                       control={form.control}
                       name="sections"
                       render={({ field }) => {
-                        const value = (field.value || []) as ("sport" | "tech")[];
-                        const toggle = (s: "sport" | "tech", checked: boolean) => {
+                        const value = (field.value || []) as ("sport" | "tech" | "positive")[];
+                        const toggle = (s: "sport" | "tech" | "positive", checked: boolean) => {
                           const next = checked
                             ? Array.from(new Set([...value, s]))
                             : value.filter((v) => v !== s);
                           field.onChange(next);
                         };
-                        const items: { id: "sport" | "tech"; label: string; hint: string }[] = [
+                        const items: { id: "sport" | "tech" | "positive"; label: string; hint: string }[] = [
                           { id: "sport", label: "Sport (szortsy.pl)", hint: "Strony i artykuły sekcji sportowej" },
                           { id: "tech", label: "Tech (/tech)", hint: "Strony i artykuły sekcji Tech" },
+                          { id: "positive", label: "Pozytywne (/pozytywne)", hint: "Strony i artykuły sekcji Pozytywne" },
                         ];
                         return (
                           <FormItem className="rounded-lg border p-4 space-y-3">

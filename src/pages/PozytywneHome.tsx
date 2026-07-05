@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { PozytywneHeader } from "@/components/pozytywne/PozytywneHeader";
 import { PozytywneFooter } from "@/components/pozytywne/PozytywneFooter";
 import { NewsCard } from "@/components/NewsCard";
+import { SponsorBanner } from "@/components/SponsorBanner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Archive, Sun, Sparkles } from "lucide-react";
 import {
@@ -11,11 +12,16 @@ import {
   useTodaysPositivePosts,
 } from "@/hooks/usePositivePosts";
 import { usePositiveCategories, usePositiveCategoryBySlug } from "@/hooks/usePositiveCategories";
+import { useActiveBannerForDevice } from "@/hooks/useBanners";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const PozytywneHome = () => {
   const { slug: categorySlug } = useParams<{ slug?: string }>();
   const inCategory = !!categorySlug;
+
+  const isMobile = useIsMobile();
+  const device = isMobile ? "mobile" : "desktop";
 
   const { data: categories = [] } = usePositiveCategories();
   const { data: category } = usePositiveCategoryBySlug(categorySlug);
@@ -24,6 +30,10 @@ const PozytywneHome = () => {
   const catQuery = usePositivePostsByCategory(categorySlug);
   const { data: posts = [], isLoading } = inCategory ? catQuery : feedQuery;
   const { data: todaysPosts = [] } = useTodaysPositivePosts();
+
+  const { data: topBanner } = useActiveBannerForDevice("home_top", device, "positive");
+  const { data: middleBanner } = useActiveBannerForDevice("home_middle", device, "positive");
+  const { data: bottomBanner } = useActiveBannerForDevice("home_bottom", device, "positive");
 
   useEffect(() => {
     document.documentElement.classList.add("mode-pozytywne");
@@ -106,6 +116,46 @@ const PozytywneHome = () => {
             )}
           </section>
 
+          {/* Top Banner */}
+          {topBanner && (
+            <SponsorBanner
+              title={topBanner.title}
+              description={topBanner.description}
+              ctaText={topBanner.cta_text}
+              ctaUrl={topBanner.click_tag}
+              imageDesktopUrl={topBanner.image_desktop_url || undefined}
+              imageMobileUrl={topBanner.image_mobile_url || undefined}
+              impressionTag={topBanner.impression_tag || undefined}
+              bannerId={topBanner.id}
+              className="mb-8"
+            />
+          )}
+
+          {/* Middle Banner — from database or placeholder */}
+          {middleBanner ? (
+            <SponsorBanner
+              title={middleBanner.title}
+              description={middleBanner.description}
+              ctaText={middleBanner.cta_text}
+              ctaUrl={middleBanner.click_tag}
+              imageDesktopUrl={middleBanner.image_desktop_url || undefined}
+              imageMobileUrl={middleBanner.image_mobile_url || undefined}
+              impressionTag={middleBanner.impression_tag || undefined}
+              bannerId={middleBanner.id}
+              className="mb-8"
+            />
+          ) : (
+            <SponsorBanner
+              title="Partner Pozytywnych"
+              description="To miejsce może być Twoje — wesprzyj dobre wiadomości"
+              ctaText="Zostań partnerem"
+              ctaUrl="mailto:reklama@szortsy.pl"
+              isPlaceholder={true}
+              className="mb-8"
+            />
+          )}
+
+
           {isLoading && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -158,8 +208,24 @@ const PozytywneHome = () => {
               </Link>
             </div>
           )}
+
+          {/* Bottom Banner */}
+          {bottomBanner && (
+            <SponsorBanner
+              title={bottomBanner.title}
+              description={bottomBanner.description}
+              ctaText={bottomBanner.cta_text}
+              ctaUrl={bottomBanner.click_tag}
+              imageDesktopUrl={bottomBanner.image_desktop_url || undefined}
+              imageMobileUrl={bottomBanner.image_mobile_url || undefined}
+              impressionTag={bottomBanner.impression_tag || undefined}
+              bannerId={bottomBanner.id}
+              className="mt-10"
+            />
+          )}
         </div>
       </main>
+
 
       <PozytywneFooter />
     </div>
