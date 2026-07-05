@@ -120,7 +120,7 @@ export const useTodaysPosts = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
-        .eq("channel" as any, "sport")
+        .eq("channel" as never, "sport" as never)
         .gte("published_at", startOfDay)
         .lte("published_at", endOfDay)
         .order("published_at", { ascending: false });
@@ -141,7 +141,7 @@ export const useRecentPosts = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
-        .eq("channel" as any, "sport")
+        .eq("channel" as never, "sport" as never)
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
