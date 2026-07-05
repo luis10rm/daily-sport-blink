@@ -282,7 +282,7 @@ const PostEditor = () => {
     const postData = {
       title: data.title,
       excerpt: data.excerpt,
-      content: data.content ? unescapeHtmlIfEncoded(data.content) : undefined,
+      content: data.content ? sanitizePastedHtml(data.content) : undefined,
       category_id: data.category_id,
       author_id: data.author_id || undefined,
       image_url: data.image_url || undefined,
