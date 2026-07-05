@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
+import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -154,6 +155,7 @@ const ReviewEditor = () => {
     const payload: any = {
       ...form,
       id: id ?? undefined,
+      content: form.content ? unescapeHtmlIfEncoded(form.content) : form.content,
       pros: (form.pros ?? []).filter((p) => p && p.trim()),
       cons: (form.cons ?? []).filter((c) => c && c.trim()),
       status: publish ? "published" : form.status ?? "draft",

@@ -12,6 +12,7 @@ import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Button } from "@/components/ui/button";
+import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
 
 const ReckiReview = () => {
   const { slug } = useParams();
@@ -196,7 +197,7 @@ const ReckiReview = () => {
           {review.content && (
             <div
               className="prose prose-lg dark:prose-invert max-w-none mb-8"
-              dangerouslySetInnerHTML={{ __html: review.content }}
+              dangerouslySetInnerHTML={{ __html: unescapeHtmlIfEncoded(review.content) }}
             />
           )}
 

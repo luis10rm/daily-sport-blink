@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
+import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
 import { Footer } from "@/components/Footer";
 import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
@@ -48,9 +49,12 @@ const sanitizeHtml = (html: string): string => {
 // Parse content - handles HTML, Markdown, and mixed formats with XSS protection
 const parseContent = (content: string): string => {
   if (!content) return "";
-  
-  // First normalize any Markdown patterns inside HTML (e.g. <p>**bold**</p>)
-  const normalized = normalizeMarkdownInHtml(content);
+
+  // Legacy content may contain escaped HTML entities (`&lt;p&gt;...`) from old pastes.
+  const decoded = unescapeHtmlIfEncoded(content);
+
+  // Normalize any Markdown patterns inside HTML (e.g. <p>**bold**</p>)
+  const normalized = normalizeMarkdownInHtml(decoded);
   
   // Parse through marked for any remaining pure Markdown
   const html = marked.parse(normalized, { async: false }) as string;
