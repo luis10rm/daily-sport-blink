@@ -197,7 +197,7 @@ const ReckiReview = () => {
           {review.content && (
             <div
               className="prose prose-lg dark:prose-invert max-w-none mb-8"
-              dangerouslySetInnerHTML={{ __html: unescapeHtmlIfEncoded(review.content) }}
+              dangerouslySetInnerHTML={{ __html: sanitizePastedHtml(review.content) }}
             />
           )}
 
