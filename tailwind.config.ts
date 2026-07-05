@@ -137,6 +137,19 @@ export default {
           "0%": { transform: "translate(0,0) rotate(0deg)", opacity: "1" },
           "100%": { transform: "translate(90px,-40px) rotate(-160deg)", opacity: "0" },
         },
+        "wiggle": {
+          "0%,100%": { transform: "rotate(0deg) scale(1)" },
+          "25%": { transform: "rotate(-4deg) scale(1.05)" },
+          "75%": { transform: "rotate(4deg) scale(1.05)" },
+        },
+        "float-slow-a": {
+          "0%,100%": { transform: "translate(-10%,-10%) scale(1)" },
+          "50%": { transform: "translate(10%,10%) scale(1.08)" },
+        },
+        "float-slow-b": {
+          "0%,100%": { transform: "translate(15%,20%) scale(1.05)" },
+          "50%": { transform: "translate(-15%,-10%) scale(0.95)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -152,6 +165,9 @@ export default {
         "confetti-4": "confetti-4 0.95s ease-out forwards",
         "confetti-5": "confetti-5 0.75s ease-out forwards",
         "confetti-6": "confetti-6 0.88s ease-out forwards",
+        "wiggle": "wiggle 0.5s ease-in-out",
+        "float-slow-a": "float-slow-a 20s ease-in-out infinite",
+        "float-slow-b": "float-slow-b 28s ease-in-out infinite",
       },
     },
   },
