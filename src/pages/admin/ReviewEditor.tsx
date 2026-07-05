@@ -213,7 +213,7 @@ const ReviewEditor = () => {
         title: data.title ?? f.title,
         slug: f.slug || slugify(data.title ?? ""),
         excerpt: data.excerpt ?? f.excerpt,
-        content: data.content ?? f.content,
+        content: data.content ? sanitizePastedHtml(data.content) : f.content,
         verdict: aiIsReview ? (data.verdict ?? f.verdict) : f.verdict,
         score: aiIsReview ? (data.score ?? f.score) : f.score,
         pros: aiIsReview ? (data.pros ?? f.pros) : f.pros,
