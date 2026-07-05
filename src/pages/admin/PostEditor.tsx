@@ -465,9 +465,12 @@ const PostEditor = () => {
     );
   }
 
-  // Get current category for ImageSourceSection
+  // Get current category for ImageSourceSection (falls back to positive when needed)
   const currentCategoryId = form.watch("category_id");
-  const currentCategory = sportCategories?.find((cat) => cat.id === currentCategoryId);
+  const currentCategory =
+    channel === "positive"
+      ? (positiveCategories?.find((cat) => cat.id === currentCategoryId) as any)
+      : sportCategories?.find((cat) => cat.id === currentCategoryId);
 
   return (
     <AdminLayout>
@@ -479,14 +482,64 @@ const PostEditor = () => {
           <div>
             <h1 className="text-3xl font-bold font-heading">
               {isEditing ? "Edytuj post" : "Nowy post"}
+              {channel === "positive" && (
+                <span className="ml-3 rounded-full bg-lime-500/15 px-3 py-1 text-sm font-semibold text-lime-700 dark:text-lime-300 align-middle">
+                  Pozytywne
+                </span>
+              )}
             </h1>
             <p className="text-muted-foreground">
               {isEditing
                 ? "Zaktualizuj istniejący post"
-                : "Utwórz nowy post sportowy"}
+                : channel === "positive"
+                  ? "Nowa dobra wiadomość dla kanału Pozytywne"
+                  : "Utwórz nowy post sportowy"}
             </p>
           </div>
         </div>
+
+        {!isEditing && (
+          <Card className={channel === "positive" ? "border-lime-500/40" : undefined}>
+            <CardContent className="pt-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm font-semibold text-foreground">Kanał:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChannel("sport");
+                    form.setValue("category_id", "");
+                  }}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    channel === "sport"
+                      ? "border-emerald-500 bg-emerald-500 text-white"
+                      : "border-border bg-card text-muted-foreground hover:border-emerald-500"
+                  }`}
+                >
+                  Sport
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChannel("positive");
+                    form.setValue("category_id", "");
+                  }}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    channel === "positive"
+                      ? "border-lime-500 bg-lime-500 text-white"
+                      : "border-border bg-card text-muted-foreground hover:border-lime-500"
+                  }`}
+                >
+                  Pozytywne
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  Zmienia dostępne kategorie i miejsce publikacji.
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
