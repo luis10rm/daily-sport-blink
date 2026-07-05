@@ -1,35 +1,38 @@
 ## Cel
-Na `/mistrzostwa-swiata-2026` w miejsce dominującej sekcji „Tabele grup" wchodzi **drabinka pucharowa** (od 1/16 do finału). Tabele grup pozostają dostępne jako zwijany akordeon poniżej — jako archiwum fazy grupowej.
+Podnieść „ciepłotę" strony `/pozytywne` czterema mikrogestami w hero — bez backendu, bez nowych zależności, jedna iteracja.
 
-## Zmiany w UI
+## Zmiany
 
-1. **Nowy komponent `WorldCupBracket.tsx`** (`src/components/worldcup/`)
-   - Renderuje 5 kolumn: `1/16` (16 meczów), `1/8` (8), `Ćwierćfinały` (4), `Półfinały` (2), `Finał` + mecz o 3. miejsce.
-   - Layout: poziomy scroll (`overflow-x-auto snap-x`) na wszystkich rozmiarach, minimalna szerokość kolumny 220 px, odstępy pionowe skalowane per runda (mecze wyżej w drabince są centrowane względem par z rundy niższej — CSS grid + `margin-block: auto`, bez rysowania linii łączących w MVP; zamiast linii cienki myślnik `→` między kolumnami).
-   - Karta meczu: dwie drużyny (flaga + TLA + wynik), status (SCHEDULED / LIVE z pulsującą kropką / FINISHED), data i godzina po polsku. Bez rywala → placeholder „TBD" i tło `bg-card/30`.
-   - Highlight: karta LIVE ma bursztynową obwódkę i lekki glow (`shadow-[0_0_0_1px_hsl(45_100%_50%/.5)]`), FINISHED — subtelnie przygaszona z zielonym paskiem „KONIEC".
-   - Nagłówek sekcji: „Drabinka pucharowa" + krótki opis: „Faza pucharowa Mistrzostw Świata 2026 — od 1/16 do finału."
+### 1. Powitanie zależne od pory dnia (A1)
+Nad H1 pojawia się mały, ciepły nagłówek zamiast statycznego układu:
+- 05:00–11:59 — „Dzień dobry ☀️"
+- 12:00–17:59 — „Miłego popołudnia 🌿"
+- 18:00–22:59 — „Dobry wieczór ✨"
+- 23:00–04:59 — „Dobrej nocy 🌙"
+Renderowany jako `<p className="text-sm font-semibold text-lime-700 dark:text-lime-300 mb-1">`. Liczone raz przy montowaniu (bez tickera — pora dnia nie zmienia się co sekundę).
 
-2. **Grupowanie danych z API** (w komponencie, `useMemo`)
-   - Źródło: istniejący `useWorldCupMatches()` → `FDMatch[]`.
-   - Filtr: `stage ∈ { 'LAST_32', 'LAST_16', 'QUARTER_FINALS', 'SEMI_FINALS', 'THIRD_PLACE', 'FINAL' }` (football-data.org). Fallback: wszystko z `stage` nie zawierającym „GROUP".
-   - Sort w kolumnie: po `utcDate` rosnąco.
-   - Empty state (przed startem knockoutu): karta „Drabinka pojawi się po zakończeniu fazy grupowej (18 czerwca)."
+### 2. Mantra dnia (A2)
+Pod paragrafem opisowym hero dochodzi cytat dnia w cudzysłowie drukarskim, wybierany deterministycznie po dacie (`Math.abs(hash(YYYY-MM-DD)) % QUOTES.length`) — ten sam cytat dla wszystkich odwiedzin w danym dniu.
+- Pula 20 krótkich zdań w `src/lib/positiveQuotes.ts` (np. „Dziś świat zrobił krok w dobrą stronę.", „Dobre wiadomości też są prawdziwe.", „Zwolnij — coś dobrego chce zostać zauważone.").
+- Wygląd: subtelny italic, przed cytatem cienki lime bar `border-l-2 border-lime-400/60 pl-3`.
+- Nie pokazujemy w widoku pojedynczej kategorii — tylko na `/pozytywne` (główna).
 
-3. **Refaktor `WorldCup2026.tsx`**
-   - Kolejność sekcji: Hero → NextMatchCountdown → **WorldCupBracket** (nowa, główny akcent) → WorldCupMatchesWidget (terminarz/wyniki bez zmian) → **Accordion „Tabele grup"** (zwinięty domyślnie) opakowujący istniejący `WorldCupStandings` → WorldCupTopScorers → WorldCupNewsAggregator.
-   - Accordion: shadcn `Accordion` (`type="single" collapsible`), trigger „Tabele fazy grupowej" + podtytuł „Archiwum — grupy A–L".
+### 3. Confetti-tap w liczniku „Dziś w Pozytywnych" (A3)
+Chip „Dziś w Pozytywnych: X" staje się `button`. Pierwszy klik w sesji sypie limonkowo-białe confetti z pozycji chipa i lekko go „popsuwa" scale animacją.
+- Bez biblioteki: własna funkcja `burstConfetti(x, y)` — tworzy 24 divy z random `translate/rotate` + `animate-[confetti_900ms_ease-out_forwards]`, cleanup po 1 s. Zdefiniuję keyframes `confetti` w `tailwind.config.ts` (opad z rotacją + fade).
+- Guard: `sessionStorage.setItem('pozytywne-confetti', '1')`; po odświeżeniu można znów. Kolejne kliknięcia w tej samej sesji tylko lekki wobble (`animate-[wiggle_400ms_ease-in-out]`), bez confetti — nie irytuje.
+- Respektuje `prefers-reduced-motion` (matchMedia): confetti wyłączone, tylko toast-badge „+1 dobra wiadomość dziś ✨" na 1.5 s.
 
-4. **Bez zmian w danych / edge functions.** `worldcup-data` już zwraca `matches` z polem `stage`, którego używamy do budowy drabinki.
+### 4. Miękkie bloby w tle hero (A5)
+W sekcji hero (`rounded-2xl` z lime gradientem) dochodzą dwa duże, rozmyte, niskoopacityowe koła lime, powoli dryfujące.
+- `absolute inset-0 overflow-hidden pointer-events-none` na wrapperze; wewnątrz 2 divy `bg-lime-300/30 dark:bg-lime-500/15 blur-3xl w-72 h-72 rounded-full` z keyframami `float-slow-a` (20 s) i `float-slow-b` (28 s) — przesunięcie ±40 px + skala 1↔1.05.
+- Nowe keyframes `float-slow-a/b` w `tailwind.config.ts`.
+- Cała warstwa schowana pod `motion-safe:` — użytkownicy z `prefers-reduced-motion` widzą statyczne, delikatne kółka bez ruchu.
+- Hero dostaje `relative overflow-hidden`, treść w `relative z-10`.
 
-## Techniczne szczegóły
+## Pliki
+- **Nowe:** `src/lib/positiveQuotes.ts` (pula 20 mantr + helper `getQuoteOfDay(date=new Date())`), `src/lib/confetti.ts` (funkcja `burstConfetti(x, y, opts?)`).
+- **Edytowane:** `src/pages/PozytywneHome.tsx` (powitanie, mantra tylko gdy `!inCategory`, chip → button z handlerem, bloby w tle hero), `tailwind.config.ts` (keyframes: `confetti`, `wiggle`, `float-slow-a`, `float-slow-b` + odpowiadające `animation:`).
 
-- Nowe pliki: `src/components/worldcup/WorldCupBracket.tsx`.
-- Edytowany: `src/pages/WorldCup2026.tsx` (import Accordion z `@/components/ui/accordion`, przetasowanie sekcji, opakowanie `WorldCupStandings`).
-- Bez zmian: `WorldCupStandings.tsx` (używany wewnątrz accordion), `useWorldCupData.ts`, edge function `worldcup-data`, cache.
-- Style: paleta bursztynu (`amber-500`) spójna z resztą hubu, brak nowych fontów, brak nowych zależności.
-
-## Poza zakresem MVP
-- Rysowanie łączących linii SVG między parami (można dodać później).
-- Interaktywne rozwijanie karty meczu do składów / strzelców.
-- Predykcje użytkowników / typer.
+## Poza zakresem
+- Emoji-reactions, streak, mood filter, pick of the week, CTA-box, kalendarz — pozostają w backlogu do kolejnych iteracji.
