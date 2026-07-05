@@ -101,6 +101,11 @@ const PostEditor = () => {
   const isEditing = !!id;
   const { user } = useAuth();
 
+  // Channel is derived from route: /admin/pozytywne/* → 'positive', otherwise 'sport'
+  const [channel, setChannel] = useState<"sport" | "positive">(
+    location.pathname.startsWith("/admin/pozytywne") ? "positive" : "sport",
+  );
+
   // Check for prefill data from navigation state (e.g., from daily summary generator)
   const navState = location.state as {
     prefill?: PrefillData;
