@@ -47,7 +47,7 @@ import { Loader2, ArrowLeft, Save, Sparkles, Facebook, Send, CheckCircle, XCircl
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
-import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
+import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
 
 // Categories are now fetched dynamically from sport_categories table
 
