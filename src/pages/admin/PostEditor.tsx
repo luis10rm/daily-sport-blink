@@ -222,12 +222,20 @@ const PostEditor = () => {
     if (post) {
       // Normalize content to convert any **text** to <strong>text</strong>
       const normalizedContent = normalizeMarkdownInHtml(post.content || "");
-      
+      const postAny = post as any;
+      const postChannel: "sport" | "positive" =
+        postAny.channel === "positive" ? "positive" : "sport";
+      setChannel(postChannel);
+      const categoryValue =
+        postChannel === "positive"
+          ? postAny.positive_category_id || ""
+          : post.category_id || "";
+
       form.reset({
         title: post.title,
         excerpt: post.excerpt,
         content: normalizedContent,
-        category_id: post.category_id || "",
+        category_id: categoryValue,
         author_id: post.author_id || "",
         image_url: post.image_url || "",
         source_url: post.source_url,
