@@ -328,8 +328,9 @@ export const RichTextEditor = ({
             </Button>
             <Button
               onClick={() => {
-                const html = htmlDraft.trim();
-                if (!html) return;
+                const raw = htmlDraft.trim();
+                if (!raw) return;
+                const html = unescapeHtmlIfEncoded(raw);
                 editor
                   .chain()
                   .focus()
