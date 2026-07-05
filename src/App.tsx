@@ -86,6 +86,11 @@ function App() {
               <Route path="/tech" element={<ReckiHome />} />
               <Route path="/tech/kategoria/:slug" element={<ReckiHome />} />
               <Route path="/tech/:category/:slug" element={<ReckiReview />} />
+              {/* Pozytywne channel */}
+              <Route path="/pozytywne" element={<PozytywneHome />} />
+              <Route path="/pozytywne/archiwum" element={<PozytywneArchive />} />
+              <Route path="/pozytywne/kategoria/:slug" element={<PozytywneHome />} />
+              <Route path="/pozytywne/:category/:slug" element={<BlinkPage />} />
               {/* 301-style redirects: /recki/* → /tech/* */}
               <Route path="/recki" element={<Navigate to="/tech" replace />} />
               <Route path="/recki/kategoria/:slug" element={<RedirectReckiCategory />} />
