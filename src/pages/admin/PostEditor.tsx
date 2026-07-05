@@ -354,7 +354,7 @@ const PostEditor = () => {
       }
     }
 
-    navigate("/admin/posts");
+    navigate(channel === "positive" ? "/admin/pozytywne" : "/admin/posts");
   };
 
   // Handle manual Facebook publish for existing posts
