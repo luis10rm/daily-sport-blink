@@ -47,7 +47,7 @@ import { Loader2, ArrowLeft, Save, Sparkles, Facebook, Send, CheckCircle, XCircl
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
-import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
+import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
 
 // Categories are now fetched dynamically from sport_categories table
 
@@ -282,7 +282,7 @@ const PostEditor = () => {
     const postData = {
       title: data.title,
       excerpt: data.excerpt,
-      content: data.content ? unescapeHtmlIfEncoded(data.content) : undefined,
+      content: data.content ? sanitizePastedHtml(data.content) : undefined,
       category_id: data.category_id,
       author_id: data.author_id || undefined,
       image_url: data.image_url || undefined,

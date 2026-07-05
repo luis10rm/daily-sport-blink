@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
-import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
+import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -155,7 +155,7 @@ const ReviewEditor = () => {
     const payload: any = {
       ...form,
       id: id ?? undefined,
-      content: form.content ? unescapeHtmlIfEncoded(form.content) : form.content,
+      content: form.content ? sanitizePastedHtml(form.content) : form.content,
       pros: (form.pros ?? []).filter((p) => p && p.trim()),
       cons: (form.cons ?? []).filter((c) => c && c.trim()),
       status: publish ? "published" : form.status ?? "draft",
@@ -213,7 +213,7 @@ const ReviewEditor = () => {
         title: data.title ?? f.title,
         slug: f.slug || slugify(data.title ?? ""),
         excerpt: data.excerpt ?? f.excerpt,
-        content: data.content ?? f.content,
+        content: data.content ? sanitizePastedHtml(data.content) : f.content,
         verdict: aiIsReview ? (data.verdict ?? f.verdict) : f.verdict,
         score: aiIsReview ? (data.score ?? f.score) : f.score,
         pros: aiIsReview ? (data.pros ?? f.pros) : f.pros,

@@ -1,57 +1,58 @@
-## Problem
+## Co jest nie tak z tą recenzją
 
-Wklejanie HTML do edytora recenzji/artykułów wciąż daje "brzydki" wynik. W DB dla Nuphy Air75 V2 widać:
+Sprawdziłem treść w bazie. Tym razem **to nie są escape'owane encje** (`&lt;`) — HTML jest prawdziwy, ale ma dwa inne problemy:
 
+### Problem 1 — podwójne opakowanie `<p>` wokół bloków
+Zapisana treść zaczyna się tak:
 ```
-<p>&lt;p&gt;&lt;strong&gt;NuPhy Air75 V2&lt;/strong&gt;...
+<p><p>NuPhy to marka...</p> <h2>Pierwsze wrażenie...</h2> <p>Na papierze...</p> ...</p>
 ```
+Zewnętrzny `<p>` obejmuje `<h2>`, `<ul>`, kolejne `<p>` — a przeglądarka **nie może** zagnieżdżać bloków w `<p>`, więc automatycznie zamyka pierwszy `<p>` przed każdym `<h2>`/`<p>`, potem pojawia się „osierocony" `</p>`, i cały układ typograficzny (odstępy, drop cap, marginesy) się rozjeżdża. To efekt uboczny wklejenia HTML-a do TipTapa, który sam owija wstawkę w akapit.
 
-Zewnętrzny `<p>` jest prawdziwy (dodał go TipTap), a środek to **zakodowane encje HTML** (`&lt;`, `&gt;`, `&quot;`). Nasza obecna heurystyka `looksLikeHtml` sprawdza tylko `<tag>` — encji nie wykrywa, więc TipTap traktuje wklejkę jako zwykły tekst i wpisuje ją dosłownie.
+### Problem 2 — leftover z AI: `:antCitation[]{...}`
+W treści są fragmenty w stylu:
+```
+:antCitation[]{citations="8e95cf57-..." injected="space"}
+```
+To składnia „directive" z outputu Claude/Anthropic — nasz renderer nie zna jej, więc **wyświetla ją dosłownie** w tekście. Wygląda jak śmieć.
 
-Prawdziwa przyczyna: **użytkownik kopiuje HTML z miejsca, które podaje go już jako escapowany tekst** (np. widok źródła strony, blok `<code>` w dokumentacji AI, ChatGPT canvas). Trzeba temu przypadkowi zawsze zaradzić po stronie edytora — a nie po fakcie w bazie.
+Skala w bazie: 2 recenzje z podwójnym `<p>`, 1 recenzja z artefaktami cytowań, 0 postów.
 
-## Rozwiązania (do wyboru)
+---
 
-### Opcja A — Najprostsza: rozszerzyć detekcję o encje + auto-dekodowanie (rekomendowane)
+## Proponowane fixy (3 warstwy — spójne z tym co już zrobiliśmy dla escape'owanych encji)
 
-W `handlePaste` w `RichTextEditor.tsx`:
+### A. Sanityzacja przy zapisie (`ReviewEditor.tsx`, `PostEditor.tsx`)
+Rozszerzyć obecny `unescapeHtmlIfEncoded` o nowy helper `sanitizePastedHtml(content)`, który dodatkowo:
+1. **Rozpakowuje zewnętrzny `<p>...</p>`**, jeśli w środku są tagi blokowe (`<h2>`, `<h3>`, `<p>`, `<ul>`, `<ol>`, `<blockquote>`). Regex: dopasuj `^<p>\s*(.*)\s*</p>$` i tylko wtedy, gdy wnętrze zawiera `<(h[1-6]|p|ul|ol|blockquote|div)\b`.
+2. **Usuwa dyrektywy AI** typu `:antCitation[...]{...}`, `:cite[...]{...}` — regex `/:ant[A-Za-z]+\[[^\]]*\]\{[^}]*\}/g` oraz ogólniejszy `/:\w+\[[^\]]*\]\{[^}]*\}/g`.
+3. Trim wielokrotnych spacji między tagami blokowymi (kosmetyka).
 
-1. Pobrać `text/plain`.
-2. Wykryć czy tekst wygląda na **escapowany HTML** — regex `/&lt;\/?[a-z][^&]*&gt;/i` (znajdzie `&lt;p&gt;`, `&lt;strong&gt;` itd.).
-3. Jeśli tak — jednokrotnie zdekodować encje (`&lt;`→`<`, `&gt;`→`>`, `&quot;`→`"`, `&#39;`→`'`, `&amp;`→`&`) i przekazać do TipTap jako HTML (z `parseOptions`).
-4. Jeśli nie — obecna ścieżka (surowy HTML → TipTap, potem fallback do natywnego wklejania).
+Helper trafia do `src/lib/unescapeHtmlIfEncoded.ts` → przemianować mentalnie na „sanitizer" albo dodać nowy plik `src/lib/sanitizePastedHtml.ts` i wołać obie funkcje razem.
 
-Zaleta: użytkownik nic nie musi robić — po prostu Ctrl+V działa w każdym wariancie źródła (renderowany HTML, źródło z encjami, mieszane).
+### B. Warstwa renderująca (`ReckiReview.tsx`, `BlinkPage.tsx`)
+W `parseContent` — po `unescapeHtmlIfEncoded`, przed `normalizeMarkdownInHtml` — wywołać ten sam `sanitizePastedHtml`. Dzięki temu stare rekordy w bazie od razu wyglądają dobrze bez migracji, a nowe zapisy też są bezpieczne (defense-in-depth).
 
-### Opcja B — Warstwa ochronna przy zapisie
+### C. Handler wklejania (`RichTextEditor.tsx`)
+W `handlePaste`, w gałęziach „encoded HTML" i „raw HTML", przed wstawieniem do TipTapa również przepuścić przez `sanitizePastedHtml`. Wtedy edytor od początku pokazuje czystą treść, a autor widzi to samo co czytelnik.
 
-Dodać w `ReviewEditor.tsx` (i `PostEditor.tsx`) sanitizer, który **przed** wysłaniem do bazy sprawdza, czy `content` zawiera `&lt;p&gt;`/`&lt;strong&gt;` itp. i dekoduje encje. To siatka bezpieczeństwa gdyby edytor coś przepuścił.
+### D. Migracja czyszcząca istniejące rekordy (jednorazowa)
+SQL na `reviews` i `posts`:
+- usunięcie dyrektyw `:antXxx[...]{...}` przez `regexp_replace`,
+- rozpakowanie zewnętrznego `<p>...</p>` gdy w środku jest `<h2|<h3|<p |<ul|<ol` — warunek `content ~ '^<p>\s*<'` i `content ~ '</p>\s*$'` + wewnątrz są bloki.
 
-Zaleta: chroni nawet gdy ktoś ręcznie wprowadzi zły content przez API/import.
+Migracja idempotentna, dotknie tylko rzędów pasujących do wzorca (dziś: 2 recenzje + 1 z cytacjami).
 
-### Opcja C — Naprawa przy renderowaniu (`BlinkPage` / `ReckiReview`)
-
-W `parseContent` wykrywać zakodowane tagi w treści i dekodować przed przekazaniem do `marked`/DOMPurify.
-
-Zaleta: naprawia też **historyczne** wpisy w DB bez migracji.
-Wada: leczy objawy, nie przyczynę — content w bazie zostaje "brudny".
-
-### Opcja rekomendowana
-
-**A + B + C jednocześnie** — trzy niezależne warstwy, każda tania:
-- **A** naprawia wklejanie na przyszłość (główna).
-- **B** chroni zapis (belt-and-suspenders).
-- **C** naprawia wstecznie wszystkie istniejące artykuły bez migracji SQL — nie będziemy już musieli ręcznie robić UPDATE dla każdego zepsutego wpisu.
-
-Dodatkowo: **jednorazowa migracja** czyszcząca wszystkie istniejące recenzje/posty, gdzie `content ILIKE '%&lt;p&gt;%'` lub `%&lt;strong&gt;%` — jednym UPDATE naprawimy Nuphy + wszystko co inne jeszcze siedzi w bazie.
+---
 
 ## Pliki do zmiany
+- `src/lib/unescapeHtmlIfEncoded.ts` — dodać `sanitizePastedHtml` (albo nowy plik)
+- `src/components/admin/RichTextEditor.tsx` — użyć sanitizera w `handlePaste` i w dialogu „Wklej HTML"
+- `src/pages/admin/ReviewEditor.tsx`, `src/pages/admin/PostEditor.tsx` — sanitizer przed zapisem
+- `src/pages/ReckiReview.tsx`, `src/pages/BlinkPage.tsx` — sanitizer w `parseContent` i w `dangerouslySetInnerHTML`
+- Migracja SQL — cleanup `reviews` + `posts`
 
-- `src/components/admin/RichTextEditor.tsx` — rozszerzona detekcja + dekoder encji w `handlePaste`.
-- `src/pages/admin/ReviewEditor.tsx` i `src/pages/admin/PostEditor.tsx` — sanitizer przy zapisie (mały helper `src/lib/unescapeHtmlIfEncoded.ts`).
-- `src/pages/BlinkPage.tsx` i `src/pages/ReckiReview.tsx` — użycie tego samego helpera w `parseContent`.
-- Migracja SQL — jednorazowy UPDATE na `posts` i `reviews` z zakodowanymi tagami.
-
-## Pytanie do Ciebie
-
-Idziemy w **rekomendowane A+B+C + jednorazowe czyszczenie DB**, czy wolisz najpierw tylko **A** (fix wklejania) i zobaczyć czy wystarczy?
+## Efekt
+- Recenzja Nuphy Air75 V2 wyświetli się z prawidłowymi nagłówkami, akapitami i odstępami.
+- Znika tekst `:antCitation[]{...}`.
+- Przyszłe wklejki (z ChatGPT / Claude / Docs / view-source) same się czyszczą na trzech warstwach.

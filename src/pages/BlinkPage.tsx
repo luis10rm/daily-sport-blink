@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
-import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
+import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
 import { Footer } from "@/components/Footer";
 import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
@@ -51,7 +51,7 @@ const parseContent = (content: string): string => {
   if (!content) return "";
 
   // Legacy content may contain escaped HTML entities (`&lt;p&gt;...`) from old pastes.
-  const decoded = unescapeHtmlIfEncoded(content);
+  const decoded = sanitizePastedHtml(content);
 
   // Normalize any Markdown patterns inside HTML (e.g. <p>**bold**</p>)
   const normalized = normalizeMarkdownInHtml(decoded);

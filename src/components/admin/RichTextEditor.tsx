@@ -32,7 +32,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { looksLikeEncodedHtml, unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
+import { looksLikeEncodedHtml, sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
 
 const looksLikeHtml = (s: string) => /<\/?[a-z][\s\S]*>/i.test(s);
 
@@ -89,7 +89,7 @@ export const RichTextEditor = ({
         // — happens when copying from view-source, code blocks, ChatGPT canvas, docs.
         if (looksLikeEncodedHtml(text)) {
           event.preventDefault();
-          const decoded = unescapeHtmlIfEncoded(text);
+          const decoded = sanitizePastedHtml(text);
           editor?.commands.insertContent(decoded, {
             parseOptions: { preserveWhitespace: false },
           });
@@ -100,7 +100,7 @@ export const RichTextEditor = ({
         // letting the browser hand us text/html that may be an escaped rendering.
         if (looksLikeHtml(text)) {
           event.preventDefault();
-          editor?.commands.insertContent(text, {
+          editor?.commands.insertContent(sanitizePastedHtml(text), {
             parseOptions: { preserveWhitespace: false },
           });
           return true;
@@ -330,7 +330,7 @@ export const RichTextEditor = ({
               onClick={() => {
                 const raw = htmlDraft.trim();
                 if (!raw) return;
-                const html = unescapeHtmlIfEncoded(raw);
+                const html = sanitizePastedHtml(raw);
                 editor
                   .chain()
                   .focus()
