@@ -214,6 +214,7 @@ export const useArchivedPosts = (filters?: {
       let query = supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("channel" as never, "sport" as never)
         .lt("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
