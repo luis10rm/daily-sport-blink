@@ -1,36 +1,57 @@
-# Problem
+## Problem
 
-W `RichTextEditor.tsx` (używany w PostEditor i ReviewEditor) TipTap nie ma niestandardowej obsługi wklejania. Gdy wklejasz **surowy HTML jako tekst** (np. `<h2>Ray-Ban Display</h2><p>...</p>` skopiowane ze źródła / edytora kodu), przeglądarka wysyła to jako `text/plain`, więc TipTap traktuje znaczniki jak dosłowny tekst i wyświetla `<h2>` zamiast go sparsować. Dodatkowo StarterKit nie ma rozszerzeń dla `<table>`, `<figure>`, `<img>` itp., więc nawet gdy HTML zostanie rozpoznany, część tagów jest wycinana.
+Wklejanie HTML do edytora recenzji/artykułów wciąż daje "brzydki" wynik. W DB dla Nuphy Air75 V2 widać:
 
-# Rozwiązanie
+```
+<p>&lt;p&gt;&lt;strong&gt;NuPhy Air75 V2&lt;/strong&gt;...
+```
 
-Dwie uzupełniające się zmiany w `src/components/admin/RichTextEditor.tsx`:
+Zewnętrzny `<p>` jest prawdziwy (dodał go TipTap), a środek to **zakodowane encje HTML** (`&lt;`, `&gt;`, `&quot;`). Nasza obecna heurystyka `looksLikeHtml` sprawdza tylko `<tag>` — encji nie wykrywa, więc TipTap traktuje wklejkę jako zwykły tekst i wpisuje ją dosłownie.
 
-## 1. Automatyczne rozpoznawanie HTML w wklejce tekstowej
+Prawdziwa przyczyna: **użytkownik kopiuje HTML z miejsca, które podaje go już jako escapowany tekst** (np. widok źródła strony, blok `<code>` w dokumentacji AI, ChatGPT canvas). Trzeba temu przypadkowi zawsze zaradzić po stronie edytora — a nie po fakcie w bazie.
 
-Dodać handler `editorProps.handlePaste`:
-- Jeśli `clipboardData` zawiera `text/html` → domyślne zachowanie TipTap.
-- Jeśli zawiera tylko `text/plain`, ale treść wygląda jak HTML (regex `/<[a-z][\s\S]*>/i`), wywołać `editor.commands.insertContent(text, { parseOptions: { preserveWhitespace: false } })` — TipTap sparsuje string jako HTML.
-- W przeciwnym razie zwrócić `false` (domyślne wklejenie tekstu).
+## Rozwiązania (do wyboru)
 
-## 2. Ręczny przycisk „Wklej HTML"
+### Opcja A — Najprostsza: rozszerzyć detekcję o encje + auto-dekodowanie (rekomendowane)
 
-Nowy przycisk w toolbarze (ikona `Code`) otwierający `Dialog` z `Textarea`:
-- Użytkownik wkleja/edytuje HTML.
-- Po zatwierdzeniu: `editor.chain().focus().insertContent(html).run()`.
-- Zapewnia fallback, gdy autodetekcja zawiedzie i pozwala świadomie wkleić fragment (np. tabelę z Google Docs).
+W `handlePaste` w `RichTextEditor.tsx`:
 
-## 3. Rozszerzenie dozwolonych tagów (opcjonalnie, w tej samej iteracji)
+1. Pobrać `text/plain`.
+2. Wykryć czy tekst wygląda na **escapowany HTML** — regex `/&lt;\/?[a-z][^&]*&gt;/i` (znajdzie `&lt;p&gt;`, `&lt;strong&gt;` itd.).
+3. Jeśli tak — jednokrotnie zdekodować encje (`&lt;`→`<`, `&gt;`→`>`, `&quot;`→`"`, `&#39;`→`'`, `&amp;`→`&`) i przekazać do TipTap jako HTML (z `parseOptions`).
+4. Jeśli nie — obecna ścieżka (surowy HTML → TipTap, potem fallback do natywnego wklejania).
 
-- Dodać rozszerzenia `@tiptap/extension-image` i `@tiptap/extension-table` (+ `TableRow`, `TableCell`, `TableHeader`), by zachować obrazki i tabele wklejane z HTML. Bez tego insertContent po cichu je wyrzuca.
-- Zaktualizować sanitizer w `src/pages/BlinkPage.tsx` (`ALLOWED_TAGS`) o `img`, `figure`, `figcaption`, `table`, `thead`, `tbody`, `tr`, `td`, `th` — obecnie są usuwane przy renderowaniu.
+Zaleta: użytkownik nic nie musi robić — po prostu Ctrl+V działa w każdym wariancie źródła (renderowany HTML, źródło z encjami, mieszane).
 
-# Pliki do zmiany
+### Opcja B — Warstwa ochronna przy zapisie
 
-- `src/components/admin/RichTextEditor.tsx` — handlePaste, przycisk „Wklej HTML", dialog, ewentualne rozszerzenia.
-- `src/pages/BlinkPage.tsx` — rozszerzenie whitelisty w `sanitizeHtml`.
-- `package.json` — `@tiptap/extension-image`, `@tiptap/extension-table*` (jeśli akceptujesz punkt 3).
+Dodać w `ReviewEditor.tsx` (i `PostEditor.tsx`) sanitizer, który **przed** wysłaniem do bazy sprawdza, czy `content` zawiera `&lt;p&gt;`/`&lt;strong&gt;` itp. i dekoduje encje. To siatka bezpieczeństwa gdyby edytor coś przepuścił.
 
-# Pytanie
+Zaleta: chroni nawet gdy ktoś ręcznie wprowadzi zły content przez API/import.
 
-Czy dorzucamy punkt 3 (obrazy + tabele w edytorze i sanitizerze), czy na razie tylko autodetekcja + przycisk „Wklej HTML"?
+### Opcja C — Naprawa przy renderowaniu (`BlinkPage` / `ReckiReview`)
+
+W `parseContent` wykrywać zakodowane tagi w treści i dekodować przed przekazaniem do `marked`/DOMPurify.
+
+Zaleta: naprawia też **historyczne** wpisy w DB bez migracji.
+Wada: leczy objawy, nie przyczynę — content w bazie zostaje "brudny".
+
+### Opcja rekomendowana
+
+**A + B + C jednocześnie** — trzy niezależne warstwy, każda tania:
+- **A** naprawia wklejanie na przyszłość (główna).
+- **B** chroni zapis (belt-and-suspenders).
+- **C** naprawia wstecznie wszystkie istniejące artykuły bez migracji SQL — nie będziemy już musieli ręcznie robić UPDATE dla każdego zepsutego wpisu.
+
+Dodatkowo: **jednorazowa migracja** czyszcząca wszystkie istniejące recenzje/posty, gdzie `content ILIKE '%&lt;p&gt;%'` lub `%&lt;strong&gt;%` — jednym UPDATE naprawimy Nuphy + wszystko co inne jeszcze siedzi w bazie.
+
+## Pliki do zmiany
+
+- `src/components/admin/RichTextEditor.tsx` — rozszerzona detekcja + dekoder encji w `handlePaste`.
+- `src/pages/admin/ReviewEditor.tsx` i `src/pages/admin/PostEditor.tsx` — sanitizer przy zapisie (mały helper `src/lib/unescapeHtmlIfEncoded.ts`).
+- `src/pages/BlinkPage.tsx` i `src/pages/ReckiReview.tsx` — użycie tego samego helpera w `parseContent`.
+- Migracja SQL — jednorazowy UPDATE na `posts` i `reviews` z zakodowanymi tagami.
+
+## Pytanie do Ciebie
+
+Idziemy w **rekomendowane A+B+C + jednorazowe czyszczenie DB**, czy wolisz najpierw tylko **A** (fix wklejania) i zobaczyć czy wystarczy?
