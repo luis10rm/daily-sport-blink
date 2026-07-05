@@ -5,7 +5,7 @@ import { ScoreBadge } from "./ScoreBadge";
 
 interface Props {
   review: Review;
-  variant?: "default" | "hero" | "compact";
+  variant?: "default" | "hero" | "compact" | "mini";
 }
 
 export const ReviewCard = ({ review, variant = "default" }: Props) => {
