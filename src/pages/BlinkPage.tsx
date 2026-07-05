@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
+import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
 import { Footer } from "@/components/Footer";
 import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
