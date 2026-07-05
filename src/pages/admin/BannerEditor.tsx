@@ -693,16 +693,17 @@ const BannerEditor = () => {
                       control={form.control}
                       name="sections"
                       render={({ field }) => {
-                        const value = (field.value || []) as ("sport" | "tech")[];
-                        const toggle = (s: "sport" | "tech", checked: boolean) => {
+                        const value = (field.value || []) as ("sport" | "tech" | "positive")[];
+                        const toggle = (s: "sport" | "tech" | "positive", checked: boolean) => {
                           const next = checked
                             ? Array.from(new Set([...value, s]))
                             : value.filter((v) => v !== s);
                           field.onChange(next);
                         };
-                        const items: { id: "sport" | "tech"; label: string; hint: string }[] = [
+                        const items: { id: "sport" | "tech" | "positive"; label: string; hint: string }[] = [
                           { id: "sport", label: "Sport (szortsy.pl)", hint: "Strony i artykuły sekcji sportowej" },
                           { id: "tech", label: "Tech (/tech)", hint: "Strony i artykuły sekcji Tech" },
+                          { id: "positive", label: "Pozytywne (/pozytywne)", hint: "Strony i artykuły sekcji Pozytywne" },
                         ];
                         return (
                           <FormItem className="rounded-lg border p-4 space-y-3">
