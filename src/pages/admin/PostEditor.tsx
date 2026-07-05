@@ -294,11 +294,10 @@ const PostEditor = () => {
   };
 
   const onSubmit = async (data: PostFormData) => {
-    const postData = {
+    const basePostData: any = {
       title: data.title,
       excerpt: data.excerpt,
       content: data.content ? sanitizePastedHtml(data.content) : undefined,
-      category_id: data.category_id,
       author_id: data.author_id || undefined,
       image_url: data.image_url || undefined,
       source_url: data.source_url,
@@ -306,7 +305,17 @@ const PostEditor = () => {
       is_sponsored: data.is_sponsored,
       is_news_of_day: data.is_news_of_day,
       published_at: new Date(data.published_at).toISOString(),
+      channel,
     };
+    // Category field depends on channel
+    if (channel === "positive") {
+      basePostData.positive_category_id = data.category_id;
+      basePostData.category_id = null;
+    } else {
+      basePostData.category_id = data.category_id;
+      basePostData.positive_category_id = null;
+    }
+    const postData = basePostData;
 
     let savedPostId = id;
 
@@ -315,6 +324,7 @@ const PostEditor = () => {
     } else {
       const newPost = await createPost.mutateAsync({ ...postData, created_by: user?.id });
       savedPostId = newPost?.id;
+
 
       // Mark originating suggestion as published
       if (suggestionId && newPost?.id) {
