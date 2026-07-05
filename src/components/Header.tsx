@@ -4,7 +4,7 @@ import { useSportCategories } from "@/hooks/useSportCategories";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { ThemeToggle } from "./ThemeToggle";
-import { ModeSwitcher } from "./recki/ModeSwitcher";
+import { ChannelSwitcher } from "./ChannelSwitcher";
 import { MatchTicker } from "./MatchTicker";
 import logoIcon from "@/assets/logo-icon.png";
 import {
