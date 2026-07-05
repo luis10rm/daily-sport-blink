@@ -116,6 +116,46 @@ const PozytywneHome = () => {
             )}
           </section>
 
+          {/* Top Banner */}
+          {topBanner && (
+            <SponsorBanner
+              title={topBanner.title}
+              description={topBanner.description}
+              ctaText={topBanner.cta_text}
+              ctaUrl={topBanner.click_tag}
+              imageDesktopUrl={topBanner.image_desktop_url || undefined}
+              imageMobileUrl={topBanner.image_mobile_url || undefined}
+              impressionTag={topBanner.impression_tag || undefined}
+              bannerId={topBanner.id}
+              className="mb-8"
+            />
+          )}
+
+          {/* Middle Banner — from database or placeholder */}
+          {middleBanner ? (
+            <SponsorBanner
+              title={middleBanner.title}
+              description={middleBanner.description}
+              ctaText={middleBanner.cta_text}
+              ctaUrl={middleBanner.click_tag}
+              imageDesktopUrl={middleBanner.image_desktop_url || undefined}
+              imageMobileUrl={middleBanner.image_mobile_url || undefined}
+              impressionTag={middleBanner.impression_tag || undefined}
+              bannerId={middleBanner.id}
+              className="mb-8"
+            />
+          ) : (
+            <SponsorBanner
+              title="Partner Pozytywnych"
+              description="To miejsce może być Twoje — wesprzyj dobre wiadomości"
+              ctaText="Zostań partnerem"
+              ctaUrl="mailto:reklama@szortsy.pl"
+              isPlaceholder={true}
+              className="mb-8"
+            />
+          )}
+
+
           {isLoading && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 6 }).map((_, i) => (
