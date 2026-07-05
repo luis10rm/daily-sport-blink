@@ -34,7 +34,9 @@ const PostsList = () => {
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const filteredPosts = posts?.filter(
+  // Only show sport-channel posts in this list. Positive posts have their own admin view.
+  const sportOnly = posts?.filter((p: any) => (p.channel ?? "sport") === "sport");
+  const filteredPosts = sportOnly?.filter(
     (post) =>
       post.title.toLowerCase().includes(search.toLowerCase()) ||
       (post.sport_category?.name || "").toLowerCase().includes(search.toLowerCase())
