@@ -64,6 +64,7 @@ export interface UpdatePostInput extends Partial<CreatePostInput> {
 export const POST_SELECT = `
   *,
   sport_category:sport_categories!fk_posts_category(id, slug, name, icon_name, icon_url, bg_color),
+  positive_category:positive_categories!posts_positive_category_id_fkey(id, slug, name, icon_name, icon_url, bg_color),
   author:authors(id, display_name, avatar_url, slug, role_title)
 `;
 
