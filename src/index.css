@@ -508,4 +508,59 @@ html.mode-recki.dark body::before {
   color: transparent;
 }
 
+/* ============================================== */
+/* POZYTYWNE MODE - good news channel (lime)      */
+/* ============================================== */
+.mode-pozytywne {
+  --primary: 84 81% 44%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 82 78% 55%;
+  --accent-foreground: 84 60% 15%;
+  --ring: 84 81% 44%;
+  --background: 80 40% 99%;
+}
+
+.dark.mode-pozytywne,
+.mode-pozytywne.dark {
+  --primary: 82 78% 55%;
+  --accent: 82 78% 55%;
+  --ring: 82 78% 55%;
+  --background: 90 15% 6%;
+}
+
+/* Reset any inherited textured backgrounds */
+html.mode-pozytywne,
+html.mode-pozytywne body {
+  background-image: none !important;
+  background-color: hsl(var(--background)) !important;
+  background-attachment: initial !important;
+}
+
+/* Sunlight signature glow */
+html.mode-pozytywne body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 100% 0%, hsl(84 81% 55% / 0.08), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, hsl(50 96% 60% / 0.05), transparent 60%);
+}
+
+html.dark.mode-pozytywne body::before,
+html.mode-pozytywne.dark body::before {
+  background:
+    radial-gradient(900px 600px at 100% 0%, hsl(82 78% 55% / 0.14), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, hsl(50 96% 60% / 0.08), transparent 60%);
+}
+
+.pozytywne-gradient-text {
+  background: linear-gradient(135deg, hsl(84 81% 44%), hsl(50 96% 55%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+
 
