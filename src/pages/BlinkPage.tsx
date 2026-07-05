@@ -73,6 +73,20 @@ const BlinkPage = () => {
   const { data: post, isLoading, error } = usePostBySlug(slug || "");
   const navLink = useNavLink();
 
+  const isPositive = (post as any)?.channel === "positive";
+  const ActiveHeader = isPositive ? PozytywneHeader : Header;
+  const ActiveFooter = isPositive ? PozytywneFooter : Footer;
+  const homeHref = isPositive ? "/pozytywne" : "/";
+
+  // Apply lime skin to <html> for positive-channel articles
+  useEffect(() => {
+    if (isPositive) {
+      document.documentElement.classList.add("mode-pozytywne");
+      return () => document.documentElement.classList.remove("mode-pozytywne");
+    }
+  }, [isPositive]);
+
+
   // Use new SEO meta hook for all meta tags
   useArticleSEOMeta(post ? {
     title: post.title,
