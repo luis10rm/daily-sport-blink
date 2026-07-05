@@ -330,7 +330,7 @@ export const RichTextEditor = ({
               onClick={() => {
                 const raw = htmlDraft.trim();
                 if (!raw) return;
-                const html = unescapeHtmlIfEncoded(raw);
+                const html = sanitizePastedHtml(raw);
                 editor
                   .chain()
                   .focus()
