@@ -109,7 +109,7 @@ const BlinkPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <ActiveHeader />
         <main className="container mx-auto px-4 py-8">
           <div className="max-w-3xl mx-auto space-y-6">
             <Skeleton className="h-8 w-3/4" />
@@ -124,7 +124,7 @@ const BlinkPage = () => {
   if (error || !post) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <ActiveHeader />
         <main className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Artykuł nie znaleziony</h1>
           <p className="text-muted-foreground mb-6">
@@ -197,7 +197,7 @@ const BlinkPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <ActiveHeader />
       <SEO {...newsArticleSchema} />
       
       <main className="container mx-auto px-4 py-8">
@@ -318,7 +318,7 @@ const BlinkPage = () => {
         </article>
       </main>
 
-      <Footer />
+      <ActiveFooter />
     </div>
   );
 };
