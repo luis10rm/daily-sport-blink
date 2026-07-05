@@ -100,7 +100,7 @@ export const RichTextEditor = ({
         // letting the browser hand us text/html that may be an escaped rendering.
         if (looksLikeHtml(text)) {
           event.preventDefault();
-          editor?.commands.insertContent(text, {
+          editor?.commands.insertContent(sanitizePastedHtml(text), {
             parseOptions: { preserveWhitespace: false },
           });
           return true;
