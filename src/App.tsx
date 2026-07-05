@@ -25,6 +25,8 @@ import NotFound from "./pages/NotFound";
 import WorldCup2026 from "./pages/WorldCup2026";
 import ReckiHome from "./pages/ReckiHome";
 import ReckiReview from "./pages/ReckiReview";
+import PozytywneHome from "./pages/PozytywneHome";
+import PozytywneArchive from "./pages/PozytywneArchive";
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const PostsList = lazy(() => import("./pages/admin/PostsList"));
 const PostEditor = lazy(() => import("./pages/admin/PostEditor"));
