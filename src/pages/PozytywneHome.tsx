@@ -42,6 +42,38 @@ const PozytywneHome = () => {
     return () => document.documentElement.classList.remove("mode-pozytywne");
   }, []);
 
+  // A1 + A2 — computed once per mount
+  const greeting = useMemo(() => getGreeting(), []);
+  const quoteOfDay = useMemo(() => getQuoteOfDay(), []);
+
+  // A3 — confetti tap on today's counter
+  const counterRef = useRef<HTMLButtonElement>(null);
+  const [showBadge, setShowBadge] = useState(false);
+  const handleCounterTap = () => {
+    const el = counterRef.current;
+    if (!el) return;
+    const alreadyPopped = typeof window !== "undefined" && sessionStorage.getItem("pozytywne-confetti") === "1";
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    if (!alreadyPopped && !prefersReducedMotion()) {
+      burstConfetti(cx, cy);
+      sessionStorage.setItem("pozytywne-confetti", "1");
+    }
+    // wiggle every time
+    el.classList.remove("animate-wiggle");
+    // force reflow so re-adding the class restarts the animation
+    void el.offsetWidth;
+    el.classList.add("animate-wiggle");
+
+    if (prefersReducedMotion()) {
+      setShowBadge(true);
+      window.setTimeout(() => setShowBadge(false), 1500);
+    }
+  };
+
+
   useSEOMeta({
     title: inCategory && category
       ? `${category.name} – Pozytywne wiadomości | Szortsy`
