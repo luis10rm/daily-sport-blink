@@ -20,6 +20,9 @@ const PozytywneHome = () => {
   const { slug: categorySlug } = useParams<{ slug?: string }>();
   const inCategory = !!categorySlug;
 
+  const isMobile = useIsMobile();
+  const device = isMobile ? "mobile" : "desktop";
+
   const { data: categories = [] } = usePositiveCategories();
   const { data: category } = usePositiveCategoryBySlug(categorySlug);
 
@@ -27,6 +30,10 @@ const PozytywneHome = () => {
   const catQuery = usePositivePostsByCategory(categorySlug);
   const { data: posts = [], isLoading } = inCategory ? catQuery : feedQuery;
   const { data: todaysPosts = [] } = useTodaysPositivePosts();
+
+  const { data: topBanner } = useActiveBannerForDevice("home_top", device, "positive");
+  const { data: middleBanner } = useActiveBannerForDevice("home_middle", device, "positive");
+  const { data: bottomBanner } = useActiveBannerForDevice("home_bottom", device, "positive");
 
   useEffect(() => {
     document.documentElement.classList.add("mode-pozytywne");
