@@ -99,7 +99,7 @@ const bannerSchema = z.object({
   target_device: z.enum(["all", "desktop", "mobile"]),
   is_active: z.boolean(),
   show_on_tech: z.boolean().optional(),
-  sections: z.array(z.enum(["sport", "tech"])).min(1, "Wybierz co najmniej jedną sekcję"),
+  sections: z.array(z.enum(["sport", "tech", "positive"])).min(1, "Wybierz co najmniej jedną sekcję"),
   start_date: z.date().optional().nullable(),
   end_date: z.date().optional().nullable(),
 }).refine((data) => {
