@@ -121,6 +121,7 @@ const PostEditor = () => {
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
   const { data: sportCategories, isLoading: isLoadingCategories } = useSportCategories();
+  const { data: positiveCategories = [] } = usePositiveCategories();
   const { data: authors } = useAuthors();
   const { data: currentUserAuthor } = useAuthorByUserId(user?.id || "");
   const { data: socialPosts } = useSocialPostsByPostId(id || "");
