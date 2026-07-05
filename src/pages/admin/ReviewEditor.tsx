@@ -155,7 +155,7 @@ const ReviewEditor = () => {
     const payload: any = {
       ...form,
       id: id ?? undefined,
-      content: form.content ? unescapeHtmlIfEncoded(form.content) : form.content,
+      content: form.content ? sanitizePastedHtml(form.content) : form.content,
       pros: (form.pros ?? []).filter((p) => p && p.trim()),
       cons: (form.cons ?? []).filter((c) => c && c.trim()),
       status: publish ? "published" : form.status ?? "draft",
