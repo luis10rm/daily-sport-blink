@@ -181,6 +181,7 @@ export const usePostsFeed = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("channel" as never, "sport" as never)
         .eq("is_news_of_day", false)
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
