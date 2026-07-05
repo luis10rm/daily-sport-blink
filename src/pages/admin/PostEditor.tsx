@@ -9,6 +9,7 @@ import { ImageSourceSection } from "@/components/admin/ImageSourceSection";
 import { usePost, useCreatePost, useUpdatePost } from "@/hooks/usePosts";
 import { useExtractArticle } from "@/hooks/useSettings";
 import { useSportCategories } from "@/hooks/useSportCategories";
+import { usePositiveCategories } from "@/hooks/usePositiveCategories";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthors, useAuthorByUserId } from "@/hooks/useAuthors";
 import { useSocialPostsByPostId, usePublishToSocial } from "@/hooks/useSocialPosts";
