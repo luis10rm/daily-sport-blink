@@ -49,9 +49,12 @@ const sanitizeHtml = (html: string): string => {
 // Parse content - handles HTML, Markdown, and mixed formats with XSS protection
 const parseContent = (content: string): string => {
   if (!content) return "";
-  
-  // First normalize any Markdown patterns inside HTML (e.g. <p>**bold**</p>)
-  const normalized = normalizeMarkdownInHtml(content);
+
+  // Legacy content may contain escaped HTML entities (`&lt;p&gt;...`) from old pastes.
+  const decoded = unescapeHtmlIfEncoded(content);
+
+  // Normalize any Markdown patterns inside HTML (e.g. <p>**bold**</p>)
+  const normalized = normalizeMarkdownInHtml(decoded);
   
   // Parse through marked for any remaining pure Markdown
   const html = marked.parse(normalized, { async: false }) as string;
