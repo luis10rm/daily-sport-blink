@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ModeSwitcher } from "./ModeSwitcher";
+import { ChannelSwitcher } from "@/components/ChannelSwitcher";
 import { useReviewCategories } from "@/hooks/useReviews";
 import { PatronBar } from "@/components/PatronBar";
 
@@ -67,7 +67,7 @@ export const ReckiHeader = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <ModeSwitcher />
+            <ChannelSwitcher />
             <ThemeToggle />
           </nav>
         </div>

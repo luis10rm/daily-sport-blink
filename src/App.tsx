@@ -25,6 +25,8 @@ import NotFound from "./pages/NotFound";
 import WorldCup2026 from "./pages/WorldCup2026";
 import ReckiHome from "./pages/ReckiHome";
 import ReckiReview from "./pages/ReckiReview";
+import PozytywneHome from "./pages/PozytywneHome";
+import PozytywneArchive from "./pages/PozytywneArchive";
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const PostsList = lazy(() => import("./pages/admin/PostsList"));
 const PostEditor = lazy(() => import("./pages/admin/PostEditor"));
@@ -43,6 +45,9 @@ const SuggestionsList = lazy(() => import("./pages/admin/SuggestionsList"));
 const SourcesList = lazy(() => import("./pages/admin/SourcesList"));
 const ReviewsList = lazy(() => import("./pages/admin/ReviewsList"));
 const ReviewEditor = lazy(() => import("./pages/admin/ReviewEditor"));
+const PositivePostsList = lazy(() => import("./pages/admin/PositivePostsList"));
+const PositiveCategoriesList = lazy(() => import("./pages/admin/PositiveCategoriesList"));
+const PositiveCategoryEditor = lazy(() => import("./pages/admin/PositiveCategoryEditor"));
 import { TournamentTheme } from "@/components/TournamentTheme";
 
 
@@ -81,6 +86,11 @@ function App() {
               <Route path="/tech" element={<ReckiHome />} />
               <Route path="/tech/kategoria/:slug" element={<ReckiHome />} />
               <Route path="/tech/:category/:slug" element={<ReckiReview />} />
+              {/* Pozytywne channel */}
+              <Route path="/pozytywne" element={<PozytywneHome />} />
+              <Route path="/pozytywne/archiwum" element={<PozytywneArchive />} />
+              <Route path="/pozytywne/kategoria/:slug" element={<PozytywneHome />} />
+              <Route path="/pozytywne/:category/:slug" element={<BlinkPage />} />
               {/* 301-style redirects: /recki/* → /tech/* */}
               <Route path="/recki" element={<Navigate to="/tech" replace />} />
               <Route path="/recki/kategoria/:slug" element={<RedirectReckiCategory />} />
@@ -126,6 +136,13 @@ function App() {
             <Route path="/admin/recki" element={<ProtectedRoute><ReviewsList /></ProtectedRoute>} />
             <Route path="/admin/recki/new" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
             <Route path="/admin/recki/:id/edit" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
+            {/* Pozytywne admin */}
+            <Route path="/admin/pozytywne" element={<ProtectedRoute><PositivePostsList /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/new" element={<ProtectedRoute><PostEditor /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/:id/edit" element={<ProtectedRoute><PostEditor /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/kategorie" element={<ProtectedRoute><PositiveCategoriesList /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/kategorie/new" element={<ProtectedRoute><PositiveCategoryEditor /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/kategorie/:id/edit" element={<ProtectedRoute><PositiveCategoryEditor /></ProtectedRoute>} />
             <Route
               path="/admin/banners"
               element={

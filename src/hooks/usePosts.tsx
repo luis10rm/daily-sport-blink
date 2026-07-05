@@ -64,6 +64,7 @@ export interface UpdatePostInput extends Partial<CreatePostInput> {
 export const POST_SELECT = `
   *,
   sport_category:sport_categories!fk_posts_category(id, slug, name, icon_name, icon_url, bg_color),
+  positive_category:positive_categories!posts_positive_category_id_fkey(id, slug, name, icon_name, icon_url, bg_color),
   author:authors(id, display_name, avatar_url, slug, role_title)
 `;
 
@@ -108,7 +109,7 @@ export const usePostsByDate = (date: string) => {
   });
 };
 
-// Fetch posts from today only
+// Fetch posts from today only (sport channel)
 export const useTodaysPosts = () => {
   return useQuery({
     queryKey: ["posts", "today"],
@@ -120,6 +121,7 @@ export const useTodaysPosts = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("channel" as never, "sport" as never)
         .gte("published_at", startOfDay)
         .lte("published_at", endOfDay)
         .order("published_at", { ascending: false });
@@ -130,7 +132,7 @@ export const useTodaysPosts = () => {
   });
 };
 
-// Fetch posts from last 7 days (for stories)
+// Fetch posts from last 7 days (for stories) - sport channel
 export const useRecentPosts = () => {
   return useQuery({
     queryKey: ["posts", "recent"],
@@ -140,6 +142,7 @@ export const useRecentPosts = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("channel" as never, "sport" as never)
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
@@ -157,6 +160,7 @@ export const useNewsOfTheDay = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("channel" as never, "sport" as never)
         .eq("is_news_of_day", true)
         .order("published_at", { ascending: false })
         .limit(1)
@@ -178,6 +182,7 @@ export const usePostsFeed = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("channel" as never, "sport" as never)
         .eq("is_news_of_day", false)
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
@@ -210,6 +215,7 @@ export const useArchivedPosts = (filters?: {
       let query = supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("channel" as never, "sport" as never)
         .lt("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 

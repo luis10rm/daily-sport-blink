@@ -187,6 +187,7 @@ export type Database = {
       }
       news_sources: {
         Row: {
+          channel: string
           created_at: string
           created_by: string | null
           feed_url: string | null
@@ -200,6 +201,7 @@ export type Database = {
           url_path_includes: string[] | null
         }
         Insert: {
+          channel?: string
           created_at?: string
           created_by?: string | null
           feed_url?: string | null
@@ -213,6 +215,7 @@ export type Database = {
           url_path_includes?: string[] | null
         }
         Update: {
+          channel?: string
           created_at?: string
           created_by?: string | null
           feed_url?: string | null
@@ -233,6 +236,7 @@ export type Database = {
           ai_reasoning: string | null
           ai_score: number | null
           article_url: string
+          channel: string
           created_at: string
           discovered_at: string
           excerpt: string | null
@@ -251,6 +255,7 @@ export type Database = {
           ai_reasoning?: string | null
           ai_score?: number | null
           article_url: string
+          channel?: string
           created_at?: string
           discovered_at?: string
           excerpt?: string | null
@@ -269,6 +274,7 @@ export type Database = {
           ai_reasoning?: string | null
           ai_score?: number | null
           article_url?: string
+          channel?: string
           created_at?: string
           discovered_at?: string
           excerpt?: string | null
@@ -306,10 +312,50 @@ export type Database = {
           },
         ]
       }
+      positive_categories: {
+        Row: {
+          bg_color: string | null
+          created_at: string
+          icon_name: string | null
+          icon_url: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bg_color?: string | null
+          created_at?: string
+          icon_name?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bg_color?: string | null
+          created_at?: string
+          icon_name?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author_id: string | null
           category_id: string | null
+          channel: string
           content: string | null
           created_at: string
           created_by: string | null
@@ -318,6 +364,7 @@ export type Database = {
           image_url: string | null
           is_news_of_day: boolean
           is_sponsored: boolean
+          positive_category_id: string | null
           published_at: string
           slug: string
           source_url: string
@@ -328,6 +375,7 @@ export type Database = {
         Insert: {
           author_id?: string | null
           category_id?: string | null
+          channel?: string
           content?: string | null
           created_at?: string
           created_by?: string | null
@@ -336,6 +384,7 @@ export type Database = {
           image_url?: string | null
           is_news_of_day?: boolean
           is_sponsored?: boolean
+          positive_category_id?: string | null
           published_at?: string
           slug: string
           source_url: string
@@ -346,6 +395,7 @@ export type Database = {
         Update: {
           author_id?: string | null
           category_id?: string | null
+          channel?: string
           content?: string | null
           created_at?: string
           created_by?: string | null
@@ -354,6 +404,7 @@ export type Database = {
           image_url?: string | null
           is_news_of_day?: boolean
           is_sponsored?: boolean
+          positive_category_id?: string | null
           published_at?: string
           slug?: string
           source_url?: string
@@ -381,6 +432,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "authors_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_positive_category_id_fkey"
+            columns: ["positive_category_id"]
+            isOneToOne: false
+            referencedRelation: "positive_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -684,6 +742,7 @@ export type Database = {
       }
       tags: {
         Row: {
+          channel: string
           created_at: string | null
           description: string | null
           id: string
@@ -693,6 +752,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          channel?: string
           created_at?: string | null
           description?: string | null
           id?: string
@@ -702,6 +762,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          channel?: string
           created_at?: string | null
           description?: string | null
           id?: string

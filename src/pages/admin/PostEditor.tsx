@@ -9,6 +9,7 @@ import { ImageSourceSection } from "@/components/admin/ImageSourceSection";
 import { usePost, useCreatePost, useUpdatePost } from "@/hooks/usePosts";
 import { useExtractArticle } from "@/hooks/useSettings";
 import { useSportCategories } from "@/hooks/useSportCategories";
+import { usePositiveCategories } from "@/hooks/usePositiveCategories";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuthors, useAuthorByUserId } from "@/hooks/useAuthors";
 import { useSocialPostsByPostId, usePublishToSocial } from "@/hooks/useSocialPosts";
@@ -100,6 +101,11 @@ const PostEditor = () => {
   const isEditing = !!id;
   const { user } = useAuth();
 
+  // Channel is derived from route: /admin/pozytywne/* → 'positive', otherwise 'sport'
+  const [channel, setChannel] = useState<"sport" | "positive">(
+    location.pathname.startsWith("/admin/pozytywne") ? "positive" : "sport",
+  );
+
   // Check for prefill data from navigation state (e.g., from daily summary generator)
   const navState = location.state as {
     prefill?: PrefillData;
@@ -115,6 +121,7 @@ const PostEditor = () => {
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
   const { data: sportCategories, isLoading: isLoadingCategories } = useSportCategories();
+  const { data: positiveCategories = [] } = usePositiveCategories();
   const { data: authors } = useAuthors();
   const { data: currentUserAuthor } = useAuthorByUserId(user?.id || "");
   const { data: socialPosts } = useSocialPostsByPostId(id || "");
@@ -215,12 +222,20 @@ const PostEditor = () => {
     if (post) {
       // Normalize content to convert any **text** to <strong>text</strong>
       const normalizedContent = normalizeMarkdownInHtml(post.content || "");
-      
+      const postAny = post as any;
+      const postChannel: "sport" | "positive" =
+        postAny.channel === "positive" ? "positive" : "sport";
+      setChannel(postChannel);
+      const categoryValue =
+        postChannel === "positive"
+          ? postAny.positive_category_id || ""
+          : post.category_id || "";
+
       form.reset({
         title: post.title,
         excerpt: post.excerpt,
         content: normalizedContent,
-        category_id: post.category_id || "",
+        category_id: categoryValue,
         author_id: post.author_id || "",
         image_url: post.image_url || "",
         source_url: post.source_url,
@@ -279,11 +294,10 @@ const PostEditor = () => {
   };
 
   const onSubmit = async (data: PostFormData) => {
-    const postData = {
+    const basePostData: any = {
       title: data.title,
       excerpt: data.excerpt,
       content: data.content ? sanitizePastedHtml(data.content) : undefined,
-      category_id: data.category_id,
       author_id: data.author_id || undefined,
       image_url: data.image_url || undefined,
       source_url: data.source_url,
@@ -291,7 +305,17 @@ const PostEditor = () => {
       is_sponsored: data.is_sponsored,
       is_news_of_day: data.is_news_of_day,
       published_at: new Date(data.published_at).toISOString(),
+      channel,
     };
+    // Category field depends on channel
+    if (channel === "positive") {
+      basePostData.positive_category_id = data.category_id;
+      basePostData.category_id = null;
+    } else {
+      basePostData.category_id = data.category_id;
+      basePostData.positive_category_id = null;
+    }
+    const postData = basePostData;
 
     let savedPostId = id;
 
@@ -300,6 +324,7 @@ const PostEditor = () => {
     } else {
       const newPost = await createPost.mutateAsync({ ...postData, created_by: user?.id });
       savedPostId = newPost?.id;
+
 
       // Mark originating suggestion as published
       if (suggestionId && newPost?.id) {
@@ -329,7 +354,7 @@ const PostEditor = () => {
       }
     }
 
-    navigate("/admin/posts");
+    navigate(channel === "positive" ? "/admin/pozytywne" : "/admin/posts");
   };
 
   // Handle manual Facebook publish for existing posts
@@ -440,9 +465,12 @@ const PostEditor = () => {
     );
   }
 
-  // Get current category for ImageSourceSection
+  // Get current category for ImageSourceSection (falls back to positive when needed)
   const currentCategoryId = form.watch("category_id");
-  const currentCategory = sportCategories?.find((cat) => cat.id === currentCategoryId);
+  const currentCategory =
+    channel === "positive"
+      ? (positiveCategories?.find((cat) => cat.id === currentCategoryId) as any)
+      : sportCategories?.find((cat) => cat.id === currentCategoryId);
 
   return (
     <AdminLayout>
@@ -454,14 +482,64 @@ const PostEditor = () => {
           <div>
             <h1 className="text-3xl font-bold font-heading">
               {isEditing ? "Edytuj post" : "Nowy post"}
+              {channel === "positive" && (
+                <span className="ml-3 rounded-full bg-lime-500/15 px-3 py-1 text-sm font-semibold text-lime-700 dark:text-lime-300 align-middle">
+                  Pozytywne
+                </span>
+              )}
             </h1>
             <p className="text-muted-foreground">
               {isEditing
                 ? "Zaktualizuj istniejący post"
-                : "Utwórz nowy post sportowy"}
+                : channel === "positive"
+                  ? "Nowa dobra wiadomość dla kanału Pozytywne"
+                  : "Utwórz nowy post sportowy"}
             </p>
           </div>
         </div>
+
+        {!isEditing && (
+          <Card className={channel === "positive" ? "border-lime-500/40" : undefined}>
+            <CardContent className="pt-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm font-semibold text-foreground">Kanał:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChannel("sport");
+                    form.setValue("category_id", "");
+                  }}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    channel === "sport"
+                      ? "border-emerald-500 bg-emerald-500 text-white"
+                      : "border-border bg-card text-muted-foreground hover:border-emerald-500"
+                  }`}
+                >
+                  Sport
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChannel("positive");
+                    form.setValue("category_id", "");
+                  }}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    channel === "positive"
+                      ? "border-lime-500 bg-lime-500 text-white"
+                      : "border-border bg-card text-muted-foreground hover:border-lime-500"
+                  }`}
+                >
+                  Pozytywne
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  Zmienia dostępne kategorie i miejsce publikacji.
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -652,7 +730,9 @@ const PostEditor = () => {
                       name="category_id"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Kategoria</FormLabel>
+                          <FormLabel>
+                            Kategoria {channel === "positive" ? "(Pozytywne)" : "(Sport)"}
+                          </FormLabel>
                           <div className="flex gap-2">
                             <Select
                               onValueChange={field.onChange}
@@ -664,23 +744,32 @@ const PostEditor = () => {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {sportCategories?.map((cat) => (
-                                  <SelectItem key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                  </SelectItem>
-                                ))}
+                                {channel === "positive"
+                                  ? positiveCategories?.map((cat) => (
+                                      <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                      </SelectItem>
+                                    ))
+                                  : sportCategories?.map((cat) => (
+                                      <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                      </SelectItem>
+                                    ))}
                               </SelectContent>
                             </Select>
-                            <QuickCategoryDialog
-                              onCategoryCreated={(categoryId) => {
-                                form.setValue("category_id", categoryId);
-                              }}
-                            />
+                            {channel === "sport" && (
+                              <QuickCategoryDialog
+                                onCategoryCreated={(categoryId) => {
+                                  form.setValue("category_id", categoryId);
+                                }}
+                              />
+                            )}
                           </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
 
                     <FormField
                       control={form.control}

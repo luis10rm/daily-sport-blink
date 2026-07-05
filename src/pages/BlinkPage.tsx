@@ -1,9 +1,12 @@
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useNavLink } from "@/hooks/useNavLink";
-import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake } from "lucide-react";
+import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake, Sun } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { Header } from "@/components/Header";
+import { PozytywneHeader } from "@/components/pozytywne/PozytywneHeader";
+import { PozytywneFooter } from "@/components/pozytywne/PozytywneFooter";
 import { SEO } from "@/components/SEO";
 import { AuthorCard } from "@/components/AuthorCard";
 import { DynamicSportIcon } from "@/components/DynamicSportIcon";
@@ -70,6 +73,20 @@ const BlinkPage = () => {
   const { data: post, isLoading, error } = usePostBySlug(slug || "");
   const navLink = useNavLink();
 
+  const isPositive = (post as any)?.channel === "positive";
+  const ActiveHeader = isPositive ? PozytywneHeader : Header;
+  const ActiveFooter = isPositive ? PozytywneFooter : Footer;
+  const homeHref = isPositive ? "/pozytywne" : "/";
+
+  // Apply lime skin to <html> for positive-channel articles
+  useEffect(() => {
+    if (isPositive) {
+      document.documentElement.classList.add("mode-pozytywne");
+      return () => document.documentElement.classList.remove("mode-pozytywne");
+    }
+  }, [isPositive]);
+
+
   // Use new SEO meta hook for all meta tags
   useArticleSEOMeta(post ? {
     title: post.title,
@@ -92,7 +109,7 @@ const BlinkPage = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <ActiveHeader />
         <main className="container mx-auto px-4 py-8">
           <div className="max-w-3xl mx-auto space-y-6">
             <Skeleton className="h-8 w-3/4" />
@@ -107,14 +124,14 @@ const BlinkPage = () => {
   if (error || !post) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        <ActiveHeader />
         <main className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Artykuł nie znaleziony</h1>
           <p className="text-muted-foreground mb-6">
             Przepraszamy, nie udało się znaleźć tego artykułu.
           </p>
           <Button asChild>
-            <a {...navLink("/")}>
+            <a {...navLink(homeHref)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Wróć na stronę główną
             </a>
@@ -180,18 +197,18 @@ const BlinkPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <ActiveHeader />
       <SEO {...newsArticleSchema} />
       
       <main className="container mx-auto px-4 py-8">
         <article className={cn("max-w-3xl mx-auto", isOlympic && "relative")}>
           {/* Back button */}
           <a 
-            {...navLink("/")} 
+            {...navLink(homeHref)} 
             className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Powrót do strony głównej
+            {isPositive ? "Powrót do Pozytywnych" : "Powrót do strony głównej"}
           </a>
 
           {/* Olympic winter banner */}
@@ -208,13 +225,26 @@ const BlinkPage = () => {
           {/* Category and date */}
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2">
-              <DynamicSportIcon 
-                sportCategory={post.sport_category} 
-                className="h-10 w-10" 
-              />
-              <span className="text-sm font-medium uppercase tracking-wider text-primary">
-                {post.sport_category?.name || "Inne"}
-              </span>
+              {isPositive ? (
+                <>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow">
+                    <Sun className="h-5 w-5" />
+                  </div>
+                  <span className="text-sm font-medium uppercase tracking-wider text-lime-700 dark:text-lime-300">
+                    {(post as any).positive_category?.name || "Pozytywne"}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <DynamicSportIcon
+                    sportCategory={post.sport_category}
+                    className="h-10 w-10"
+                  />
+                  <span className="text-sm font-medium uppercase tracking-wider text-primary">
+                    {post.sport_category?.name || "Inne"}
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
@@ -301,7 +331,7 @@ const BlinkPage = () => {
         </article>
       </main>
 
-      <Footer />
+      <ActiveFooter />
     </div>
   );
 };
