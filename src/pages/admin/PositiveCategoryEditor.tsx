@@ -69,10 +69,11 @@ const PositiveCategoryEditor = () => {
   }, [cat, form]);
 
   const onSubmit = async (data: FormData) => {
+    const payload: any = data;
     if (isEditing && id) {
-      await update.mutateAsync({ id, ...data });
+      await update.mutateAsync({ id, ...payload });
     } else {
-      await create.mutateAsync(data);
+      await create.mutateAsync(payload);
     }
     navigate("/admin/pozytywne/kategorie");
   };
