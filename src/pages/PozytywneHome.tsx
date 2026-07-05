@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { PozytywneHeader } from "@/components/pozytywne/PozytywneHeader";
 import { PozytywneFooter } from "@/components/pozytywne/PozytywneFooter";
 import { NewsCard } from "@/components/NewsCard";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Archive, Sun, Sparkles } from "lucide-react";
+import { Archive, Sun, Sparkles, Quote } from "lucide-react";
 import {
   usePositivePostsFeed,
   usePositivePostsByCategory,
@@ -15,6 +15,8 @@ import { usePositiveCategories, usePositiveCategoryBySlug } from "@/hooks/usePos
 import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
+import { getGreeting, getQuoteOfDay } from "@/lib/positiveQuotes";
+import { burstConfetti, prefersReducedMotion } from "@/lib/confetti";
 
 const PozytywneHome = () => {
   const { slug: categorySlug } = useParams<{ slug?: string }>();
