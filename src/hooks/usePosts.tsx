@@ -108,7 +108,7 @@ export const usePostsByDate = (date: string) => {
   });
 };
 
-// Fetch posts from today only
+// Fetch posts from today only (sport channel)
 export const useTodaysPosts = () => {
   return useQuery({
     queryKey: ["posts", "today"],
@@ -120,6 +120,7 @@ export const useTodaysPosts = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("channel" as any, "sport")
         .gte("published_at", startOfDay)
         .lte("published_at", endOfDay)
         .order("published_at", { ascending: false });
@@ -130,7 +131,7 @@ export const useTodaysPosts = () => {
   });
 };
 
-// Fetch posts from last 7 days (for stories)
+// Fetch posts from last 7 days (for stories) - sport channel
 export const useRecentPosts = () => {
   return useQuery({
     queryKey: ["posts", "recent"],
@@ -140,6 +141,7 @@ export const useRecentPosts = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("channel" as any, "sport")
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
