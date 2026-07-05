@@ -1,9 +1,12 @@
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useNavLink } from "@/hooks/useNavLink";
-import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake } from "lucide-react";
+import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake, Sun } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { Header } from "@/components/Header";
+import { PozytywneHeader } from "@/components/pozytywne/PozytywneHeader";
+import { PozytywneFooter } from "@/components/pozytywne/PozytywneFooter";
 import { SEO } from "@/components/SEO";
 import { AuthorCard } from "@/components/AuthorCard";
 import { DynamicSportIcon } from "@/components/DynamicSportIcon";
