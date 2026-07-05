@@ -225,13 +225,26 @@ const BlinkPage = () => {
           {/* Category and date */}
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2">
-              <DynamicSportIcon 
-                sportCategory={post.sport_category} 
-                className="h-10 w-10" 
-              />
-              <span className="text-sm font-medium uppercase tracking-wider text-primary">
-                {post.sport_category?.name || "Inne"}
-              </span>
+              {isPositive ? (
+                <>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow">
+                    <Sun className="h-5 w-5" />
+                  </div>
+                  <span className="text-sm font-medium uppercase tracking-wider text-lime-700 dark:text-lime-300">
+                    {(post as any).positive_category?.name || "Pozytywne"}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <DynamicSportIcon
+                    sportCategory={post.sport_category}
+                    className="h-10 w-10"
+                  />
+                  <span className="text-sm font-medium uppercase tracking-wider text-primary">
+                    {post.sport_category?.name || "Inne"}
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
