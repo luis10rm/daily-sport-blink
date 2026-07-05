@@ -730,7 +730,9 @@ const PostEditor = () => {
                       name="category_id"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Kategoria</FormLabel>
+                          <FormLabel>
+                            Kategoria {channel === "positive" ? "(Pozytywne)" : "(Sport)"}
+                          </FormLabel>
                           <div className="flex gap-2">
                             <Select
                               onValueChange={field.onChange}
@@ -742,23 +744,32 @@ const PostEditor = () => {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {sportCategories?.map((cat) => (
-                                  <SelectItem key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                  </SelectItem>
-                                ))}
+                                {channel === "positive"
+                                  ? positiveCategories?.map((cat) => (
+                                      <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                      </SelectItem>
+                                    ))
+                                  : sportCategories?.map((cat) => (
+                                      <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                      </SelectItem>
+                                    ))}
                               </SelectContent>
                             </Select>
-                            <QuickCategoryDialog
-                              onCategoryCreated={(categoryId) => {
-                                form.setValue("category_id", categoryId);
-                              }}
-                            />
+                            {channel === "sport" && (
+                              <QuickCategoryDialog
+                                onCategoryCreated={(categoryId) => {
+                                  form.setValue("category_id", categoryId);
+                                }}
+                              />
+                            )}
                           </div>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
 
                     <FormField
                       control={form.control}
