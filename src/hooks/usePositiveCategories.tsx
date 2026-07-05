@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase as sb } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+// Positive categories table not yet in generated types — cast client to any.
+const supabase = sb as any;
 
 export interface PositiveCategory {
   id: string;
