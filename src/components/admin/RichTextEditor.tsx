@@ -81,9 +81,10 @@ export const RichTextEditor = ({
       handlePaste: (view, event) => {
         const cd = event.clipboardData;
         if (!cd) return false;
-        const html = cd.getData("text/html");
-        if (html && html.trim()) return false; // TipTap parses HTML natively
         const text = cd.getData("text/plain");
+        // If plain text looks like HTML markup (copied from a code editor / view-source),
+        // parse it as HTML regardless of what text/html contains (which is often the
+        // escaped rendering of that same code, e.g. `&lt;p&gt;...`).
         if (text && looksLikeHtml(text)) {
           event.preventDefault();
           editor?.commands.insertContent(text, {
@@ -91,7 +92,7 @@ export const RichTextEditor = ({
           });
           return true;
         }
-        return false;
+        return false; // fall back to TipTap's native handling (incl. text/html)
       },
     },
   });
