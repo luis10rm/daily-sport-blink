@@ -93,62 +93,104 @@ const PozytywneHome = () => {
       <main className="flex-1">
         <div className="container py-6 md:py-10">
           {/* Hero heading */}
-          <section className="mb-8 rounded-2xl border border-lime-500/20 bg-gradient-to-br from-lime-50 via-lime-50/60 to-transparent dark:from-lime-950/40 dark:via-lime-950/20 dark:to-transparent p-6 md:p-8">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow-md">
-                <Sun className="h-6 w-6" />
-              </div>
-              <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-                  {inCategory && category ? category.name : (
-                    <>
-                      <span className="pozytywne-gradient-text">Pozytywne</span> — dobre wiadomości
-                    </>
-                  )}
-                </h1>
-                <p className="mt-2 text-muted-foreground">
-                  {inCategory && category
-                    ? `Pozytywne wiadomości z kategorii ${category.name.toLowerCase()}.`
-                    : "Publikujemy tylko to, co dodaje energii. 60 sekund. Lepszy dzień."}
-                </p>
-                {!inCategory && todaysPosts.length > 0 && (
-                  <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-lime-500/15 px-3 py-1 text-xs font-semibold text-lime-700 dark:text-lime-300">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Dziś w Pozytywnych: {todaysPosts.length}{" "}
-                    {todaysPosts.length === 1 ? "dobra wiadomość" : "dobrych wiadomości"}
-                  </p>
-                )}
-              </div>
+          <section className="relative overflow-hidden mb-8 rounded-2xl border border-lime-500/20 bg-gradient-to-br from-lime-50 via-lime-50/60 to-transparent dark:from-lime-950/40 dark:via-lime-950/20 dark:to-transparent p-6 md:p-8">
+            {/* A5 — floating lime blobs (decorative, motion-safe) */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+              <div className="absolute -left-16 -top-16 h-72 w-72 rounded-full bg-lime-300/40 blur-3xl dark:bg-lime-500/20 motion-safe:animate-float-slow-a" />
+              <div className="absolute -bottom-24 -right-10 h-80 w-80 rounded-full bg-lime-400/30 blur-3xl dark:bg-lime-500/15 motion-safe:animate-float-slow-b" />
             </div>
 
-            {categories.length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Link
-                  to="/pozytywne"
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                    !inCategory
-                      ? "border-lime-500 bg-lime-500 text-white"
-                      : "border-border bg-card text-muted-foreground hover:border-lime-500 hover:text-lime-700 dark:hover:text-lime-300"
-                  }`}
-                >
-                  Wszystkie
-                </Link>
-                {categories.map((c) => (
+            <div className="relative z-10">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow-md">
+                  <Sun className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  {/* A1 — time-of-day greeting */}
+                  {!inCategory && (
+                    <p className="mb-1 text-sm font-semibold text-lime-700 dark:text-lime-300">
+                      {greeting}
+                    </p>
+                  )}
+                  <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+                    {inCategory && category ? category.name : (
+                      <>
+                        <span className="pozytywne-gradient-text">Pozytywne</span> — dobre wiadomości
+                      </>
+                    )}
+                  </h1>
+                  <p className="mt-2 text-muted-foreground">
+                    {inCategory && category
+                      ? `Pozytywne wiadomości z kategorii ${category.name.toLowerCase()}.`
+                      : "Publikujemy tylko to, co dodaje energii. 60 sekund. Lepszy dzień."}
+                  </p>
+
+                  {/* A2 — mantra of the day (main feed only) */}
+                  {!inCategory && (
+                    <div className="mt-3 flex items-start gap-2 border-l-2 border-lime-400/60 pl-3">
+                      <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-lime-500" aria-hidden="true" />
+                      <p className="text-sm italic text-foreground/80">
+                        {quoteOfDay}
+                      </p>
+                    </div>
+                  )}
+
+                  {!inCategory && todaysPosts.length > 0 && (
+                    <div className="relative mt-3 inline-block">
+                      <button
+                        ref={counterRef}
+                        type="button"
+                        onClick={handleCounterTap}
+                        aria-label="Świętuj dobre wiadomości dnia"
+                        className="inline-flex items-center gap-2 rounded-full bg-lime-500/15 px-3 py-1 text-xs font-semibold text-lime-700 transition-colors hover:bg-lime-500/25 dark:text-lime-300"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Dziś w Pozytywnych: {todaysPosts.length}{" "}
+                        {todaysPosts.length === 1 ? "dobra wiadomość" : "dobrych wiadomości"}
+                      </button>
+                      {showBadge && (
+                        <span
+                          role="status"
+                          className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-lime-500 px-2.5 py-1 text-[11px] font-semibold text-white shadow-md animate-fade-in"
+                        >
+                          +1 dobra wiadomość ✨
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {categories.length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
                   <Link
-                    key={c.id}
-                    to={`/pozytywne/kategoria/${c.slug}`}
+                    to="/pozytywne"
                     className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                      categorySlug === c.slug
+                      !inCategory
                         ? "border-lime-500 bg-lime-500 text-white"
                         : "border-border bg-card text-muted-foreground hover:border-lime-500 hover:text-lime-700 dark:hover:text-lime-300"
                     }`}
                   >
-                    {c.name}
+                    Wszystkie
                   </Link>
-                ))}
-              </div>
-            )}
+                  {categories.map((c) => (
+                    <Link
+                      key={c.id}
+                      to={`/pozytywne/kategoria/${c.slug}`}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        categorySlug === c.slug
+                          ? "border-lime-500 bg-lime-500 text-white"
+                          : "border-border bg-card text-muted-foreground hover:border-lime-500 hover:text-lime-700 dark:hover:text-lime-300"
+                      }`}
+                    >
+                      {c.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
+
 
           {/* Top Banner */}
           {topBanner && (
