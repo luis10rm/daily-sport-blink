@@ -136,6 +136,13 @@ function App() {
             <Route path="/admin/recki" element={<ProtectedRoute><ReviewsList /></ProtectedRoute>} />
             <Route path="/admin/recki/new" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
             <Route path="/admin/recki/:id/edit" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
+            {/* Pozytywne admin */}
+            <Route path="/admin/pozytywne" element={<ProtectedRoute><PositivePostsList /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/new" element={<ProtectedRoute><PostEditor /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/:id/edit" element={<ProtectedRoute><PostEditor /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/kategorie" element={<ProtectedRoute><PositiveCategoriesList /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/kategorie/new" element={<ProtectedRoute><PositiveCategoryEditor /></ProtectedRoute>} />
+            <Route path="/admin/pozytywne/kategorie/:id/edit" element={<ProtectedRoute><PositiveCategoryEditor /></ProtectedRoute>} />
             <Route
               path="/admin/banners"
               element={
