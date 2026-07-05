@@ -12,7 +12,7 @@ import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Button } from "@/components/ui/button";
-import { unescapeHtmlIfEncoded } from "@/lib/unescapeHtmlIfEncoded";
+import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
 
 const ReckiReview = () => {
   const { slug } = useParams();
