@@ -160,7 +160,7 @@ const BannerEditor = () => {
     if (banner) {
       const rawSections = (banner as any).sections as string[] | null | undefined;
       const sections = (rawSections && rawSections.length > 0
-        ? rawSections.filter((s): s is "sport" | "tech" => s === "sport" || s === "tech")
+        ? rawSections.filter((s): s is "sport" | "tech" | "positive" => s === "sport" || s === "tech" || s === "positive")
         : banner.position.startsWith("recki_")
           ? ["tech" as const]
           : ["sport" as const]);
