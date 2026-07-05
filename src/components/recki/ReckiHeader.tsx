@@ -67,7 +67,7 @@ export const ReckiHeader = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <ModeSwitcher />
+            <ChannelSwitcher />
             <ThemeToggle />
           </nav>
         </div>
