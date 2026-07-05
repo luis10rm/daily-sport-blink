@@ -51,7 +51,7 @@ const parseContent = (content: string): string => {
   if (!content) return "";
 
   // Legacy content may contain escaped HTML entities (`&lt;p&gt;...`) from old pastes.
-  const decoded = unescapeHtmlIfEncoded(content);
+  const decoded = sanitizePastedHtml(content);
 
   // Normalize any Markdown patterns inside HTML (e.g. <p>**bold**</p>)
   const normalized = normalizeMarkdownInHtml(decoded);
