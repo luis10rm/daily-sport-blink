@@ -1,58 +1,40 @@
-## Co jest nie tak z tą recenzją
+## Cel
+Powiększyć 3 kafelki w prawej kolumnie hero na stronie `/tech`, żeby były bardziej wizualne i wypełniały wysokość karty hero.
 
-Sprawdziłem treść w bazie. Tym razem **to nie są escape'owane encje** (`&lt;`) — HTML jest prawdziwy, ale ma dwa inne problemy:
+## Zmiany
 
-### Problem 1 — podwójne opakowanie `<p>` wokół bloków
-Zapisana treść zaczyna się tak:
+### 1. Nowy wariant `mini` w `src/components/recki/ReviewCard.tsx`
+Dodaję trzeci wariant obok `hero`, `default`, `compact`:
+
+- Layout pionowy: miniatura 16:9 na górze + treść pod spodem
+- Miniatura z `object-cover`, fallback gradient jak w innych wariantach
+- `ScoreBadge size="sm"` w prawym górnym rogu miniatury
+- Kategoria (mały uppercase w kolorze `fuchsia-600`)
+- Tytuł: `text-sm font-semibold`, `line-clamp-2`
+- Bez excerpt (za mało miejsca), bez osobnego CTA — cała karta klikalna przez `<a>` opakowanie
+- Karta: `flex flex-col`, `rounded-lg`, hover shadow
+- `h-full` żeby wypełniała slot flexbox
+
+### 2. `src/pages/ReckiHome.tsx` — układ prawej kolumny
+Zmiana w `<aside>` (linie 105–109):
+
+```tsx
+<aside className="lg:col-span-1 grid grid-cols-1 gap-3">
+  {secondary.map((r) => (
+    <ReviewCard key={r.id} review={r} variant="mini" />
+  ))}
+</aside>
 ```
-<p><p>NuPhy to marka...</p> <h2>Pierwsze wrażenie...</h2> <p>Na papierze...</p> ...</p>
-```
-Zewnętrzny `<p>` obejmuje `<h2>`, `<ul>`, kolejne `<p>` — a przeglądarka **nie może** zagnieżdżać bloków w `<p>`, więc automatycznie zamyka pierwszy `<p>` przed każdym `<h2>`/`<p>`, potem pojawia się „osierocony" `</p>`, i cały układ typograficzny (odstępy, drop cap, marginesy) się rozjeżdża. To efekt uboczny wklejenia HTML-a do TipTapa, który sam owija wstawkę w akapit.
 
-### Problem 2 — leftover z AI: `:antCitation[]{...}`
-W treści są fragmenty w stylu:
-```
-:antCitation[]{citations="8e95cf57-..." injected="space"}
-```
-To składnia „directive" z outputu Claude/Anthropic — nasz renderer nie zna jej, więc **wyświetla ją dosłownie** w tekście. Wygląda jak śmieć.
+Karta hero ma naturalną wysokość (obraz 16:9 + treść). Trzy mini-karty w kolumnie `gap-3` zsumowane ~ dopasują się wizualnie — nie wymuszam sztywnego `h-full` na aside, żeby uniknąć rozjazdu proporcji zdjęć.
 
-Skala w bazie: 2 recenzje z podwójnym `<p>`, 1 recenzja z artefaktami cytowań, 0 postów.
+Na mobile (`<lg`): mini-karty renderują się jedna pod drugą tak samo jak wcześniej compact — czytelniej niż mikro-miniatura 64px.
 
----
+## Bez zmian
+- Wariant `compact` zostaje (używany gdzieś indziej, np. w sidebarze recenzji).
+- Wariant `default` w dolnej siatce "Wszystko z Tech" bez zmian.
+- Brak zmian w danych, hookach, backendzie.
 
-## Proponowane fixy (3 warstwy — spójne z tym co już zrobiliśmy dla escape'owanych encji)
-
-### A. Sanityzacja przy zapisie (`ReviewEditor.tsx`, `PostEditor.tsx`)
-Rozszerzyć obecny `unescapeHtmlIfEncoded` o nowy helper `sanitizePastedHtml(content)`, który dodatkowo:
-1. **Rozpakowuje zewnętrzny `<p>...</p>`**, jeśli w środku są tagi blokowe (`<h2>`, `<h3>`, `<p>`, `<ul>`, `<ol>`, `<blockquote>`). Regex: dopasuj `^<p>\s*(.*)\s*</p>$` i tylko wtedy, gdy wnętrze zawiera `<(h[1-6]|p|ul|ol|blockquote|div)\b`.
-2. **Usuwa dyrektywy AI** typu `:antCitation[...]{...}`, `:cite[...]{...}` — regex `/:ant[A-Za-z]+\[[^\]]*\]\{[^}]*\}/g` oraz ogólniejszy `/:\w+\[[^\]]*\]\{[^}]*\}/g`.
-3. Trim wielokrotnych spacji między tagami blokowymi (kosmetyka).
-
-Helper trafia do `src/lib/unescapeHtmlIfEncoded.ts` → przemianować mentalnie na „sanitizer" albo dodać nowy plik `src/lib/sanitizePastedHtml.ts` i wołać obie funkcje razem.
-
-### B. Warstwa renderująca (`ReckiReview.tsx`, `BlinkPage.tsx`)
-W `parseContent` — po `unescapeHtmlIfEncoded`, przed `normalizeMarkdownInHtml` — wywołać ten sam `sanitizePastedHtml`. Dzięki temu stare rekordy w bazie od razu wyglądają dobrze bez migracji, a nowe zapisy też są bezpieczne (defense-in-depth).
-
-### C. Handler wklejania (`RichTextEditor.tsx`)
-W `handlePaste`, w gałęziach „encoded HTML" i „raw HTML", przed wstawieniem do TipTapa również przepuścić przez `sanitizePastedHtml`. Wtedy edytor od początku pokazuje czystą treść, a autor widzi to samo co czytelnik.
-
-### D. Migracja czyszcząca istniejące rekordy (jednorazowa)
-SQL na `reviews` i `posts`:
-- usunięcie dyrektyw `:antXxx[...]{...}` przez `regexp_replace`,
-- rozpakowanie zewnętrznego `<p>...</p>` gdy w środku jest `<h2|<h3|<p |<ul|<ol` — warunek `content ~ '^<p>\s*<'` i `content ~ '</p>\s*$'` + wewnątrz są bloki.
-
-Migracja idempotentna, dotknie tylko rzędów pasujących do wzorca (dziś: 2 recenzje + 1 z cytacjami).
-
----
-
-## Pliki do zmiany
-- `src/lib/unescapeHtmlIfEncoded.ts` — dodać `sanitizePastedHtml` (albo nowy plik)
-- `src/components/admin/RichTextEditor.tsx` — użyć sanitizera w `handlePaste` i w dialogu „Wklej HTML"
-- `src/pages/admin/ReviewEditor.tsx`, `src/pages/admin/PostEditor.tsx` — sanitizer przed zapisem
-- `src/pages/ReckiReview.tsx`, `src/pages/BlinkPage.tsx` — sanitizer w `parseContent` i w `dangerouslySetInnerHTML`
-- Migracja SQL — cleanup `reviews` + `posts`
-
-## Efekt
-- Recenzja Nuphy Air75 V2 wyświetli się z prawidłowymi nagłówkami, akapitami i odstępami.
-- Znika tekst `:antCitation[]{...}`.
-- Przyszłe wklejki (z ChatGPT / Claude / Docs / view-source) same się czyszczą na trzech warstwach.
+## Pliki
+- `src/components/recki/ReviewCard.tsx` — dodać wariant `mini`
+- `src/pages/ReckiHome.tsx` — zmienić `variant="compact"` → `variant="mini"` w aside

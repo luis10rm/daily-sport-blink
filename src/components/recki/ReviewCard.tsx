@@ -5,7 +5,7 @@ import { ScoreBadge } from "./ScoreBadge";
 
 interface Props {
   review: Review;
-  variant?: "default" | "hero" | "compact";
+  variant?: "default" | "hero" | "compact" | "mini";
 }
 
 export const ReviewCard = ({ review, variant = "default" }: Props) => {
@@ -80,6 +80,43 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
       </article>
     );
   }
+  if (variant === "mini") {
+    return (
+      <a
+        {...navLink(to)}
+        className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
+      >
+        <div className="relative aspect-[16/9] overflow-hidden bg-muted">
+          {review.cover_image_url ? (
+            <img
+              src={review.cover_image_url}
+              alt={review.title}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-full w-full bg-gradient-to-br from-fuchsia-600/20 to-pink-600/20" />
+          )}
+          {review.score !== null && (
+            <div className="absolute right-2 top-2">
+              <ScoreBadge score={review.score} size="sm" />
+            </div>
+          )}
+        </div>
+        <div className="flex flex-1 flex-col p-3">
+          {review.category && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-fuchsia-600 dark:text-fuchsia-300">
+              {review.category.name}
+            </span>
+          )}
+          <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-foreground group-hover:text-fuchsia-600 dark:group-hover:text-fuchsia-300">
+            {review.title}
+          </h3>
+        </div>
+      </a>
+    );
+  }
+
 
   return (
     <article className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg">
