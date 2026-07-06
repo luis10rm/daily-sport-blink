@@ -1,0 +1,1 @@
+ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS force_index boolean NOT NULL DEFAULT false;

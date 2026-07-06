@@ -794,6 +794,7 @@ export type Database = {
           channel: string
           created_at: string | null
           description: string | null
+          force_index: boolean
           id: string
           name: string
           post_count: number | null
@@ -804,6 +805,7 @@ export type Database = {
           channel?: string
           created_at?: string | null
           description?: string | null
+          force_index?: boolean
           id?: string
           name: string
           post_count?: number | null
@@ -814,6 +816,7 @@ export type Database = {
           channel?: string
           created_at?: string | null
           description?: string | null
+          force_index?: boolean
           id?: string
           name?: string
           post_count?: number | null
