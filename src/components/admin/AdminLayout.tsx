@@ -42,6 +42,7 @@ const navItems = [
   { href: "/admin/suggestions", label: "Propozycje newsów", icon: Sparkles, badge: "pendingSuggestions" as const },
   { href: "/admin/sources", label: "Źródła", icon: Globe },
   { href: "/admin/posts", label: "Posty (Sport)", icon: FileText },
+  { href: "/admin/duplikaty", label: "Duplikaty", icon: Copy },
   { href: "/admin/recki", label: "Tech", icon: Star },
   { href: "/admin/pozytywne", label: "Pozytywne", icon: Sun },
   { href: "/admin/pozytywne/kategorie", label: "Kategorie Pozytywnych", icon: FolderKanban, adminOnly: true },
