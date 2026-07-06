@@ -146,6 +146,14 @@ const PostEditor = () => {
   const [customFacebookCaption, setCustomFacebookCaption] = useState("");
   const [showFacebookDialog, setShowFacebookDialog] = useState(false);
 
+  // Duplicate-title safeguard state (only used when creating a new post)
+  const [similarPost, setSimilarPost] = useState<{
+    title: string;
+    slug: string;
+    similarity: number;
+  } | null>(null);
+  const [pendingSubmit, setPendingSubmit] = useState<PostFormData | null>(null);
+
   // Get current date/time formatted for datetime-local input
   const getCurrentDateTime = () => new Date().toISOString().slice(0, 16);
 
