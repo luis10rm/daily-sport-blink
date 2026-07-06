@@ -150,7 +150,7 @@ const BlinkPage = () => {
   });
 
   // Build full NewsArticle JSON-LD according to expert recommendations
-  const authorUrl = post.author?.slug ? `${SITE_URL}/redakcja/${post.author.slug}` : undefined;
+  const authorUrl = post.author?.slug ? `${SITE_URL}/autor/${post.author.slug}` : undefined;
   
   const newsArticleSchema = {
     type: "NewsArticle" as const,
