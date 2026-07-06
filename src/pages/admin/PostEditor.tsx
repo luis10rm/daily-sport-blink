@@ -312,7 +312,31 @@ const PostEditor = () => {
     }
   };
 
-  const onSubmit = async (data: PostFormData) => {
+  // Look up a near-duplicate post from the last 72 hours (only used when creating a new post).
+  // Returns the most similar post above the threshold, if any.
+  const findRecentSimilarPost = async (title: string) => {
+    const since = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from("posts")
+      .select("title, slug, published_at")
+      .eq("channel" as never, channel as never)
+      .gte("published_at", since)
+      .order("published_at", { ascending: false })
+      .limit(50);
+
+    if (error || !data) return null;
+
+    let best: { title: string; slug: string; similarity: number } | null = null;
+    for (const row of data as Array<{ title: string; slug: string }>) {
+      const score = titleSimilarity(title, row.title);
+      if (score >= 0.85 && (!best || score > best.similarity)) {
+        best = { title: row.title, slug: row.slug, similarity: score };
+      }
+    }
+    return best;
+  };
+
+  const performSave = async (data: PostFormData) => {
     const basePostData: any = {
       title: data.title,
       excerpt: data.excerpt,
@@ -339,6 +363,7 @@ const PostEditor = () => {
     let savedPostId = id;
 
     if (isEditing && id) {
+      // Slug is immutable: never send it on update. DB trigger also enforces this.
       await updatePost.mutateAsync({ id, ...postData });
     } else {
       const newPost = await createPost.mutateAsync({ ...postData, created_by: user?.id });
@@ -374,6 +399,19 @@ const PostEditor = () => {
     }
 
     navigate(channel === "positive" ? "/admin/pozytywne" : "/admin/posts");
+  };
+
+  const onSubmit = async (data: PostFormData) => {
+    // Only guard against duplicates when creating a new post
+    if (!isEditing) {
+      const match = await findRecentSimilarPost(data.title);
+      if (match) {
+        setSimilarPost(match);
+        setPendingSubmit(data);
+        return;
+      }
+    }
+    await performSave(data);
   };
 
   // Handle manual Facebook publish for existing posts
