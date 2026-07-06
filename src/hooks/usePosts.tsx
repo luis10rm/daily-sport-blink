@@ -222,6 +222,7 @@ export const useArchivedPosts = (filters?: {
         .from("posts")
         .select(POST_SELECT)
         .eq("channel" as never, "sport" as never)
+        .eq("is_hidden" as never, false as never)
         .lt("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
