@@ -24,20 +24,22 @@ serve(async (req) => {
       console.error("Error fetching posts:", postsError);
     }
 
-    // Fetch all categories
+    // Fetch all categories (exclude sponsored content — noindex)
     const { data: categories, error: catError } = await supabase
       .from("sport_categories")
-      .select("slug, updated_at");
+      .select("slug, updated_at")
+      .neq("slug", "wspo-praca-reklamowa");
 
     if (catError) {
       console.error("Error fetching categories:", catError);
     }
 
-    // Fetch all tags with posts
+    // Fetch tags that are actually indexable:
+    //   force_index = true  OR  post_count >= 4
     const { data: tags, error: tagsError } = await supabase
       .from("tags")
-      .select("slug, updated_at")
-      .gt("post_count", 0)
+      .select("slug, updated_at, post_count, force_index")
+      .or("force_index.eq.true,post_count.gte.4")
       .limit(500);
 
     if (tagsError) {
@@ -68,22 +70,10 @@ serve(async (req) => {
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>${SITE_URL}/archiwum</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>${SITE_URL}/autorzy</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tagi</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.7</priority>
   </url>
 `;
 

@@ -23,11 +23,13 @@ const TagPage = () => {
   // Use optimized hook that fetches posts by slug directly to avoid API cascade
   const { data: posts = [], isLoading: postsLoading } = usePostsByTagSlug(slug);
 
-  // SEO meta tags
+  // SEO meta tags — noindex,follow when tag has < 4 posts (unless force_index)
   useTagSEOMeta({
     name: tag?.name || "Tag",
     slug: slug || "",
     description: tag?.description || undefined,
+    postCount: posts.length,
+    forceIndex: (tag as { force_index?: boolean } | undefined)?.force_index ?? false,
   });
   // Rich SEO with full NewsArticle schema including isBasedOn for E-E-A-T
   const seoData = getRichItemListSEO(

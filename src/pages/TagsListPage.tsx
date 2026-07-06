@@ -19,7 +19,7 @@ import {
 const TagsListPage = () => {
   const { data: tags = [], isLoading } = useTags(1);
 
-  useSEOMeta({ title: "Tagi", description: "Lista wszystkich tagów w serwisie Szortsy. Przeglądaj wiadomości sportowe po tematach." });
+  useSEOMeta({ title: "Tagi", description: "Lista wszystkich tagów w serwisie Szortsy. Przeglądaj wiadomości sportowe po tematach.", robots: "noindex, follow" });
 
   // Group tags alphabetically
   const groupedTags = tags.reduce((acc, tag) => {
