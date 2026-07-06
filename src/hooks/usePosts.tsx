@@ -99,6 +99,7 @@ export const usePostsByDate = (date: string) => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("is_hidden" as never, false as never)
         .gte("published_at", startOfDay)
         .lte("published_at", endOfDay)
         .order("published_at", { ascending: false });
