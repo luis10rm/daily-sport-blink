@@ -45,7 +45,7 @@ export default function DailyPage() {
   const { data: posts = [], isLoading } = usePostsByDate(dateStr);
 
   const formattedDate = formatDatePl(safeDate);
-  useSEOMeta({ title: `Briefing sportowy — ${formattedDate}`, canonical: `https://szortsy.pl/dzien/${dateStr}` });
+  useSEOMeta({ title: `Briefing sportowy — ${formattedDate}`, canonical: `https://szortsy.pl/dzien/${dateStr}`, robots: "noindex, follow" });
 
   const prevDate = format(subDays(safeDate, 1), "yyyy-MM-dd");
   const nextDate = addDays(safeDate, 1);
