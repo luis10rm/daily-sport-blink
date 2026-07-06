@@ -70,22 +70,10 @@ serve(async (req) => {
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>${SITE_URL}/archiwum</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>${SITE_URL}/autorzy</loc>
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tagi</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.7</priority>
   </url>
 `;
 
