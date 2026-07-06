@@ -200,6 +200,7 @@ export const useAuthorStats = (authorId: string) => {
         .from("posts")
         .select("category_id, sport_category:sport_categories!fk_posts_category(name)")
         .eq("author_id", authorId)
+        .eq("is_hidden" as never, false as never)
         .lte("published_at", new Date().toISOString());
 
       if (categoryError) throw categoryError;
