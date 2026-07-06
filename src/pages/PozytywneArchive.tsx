@@ -44,6 +44,7 @@ const PozytywneArchive = () => {
     title: "Archiwum – Pozytywne wiadomości | Szortsy",
     description: "Archiwum pozytywnych wiadomości ze Szortsy. Wszystko, co dobre, dłużej niż tydzień.",
     canonical: "https://szortsy.pl/pozytywne/archiwum",
+    robots: "noindex, follow",
   });
 
   return (
