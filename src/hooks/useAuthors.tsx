@@ -221,6 +221,7 @@ export const useAuthorStats = (authorId: string) => {
         .from("posts")
         .select("published_at")
         .eq("author_id", authorId)
+        .eq("is_hidden" as never, false as never)
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: true })
         .limit(1)
