@@ -51,15 +51,38 @@ const AI_DIRECTIVE_RE = /:[a-zA-Z][\w]*\[[^\]]*\]\{[^}]*\}/g;
 function unwrapRedundantOuterParagraph(s: string): string {
   let out = s.trim();
   for (let i = 0; i < 3; i++) {
-    const m = out.match(/^<p>([\s\S]*)<\/p>$/i);
-    if (!m) break;
-    const inner = m[1];
-    // Only unwrap if inner contains block tags AND has no unbalanced </p> that would break structure
+    if (!/^<p\b[^>]*>/i.test(out) || !/<\/p>$/i.test(out)) break;
+    // Only unwrap when the entire string is a SINGLE <p>...</p> block
+    // (i.e. no intermediate </p> that would indicate sibling paragraphs).
+    // Detect by walking tag depth for <p> elements.
+    let depth = 0;
+    let sawClosingBeforeEnd = false;
+    const tagRe = /<(\/?)p\b[^>]*>/gi;
+    let match: RegExpExecArray | null;
+    let firstOpenIdx = -1;
+    let lastCloseIdx = -1;
+    while ((match = tagRe.exec(out)) !== null) {
+      const isClose = match[1] === "/";
+      if (isClose) {
+        depth--;
+        lastCloseIdx = match.index;
+        if (depth === 0 && match.index + match[0].length < out.length) {
+          sawClosingBeforeEnd = true;
+          break;
+        }
+      } else {
+        if (firstOpenIdx === -1) firstOpenIdx = match.index;
+        depth++;
+      }
+    }
+    if (sawClosingBeforeEnd || firstOpenIdx !== 0 || lastCloseIdx === -1) break;
+    const inner = out.slice(out.indexOf(">") + 1, lastCloseIdx);
     if (!BLOCK_TAG_INSIDE_RE.test(inner)) break;
     out = inner.trim();
   }
   return out;
 }
+
 
 /**
  * Remove leftover AI directive syntax (Claude/Anthropic `:antCitation[...]{...}` and similar).
