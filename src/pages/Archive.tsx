@@ -26,6 +26,7 @@ const Archive = () => {
     title: "Archiwum",
     description: "Przeglądaj archiwalne artykuły sportowe starsze niż 7 dni. Piłka nożna, tenis, F1, MMA i więcej na Szortsy.",
     canonical: "https://szortsy.pl/archiwum",
+    robots: "noindex, follow",
   });
   
   const { data: posts = [], isLoading } = useArchivedPosts({
