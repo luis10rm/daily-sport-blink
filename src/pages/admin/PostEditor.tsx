@@ -1084,6 +1084,65 @@ const PostEditor = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Duplicate title safeguard */}
+        <AlertDialog
+          open={!!similarPost}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSimilarPost(null);
+              setPendingSubmit(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Podobny artykuł już istnieje</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-2">
+                  <p>
+                    W ciągu ostatnich 72 godzin opublikowano artykuł o bardzo podobnym tytule
+                    {similarPost ? ` (${Math.round(similarPost.similarity * 100)}% zgodności)` : ""}:
+                  </p>
+                  {similarPost && (
+                    <a
+                      href={`/blink/${similarPost.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-md border border-border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                    >
+                      {similarPost.title}
+                    </a>
+                  )}
+                  <p>
+                    Czy na pewno chcesz utworzyć nowy artykuł, zamiast zaktualizować istniejący?
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  if (similarPost) {
+                    window.open(`/blink/${similarPost.slug}`, "_blank", "noopener");
+                  }
+                }}
+              >
+                Otwórz istniejący
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  const data = pendingSubmit;
+                  setSimilarPost(null);
+                  setPendingSubmit(null);
+                  if (data) await performSave(data);
+                }}
+              >
+                Utwórz mimo to
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );
