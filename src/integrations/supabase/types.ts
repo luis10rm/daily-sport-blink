@@ -351,6 +351,42 @@ export type Database = {
         }
         Relationships: []
       }
+      post_redirects: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          from_slug: string
+          from_url: string
+          hits: number
+          reason: string
+          to_slug: string
+          to_url: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          from_slug: string
+          from_url: string
+          hits?: number
+          reason?: string
+          to_slug: string
+          to_url: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          from_slug?: string
+          from_url?: string
+          hits?: number
+          reason?: string
+          to_slug?: string
+          to_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author_id: string | null
@@ -362,10 +398,12 @@ export type Database = {
           excerpt: string
           id: string
           image_url: string | null
+          is_hidden: boolean
           is_news_of_day: boolean
           is_sponsored: boolean
           positive_category_id: string | null
           published_at: string
+          redirect_to_post_id: string | null
           slug: string
           source_url: string
           tags: string[] | null
@@ -382,10 +420,12 @@ export type Database = {
           excerpt: string
           id?: string
           image_url?: string | null
+          is_hidden?: boolean
           is_news_of_day?: boolean
           is_sponsored?: boolean
           positive_category_id?: string | null
           published_at?: string
+          redirect_to_post_id?: string | null
           slug: string
           source_url: string
           tags?: string[] | null
@@ -402,10 +442,12 @@ export type Database = {
           excerpt?: string
           id?: string
           image_url?: string | null
+          is_hidden?: boolean
           is_news_of_day?: boolean
           is_sponsored?: boolean
           positive_category_id?: string | null
           published_at?: string
+          redirect_to_post_id?: string | null
           slug?: string
           source_url?: string
           tags?: string[] | null
@@ -439,6 +481,13 @@ export type Database = {
             columns: ["positive_category_id"]
             isOneToOne: false
             referencedRelation: "positive_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "posts_redirect_to_post_id_fkey"
+            columns: ["redirect_to_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
             referencedColumns: ["id"]
           },
         ]
