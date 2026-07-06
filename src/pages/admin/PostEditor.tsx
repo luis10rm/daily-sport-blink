@@ -49,6 +49,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
+import { titleSimilarity } from "@/lib/titleSimilarity";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Categories are now fetched dynamically from sport_categories table
 
