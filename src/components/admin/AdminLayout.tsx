@@ -31,6 +31,7 @@ import {
   Star,
   Sun,
   Copy,
+  Tag,
 } from "lucide-react";
 
 interface AdminLayoutProps {
