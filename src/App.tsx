@@ -49,6 +49,7 @@ const PositivePostsList = lazy(() => import("./pages/admin/PositivePostsList"));
 const PositiveCategoriesList = lazy(() => import("./pages/admin/PositiveCategoriesList"));
 const PositiveCategoryEditor = lazy(() => import("./pages/admin/PositiveCategoryEditor"));
 const DuplicatesList = lazy(() => import("./pages/admin/DuplicatesList"));
+const TagsList = lazy(() => import("./pages/admin/TagsList"));
 import { TournamentTheme } from "@/components/TournamentTheme";
 
 
