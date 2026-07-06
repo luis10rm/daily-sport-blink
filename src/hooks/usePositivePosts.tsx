@@ -38,6 +38,7 @@ export const usePositivePostsFeed = () => {
         .from("posts")
         .select(POSITIVE_POST_SELECT)
         .eq("channel", "positive")
+        .eq("is_hidden", false)
         .gte("published_at", sevenDaysAgo)
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false });
