@@ -169,6 +169,7 @@ export const useAuthorPosts = (authorId: string) => {
         .from("posts")
         .select("*, sport_category:sport_categories!fk_posts_category(*)")
         .eq("author_id", authorId)
+        .eq("is_hidden" as never, false as never)
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false });
 
