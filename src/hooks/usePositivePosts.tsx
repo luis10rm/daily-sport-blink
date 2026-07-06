@@ -104,6 +104,7 @@ export const useTodaysPositivePosts = () => {
         .from("posts")
         .select(POSITIVE_POST_SELECT)
         .eq("channel", "positive")
+        .eq("is_hidden", false)
         .gte("published_at", start)
         .lte("published_at", end)
         .order("published_at", { ascending: false });
