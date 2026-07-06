@@ -19,7 +19,7 @@ const AuthorProfile = () => {
   useSEOMeta({
     title: author?.display_name || "Profil autora",
     description: author?.bio || undefined,
-    canonical: slug ? `https://szortsy.pl/redakcja/${slug}` : undefined,
+    canonical: slug ? `https://szortsy.pl/autor/${slug}` : undefined,
   });
 
   if (authorLoading) {
