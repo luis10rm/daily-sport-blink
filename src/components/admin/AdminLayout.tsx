@@ -44,6 +44,7 @@ const navItems = [
   { href: "/admin/sources", label: "Źródła", icon: Globe },
   { href: "/admin/posts", label: "Posty (Sport)", icon: FileText },
   { href: "/admin/duplikaty", label: "Duplikaty", icon: Copy },
+  { href: "/admin/tagi", label: "Tagi (SEO)", icon: Tag },
   { href: "/admin/recki", label: "Tech", icon: Star },
   { href: "/admin/pozytywne", label: "Pozytywne", icon: Sun },
   { href: "/admin/pozytywne/kategorie", label: "Kategorie Pozytywnych", icon: FolderKanban, adminOnly: true },
