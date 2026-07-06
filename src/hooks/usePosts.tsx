@@ -76,6 +76,7 @@ export const usePosts = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("is_hidden" as never, false as never)
         .order("published_at", { ascending: false });
 
       if (error) throw error;
