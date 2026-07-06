@@ -39,20 +39,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadRoles = async (userId: string) => {
+      const r = await fetchUserRoles(userId);
+      if (!cancelled) {
+        setRoles(r);
+        setLoading(false);
+      }
+    };
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
 
-        // Defer role fetching with setTimeout to avoid deadlock
         if (session?.user) {
+          // Keep loading=true until roles arrive, so ProtectedRoute
+          // doesn't flash "Brak dostępu" before roles resolve.
+          setLoading(true);
+          // Defer to avoid deadlock inside the auth callback
           setTimeout(() => {
-            fetchUserRoles(session.user.id).then(setRoles);
+            loadRoles(session.user.id);
           }, 0);
         } else {
           setRoles([]);
+          setLoading(false);
         }
       }
     );
@@ -61,15 +74,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
 
       if (session?.user) {
-        fetchUserRoles(session.user.id).then(setRoles);
+        loadRoles(session.user.id);
+      } else {
+        setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
+
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
