@@ -124,6 +124,7 @@ export const useTodaysPosts = () => {
         .from("posts")
         .select(POST_SELECT)
         .eq("channel" as never, "sport" as never)
+        .eq("is_hidden" as never, false as never)
         .gte("published_at", startOfDay)
         .lte("published_at", endOfDay)
         .order("published_at", { ascending: false });
