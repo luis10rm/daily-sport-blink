@@ -165,6 +165,7 @@ export const useNewsOfTheDay = () => {
         .from("posts")
         .select(POST_SELECT)
         .eq("channel" as never, "sport" as never)
+        .eq("is_hidden" as never, false as never)
         .eq("is_news_of_day", true)
         .order("published_at", { ascending: false })
         .limit(1)
