@@ -49,6 +49,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
+import { titleSimilarity } from "@/lib/titleSimilarity";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Categories are now fetched dynamically from sport_categories table
 
@@ -134,6 +145,14 @@ const PostEditor = () => {
   const [publishToFacebook, setPublishToFacebook] = useState(false);
   const [customFacebookCaption, setCustomFacebookCaption] = useState("");
   const [showFacebookDialog, setShowFacebookDialog] = useState(false);
+
+  // Duplicate-title safeguard state (only used when creating a new post)
+  const [similarPost, setSimilarPost] = useState<{
+    title: string;
+    slug: string;
+    similarity: number;
+  } | null>(null);
+  const [pendingSubmit, setPendingSubmit] = useState<PostFormData | null>(null);
 
   // Get current date/time formatted for datetime-local input
   const getCurrentDateTime = () => new Date().toISOString().slice(0, 16);
@@ -293,7 +312,31 @@ const PostEditor = () => {
     }
   };
 
-  const onSubmit = async (data: PostFormData) => {
+  // Look up a near-duplicate post from the last 72 hours (only used when creating a new post).
+  // Returns the most similar post above the threshold, if any.
+  const findRecentSimilarPost = async (title: string) => {
+    const since = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from("posts")
+      .select("title, slug, published_at")
+      .eq("channel" as never, channel as never)
+      .gte("published_at", since)
+      .order("published_at", { ascending: false })
+      .limit(50);
+
+    if (error || !data) return null;
+
+    let best: { title: string; slug: string; similarity: number } | null = null;
+    for (const row of data as Array<{ title: string; slug: string }>) {
+      const score = titleSimilarity(title, row.title);
+      if (score >= 0.85 && (!best || score > best.similarity)) {
+        best = { title: row.title, slug: row.slug, similarity: score };
+      }
+    }
+    return best;
+  };
+
+  const performSave = async (data: PostFormData) => {
     const basePostData: any = {
       title: data.title,
       excerpt: data.excerpt,
@@ -320,6 +363,7 @@ const PostEditor = () => {
     let savedPostId = id;
 
     if (isEditing && id) {
+      // Slug is immutable: never send it on update. DB trigger also enforces this.
       await updatePost.mutateAsync({ id, ...postData });
     } else {
       const newPost = await createPost.mutateAsync({ ...postData, created_by: user?.id });
@@ -355,6 +399,19 @@ const PostEditor = () => {
     }
 
     navigate(channel === "positive" ? "/admin/pozytywne" : "/admin/posts");
+  };
+
+  const onSubmit = async (data: PostFormData) => {
+    // Only guard against duplicates when creating a new post
+    if (!isEditing) {
+      const match = await findRecentSimilarPost(data.title);
+      if (match) {
+        setSimilarPost(match);
+        setPendingSubmit(data);
+        return;
+      }
+    }
+    await performSave(data);
   };
 
   // Handle manual Facebook publish for existing posts
@@ -1027,6 +1084,65 @@ const PostEditor = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Duplicate title safeguard */}
+        <AlertDialog
+          open={!!similarPost}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSimilarPost(null);
+              setPendingSubmit(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Podobny artykuł już istnieje</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-2">
+                  <p>
+                    W ciągu ostatnich 72 godzin opublikowano artykuł o bardzo podobnym tytule
+                    {similarPost ? ` (${Math.round(similarPost.similarity * 100)}% zgodności)` : ""}:
+                  </p>
+                  {similarPost && (
+                    <a
+                      href={`/blink/${similarPost.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-md border border-border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                    >
+                      {similarPost.title}
+                    </a>
+                  )}
+                  <p>
+                    Czy na pewno chcesz utworzyć nowy artykuł, zamiast zaktualizować istniejący?
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  if (similarPost) {
+                    window.open(`/blink/${similarPost.slug}`, "_blank", "noopener");
+                  }
+                }}
+              >
+                Otwórz istniejący
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  const data = pendingSubmit;
+                  setSimilarPost(null);
+                  setPendingSubmit(null);
+                  if (data) await performSave(data);
+                }}
+              >
+                Utwórz mimo to
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   );
