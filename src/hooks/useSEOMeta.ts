@@ -193,13 +193,21 @@ export const useCategorySEOMeta = (category: {
   slug: string;
   description?: string;
 }) => {
+  // Sponsored content category — never index
+  const isSponsored = category.slug === "wspo-praca-reklamowa";
   useSEOMeta({
     title: `${category.name} - Wiadomości`,
     description: category.description || `Najnowsze wiadomości sportowe z kategorii ${category.name}. Śledź wszystkie newsy na Szortsy.`,
     canonical: `https://szortsy.pl/kategoria/${category.slug}`,
-    robots: "index, follow",
+    robots: isSponsored ? "noindex, follow" : "index, follow",
   });
 };
+
+/**
+ * Tag indexability threshold. Tags with fewer than this number of published
+ * articles are noindex,follow unless an editor sets `force_index = true`.
+ */
+export const TAG_INDEX_MIN_POSTS = 4;
 
 /**
  * Preset for tag pages
@@ -208,11 +216,15 @@ export const useTagSEOMeta = (tag: {
   name: string;
   slug: string;
   description?: string;
+  postCount?: number;
+  forceIndex?: boolean;
 }) => {
+  const shouldNoindex =
+    !tag.forceIndex && (tag.postCount ?? 0) < TAG_INDEX_MIN_POSTS;
   useSEOMeta({
     title: tag.name,
     description: tag.description || `Wszystkie wiadomości sportowe związane z ${tag.name}. Śledź najnowsze informacje na Szortsy.`,
     canonical: `https://szortsy.pl/tag/${tag.slug}`,
-    robots: "index, follow",
+    robots: shouldNoindex ? "noindex, follow" : "index, follow",
   });
 };
