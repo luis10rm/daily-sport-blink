@@ -48,6 +48,7 @@ const ReviewEditor = lazy(() => import("./pages/admin/ReviewEditor"));
 const PositivePostsList = lazy(() => import("./pages/admin/PositivePostsList"));
 const PositiveCategoriesList = lazy(() => import("./pages/admin/PositiveCategoriesList"));
 const PositiveCategoryEditor = lazy(() => import("./pages/admin/PositiveCategoryEditor"));
+const DuplicatesList = lazy(() => import("./pages/admin/DuplicatesList"));
 import { TournamentTheme } from "@/components/TournamentTheme";
 
 
@@ -130,6 +131,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <PostEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/duplikaty"
+              element={
+                <ProtectedRoute>
+                  <DuplicatesList />
                 </ProtectedRoute>
               }
             />

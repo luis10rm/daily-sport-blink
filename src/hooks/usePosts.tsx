@@ -76,6 +76,7 @@ export const usePosts = () => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("is_hidden" as never, false as never)
         .order("published_at", { ascending: false });
 
       if (error) throw error;
@@ -98,6 +99,7 @@ export const usePostsByDate = (date: string) => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        .eq("is_hidden" as never, false as never)
         .gte("published_at", startOfDay)
         .lte("published_at", endOfDay)
         .order("published_at", { ascending: false });
@@ -122,6 +124,7 @@ export const useTodaysPosts = () => {
         .from("posts")
         .select(POST_SELECT)
         .eq("channel" as never, "sport" as never)
+        .eq("is_hidden" as never, false as never)
         .gte("published_at", startOfDay)
         .lte("published_at", endOfDay)
         .order("published_at", { ascending: false });
@@ -143,6 +146,7 @@ export const useRecentPosts = () => {
         .from("posts")
         .select(POST_SELECT)
         .eq("channel" as never, "sport" as never)
+        .eq("is_hidden" as never, false as never)
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
@@ -161,6 +165,7 @@ export const useNewsOfTheDay = () => {
         .from("posts")
         .select(POST_SELECT)
         .eq("channel" as never, "sport" as never)
+        .eq("is_hidden" as never, false as never)
         .eq("is_news_of_day", true)
         .order("published_at", { ascending: false })
         .limit(1)
@@ -183,6 +188,7 @@ export const usePostsFeed = () => {
         .from("posts")
         .select(POST_SELECT)
         .eq("channel" as never, "sport" as never)
+        .eq("is_hidden" as never, false as never)
         .eq("is_news_of_day", false)
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
@@ -216,6 +222,7 @@ export const useArchivedPosts = (filters?: {
         .from("posts")
         .select(POST_SELECT)
         .eq("channel" as never, "sport" as never)
+        .eq("is_hidden" as never, false as never)
         .lt("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 

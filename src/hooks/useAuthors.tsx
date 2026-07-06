@@ -169,6 +169,7 @@ export const useAuthorPosts = (authorId: string) => {
         .from("posts")
         .select("*, sport_category:sport_categories!fk_posts_category(*)")
         .eq("author_id", authorId)
+        .eq("is_hidden" as never, false as never)
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false });
 
@@ -189,6 +190,7 @@ export const useAuthorStats = (authorId: string) => {
         .from("posts")
         .select("*", { count: "exact", head: true })
         .eq("author_id", authorId)
+        .eq("is_hidden" as never, false as never)
         .lte("published_at", new Date().toISOString());
 
       if (countError) throw countError;
@@ -198,6 +200,7 @@ export const useAuthorStats = (authorId: string) => {
         .from("posts")
         .select("category_id, sport_category:sport_categories!fk_posts_category(name)")
         .eq("author_id", authorId)
+        .eq("is_hidden" as never, false as never)
         .lte("published_at", new Date().toISOString());
 
       if (categoryError) throw categoryError;
@@ -218,6 +221,7 @@ export const useAuthorStats = (authorId: string) => {
         .from("posts")
         .select("published_at")
         .eq("author_id", authorId)
+        .eq("is_hidden" as never, false as never)
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: true })
         .limit(1)

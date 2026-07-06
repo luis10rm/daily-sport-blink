@@ -23,6 +23,7 @@ const usePositiveArchive = () => {
           "*, positive_category:positive_categories!posts_positive_category_id_fkey(id, slug, name, icon_name, icon_url, bg_color), author:authors(id, display_name, avatar_url, slug, role_title)",
         )
         .eq("channel", "positive")
+        .eq("is_hidden", false)
         .lt("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
       if (error) throw error;

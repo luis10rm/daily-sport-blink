@@ -23,6 +23,7 @@ const useAuthorsPostsCounts = (authorIds: string[]) => {
           .from("posts")
           .select("*", { count: "exact", head: true })
           .eq("author_id", authorId)
+          .eq("is_hidden" as never, false as never)
           .lte("published_at", new Date().toISOString());
 
         if (!error && count !== null) {

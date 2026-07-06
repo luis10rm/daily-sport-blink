@@ -38,6 +38,7 @@ export const usePositivePostsFeed = () => {
         .from("posts")
         .select(POSITIVE_POST_SELECT)
         .eq("channel", "positive")
+        .eq("is_hidden", false)
         .gte("published_at", sevenDaysAgo)
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false });
@@ -64,6 +65,7 @@ export const usePositivePostsByCategory = (categorySlug?: string) => {
         .from("posts")
         .select(POSITIVE_POST_SELECT)
         .eq("channel", "positive")
+        .eq("is_hidden", false)
         .eq("positive_category_id", (cat as any).id)
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
@@ -102,6 +104,7 @@ export const useTodaysPositivePosts = () => {
         .from("posts")
         .select(POSITIVE_POST_SELECT)
         .eq("channel", "positive")
+        .eq("is_hidden", false)
         .gte("published_at", start)
         .lte("published_at", end)
         .order("published_at", { ascending: false });

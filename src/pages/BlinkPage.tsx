@@ -141,6 +141,29 @@ const BlinkPage = () => {
     );
   }
 
+  // Fallback for hidden/merged posts if the Cloudflare Worker didn't intercept
+  // (e.g. Lovable preview domains). The Worker serves a real HTTP 301 in production.
+  const anyPost = post as unknown as { is_hidden?: boolean; redirect_to_post_id?: string | null };
+  if (anyPost.is_hidden && anyPost.redirect_to_post_id) {
+    return (
+      <div className="min-h-screen bg-background">
+        <ActiveHeader />
+        <main className="container mx-auto px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold mb-4">Ten artykuł został przeniesiony</h1>
+          <p className="text-muted-foreground mb-6">
+            Aktualna wersja jest dostępna pod nowym adresem.
+          </p>
+          <Button asChild>
+            <a {...navLink(homeHref)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Wróć na stronę główną
+            </a>
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
   const formattedDate = new Date(post.published_at).toLocaleDateString("pl-PL", {
     day: "numeric",
     month: "long",

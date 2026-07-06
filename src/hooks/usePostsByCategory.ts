@@ -24,6 +24,7 @@ export const usePostsByCategory = (categorySlug: string | undefined) => {
         .from("posts")
         .select(POST_SELECT)
         .eq("category_id", category.id)
+        .eq("is_hidden" as never, false as never)
         .gte("published_at", sevenDaysAgo)
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false });
@@ -56,6 +57,7 @@ export const useArchivedPostsByCategory = (categorySlug: string | undefined) => 
         .from("posts")
         .select(POST_SELECT)
         .eq("category_id", category.id)
+        .eq("is_hidden" as never, false as never)
         .lt("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
