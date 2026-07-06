@@ -65,6 +65,7 @@ export const usePositivePostsByCategory = (categorySlug?: string) => {
         .from("posts")
         .select(POSITIVE_POST_SELECT)
         .eq("channel", "positive")
+        .eq("is_hidden", false)
         .eq("positive_category_id", (cat as any).id)
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
