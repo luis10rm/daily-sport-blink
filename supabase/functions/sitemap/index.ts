@@ -11,11 +11,12 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY")!
     );
 
-    // Fetch all published posts
+    // Fetch all published, visible posts
     const { data: posts, error: postsError } = await supabase
       .from("posts")
       .select("slug, updated_at, published_at")
       .lte("published_at", new Date().toISOString())
+      .eq("is_hidden", false)
       .order("published_at", { ascending: false })
       .limit(1000);
 
