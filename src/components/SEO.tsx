@@ -95,8 +95,8 @@ export const getWebsiteSEO = () => ({
 
 // Full NewsArticle schema for individual posts (used on BlinkPage)
 export const getNewsArticleSEO = (post: Post) => {
-  // Use /redakcja/ path per SEO expert recommendation
-  const authorUrl = post.author?.slug ? `${SITE_URL}/redakcja/${post.author.slug}` : undefined;
+  // Use /autor/ path per SEO expert recommendation
+  const authorUrl = post.author?.slug ? `${SITE_URL}/autor/${post.author.slug}` : undefined;
   
   return {
     type: "NewsArticle" as const,
@@ -211,8 +211,8 @@ export const getRichItemListSEO = (name: string, posts: Post[]) => ({
           author: {
             "@type": "Person",
             name: post.author.display_name,
-            // Use /redakcja/ path per SEO expert recommendation
-            ...(post.author.slug && { url: `${SITE_URL}/redakcja/${post.author.slug}` }),
+            // Use /autor/ path per SEO expert recommendation
+            ...(post.author.slug && { url: `${SITE_URL}/autor/${post.author.slug}` }),
           },
         }),
         // isBasedOn as direct URL string
@@ -238,8 +238,8 @@ export const getPersonSEO = (
     name,
     ...(description && { description }),
     ...(image && { image }),
-    // Use /redakcja/ path per SEO expert recommendation
-    ...(slug && { url: `${SITE_URL}/redakcja/${slug}` }),
+    // Use /autor/ path per SEO expert recommendation
+    ...(slug && { url: `${SITE_URL}/autor/${slug}` }),
     // Affiliation with Daily Sport Blink
     worksFor: {
       "@type": "Organization",
