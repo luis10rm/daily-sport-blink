@@ -1,85 +1,60 @@
-
 ## Cel
 
-Kontrolować indeksowanie stron listingowych/pomocniczych przez `<meta name="robots">` obecny **w początkowej odpowiedzi HTML** (żeby Googlebot na pewno go zobaczył), plus ręczny override dla strategicznych tagów.
+Kampania Google Ads Performance Max nastawiona na **ruch na artykuły / świadomość marki** dla szortsy.pl — agregatora sportowych newsów 60-sekundowych. Kampania powstanie jako pauzowana; budżet, płatność i uruchomienie zostaną w rękach użytkownika po stronie Google Ads.
 
-## Kontekst techniczny
+## Materiały wyjściowe (już mam)
 
-Aplikacja to Vite SPA — `index.html` jest statyczny, więc `react-helmet-async` wstrzykuje tagi dopiero po hydratacji. Aby spełnić wymóg SSR, wykorzystamy istniejący **Cloudflare Worker** (ten sam, który obsługuje redirecty `/blink/*` i legacy `/news/*`) do przepisywania HTML zwracanego przez origin i wstrzykiwania `<meta name="robots">` przed `</head>`.
+- Nazwa marki: **Szortsy**
+- Logo: `logo-icon.png` (pomarańczowa ikonka "S" z megafonem) oraz `logo-text.png` (z wordmarkiem) — użyję ich do groundingu i jako logo kampanii
+- Ton wizualny live'a: minimalistyczne białe/pastel tło, akcenty pomarańcz + emerald, ikony sportów w kółkach, mocno "sport-first"
+- Brak własnych zdjęć / screenów — generuję wszystko od zera, grounding na loga i screencie strony
 
-Dodatkowo ustawiamy ten sam tag przez Helmet po stronie klienta jako drugi tor (dla przeglądarek/narzędzi wykonujących JS oraz jako fallback, gdyby Worker akurat nie zadziałał).
+## Krok 1 — 3 kierunki kreacji (po jednym kadrze square na każdy)
 
-## Zmiany
+Zaproponuję 3 wyraźnie różne podejścia, każde jako pojedynczy obrazek 1200x1200 do porównania. **Zatrzymam się i poczekam na Twój wybór** — dopiero potem rozbuduję pełny set.
 
-### 1. Baza danych — migracja
+- **Kierunek A — "Sport w 60 sekund"**: fotograficzny kadr sportowy (piłkarz, biegacz albo koszykarz w akcji) z subtelnym, naturalnym countdown-timerem 60s wpisanym w scenę. Emocja + obietnica krótkiego formatu.
+- **Kierunek B — "Wszystkie dyscypliny w jednym miejscu"**: dynamiczny kolaż/mozaika kadrów z różnych sportów (piłka, F1, tenis, koszykówka, MŚ 2026) — pokazuje szerokość agregatora i wielosportowość.
+- **Kierunek C — "Newsy w telefonie kibica"**: życiowa scena (osoba w metrze/kawiarni/na kanapie) z telefonem, na którym widać wystylizowany feed Szortsów. Buduje kontekst użycia i nawyk codziennego zaglądania.
 
-- `ALTER TABLE public.tags ADD COLUMN force_index boolean NOT NULL DEFAULT false;`
-- Bez zmian w RLS/GRANTach (tabela `tags` już ma publiczny SELECT).
+Każdy kierunek trzyma spójną paletę marki (pomarańcz + granat/emerald), bez tekstów reklamowych na obrazie, bez fake screenshotów UI, bez znaków obcych brandów/lig/klubów.
 
-### 2. Edge function `robots-meta` (nowa, publiczna, bez JWT)
+## Krok 2 — po wyborze kierunku: pełny set obrazów
 
-`GET /functions/v1/robots-meta?path=<pathname>` zwraca JSON:
-```json
-{ "robots": "noindex, follow" }   // lub null gdy strona ma być indeksowalna
-```
-Logika:
-- Zawsze `noindex, follow` dla ścieżek pasujących do:
-  - `/dzien/*`
-  - `/podsumowanie/*`
-  - `/archiwum` (dokładne)
-  - `/tagi` (dokładne)
-  - `/kategoria/wspo-praca-reklamowa` (dokładne)
-- Dla `/tag/{slug}`:
-  - `SELECT force_index, post_count FROM tags WHERE slug = $1` (channel-agnostic, bierzemy max post_count),
-  - `force_index = true` → brak meta (indeksowalne),
-  - w przeciwnym razie liczymy realnie opublikowane posty w tagu (published_at <= now(), is_hidden=false), aby nie polegać na potencjalnie nieaktualnym `post_count`,
-  - `count < 4` → `noindex, follow`, inaczej brak meta.
-- Wszystkie inne ścieżki → `null`.
-- Krótki cache: `Cache-Control: public, max-age=60, s-maxage=60`.
+Pod wybrany kierunek wygeneruję zestaw pod Performance Max, każdy kadr komponowany osobno (nie ten sam obraz w 3 crop'ach):
 
-### 3. Cloudflare Worker (rozszerzenie istniejącego)
+- **4x square** 1200×1200
+- **4x landscape** 1200×628 (komponowane na szeroko, potem docięte do dokładnie 1200×628 by uniknąć rundowania modelu)
+- **2x portrait** 960×1200
 
-Dołóż blok, który dla żądań `GET` z `Accept: text/html`:
-1. Pobiera odpowiedź HTML z origina.
-2. Woła `robots-meta?path=<url.pathname>` (z timeoutem ~200 ms; przy błędzie pomija).
-3. Jeśli endpoint zwrócił wartość, używa `HTMLRewriter` i wstrzykuje przed `</head>`:
-   ```html
-   <meta name="robots" content="noindex, follow">
-   ```
-   Jednocześnie usuwa ewentualny istniejący `<meta name="robots">` z `index.html` (na wypadek gdyby był), żeby nie było duplikatów.
-4. Zwraca zmodyfikowany HTML z nagłówkiem `X-Robots-Injected: 1` (do debugowania) oraz `Cache-Control` respektującym origin.
+Wszystkie pliki lądują w `/mnt/documents/ads/` z krótkimi nazwami typu `szortsy-stadium-square-1.jpg`. Pokażę je w galerii do akceptacji — będzie można podmienić pojedyncze kadry.
 
-Snippet dostarczę do wklejenia (user samodzielnie wdroży w swoim Workerze — tak samo jak przy redirectach).
+## Krok 3 — copy (osobno, po zamknięciu obrazów)
 
-### 4. Fallback po stronie klienta (Helmet)
+Wspólna pula tekstów (rotowana przez Google z każdym obrazem, po polsku):
 
-W komponentach stron:
-- `src/pages/TagPage.tsx` — po pobraniu tagu i licznika postów: jeśli `!force_index && published_count < 4` → `<Helmet><meta name="robots" content="noindex, follow" /></Helmet>`.
-- `src/pages/TagsListPage.tsx`, `src/pages/PozytywneArchive.tsx` (o ile odpowiada `/archiwum` — do potwierdzenia), strony `/dzien/:date` i `/podsumowanie/:date`, oraz strona kategorii, gdy `slug === 'wspo-praca-reklamowa'` — stały `noindex, follow`.
-- Zapewnia to spójność dla Googlebota renderującego JS oraz jeśli Worker nie zdąży odpowiedzieć.
+- **11–15 headlines** (do 30 znaków, min. 2 krótsze niż 15)
+- **2–5 long headlines** (do 90 znaków)
+- **4–5 descriptions** (do 90 znaków)
 
-### 5. Panel admina — `force_index` na tagach
+Zaproponuję próbkę + tabelę, dopiszemy razem, dopiero potem zapiszę cały set.
 
-- W widoku zarządzania tagami (znajdę właściwy plik w `src/pages/admin/`): checkbox „Wymuś indeksowanie (force_index)" przy każdym tagu, zapis do Supabase.
-- Podgląd: liczba opublikowanych postów + status („indeksowany" / „noindex — poniżej progu" / „noindex — wymuszone przez próg, ale force_index wyłączony").
+## Krok 4 — dalsze kroki (poza tym planem, do zrobienia po akceptacji kreacji)
 
-### 6. Sitemap
+Robimy je dopiero jak reklamy są gotowe:
 
-- `supabase/functions/sitemap/index.ts`: wyklucz z sitemapy tagi, które byłyby `noindex` (czyli `force_index = false AND published_count < 4`). Strony `/dzien/*`, `/podsumowanie/*`, `/archiwum`, `/tagi`, `/kategoria/wspo-praca-reklamowa` też nie powinny w niej być — sprawdzę i w razie potrzeby usunę.
+1. Podłączenie konta Google (jednorazowo, workspace-level) i założenie/przypisanie konta Google Ads dla projektu
+2. Ustawienie pomiaru konwersji (dla awareness rekomenduję "wejście na artykuł + scroll/read" jako conversion event)
+3. Publikacja szortsy.pl jest już aktywna (widzę live) — landing OK
+4. Utworzenie kampanii **PAUSED** — budżet, waluta (PLN), rynek (Polska), sitelinki
+5. Ty w panelu Google Ads: dodajesz płatność, weryfikujesz reklamodawcę, włączasz kampanię
 
-## Weryfikacja
+## Uczciwe zastrzeżenia
 
-- `curl -H "Accept: text/html" https://szortsy.pl/tagi | grep robots` — powinno pokazać `noindex, follow`.
-- To samo dla `/tag/<slug-z-1-postem>` i `/dzien/2026-07-06`.
-- Dla popularnego tagu (≥4 posty) meta nie powinno się pojawić.
-- Po ustawieniu `force_index=true` na małym tagu meta znika bez deployu.
+- Szortsy to serwis darmowy bez „twardej" konwersji sprzedażowej — Google Ads dowiezie ruch, ale koszty potrafią rosnąć szybko. Kampania powstanie pauzowana, więc masz kontrolę.
+- Bez wideo Ad Strength realistycznie sięgnie „Good", nie „Excellent" — to normalne dla PMax bez YouTube assets.
+- Wszystkie kadry generowane; brak zdjęć konkretnych zawodników, klubów, lig, znaków MŚ / FIFA / UEFA (prawo autorskie/znaki towarowe).
 
-## Pliki
+## Co teraz
 
-**Nowe:** `supabase/functions/robots-meta/index.ts`, migracja SQL.
-**Edytowane:** `src/pages/TagPage.tsx`, `src/pages/TagsListPage.tsx`, `src/pages/PozytywneArchive.tsx` (lub właściwa strona `/archiwum`), strony `/dzien/*` i `/podsumowanie/*`, strona kategorii, panel admina tagów, `supabase/functions/sitemap/index.ts`.
-**Do samodzielnego wdrożenia przez użytkownika:** rozszerzenie Cloudflare Workera (dostarczę gotowy snippet).
-
-## Pytanie przed implementacją
-
-Czy potwierdzasz, że rozszerzenie Cloudflare Workera wykonasz samodzielnie (jak przy redirectach z poprzedniego zadania), a ja dostarczę tylko snippet do wklejenia? Jeśli wolisz, mogę pominąć część workerową i zostać wyłącznie przy Helmecie — ale wtedy nie będzie to ściśle „server-side" (Google zwykle to i tak łapie, ale jest to mniej pewne).
+Klikasz **Implement plan** → przechodzę do trybu build, generuję 3 kadry (po jednym na kierunek) i wracam z galerią do wyboru.
