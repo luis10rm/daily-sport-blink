@@ -1,60 +1,54 @@
-## Cel
+# Cross-promocja kanałów: Tabs + Cross-channel Strip
 
-Kampania Google Ads Performance Max nastawiona na **ruch na artykuły / świadomość marki** dla szortsy.pl — agregatora sportowych newsów 60-sekundowych. Kampania powstanie jako pauzowana; budżet, płatność i uruchomienie zostaną w rękach użytkownika po stronie Google Ads.
+Cel: dać użytkownikom sport.szortsy.pl widoczną, ale nienachalną świadomość kanałów Tech i Pozytywne oraz łatwą nawigację między nimi — bez uszczerbku dla ruchu sportowego.
 
-## Materiały wyjściowe (już mam)
+## 1) Header: `ChannelSwitcher` → 3 widoczne taby
 
-- Nazwa marki: **Szortsy**
-- Logo: `logo-icon.png` (pomarańczowa ikonka "S" z megafonem) oraz `logo-text.png` (z wordmarkiem) — użyję ich do groundingu i jako logo kampanii
-- Ton wizualny live'a: minimalistyczne białe/pastel tło, akcenty pomarańcz + emerald, ikony sportów w kółkach, mocno "sport-first"
-- Brak własnych zdjęć / screenów — generuję wszystko od zera, grounding na loga i screencie strony
+Zamiana obecnego dropdownu (jeden pill z chevronem) na 3 równorzędne, widoczne pigułki: **Sport · Tech · Pozytywne**. Aktywny kanał podświetlony kolorem kanału, nieaktywne w wersji ghost/outline z ikoną i etykietą.
 
-## Krok 1 — 3 kierunki kreacji (po jednym kadrze square na każdy)
+- Zachowujemy istniejący komponent `src/components/ChannelSwitcher.tsx` — przepisujemy render z `DropdownMenu` na segmentowany kontrolkę (3 × `Link`).
+- Desktop (≥ md): wszystkie 3 etykiety + ikony widoczne (`Sport`, `Tech`, `Pozytywne`).
+- Mobile (< md): 3 ikony + krótkie etykiety (`Sport / Tech / Poz.`) — lub same ikony jeśli brakuje miejsca w headerze; aktywna zawsze z etykietą.
+- Semantyka: `role="tablist"` z `aria-current="page"` na aktywnym.
+- Zero zmian w logice detekcji kanału (`detectChannel`) i w miejscach użycia (`Header`, `PozytywneHeader`, `ReckiHeader`) — kontrakt komponentu ten sam.
 
-Zaproponuję 3 wyraźnie różne podejścia, każde jako pojedynczy obrazek 1200x1200 do porównania. **Zatrzymam się i poczekam na Twój wybór** — dopiero potem rozbuduję pełny set.
+Efekt: świadomość istnienia Tech/Pozytywne w każdej sesji, bez dodatkowego kliknięcia w dropdown.
 
-- **Kierunek A — "Sport w 60 sekund"**: fotograficzny kadr sportowy (piłkarz, biegacz albo koszykarz w akcji) z subtelnym, naturalnym countdown-timerem 60s wpisanym w scenę. Emocja + obietnica krótkiego formatu.
-- **Kierunek B — "Wszystkie dyscypliny w jednym miejscu"**: dynamiczny kolaż/mozaika kadrów z różnych sportów (piłka, F1, tenis, koszykówka, MŚ 2026) — pokazuje szerokość agregatora i wielosportowość.
-- **Kierunek C — "Newsy w telefonie kibica"**: życiowa scena (osoba w metrze/kawiarni/na kanapie) z telefonem, na którym widać wystylizowany feed Szortsów. Buduje kontekst użycia i nawyk codziennego zaglądania.
+## 2) Cross-channel Strip pod hero (tylko strona sportowa)
 
-Każdy kierunek trzyma spójną paletę marki (pomarańcz + granat/emerald), bez tekstów reklamowych na obrazie, bez fake screenshotów UI, bez znaków obcych brandów/lig/klubów.
+Nowa sekcja poniżej `NewsOfTheDay` w `src/pages/Index.tsx`, prezentująca najświeższy kontent z pozostałych 2 kanałów. Umieszczenie: **po `NewsOfTheDay`, przed `MatchOfTheDay` / `FeedbackBox`**, żeby nie konkurować z hero i nie rozbijać głównego feedu sportowego.
 
-## Krok 2 — po wyborze kierunku: pełny set obrazów
+Layout desktop: dwie równe kolumny (Tech | Pozytywne), każda z:
+- nagłówkiem sekcji z ikoną i kolorem kanału ("Świeżo w Tech" / "Świeżo w Pozytywnych") + małym linkiem "Zobacz wszystko →" prowadzącym do `/tech` lub `/pozytywne`,
+- listą **2 najnowszych** artykułów z danego kanału (mały thumbnail + tytuł + data), klikalnych do `/blink/{slug}`.
 
-Pod wybrany kierunek wygeneruję zestaw pod Performance Max, każdy kadr komponowany osobno (nie ten sam obraz w 3 crop'ach):
+Layout mobile: kolumny układają się jedna pod drugą (`grid-cols-1 md:grid-cols-2`), po 2 karty na kanał — bez horyzontalnego scrolla, żeby uniknąć „carousel blindness”.
 
-- **4x square** 1200×1200
-- **4x landscape** 1200×628 (komponowane na szeroko, potem docięte do dokładnie 1200×628 by uniknąć rundowania modelu)
-- **2x portrait** 960×1200
+Wizualnie: subtelny border/tło w kolorze kanału (fuchsia dla Tech, lime dla Pozytywne) tak, by strip był rozpoznawalny jako „inny kanał”, ale nie krzyczał. Karty mniejsze niż główne `NewsCard` — to sygnał, że to sekundarny kontent.
 
-Wszystkie pliki lądują w `/mnt/documents/ads/` z krótkimi nazwami typu `szortsy-stadium-square-1.jpg`. Pokażę je w galerii do akceptacji — będzie można podmienić pojedyncze kadry.
+Nowy komponent: `src/components/CrossChannelStrip.tsx`
+- Pobiera po 2 najnowsze `published` posty dla `channel = 'tech'` i `channel = 'positive'` z ostatnich 14 dni.
+- Reużywa istniejących hooków: `usePostsFeed` (dodajemy opcjonalny arg `channel` + `limit`) lub — jeśli hook nie jest sparametryzowany — dedykowane query przez `supabase` w komponencie.
+- Ukrywa całą sekcję, jeśli oba kanały są puste (fail-safe).
 
-## Krok 3 — copy (osobno, po zamknięciu obrazów)
+Nie ruszamy: feedu głównego, StoriesRow, banerów, headerów kanałów Tech/Pozytywne.
 
-Wspólna pula tekstów (rotowana przez Google z każdym obrazem, po polsku):
+## Zakres techniczny
 
-- **11–15 headlines** (do 30 znaków, min. 2 krótsze niż 15)
-- **2–5 long headlines** (do 90 znaków)
-- **4–5 descriptions** (do 90 znaków)
+Pliki do zmiany / utworzenia:
+- `src/components/ChannelSwitcher.tsx` — przepisanie renderu na segmentowane taby (bez zmian API).
+- `src/pages/Index.tsx` — wstawienie `<CrossChannelStrip />` po `NewsOfTheDay`.
+- `src/components/CrossChannelStrip.tsx` — nowy komponent (klient-side query, skeleton, empty-safe).
+- Opcjonalnie: mały helper w `src/hooks/usePosts.tsx` do pobrania „latest by channel, limit N”, jeśli nie ma już takiego.
 
-Zaproponuję próbkę + tabelę, dopiszemy razem, dopiero potem zapiszę cały set.
+Poza zakresem (świadomie):
+- Nie ruszamy `PozytywneHome` ani `ReckiHome` — chcemy najpierw zwalidować mechanikę na największym ruchu (Sport), potem ewentualnie zreplikować.
+- Brak zmian w SEO/robots, sitemapie, edge functions.
 
-## Krok 4 — dalsze kroki (poza tym planem, do zrobienia po akceptacji kreacji)
+## Metryki sukcesu (do obserwacji po wdrożeniu)
 
-Robimy je dopiero jak reklamy są gotowe:
+- CTR z tabów Tech/Pozytywne w headerze (event na klik).
+- CTR ze strip’a (osobne eventy per kanał + per pozycja karty).
+- Utrzymanie / brak spadku CTR w głównym feedzie sportowym (kontrola kanibalizacji).
 
-1. Podłączenie konta Google (jednorazowo, workspace-level) i założenie/przypisanie konta Google Ads dla projektu
-2. Ustawienie pomiaru konwersji (dla awareness rekomenduję "wejście na artykuł + scroll/read" jako conversion event)
-3. Publikacja szortsy.pl jest już aktywna (widzę live) — landing OK
-4. Utworzenie kampanii **PAUSED** — budżet, waluta (PLN), rynek (Polska), sitelinki
-5. Ty w panelu Google Ads: dodajesz płatność, weryfikujesz reklamodawcę, włączasz kampanię
-
-## Uczciwe zastrzeżenia
-
-- Szortsy to serwis darmowy bez „twardej" konwersji sprzedażowej — Google Ads dowiezie ruch, ale koszty potrafią rosnąć szybko. Kampania powstanie pauzowana, więc masz kontrolę.
-- Bez wideo Ad Strength realistycznie sięgnie „Good", nie „Excellent" — to normalne dla PMax bez YouTube assets.
-- Wszystkie kadry generowane; brak zdjęć konkretnych zawodników, klubów, lig, znaków MŚ / FIFA / UEFA (prawo autorskie/znaki towarowe).
-
-## Co teraz
-
-Klikasz **Implement plan** → przechodzę do trybu build, generuję 3 kadry (po jednym na kierunek) i wracam z galerią do wyboru.
+Instrumentacja analityczna zostaje dodana w kolejnym kroku, o ile potwierdzisz jaki system eventów preferujesz (GA4 event names).

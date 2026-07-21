@@ -12,6 +12,7 @@ import { StoriesRow } from "@/components/StoriesRow";
 import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
 import { FeedbackBox } from "@/components/FeedbackBox";
 import { WorldCupHomeBanner } from "@/components/WorldCupHomeBanner";
+import { CrossChannelStrip } from "@/components/CrossChannelStrip";
 import { TodaysMatchesBanner } from "@/components/TodaysMatchesBanner";
 import { MatchOfTheDay } from "@/components/MatchOfTheDay";
 import { MultiSEO, getWebsiteSEO, getRichItemListSEO } from "@/components/SEO";
@@ -108,8 +109,12 @@ const Index = () => {
           />
         )}
 
+        {/* Cross-channel strip: latest from Tech + Pozytywne */}
+        <CrossChannelStrip className="mb-10" />
+
         {/* World Cup Match of the Day (only in tournament mode) */}
         <MatchOfTheDay />
+
 
         {/* Feedback Box */}
         <FeedbackBox className="mb-10" />
