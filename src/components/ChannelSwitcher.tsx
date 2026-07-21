@@ -1,39 +1,49 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { Cpu, Trophy, Sun, ChevronDown, Check } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Link, useLocation } from "react-router-dom";
+import { Cpu, Trophy, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type ChannelKey = "sport" | "tech" | "positive";
 
 const CHANNELS: Record<
   ChannelKey,
-  { label: string; href: string; Icon: typeof Trophy; classes: string; dot: string }
+  {
+    label: string;
+    shortLabel: string;
+    href: string;
+    Icon: typeof Trophy;
+    activeClasses: string;
+    idleClasses: string;
+  }
 > = {
   sport: {
     label: "Sport",
+    shortLabel: "Sport",
     href: "/",
     Icon: Trophy,
-    classes: "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-    dot: "bg-emerald-500",
+    activeClasses:
+      "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/40",
+    idleClasses:
+      "text-muted-foreground hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10",
   },
   tech: {
     label: "Tech",
+    shortLabel: "Tech",
     href: "/tech",
     Icon: Cpu,
-    classes: "border-fuchsia-600/40 bg-fuchsia-600/10 text-fuchsia-600 dark:text-fuchsia-300",
-    dot: "bg-fuchsia-500",
+    activeClasses:
+      "bg-fuchsia-600/15 text-fuchsia-700 dark:text-fuchsia-300 ring-1 ring-inset ring-fuchsia-600/40",
+    idleClasses:
+      "text-muted-foreground hover:text-fuchsia-700 dark:hover:text-fuchsia-300 hover:bg-fuchsia-600/10",
   },
   positive: {
     label: "Pozytywne",
+    shortLabel: "Poz.",
     href: "/pozytywne",
     Icon: Sun,
-    classes: "border-lime-500/50 bg-lime-500/10 text-lime-700 dark:text-lime-300",
-    dot: "bg-lime-500",
+    activeClasses:
+      "bg-lime-500/15 text-lime-800 dark:text-lime-300 ring-1 ring-inset ring-lime-500/50",
+    idleClasses:
+      "text-muted-foreground hover:text-lime-800 dark:hover:text-lime-300 hover:bg-lime-500/10",
   },
 };
 
@@ -44,49 +54,41 @@ const detectChannel = (pathname: string): ChannelKey => {
 };
 
 /**
- * Three-state channel switcher. Renders as a small pill with the current channel
- * label + icon; clicking opens a dropdown to switch between Sport / Tech / Pozytywne.
+ * Segmented three-tab channel switcher: Sport · Tech · Pozytywne.
+ * Renders all three channels visibly so users are always aware of the other
+ * sections. The active channel gets its channel color; idle tabs are muted.
  */
 export const ChannelSwitcher = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const active = detectChannel(location.pathname);
-  const { Icon: ActiveIcon, label: activeLabel, classes: activeClasses } = CHANNELS[active];
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
-            activeClasses,
-          )}
-          aria-label={`Aktywny kanał: ${activeLabel}. Zmień kanał`}
-        >
-          <ActiveIcon className="h-3.5 w-3.5" />
-          <span>{activeLabel}</span>
-          <ChevronDown className="h-3 w-3 opacity-70" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        {(Object.keys(CHANNELS) as ChannelKey[]).map((key) => {
-          const c = CHANNELS[key];
-          const isActive = key === active;
-          return (
-            <DropdownMenuItem
-              key={key}
-              onClick={() => !isActive && navigate(c.href)}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <span className={cn("h-2 w-2 rounded-full", c.dot)} />
-              <c.Icon className="h-4 w-4" />
-              <span className="flex-1">{c.label}</span>
-              {isActive && <Check className="h-3.5 w-3.5 opacity-70" />}
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <nav
+      role="tablist"
+      aria-label="Wybór kanału"
+      className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-background/60 p-0.5 backdrop-blur-sm"
+    >
+      {(Object.keys(CHANNELS) as ChannelKey[]).map((key) => {
+        const c = CHANNELS[key];
+        const isActive = key === active;
+        return (
+          <Link
+            key={key}
+            to={c.href}
+            role="tab"
+            aria-selected={isActive}
+            aria-current={isActive ? "page" : undefined}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-colors touch-manipulation",
+              isActive ? c.activeClasses : c.idleClasses,
+            )}
+          >
+            <c.Icon className="h-3.5 w-3.5 shrink-0" />
+            <span className="hidden sm:inline">{c.label}</span>
+            <span className="sm:hidden">{isActive ? c.label : c.shortLabel}</span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 };
