@@ -78,17 +78,27 @@ export const ChannelSwitcher = () => {
             role="tab"
             aria-selected={isActive}
             aria-current={isActive ? "page" : undefined}
+            aria-label={c.label}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-semibold transition-colors touch-manipulation",
+              "inline-flex items-center gap-1.5 rounded-full text-xs font-semibold transition-colors touch-manipulation",
+              // Idle na mobile: kompaktowa ikonowa pigułka. Na desktop pełny padding.
+              isActive
+                ? "px-2.5 py-1.5"
+                : "p-1.5 sm:px-2.5 sm:py-1.5",
               isActive ? c.activeClasses : c.idleClasses,
             )}
           >
             <c.Icon className="h-3.5 w-3.5 shrink-0" />
-            <span className="hidden sm:inline">{c.label}</span>
-            <span className="sm:hidden">{isActive ? c.label : c.shortLabel}</span>
+            {/* Aktywny: zawsze pokazuj label. Idle: tylko od sm w górę. */}
+            {isActive ? (
+              <span>{c.label}</span>
+            ) : (
+              <span className="hidden sm:inline">{c.label}</span>
+            )}
           </Link>
         );
       })}
+
     </nav>
   );
 };
