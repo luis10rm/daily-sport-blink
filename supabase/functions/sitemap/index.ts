@@ -179,16 +179,16 @@ serve(async (req) => {
       }
     }
 
-    // Add posts (articles) - with Google News extension for recent posts
+    // Sport-channel posts → /blink/{slug}
     if (posts?.length) {
-      xml += `\n  <!-- Articles -->\n`;
+      xml += `\n  <!-- Articles (sport) -->\n`;
       const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-      
+
       for (const post of posts) {
         const lastmod = (post.updated_at || post.published_at)?.split("T")[0] || today;
         const publishedDate = new Date(post.published_at);
         const isRecent = publishedDate > twoDaysAgo;
-        
+
         xml += `  <url>
     <loc>${SITE_URL}/blink/${post.slug}</loc>
     <lastmod>${lastmod}</lastmod>
@@ -198,9 +198,69 @@ serve(async (req) => {
       }
     }
 
+    // Positive-channel posts → /pozytywne/{category}/{slug}
+    if (positivePosts?.length) {
+      xml += `\n  <!-- Articles (positive) -->\n`;
+      for (const post of positivePosts as Array<{ slug: string; updated_at?: string; published_at: string; positive_category?: { slug?: string } | null }>) {
+        const catSlug = post.positive_category?.slug;
+        if (!catSlug) continue;
+        const lastmod = (post.updated_at || post.published_at)?.split("T")[0] || today;
+        xml += `  <url>
+    <loc>${SITE_URL}/pozytywne/${catSlug}/${post.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>\n`;
+      }
+    }
+
+    // Positive categories
+    if (positiveCategories?.length) {
+      xml += `\n  <!-- Positive categories -->\n`;
+      for (const cat of positiveCategories as Array<{ slug: string; updated_at?: string }>) {
+        const lastmod = cat.updated_at?.split("T")[0] || today;
+        xml += `  <url>
+    <loc>${SITE_URL}/pozytywne/kategoria/${cat.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>\n`;
+      }
+    }
+
+    // Tech review categories
+    if (reviewCategories?.length) {
+      xml += `\n  <!-- Tech categories -->\n`;
+      for (const cat of reviewCategories as Array<{ slug: string; updated_at?: string }>) {
+        const lastmod = cat.updated_at?.split("T")[0] || today;
+        xml += `  <url>
+    <loc>${SITE_URL}/tech/kategoria/${cat.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>\n`;
+      }
+    }
+
+    // Tech reviews → /tech/{category_slug}/{review_slug}
+    if (reviews?.length) {
+      xml += `\n  <!-- Tech reviews -->\n`;
+      for (const rev of reviews as Array<{ slug: string; updated_at?: string; published_at: string; category?: { slug?: string } | null }>) {
+        const catSlug = rev.category?.slug;
+        if (!catSlug) continue;
+        const lastmod = (rev.updated_at || rev.published_at)?.split("T")[0] || today;
+        xml += `  <url>
+    <loc>${SITE_URL}/tech/${catSlug}/${rev.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>\n`;
+      }
+    }
+
     xml += `</urlset>`;
 
-    console.log(`Generated sitemap with ${posts?.length || 0} posts, ${categories?.length || 0} categories, ${tags?.length || 0} tags, ${authors?.length || 0} authors`);
+    console.log(`Generated sitemap: ${posts?.length || 0} sport posts, ${positivePosts?.length || 0} positive posts, ${reviews?.length || 0} reviews, ${categories?.length || 0} sport cats, ${positiveCategories?.length || 0} positive cats, ${reviewCategories?.length || 0} tech cats, ${tags?.length || 0} tags, ${authors?.length || 0} authors`);
 
     return new Response(xml, {
       headers: {
