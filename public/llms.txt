@@ -1,25 +1,41 @@
 # Szortsy
 
-> Minimalistyczny agregator wiadomości sportowych. Krótkie, 60-sekundowe streszczenia najważniejszych wydarzeń sportowych w języku polskim. Czytelny układ, ciemny motyw, bez zbędnego balastu.
+> Minimalistyczny agregator wiadomości w trzech kanałach: Sport, Tech i Pozytywne. Krótkie, 60-sekundowe streszczenia w języku polskim. Czytelny układ, ciemny motyw, bez zbędnego balastu.
+
+## Kanały
+
+- **Sport** ([/](/)) — główny kanał: najnowsze wiadomości sportowe z ostatnich 7 dni.
+- **Tech** ([/tech](/tech)) — recenzje sprzętu i newsy technologiczne (smartfony, audio, gaming, smart home, AI).
+- **Pozytywne** ([/pozytywne](/pozytywne)) — wyłącznie pozytywne wiadomości z kraju i ze świata.
 
 ## Strony
 
-- [/](/): Strona główna — najnowsze wiadomości sportowe z ostatnich 7 dni.
+### Sport
+- [/](/): Strona główna sportu — najnowsze wiadomości z ostatnich 7 dni.
 - [/archiwum](/archiwum): Archiwum newsów starszych niż 7 dni z filtrowaniem po kategoriach.
-- [/blink/{slug}](/blink/przykladowy-artykul): Pełny artykuł — rozwinięcie newsa z nagłówkiem, treścią, obrazem i źródłem.
-- [/redakcja/{slug}](/redakcja/autor): Profil autora/redaktora z listą jego artykułów.
-- [/dzien/{data}](/dzien/2026-05-19): Podsumowanie dnia — timeline wszystkich newsów z wybranej daty.
+- [/blink/{slug}](/blink/przykladowy-artykul): Pełny artykuł sportowy.
+- [/kategoria/{slug}](/kategoria/pilka-nozna): Kategoria sportowa.
+- [/redakcja/{slug}](/redakcja/autor): Profil autora/redaktora.
+- [/dzien/{data}](/dzien/2026-05-19): Podsumowanie dnia — timeline newsów z wybranej daty.
 - [/tag/{slug}](/tag/pilka-nozna): Lista artykułów oznaczonych danym tagiem.
 - [/tags](/tags): Przegląd wszystkich dostępnych tagów.
+- [/mistrzostwa-swiata-2026](/mistrzostwa-swiata-2026): Hub Mistrzostw Świata 2026 (drabinka pucharowa, mecze, statystyki).
+
+### Tech
+- [/tech](/tech): Strona główna kanału Tech — recenzje i newsy.
+- [/tech/kategoria/{slug}](/tech/kategoria/smartfony): Kategoria Tech (np. smartfony, audio, gaming).
+- [/tech/{category}/{slug}](/tech/smartfony/recenzja-przykladowa): Pełna recenzja z werdyktem, plusami/minusami, galerią.
+
+### Pozytywne
+- [/pozytywne](/pozytywne): Strona główna kanału Pozytywne — dobre wiadomości.
+- [/pozytywne/archiwum](/pozytywne/archiwum): Archiwum pozytywnych wiadomości starszych niż 7 dni.
+- [/pozytywne/kategoria/{slug}](/pozytywne/kategoria/przyklad): Kategoria pozytywnych.
+- [/pozytywne/{category}/{slug}](/pozytywne/przyklad/przykladowy-artykul): Pełny artykuł pozytywny.
 
 ## Kategorie sportowe
 
 Strona główna i archiwum prezentują newsy pogrupowane w kategorie sportowe, m.in.:
-- Piłka noża
-- Piłka nożna — Liga Mistrzów
-- Piłka nożna — Liga Europy
-- Piłka nożna — Ekstraklasa
-- Piłka nożna — Euro 2024
+- Piłka nożna (Ekstraklasa, Liga Mistrzów, Liga Europy, Euro, Mistrzostwa Świata 2026)
 - Koszykówka
 - Siatkówka
 - Tenis
@@ -32,7 +48,7 @@ Strona główna i archiwum prezentują newsy pogrupowane w kategorie sportowe, m
 
 ## Ważne zasady
 
-- Treści są generowane i kuratowane przez zespół redakcyjny oraz wspierane przez AI.
+- Treści są kuratowane przez zespół redakcyjny i wspierane przez AI.
 - Każdy artykuł zawiera link do oryginalnego źródła (atrybucja).
 - Strona jest zoptymalizowana pod urządzenia mobilne (PWA).
 - Język serwisu: polski.
@@ -41,4 +57,5 @@ Strona główna i archiwum prezentują newsy pogrupowane w kategorie sportowe, m
 
 - URL kanoniczny: https://www.szortsy.pl
 - Język: pl-PL
-- Schemat danych: NewsArticle (schema.org) dla każdego artykułu.
+- Schemat danych: NewsArticle (schema.org) dla artykułów sportowych i pozytywnych; Review (schema.org) planowany dla recenzji Tech.
+- Sitemap: https://sitemap.szortsy.pl/

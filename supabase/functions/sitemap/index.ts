@@ -11,12 +11,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY")!
     );
 
-    // Fetch all published, visible posts
+    const nowIso = new Date().toISOString();
+
+    // Sport channel posts → /blink/{slug}
     const { data: posts, error: postsError } = await supabase
       .from("posts")
       .select("slug, updated_at, published_at")
-      .lte("published_at", new Date().toISOString())
+      .lte("published_at", nowIso)
       .eq("is_hidden", false)
+      .eq("channel", "sport")
       .order("published_at", { ascending: false })
       .limit(1000);
 
@@ -24,7 +27,34 @@ serve(async (req) => {
       console.error("Error fetching posts:", postsError);
     }
 
-    // Fetch all categories (exclude sponsored content — noindex)
+    // Positive channel posts → /pozytywne/{category_slug}/{slug}
+    const { data: positivePosts, error: positivePostsError } = await supabase
+      .from("posts")
+      .select("slug, updated_at, published_at, positive_category:positive_categories!posts_positive_category_id_fkey(slug)")
+      .lte("published_at", nowIso)
+      .eq("is_hidden", false)
+      .eq("channel", "positive")
+      .order("published_at", { ascending: false })
+      .limit(1000);
+
+    if (positivePostsError) {
+      console.error("Error fetching positive posts:", positivePostsError);
+    }
+
+    // Tech reviews → /tech/{category_slug}/{slug}
+    const { data: reviews, error: reviewsError } = await supabase
+      .from("reviews")
+      .select("slug, updated_at, published_at, category:review_categories!reviews_category_id_fkey(slug)")
+      .eq("status", "published")
+      .lte("published_at", nowIso)
+      .order("published_at", { ascending: false })
+      .limit(1000);
+
+    if (reviewsError) {
+      console.error("Error fetching reviews:", reviewsError);
+    }
+
+    // Sport categories (exclude sponsored — noindex)
     const { data: categories, error: catError } = await supabase
       .from("sport_categories")
       .select("slug, updated_at")
@@ -34,8 +64,26 @@ serve(async (req) => {
       console.error("Error fetching categories:", catError);
     }
 
-    // Fetch tags that are actually indexable:
-    //   force_index = true  OR  post_count >= 4
+    // Positive categories
+    const { data: positiveCategories, error: posCatError } = await supabase
+      .from("positive_categories")
+      .select("slug, updated_at")
+      .eq("is_active", true);
+
+    if (posCatError) {
+      console.error("Error fetching positive categories:", posCatError);
+    }
+
+    // Tech review categories
+    const { data: reviewCategories, error: revCatError } = await supabase
+      .from("review_categories")
+      .select("slug, updated_at");
+
+    if (revCatError) {
+      console.error("Error fetching review categories:", revCatError);
+    }
+
+    // Tags with force_index OR post_count >= 4
     const { data: tags, error: tagsError } = await supabase
       .from("tags")
       .select("slug, updated_at, post_count, force_index")
@@ -46,7 +94,7 @@ serve(async (req) => {
       console.error("Error fetching tags:", tagsError);
     }
 
-    // Fetch public authors
+    // Public authors
     const { data: authors, error: authorsError } = await supabase
       .from("authors")
       .select("slug, updated_at")
@@ -74,6 +122,18 @@ serve(async (req) => {
     <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>${SITE_URL}/tech</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>${SITE_URL}/pozytywne</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
 `;
 
@@ -119,16 +179,16 @@ serve(async (req) => {
       }
     }
 
-    // Add posts (articles) - with Google News extension for recent posts
+    // Sport-channel posts → /blink/{slug}
     if (posts?.length) {
-      xml += `\n  <!-- Articles -->\n`;
+      xml += `\n  <!-- Articles (sport) -->\n`;
       const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
-      
+
       for (const post of posts) {
         const lastmod = (post.updated_at || post.published_at)?.split("T")[0] || today;
         const publishedDate = new Date(post.published_at);
         const isRecent = publishedDate > twoDaysAgo;
-        
+
         xml += `  <url>
     <loc>${SITE_URL}/blink/${post.slug}</loc>
     <lastmod>${lastmod}</lastmod>
@@ -138,9 +198,69 @@ serve(async (req) => {
       }
     }
 
+    // Positive-channel posts → /pozytywne/{category}/{slug}
+    if (positivePosts?.length) {
+      xml += `\n  <!-- Articles (positive) -->\n`;
+      for (const post of positivePosts as Array<{ slug: string; updated_at?: string; published_at: string; positive_category?: { slug?: string } | null }>) {
+        const catSlug = post.positive_category?.slug;
+        if (!catSlug) continue;
+        const lastmod = (post.updated_at || post.published_at)?.split("T")[0] || today;
+        xml += `  <url>
+    <loc>${SITE_URL}/pozytywne/${catSlug}/${post.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>\n`;
+      }
+    }
+
+    // Positive categories
+    if (positiveCategories?.length) {
+      xml += `\n  <!-- Positive categories -->\n`;
+      for (const cat of positiveCategories as Array<{ slug: string; updated_at?: string }>) {
+        const lastmod = cat.updated_at?.split("T")[0] || today;
+        xml += `  <url>
+    <loc>${SITE_URL}/pozytywne/kategoria/${cat.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>\n`;
+      }
+    }
+
+    // Tech review categories
+    if (reviewCategories?.length) {
+      xml += `\n  <!-- Tech categories -->\n`;
+      for (const cat of reviewCategories as Array<{ slug: string; updated_at?: string }>) {
+        const lastmod = cat.updated_at?.split("T")[0] || today;
+        xml += `  <url>
+    <loc>${SITE_URL}/tech/kategoria/${cat.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>\n`;
+      }
+    }
+
+    // Tech reviews → /tech/{category_slug}/{review_slug}
+    if (reviews?.length) {
+      xml += `\n  <!-- Tech reviews -->\n`;
+      for (const rev of reviews as Array<{ slug: string; updated_at?: string; published_at: string; category?: { slug?: string } | null }>) {
+        const catSlug = rev.category?.slug;
+        if (!catSlug) continue;
+        const lastmod = (rev.updated_at || rev.published_at)?.split("T")[0] || today;
+        xml += `  <url>
+    <loc>${SITE_URL}/tech/${catSlug}/${rev.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>\n`;
+      }
+    }
+
     xml += `</urlset>`;
 
-    console.log(`Generated sitemap with ${posts?.length || 0} posts, ${categories?.length || 0} categories, ${tags?.length || 0} tags, ${authors?.length || 0} authors`);
+    console.log(`Generated sitemap: ${posts?.length || 0} sport posts, ${positivePosts?.length || 0} positive posts, ${reviews?.length || 0} reviews, ${categories?.length || 0} sport cats, ${positiveCategories?.length || 0} positive cats, ${reviewCategories?.length || 0} tech cats, ${tags?.length || 0} tags, ${authors?.length || 0} authors`);
 
     return new Response(xml, {
       headers: {

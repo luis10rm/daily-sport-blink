@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Button } from "@/components/ui/button";
 import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const ReckiReview = () => {
   const { slug } = useParams();
@@ -35,6 +36,20 @@ const ReckiReview = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [slug]);
+
+  const canonicalPath = review?.category?.slug && review?.slug
+    ? `https://szortsy.pl/tech/${review.category.slug}/${review.slug}`
+    : `https://szortsy.pl/tech`;
+  useSEOMeta({
+    title: review?.title ?? "Tech — recenzja",
+    description: review?.excerpt || review?.verdict || "Recenzja na Szortsy Tech.",
+    canonical: canonicalPath,
+    ogType: "article",
+    ogImage: review?.cover_image_url || undefined,
+    articlePublishedTime: review?.published_at || undefined,
+    articleModifiedTime: review?.updated_at || undefined,
+    articleSection: review?.category?.name,
+  });
 
   const related = allReviews
     .filter((r) => r.id !== review?.id && r.category?.id === review?.category?.id)

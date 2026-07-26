@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const ReckiHome = () => {
   const { data: reviews = [], isLoading } = usePublishedReviews();
@@ -23,6 +24,12 @@ const ReckiHome = () => {
     document.documentElement.classList.add("mode-recki");
     return () => document.documentElement.classList.remove("mode-recki");
   }, []);
+
+  useSEOMeta({
+    title: "Tech — recenzje sprzętu i newsy technologiczne",
+    description: "Krótkie, konkretne recenzje smartfonów, audio, gamingu, smart home i AI. Bez lania wody.",
+    canonical: "https://szortsy.pl/tech",
+  });
 
   const useHeroLayout = reviews.length >= 4;
   const hero = useHeroLayout ? reviews[0] : null;

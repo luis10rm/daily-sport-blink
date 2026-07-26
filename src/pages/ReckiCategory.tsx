@@ -5,6 +5,7 @@ import { ReckiFooter } from "@/components/recki/ReckiFooter";
 import { ReviewCard } from "@/components/recki/ReviewCard";
 import { usePublishedReviews, useReviewCategories } from "@/hooks/useReviews";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const ReckiCategory = () => {
   const { slug } = useParams();
@@ -16,6 +17,12 @@ const ReckiCategory = () => {
     document.documentElement.classList.add("mode-recki");
     return () => document.documentElement.classList.remove("mode-recki");
   }, []);
+
+  useSEOMeta({
+    title: category ? `Tech — ${category.name}` : "Tech — kategoria",
+    description: category?.description || `Recenzje i newsy z kategorii ${category?.name ?? slug} na Szortsy Tech.`,
+    canonical: `https://szortsy.pl/tech/kategoria/${slug ?? ""}`,
+  });
 
   return (
     <div className="min-h-screen flex flex-col">
