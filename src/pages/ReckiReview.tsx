@@ -13,6 +13,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Button } from "@/components/ui/button";
 import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const ReckiReview = () => {
   const { slug } = useParams();

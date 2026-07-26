@@ -25,6 +25,12 @@ const ReckiHome = () => {
     return () => document.documentElement.classList.remove("mode-recki");
   }, []);
 
+  useSEOMeta({
+    title: "Tech — recenzje sprzętu i newsy technologiczne",
+    description: "Krótkie, konkretne recenzje smartfonów, audio, gamingu, smart home i AI. Bez lania wody.",
+    canonical: "https://szortsy.pl/tech",
+  });
+
   const useHeroLayout = reviews.length >= 4;
   const hero = useHeroLayout ? reviews[0] : null;
   const secondary = useHeroLayout ? reviews.slice(1, 4) : [];
