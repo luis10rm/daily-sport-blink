@@ -11,12 +11,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY")!
     );
 
-    // Fetch all published, visible posts
+    const nowIso = new Date().toISOString();
+
+    // Sport channel posts → /blink/{slug}
     const { data: posts, error: postsError } = await supabase
       .from("posts")
       .select("slug, updated_at, published_at")
-      .lte("published_at", new Date().toISOString())
+      .lte("published_at", nowIso)
       .eq("is_hidden", false)
+      .eq("channel", "sport")
       .order("published_at", { ascending: false })
       .limit(1000);
 
@@ -24,7 +27,34 @@ serve(async (req) => {
       console.error("Error fetching posts:", postsError);
     }
 
-    // Fetch all categories (exclude sponsored content — noindex)
+    // Positive channel posts → /pozytywne/{category_slug}/{slug}
+    const { data: positivePosts, error: positivePostsError } = await supabase
+      .from("posts")
+      .select("slug, updated_at, published_at, positive_category:positive_categories!posts_positive_category_id_fkey(slug)")
+      .lte("published_at", nowIso)
+      .eq("is_hidden", false)
+      .eq("channel", "positive")
+      .order("published_at", { ascending: false })
+      .limit(1000);
+
+    if (positivePostsError) {
+      console.error("Error fetching positive posts:", positivePostsError);
+    }
+
+    // Tech reviews → /tech/{category_slug}/{slug}
+    const { data: reviews, error: reviewsError } = await supabase
+      .from("reviews")
+      .select("slug, updated_at, published_at, category:review_categories!reviews_category_id_fkey(slug)")
+      .eq("status", "published")
+      .lte("published_at", nowIso)
+      .order("published_at", { ascending: false })
+      .limit(1000);
+
+    if (reviewsError) {
+      console.error("Error fetching reviews:", reviewsError);
+    }
+
+    // Sport categories (exclude sponsored — noindex)
     const { data: categories, error: catError } = await supabase
       .from("sport_categories")
       .select("slug, updated_at")
@@ -34,8 +64,26 @@ serve(async (req) => {
       console.error("Error fetching categories:", catError);
     }
 
-    // Fetch tags that are actually indexable:
-    //   force_index = true  OR  post_count >= 4
+    // Positive categories
+    const { data: positiveCategories, error: posCatError } = await supabase
+      .from("positive_categories")
+      .select("slug, updated_at")
+      .eq("is_active", true);
+
+    if (posCatError) {
+      console.error("Error fetching positive categories:", posCatError);
+    }
+
+    // Tech review categories
+    const { data: reviewCategories, error: revCatError } = await supabase
+      .from("review_categories")
+      .select("slug, updated_at");
+
+    if (revCatError) {
+      console.error("Error fetching review categories:", revCatError);
+    }
+
+    // Tags with force_index OR post_count >= 4
     const { data: tags, error: tagsError } = await supabase
       .from("tags")
       .select("slug, updated_at, post_count, force_index")
@@ -46,7 +94,7 @@ serve(async (req) => {
       console.error("Error fetching tags:", tagsError);
     }
 
-    // Fetch public authors
+    // Public authors
     const { data: authors, error: authorsError } = await supabase
       .from("authors")
       .select("slug, updated_at")
