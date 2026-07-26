@@ -9,8 +9,20 @@ export interface ReviewCategory {
   name: string;
   slug: string;
   description: string | null;
+  icon_url: string | null;
   color: string | null;
   sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReviewCategoryInput {
+  name: string;
+  slug: string;
+  description?: string | null;
+  icon_url?: string | null;
+  color?: string | null;
+  sort_order?: number;
 }
 
 export interface Review {
