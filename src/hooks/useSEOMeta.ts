@@ -169,11 +169,12 @@ export const useArticleSEOMeta = (article: {
   author?: { display_name: string } | null;
   sport_category?: { name: string } | null;
   tags?: string[] | null;
+  canonical?: string;
 }) => {
   useSEOMeta({
     title: article.title,
     description: article.excerpt,
-    canonical: `https://szortsy.pl/blink/${article.slug}`,
+    canonical: article.canonical || `https://szortsy.pl/blink/${article.slug}`,
     robots: "index, follow",
     ogType: "article",
     ogImage: article.image_url || undefined,

@@ -88,6 +88,10 @@ const BlinkPage = () => {
 
 
   // Use new SEO meta hook for all meta tags
+  const positiveCatSlug = (post as any)?.positive_category?.slug as string | undefined;
+  const articleCanonical = isPositive && positiveCatSlug && post?.slug
+    ? `https://szortsy.pl/pozytywne/${positiveCatSlug}/${post.slug}`
+    : undefined;
   useArticleSEOMeta(post ? {
     title: post.title,
     excerpt: post.excerpt,
@@ -98,6 +102,7 @@ const BlinkPage = () => {
     author: post.author,
     sport_category: post.sport_category,
     tags: post.tags,
+    canonical: articleCanonical,
   } : {
     title: "Ładowanie...",
     excerpt: "",
