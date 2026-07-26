@@ -22,6 +22,7 @@ import {
   useReviewCategory,
   useCreateReviewCategory,
   useUpdateReviewCategory,
+  type ReviewCategoryInput,
 } from "@/hooks/useReviews";
 
 const slugify = (s: string) =>
