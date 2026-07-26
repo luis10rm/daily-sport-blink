@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "react-router-dom";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const ReckiHome = () => {
   const { data: reviews = [], isLoading } = usePublishedReviews();
