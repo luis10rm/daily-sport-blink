@@ -1,74 +1,67 @@
-## Cel
+## Wyniki audytu indeksacji: Tech i Pozytywne
 
-Dodać w panelu administracyjnym dedykowaną zakładkę **„Kategorie Tech"** do zarządzania kategoriami recenzji (tabela `review_categories`) — analogicznie do istniejących paneli Kategorii Sportowych i Kategorii Pozytywnych.
+### Co sprawdziłem
+- Routing w `src/App.tsx` (Tech = `/tech/*`, Pozytywne = `/pozytywne/*`).
+- Meta tagi na stronach (`useSEOMeta` / `useArticleSEOMeta`).
+- Edge function `sitemap` i `robots-meta`.
+- Live sitemap (1544 URL) i live `/tech` (HTML z serwera).
+- `public/robots.txt` i `public/llms.txt`.
 
-## Obecny stan
+### Znalezione problemy
 
-- Tabela `review_categories` już istnieje w bazie i ma wszystkie potrzebne pola: `id`, `name`, `slug`, `description`, `icon_url`, `color`, `sort_order`, `created_at`, `updated_at`.
-- Polityki RLS i GRANT-y są już skonfigurowane: admin/redaktor może tworzyć / edytować / usuwać, wszyscy mogą widzieć.
-- W frontendzie jest tylko hook `useReviewCategories` (pobieranie listy). Nie ma hooków do tworzenia, edycji, usuwania ani zmiany kolejności.
-- W menu admina brak pozycji „Kategorie Tech".
-- W `ReviewEditor.tsx` kategoria jest wybierana z selecta, ale nie ma szybkiego tworzenia kategorii z poziomu formularza (w przeciwieństwie do PostEditora dla Sportu).
+**1. Sitemap nie zawiera Tech ani Pozytywne (krytyczne)**
+Sitemap generuje wyłącznie `/`, `/autorzy`, `/kategoria/*` (sport), `/redakcja/*`, `/tag/*` i `/blink/*`. Brak:
+- `/tech`, `/tech/kategoria/{slug}`, `/tech/{category}/{slug}` — cały kanał Tech (recenzje z tabeli `reviews`) nie jest w ogóle w sitemap. Google nie ma jak ich znaleźć poza linkami wewnętrznymi.
+- `/pozytywne`, `/pozytywne/kategoria/{slug}` — kanałowa strona główna i kategorie Pozytywnych.
+- Query `posts` w sitemapie nie filtruje po `channel`, więc posty pozytywne trafiają do sitemap jako `/blink/{slug}` — działa, ale jest niespójne z kanałową nawigacją.
 
-## Plan wdrożenia
+**2. Strony Tech nie mają meta SEO (krytyczne)**
+`ReckiHome.tsx`, `ReckiReview.tsx`, `ReckiCategory.tsx` w ogóle nie wołają `useSEOMeta`. Skutek: title="Szortsy - Wiadomości sportowe...", brak `canonical`, brak `description` dostosowanego do treści, brak `og:*` dla recenzji. Potwierdzone `curl`em na `https://szortsy.pl/tech`.
 
-### 1. Rozszerzenie hooków kategorii Tech
+**3. Duplikat URL dla postów Pozytywnych (średnie)**
+Post pozytywny ma dwa działające adresy: `/blink/{slug}` (canonical z `useArticleSEOMeta`) i `/pozytywne/{category}/{slug}` (route w `App.tsx` → też renderuje `BlinkPage`). Bez `canonical` wskazującego jednoznacznie na jeden z nich ryzyko duplicate content.
 
-W pliku `src/hooks/useReviews.tsx` dodać:
-- `useReviewCategory(id)` — pobieranie jednej kategorii.
-- `useCreateReviewCategory()` — tworzenie nowej kategorii.
-- `useUpdateReviewCategory()` — aktualizacja kategorii.
-- `useDeleteReviewCategory()` — usuwanie z walidacją, czy nie ma przypisanych recenzji.
-- `useReorderReviewCategories()` — zmiana kolejności (analogicznie do sportowych).
+**4. Brak Tech w robots-meta (mały)**
+Edge function nie ma reguł dla `/tech/*` (domyślnie index, follow — OK), ale warto potwierdzić że `wspo-praca-reklamowa`-styl noindex nie ma odpowiednika np. dla ukrytych kategorii Tech (obecnie brak takiej potrzeby).
 
-### 2. Lista kategorii Tech
+**5. `public/llms.txt` nieaktualne (mały)**
+Wymienia tylko kanał sportowy — brak sekcji Tech i Pozytywne.
 
-Nowy plik: `src/pages/admin/ReviewCategoriesList.tsx`
-- Tabela z kolumnami: podgląd koloru, nazwa, slug, kolejność, akcje.
-- Przyciski: edytuj, usuń.
-- Przycisk „Nowa kategoria" w nagłówku.
-- Drag-and-drop do zmiany kolejności (tak jak w `CategoriesList.tsx`).
-- Dialog potwierdzenia usunięcia.
+**6. Config OK ✅**
+- `robots.txt` — wpuszcza Googlebot / Googlebot-News, wskazuje `sitemap.szortsy.pl`.
+- `useSEOMeta` — poprawnie ustawia canonical, og, twitter, robots.
+- `robots-meta` edge function — poprawnie obsługuje tag threshold i static noindex paths.
 
-### 3. Edytor kategorii Tech
+---
 
-Nowy plik: `src/pages/admin/ReviewCategoryEditor.tsx`
-- Formularz oparty na `react-hook-form` + `zod`:
-  - Nazwa (wymagana)
-  - Slug (wymagany, walidacja małe litery/cyfry/myślniki)
-  - Opis (opcjonalny)
-  - Kolor akcentu (input color + hex)
-  - URL ikony (opcjonalny, tekstowy URL)
-  - Kolejność (liczba całkowita)
-- Tryb tworzenia i edycji (obsługa parametru `id`).
-- Po zapisaniu przekierowanie z powrotem do listy.
+### Proponowane fixy (kolejność priorytetów)
 
-### 4. Routing
+**Krok 1 — Sitemap: dodać Tech i Pozytywne** (`supabase/functions/sitemap/index.ts`)
+- Osobne query do tabeli `reviews` (published, nie ukryte) → wpisy `/tech/{category_slug}/{review_slug}` + strona główna `/tech` + `/tech/kategoria/{slug}` z `review_categories`.
+- Osobne query `posts` z `channel = 'positive'` → wpisy `/pozytywne/{positive_category_slug}/{slug}` + `/pozytywne` + `/pozytywne/kategoria/{slug}` z `positive_categories`.
+- Existing query postów zawęzić do `channel = 'sport'` (lub null dla legacy) żeby `/blink/*` = wyłącznie sportowe.
 
-W `src/App.tsx` dodać trasy pod `/admin/recki`:
-- `/admin/recki/kategorie` → `ReviewCategoriesList`
-- `/admin/recki/kategorie/new` → `ReviewCategoryEditor`
-- `/admin/recki/kategorie/:id/edit` → `ReviewCategoryEditor`
+**Krok 2 — Meta SEO na stronach Tech** (nowe wywołania `useSEOMeta`)
+- `ReckiHome` (bez kategorii): tytuł "Tech — recenzje sprzętu", canonical `https://szortsy.pl/tech`.
+- `ReckiHome` (w kategorii): tytuł z nazwy kategorii, canonical `https://szortsy.pl/tech/kategoria/{slug}`.
+- `ReckiReview`: użyć `useArticleSEOMeta`-analog (title=review.title, description=excerpt, og:image=review.image_url, canonical=`/tech/{category_slug}/{slug}`, ogType=article).
 
-### 5. Menu admina
+**Krok 3 — Canonical dla postów Pozytywnych** (`src/hooks/useSEOMeta.ts` + `src/pages/BlinkPage.tsx`)
+- Rozszerzyć `useArticleSEOMeta` o opcjonalny `channel` / niestandardowy canonical.
+- W `BlinkPage`, dla `post.channel === 'positive'`, canonical → `/pozytywne/{positive_category_slug}/{post.slug}`.
+- Ujednolicić: sitemap emituje ten sam URL, `/blink/{slug}` nadal działa jako alias (bez zmiany URL).
 
-W `src/components/admin/AdminLayout.tsx` dodać pozycję nawigacyjną **„Kategorie Tech"** pod istniejącym „Tech" (dostępna dla adminów i redaktorów, bo polityki RLS na to pozwalają).
+**Krok 4 — Aktualizacja `public/llms.txt`**
+Dodać sekcje o kanałach Tech (`/tech`, recenzje) i Pozytywne (`/pozytywne`).
 
-### 6. Usprawnienie w edytorze recenzji (opcjonalnie, wykonać jeśli starczy zakresu)
+### Poza zakresem tego kroku
+- HTTP 301 z `/blink/{slug}` na canonical dla postów pozytywnych — wymagałoby Cloudflare Workera; wstępnie wystarczy tag canonical.
+- Zmiana istniejących URL-i (zgodnie z wcześniejszą regułą: nie zmieniamy URL-i już wypuszczonych).
 
-W `src/pages/admin/ReviewEditor.tsx`:
-- Po zapisaniu nowej kategorii odświeżać listę kategorii w selecta.
-- Rozważyć mini przycisk „+" do szybkiego utworzenia kategorii bez opuszczania formularza (tak jak `QuickCategoryDialog` w PostEditorze).
+---
 
-## Co pozostaje bez zmian
+### Ryzyka
+- Zmiana canonical dla postów pozytywnych = przekierowanie sygnału indeksacji na `/pozytywne/...`. Google potrzebuje ~kilka tygodni na przetworzenie. Aliasy `/blink/*` pozostają live.
+- Sitemap size rośnie — obecnie 1544 wpisy, po dodaniu recenzji + pozytywnych spokojnie mieści się w 50k limicie.
 
-- Nie zmieniamy struktury tabeli `review_categories` — wszystkie potrzebne kolumny i polityki już istnieją.
-- Nie zmieniamy publicznych ścieżek URL kategorii Tech (`/tech/kategoria/:slug`).
-- Nie zmieniamy sposobu przypisywania kategorii do recenzji — wciąż przez `category_id`.
-
-## Kryteria akceptacji
-
-- Admin/redaktor widzi w menu „Kategorie Tech".
-- Może dodać, edytować, usunąć i zmienić kolejność kategorii.
-- Kategoria jest od razu dostępna w selecta w `ReviewEditorze`.
-- Usunięcie kategorii przypisanej do recenzji jest blokowane z czytelnym komunikatem.
+Powiedz "buduj" (lub wskaż które kroki pominąć), zaczynam od Kroku 1.
