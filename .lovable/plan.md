@@ -1,46 +1,74 @@
-# Fix: ChannelSwitcher overflows on mobile
+## Cel
 
-## Problem
+Dodać w panelu administracyjnym dedykowaną zakładkę **„Kategorie Tech"** do zarządzania kategoriami recenzji (tabela `review_categories`) — analogicznie do istniejących paneli Kategorii Sportowych i Kategorii Pozytywnych.
 
-Na mobile trzy widoczne taby (Sport · Tech · Pozytywne) + logo kanału + Kategorie + ThemeToggle nie mieszczą się w headerze — switcher wylewa się poza prawą krawędź (widać na screenie: aktywny "Pozytywne" wystaje poza ekran, a duplikat ikony `Sun` z ThemeToggle ląduje w czarnym marginesie safe-area).
+## Obecny stan
 
-Trzy taby w headerze to za dużo real-estate na <400px. Musimy pogodzić dwa cele:
-- świadomość istnienia Tech/Pozytywne w każdej sesji (cel Cross-promocji),
-- brak overflow i brak konkurencji z logo kanału / Kategorie.
+- Tabela `review_categories` już istnieje w bazie i ma wszystkie potrzebne pola: `id`, `name`, `slug`, `description`, `icon_url`, `color`, `sort_order`, `created_at`, `updated_at`.
+- Polityki RLS i GRANT-y są już skonfigurowane: admin/redaktor może tworzyć / edytować / usuwać, wszyscy mogą widzieć.
+- W frontendzie jest tylko hook `useReviewCategories` (pobieranie listy). Nie ma hooków do tworzenia, edycji, usuwania ani zmiany kolejności.
+- W menu admina brak pozycji „Kategorie Tech".
+- W `ReviewEditor.tsx` kategoria jest wybierana z selecta, ale nie ma szybkiego tworzenia kategorii z poziomu formularza (w przeciwieństwie do PostEditora dla Sportu).
 
-## Rozwiązanie: kompaktowy switcher na mobile, pełne taby na desktop
+## Plan wdrożenia
 
-**Mobile (`< sm`, ~<640px):** `ChannelSwitcher` renderuje tylko aktywny kanał jako pełną pigułkę (ikona + etykieta w kolorze kanału) + 2 małe ikonowe pigułki nieaktywnych kanałów (bez tekstu, tylko `Icon`, `aria-label`). Całość ~ 3 razy węższa niż obecnie, mieści się obok Kategorii i ThemeToggle.
+### 1. Rozszerzenie hooków kategorii Tech
 
-**Desktop (`≥ sm`):** bez zmian — trzy pełne taby z ikoną + etykietą, tak jak dziś.
+W pliku `src/hooks/useReviews.tsx` dodać:
+- `useReviewCategory(id)` — pobieranie jednej kategorii.
+- `useCreateReviewCategory()` — tworzenie nowej kategorii.
+- `useUpdateReviewCategory()` — aktualizacja kategorii.
+- `useDeleteReviewCategory()` — usuwanie z walidacją, czy nie ma przypisanych recenzji.
+- `useReorderReviewCategories()` — zmiana kolejności (analogicznie do sportowych).
 
-Dodatkowo w `PozytywneHeader` (i analogicznie w `Header` sportowym oraz `ReckiHeader`, jeśli mają ten sam problem) — ukrywamy podtytuł kanału na mobile już jest (`hidden sm:block`), zostawiamy. Przycisk "Kategorie" na mobile pokazuje tylko chevron (bez słowa) — już tak działa. Nic więcej nie ruszamy w headerach.
+### 2. Lista kategorii Tech
 
-## Wizualizacja (mobile)
+Nowy plik: `src/pages/admin/ReviewCategoriesList.tsx`
+- Tabela z kolumnami: podgląd koloru, nazwa, slug, kolejność, akcje.
+- Przyciski: edytuj, usuń.
+- Przycisk „Nowa kategoria" w nagłówku.
+- Drag-and-drop do zmiany kolejności (tak jak w `CategoriesList.tsx`).
+- Dialog potwierdzenia usunięcia.
 
-```text
-[LogoKanału]        [⌄ Kategorie] [● Pozytywne] [🏆] [💻] [🌗]
-                                  aktywny        idle idle theme
-```
+### 3. Edytor kategorii Tech
 
-- aktywny: pełna pigułka z kolorem kanału i etykietą
-- idle: kwadratowe/okrągłe ikonowe pigułki 28×28, tylko ikona, `aria-label` z pełną nazwą, dyskretny hover w kolorze kanału
+Nowy plik: `src/pages/admin/ReviewCategoryEditor.tsx`
+- Formularz oparty na `react-hook-form` + `zod`:
+  - Nazwa (wymagana)
+  - Slug (wymagany, walidacja małe litery/cyfry/myślniki)
+  - Opis (opcjonalny)
+  - Kolor akcentu (input color + hex)
+  - URL ikony (opcjonalny, tekstowy URL)
+  - Kolejność (liczba całkowita)
+- Tryb tworzenia i edycji (obsługa parametru `id`).
+- Po zapisaniu przekierowanie z powrotem do listy.
 
-## Zakres techniczny
+### 4. Routing
 
-Pliki do zmiany:
-- `src/components/ChannelSwitcher.tsx` — dodać wariant mobile:
-  - dla `key === active` render jak dziś (pełny label),
-  - dla idle na mobile: pojedyncza ikona bez tekstu, klasy `p-1.5` zamiast `px-2.5 py-1.5`, `aria-label={c.label}`,
-  - kontrola breakpointem CSS: klasy `sm:inline-flex` / `sm:hidden` na labelach, żeby zachować SSR-safe render bez `useEffect`.
-- Brak zmian w `Header.tsx`, `PozytywneHeader.tsx`, `ReckiHeader.tsx` — kontrakt komponentu ten sam.
-- Brak zmian w `CrossChannelStrip` i w feedzie.
+W `src/App.tsx` dodać trasy pod `/admin/recki`:
+- `/admin/recki/kategorie` → `ReviewCategoriesList`
+- `/admin/recki/kategorie/new` → `ReviewCategoryEditor`
+- `/admin/recki/kategorie/:id/edit` → `ReviewCategoryEditor`
 
-## Poza zakresem
+### 5. Menu admina
 
-- Nie przenosimy switchera do dolnej nawigacji ani do menu hamburgera — celowo trzymamy widoczność wszystkich 3 kanałów w headerze, po prostu w wersji ikonowej dla idle.
-- Nie zmieniamy detekcji kanału ani hrefów.
+W `src/components/admin/AdminLayout.tsx` dodać pozycję nawigacyjną **„Kategorie Tech"** pod istniejącym „Tech" (dostępna dla adminów i redaktorów, bo polityki RLS na to pozwalają).
 
-## Weryfikacja
+### 6. Usprawnienie w edytorze recenzji (opcjonalnie, wykonać jeśli starczy zakresu)
 
-Po wdrożeniu sprawdzam headera na widoku 375px (iPhone SE) w preview_ui mobile — logo kanału, Kategorie, kompaktowy switcher i ThemeToggle mają się mieścić w jednej linii bez overflow, aktywny kanał wyraźnie oznaczony kolorem.
+W `src/pages/admin/ReviewEditor.tsx`:
+- Po zapisaniu nowej kategorii odświeżać listę kategorii w selecta.
+- Rozważyć mini przycisk „+" do szybkiego utworzenia kategorii bez opuszczania formularza (tak jak `QuickCategoryDialog` w PostEditorze).
+
+## Co pozostaje bez zmian
+
+- Nie zmieniamy struktury tabeli `review_categories` — wszystkie potrzebne kolumny i polityki już istnieją.
+- Nie zmieniamy publicznych ścieżek URL kategorii Tech (`/tech/kategoria/:slug`).
+- Nie zmieniamy sposobu przypisywania kategorii do recenzji — wciąż przez `category_id`.
+
+## Kryteria akceptacji
+
+- Admin/redaktor widzi w menu „Kategorie Tech".
+- Może dodać, edytować, usunąć i zmienić kolejność kategorii.
+- Kategoria jest od razu dostępna w selecta w `ReviewEditorze`.
+- Usunięcie kategorii przypisanej do recenzji jest blokowane z czytelnym komunikatem.
