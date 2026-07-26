@@ -88,8 +88,11 @@ export default function ReviewCategoryEditor() {
   }, [watchedName, slugTouched, form]);
 
   const onSubmit = async (data: FormData) => {
-    const payload = {
-      ...data,
+    const payload: ReviewCategoryInput = {
+      name: data.name,
+      slug: data.slug,
+      color: data.color,
+      sort_order: data.sort_order,
       description: data.description || null,
       icon_url: data.icon_url || null,
     };
