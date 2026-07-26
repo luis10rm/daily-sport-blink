@@ -156,10 +156,7 @@ export default function ReviewCategoryEditor() {
                         <Input
                           {...field}
                           placeholder="np. smartfony"
-                          onChange={(e) => {
-                            form.setValue("slug", slugify(e.target.value), { shouldValidate: true });
-                            form.setValue("slug", e.target.value, { shouldTouch: true });
-                          }}
+                          onChange={(e) => field.onChange(slugify(e.target.value))}
                         />
                       </FormControl>
                       <FormDescription>
