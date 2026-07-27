@@ -16,7 +16,7 @@ serve(async (req) => {
     // Sport channel posts → /blink/{slug}
     const { data: posts, error: postsError } = await supabase
       .from("posts")
-      .select("slug, updated_at, published_at")
+      .select("slug, title, updated_at, published_at")
       .lte("published_at", nowIso)
       .eq("is_hidden", false)
       .eq("channel", "sport")
@@ -106,7 +106,14 @@ serve(async (req) => {
 
     // Build XML sitemap
     const today = new Date().toISOString().split("T")[0];
-    
+
+    const escapeXml = (s: string) =>
+      s.replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
@@ -135,6 +142,30 @@ serve(async (req) => {
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>${SITE_URL}/mistrzostwa-swiata-2026</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>${SITE_URL}/archiwum</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>${SITE_URL}/tagi</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>${SITE_URL}/pozytywne/archiwum</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
 `;
 
     // Add categories
@@ -157,7 +188,7 @@ serve(async (req) => {
       for (const author of authors) {
         const lastmod = author.updated_at?.split("T")[0] || today;
         xml += `  <url>
-    <loc>${SITE_URL}/redakcja/${author.slug}</loc>
+    <loc>${SITE_URL}/autor/${author.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
@@ -184,16 +215,28 @@ serve(async (req) => {
       xml += `\n  <!-- Articles (sport) -->\n`;
       const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
 
-      for (const post of posts) {
+      for (const post of posts as Array<{ slug: string; title?: string; updated_at?: string; published_at: string }>) {
         const lastmod = (post.updated_at || post.published_at)?.split("T")[0] || today;
         const publishedDate = new Date(post.published_at);
         const isRecent = publishedDate > twoDaysAgo;
+
+        const newsBlock = isRecent && post.title
+          ? `
+    <news:news>
+      <news:publication>
+        <news:name>Szortsy</news:name>
+        <news:language>pl</news:language>
+      </news:publication>
+      <news:publication_date>${post.published_at}</news:publication_date>
+      <news:title>${escapeXml(post.title)}</news:title>
+    </news:news>`
+          : '';
 
         xml += `  <url>
     <loc>${SITE_URL}/blink/${post.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>${isRecent ? 'hourly' : 'weekly'}</changefreq>
-    <priority>${isRecent ? '0.9' : '0.6'}</priority>
+    <priority>${isRecent ? '0.9' : '0.6'}</priority>${newsBlock}
   </url>\n`;
       }
     }

@@ -1,67 +1,58 @@
-## Wyniki audytu indeksacji: Tech i Pozytywne
+# Plan: Sitemap + /autor redirect + Google News
 
-### Co sprawdziłem
-- Routing w `src/App.tsx` (Tech = `/tech/*`, Pozytywne = `/pozytywne/*`).
-- Meta tagi na stronach (`useSEOMeta` / `useArticleSEOMeta`).
-- Edge function `sitemap` i `robots-meta`.
-- Live sitemap (1544 URL) i live `/tech` (HTML z serwera).
-- `public/robots.txt` i `public/llms.txt`.
+## 1. Sitemap edge function (`supabase/functions/sitemap/index.ts`)
 
-### Znalezione problemy
+- **Autorzy → `/autor/`**: linia 160 zamienia `${SITE_URL}/redakcja/${author.slug}` na `${SITE_URL}/autor/${author.slug}`.
+- **Brakujące strony statyczne** (dodać do sekcji Static pages, obok istniejących `/`, `/autorzy`, `/tech`, `/pozytywne`):
+  - `/mistrzostwa-swiata-2026` (priority 0.9, changefreq daily)
+  - `/archiwum` (priority 0.7, changefreq daily)
+  - `/tagi` (priority 0.6, changefreq weekly)
+  - `/pozytywne/archiwum` (priority 0.6, changefreq daily)
+- **Weryfikacja Tech/Pozytywne**: sekcje `/tech`, `/tech/kategoria/*`, `/tech/{cat}/{slug}`, `/pozytywne`, `/pozytywne/kategoria/*`, `/pozytywne/{cat}/{slug}` już są — bez zmian.
+- **Google News `<news:news>`** dla postów sportowych <48h:
+  - Rozszerzyć SELECT postów sportowych o kolumnę `title`.
+  - Dla każdego posta z `publishedDate > now - 48h` dołączyć wewnątrz `<url>` blok:
+    ```xml
+    <news:news>
+      <news:publication>
+        <news:name>Szortsy</news:name>
+        <news:language>pl</news:language>
+      </news:publication>
+      <news:publication_date>{published_at ISO 8601}</news:publication_date>
+      <news:title>{escaped title}</news:title>
+    </news:news>
+    ```
+  - Dodać mały helper `escapeXml()` dla `&<>"'` w tytule.
+  - Namespace `xmlns:news` już zadeklarowany w root `<urlset>`.
 
-**1. Sitemap nie zawiera Tech ani Pozytywne (krytyczne)**
-Sitemap generuje wyłącznie `/`, `/autorzy`, `/kategoria/*` (sport), `/redakcja/*`, `/tag/*` i `/blink/*`. Brak:
-- `/tech`, `/tech/kategoria/{slug}`, `/tech/{category}/{slug}` — cały kanał Tech (recenzje z tabeli `reviews`) nie jest w ogóle w sitemap. Google nie ma jak ich znaleźć poza linkami wewnętrznymi.
-- `/pozytywne`, `/pozytywne/kategoria/{slug}` — kanałowa strona główna i kategorie Pozytywnych.
-- Query `posts` w sitemapie nie filtruje po `channel`, więc posty pozytywne trafiają do sitemap jako `/blink/{slug}` — działa, ale jest niespójne z kanałową nawigacją.
+## 2. Redirect 301 dla `/redakcja/{slug}` → `/autor/{slug}`
 
-**2. Strony Tech nie mają meta SEO (krytyczne)**
-`ReckiHome.tsx`, `ReckiReview.tsx`, `ReckiCategory.tsx` w ogóle nie wołają `useSEOMeta`. Skutek: title="Szortsy - Wiadomości sportowe...", brak `canonical`, brak `description` dostosowanego do treści, brak `og:*` dla recenzji. Potwierdzone `curl`em na `https://szortsy.pl/tech`.
+Brak istniejącej route → obecnie 404. React SPA nie zwróci prawdziwego HTTP 301, ale mamy dwie warstwy:
 
-**3. Duplikat URL dla postów Pozytywnych (średnie)**
-Post pozytywny ma dwa działające adresy: `/blink/{slug}` (canonical z `useArticleSEOMeta`) i `/pozytywne/{category}/{slug}` (route w `App.tsx` → też renderuje `BlinkPage`). Bez `canonical` wskazującego jednoznacznie na jeden z nich ryzyko duplicate content.
+- **Cloudflare Worker (rzeczywisty 301)** — dostarczę snippet do wklejenia w Workerze (który już obsługuje HTTP 410 dla `/news/*`):
+  ```js
+  const m = url.pathname.match(/^\/redakcja\/(.+)$/);
+  if (m) return Response.redirect(`${url.origin}/autor/${m[1]}${url.search}`, 301);
+  ```
+  Wykonuje się przed serwowaniem strony, prawdziwy 301 dla Googlebota.
+- **Fallback w React (`src/App.tsx`)** — na wypadek gdyby ktoś ominął Workera (preview, dev, custom domain bez Workera), dodać:
+  ```tsx
+  <Route path="/redakcja/:slug" element={<Navigate to="/autor/:slug" replace />} />
+  ```
+  Właściwie użyć wrappera bo React Router nie interpoluje `:slug` w `to` — komponent `<RedirectRedakcjaToAutor />` który czyta `useParams()` i robi `<Navigate to={"/autor/"+slug} replace />`. To client-side 302, ale Googlebot i tak zobaczy 301 z Workera.
 
-**4. Brak Tech w robots-meta (mały)**
-Edge function nie ma reguł dla `/tech/*` (domyślnie index, follow — OK), ale warto potwierdzić że `wspo-praca-reklamowa`-styl noindex nie ma odpowiednika np. dla ukrytych kategorii Tech (obecnie brak takiej potrzeby).
+## 3. Weryfikacja po deployu
 
-**5. `public/llms.txt` nieaktualne (mały)**
-Wymienia tylko kanał sportowy — brak sekcji Tech i Pozytywne.
+- `curl https://<project>.functions.supabase.co/sitemap` → walid XML, obecny `/autor/`, brak `/redakcja/`, obecne `/mistrzostwa-swiata-2026`, `/archiwum`, `/tagi`, `/pozytywne/archiwum`, i bloki `<news:news>` dla świeżych postów.
+- Otworzyć `/redakcja/<istniejacy-slug>` w preview → powinno zredirectować na `/autor/<slug>`.
 
-**6. Config OK ✅**
-- `robots.txt` — wpuszcza Googlebot / Googlebot-News, wskazuje `sitemap.szortsy.pl`.
-- `useSEOMeta` — poprawnie ustawia canonical, og, twitter, robots.
-- `robots-meta` edge function — poprawnie obsługuje tag threshold i static noindex paths.
+## Szczegóły techniczne
 
----
+- Sitemap: jedna zmiana w `supabase/functions/sitemap/index.ts` (posts SELECT + title escape helper + kilka bloków static + rename authors URL). Deploy auto.
+- Redirect route: nowy plik `src/pages/RedakcjaRedirect.tsx` (~10 linii) + wpis w `src/App.tsx`.
+- Worker snippet: dostarczę do wklejenia — użytkownik sam aktualizuje kod Cloudflare Workera.
 
-### Proponowane fixy (kolejność priorytetów)
+## Poza scope
 
-**Krok 1 — Sitemap: dodać Tech i Pozytywne** (`supabase/functions/sitemap/index.ts`)
-- Osobne query do tabeli `reviews` (published, nie ukryte) → wpisy `/tech/{category_slug}/{review_slug}` + strona główna `/tech` + `/tech/kategoria/{slug}` z `review_categories`.
-- Osobne query `posts` z `channel = 'positive'` → wpisy `/pozytywne/{positive_category_slug}/{slug}` + `/pozytywne` + `/pozytywne/kategoria/{slug}` z `positive_categories`.
-- Existing query postów zawęzić do `channel = 'sport'` (lub null dla legacy) żeby `/blink/*` = wyłącznie sportowe.
-
-**Krok 2 — Meta SEO na stronach Tech** (nowe wywołania `useSEOMeta`)
-- `ReckiHome` (bez kategorii): tytuł "Tech — recenzje sprzętu", canonical `https://szortsy.pl/tech`.
-- `ReckiHome` (w kategorii): tytuł z nazwy kategorii, canonical `https://szortsy.pl/tech/kategoria/{slug}`.
-- `ReckiReview`: użyć `useArticleSEOMeta`-analog (title=review.title, description=excerpt, og:image=review.image_url, canonical=`/tech/{category_slug}/{slug}`, ogType=article).
-
-**Krok 3 — Canonical dla postów Pozytywnych** (`src/hooks/useSEOMeta.ts` + `src/pages/BlinkPage.tsx`)
-- Rozszerzyć `useArticleSEOMeta` o opcjonalny `channel` / niestandardowy canonical.
-- W `BlinkPage`, dla `post.channel === 'positive'`, canonical → `/pozytywne/{positive_category_slug}/{post.slug}`.
-- Ujednolicić: sitemap emituje ten sam URL, `/blink/{slug}` nadal działa jako alias (bez zmiany URL).
-
-**Krok 4 — Aktualizacja `public/llms.txt`**
-Dodać sekcje o kanałach Tech (`/tech`, recenzje) i Pozytywne (`/pozytywne`).
-
-### Poza zakresem tego kroku
-- HTTP 301 z `/blink/{slug}` na canonical dla postów pozytywnych — wymagałoby Cloudflare Workera; wstępnie wystarczy tag canonical.
-- Zmiana istniejących URL-i (zgodnie z wcześniejszą regułą: nie zmieniamy URL-i już wypuszczonych).
-
----
-
-### Ryzyka
-- Zmiana canonical dla postów pozytywnych = przekierowanie sygnału indeksacji na `/pozytywne/...`. Google potrzebuje ~kilka tygodni na przetworzenie. Aliasy `/blink/*` pozostają live.
-- Sitemap size rośnie — obecnie 1544 wpisy, po dodaniu recenzji + pozytywnych spokojnie mieści się w 50k limicie.
-
-Powiedz "buduj" (lub wskaż które kroki pominąć), zaczynam od Kroku 1.
+- Naprawa `worldcup-data` (502) — parkujemy, obsłużymy w osobnym kroku.
+- Migracja/redirecty dla starych URL-i innych niż `/redakcja/*`.

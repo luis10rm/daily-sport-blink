@@ -14,6 +14,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AuthorProfile from "./pages/AuthorProfile";
 import AuthorsPage from "./pages/AuthorsPage";
+import RedakcjaRedirect from "./pages/RedakcjaRedirect";
 import Archive from "./pages/Archive";
 import CategoryPage from "./pages/CategoryPage";
 import TagPage from "./pages/TagPage";
@@ -104,6 +105,8 @@ function App() {
               <Route path="/tag/:slug" element={<TagPage />} />
               <Route path="/autorzy" element={<AuthorsPage />} />
               <Route path="/autor/:slug" element={<AuthorProfile />} />
+              <Route path="/redakcja/:slug" element={<RedakcjaRedirect />} />
+              <Route path="/redakcja" element={<Navigate to="/autorzy" replace />} />
             <Route path="/auth" element={<Auth />} />
             <Route
               path="/admin"
