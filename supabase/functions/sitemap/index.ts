@@ -215,16 +215,28 @@ serve(async (req) => {
       xml += `\n  <!-- Articles (sport) -->\n`;
       const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
 
-      for (const post of posts) {
+      for (const post of posts as Array<{ slug: string; title?: string; updated_at?: string; published_at: string }>) {
         const lastmod = (post.updated_at || post.published_at)?.split("T")[0] || today;
         const publishedDate = new Date(post.published_at);
         const isRecent = publishedDate > twoDaysAgo;
+
+        const newsBlock = isRecent && post.title
+          ? `
+    <news:news>
+      <news:publication>
+        <news:name>Szortsy</news:name>
+        <news:language>pl</news:language>
+      </news:publication>
+      <news:publication_date>${post.published_at}</news:publication_date>
+      <news:title>${escapeXml(post.title)}</news:title>
+    </news:news>`
+          : '';
 
         xml += `  <url>
     <loc>${SITE_URL}/blink/${post.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>${isRecent ? 'hourly' : 'weekly'}</changefreq>
-    <priority>${isRecent ? '0.9' : '0.6'}</priority>
+    <priority>${isRecent ? '0.9' : '0.6'}</priority>${newsBlock}
   </url>\n`;
       }
     }
