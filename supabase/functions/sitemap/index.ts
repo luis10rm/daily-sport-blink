@@ -16,7 +16,7 @@ serve(async (req) => {
     // Sport channel posts → /blink/{slug}
     const { data: posts, error: postsError } = await supabase
       .from("posts")
-      .select("slug, updated_at, published_at")
+      .select("slug, title, updated_at, published_at")
       .lte("published_at", nowIso)
       .eq("is_hidden", false)
       .eq("channel", "sport")
