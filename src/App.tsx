@@ -14,6 +14,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import AuthorProfile from "./pages/AuthorProfile";
 import AuthorsPage from "./pages/AuthorsPage";
+import RedakcjaRedirect from "./pages/RedakcjaRedirect";
 import Archive from "./pages/Archive";
 import CategoryPage from "./pages/CategoryPage";
 import TagPage from "./pages/TagPage";
