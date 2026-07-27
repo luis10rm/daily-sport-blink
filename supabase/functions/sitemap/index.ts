@@ -188,7 +188,7 @@ serve(async (req) => {
       for (const author of authors) {
         const lastmod = author.updated_at?.split("T")[0] || today;
         xml += `  <url>
-    <loc>${SITE_URL}/redakcja/${author.slug}</loc>
+    <loc>${SITE_URL}/autor/${author.slug}</loc>
     <lastmod>${lastmod}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
