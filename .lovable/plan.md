@@ -1,26 +1,35 @@
-Cel: dodać plik `vercel.json` do projektu, by równoległe deployowanie na Vercel obsługiwało SPA routing i serwerowe przekierowania 301.
+## Cel
+Skonfigurować Vercel tak, by żądanie `GET /sitemap.xml` zwracało dynamiczną mapę strony z Supabase Edge Function (`https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap`), a nie statyczny plik ani SPA fallback.
 
-Aktualny stan:
-- Brak pliku `vercel.json`.
-- Aplikacja używa `BrowserRouter` (`src/App.tsx`), więc Vercel musi fallbackować do `index.html` dla głębokich ścieżek.
-- Przekierowania `/redakcja/* → /autor/*` są już obsługiwane klientem (`RedakcjaRedirect`, `Navigate`), ale Vercel może zrobić to szybciej i bardziej SEO-friendly jako 301.
+## Sprawdzony obecny stan
+- `vercel.json` ma tylko jeden rewrite: catch-all `/(.*)` → `/index.html`, który pochłonie `/sitemap.xml` jeśli zostanie ustawiony jako pierwszy.
+- `public/robots.txt` wskazuje `Sitemap: https://sitemap.szortsy.pl/` — domena prawdopodobnie nie istnieje/wskazuje na martwy endpoint (z poprzedniego audytu SEO).
+- `public/sitemap.xml` to przestarzały statyczny plik (zawiera jeszcze `/redakcja/`, brak Tech/Pozytywne), który obecnie jest serwowany zamiast dynamicznej wersji.
 
-Zamierzamy zbudować:
-1. Plik `vercel.json` w głównym katalogu projektu z dokładną konfiguracją podaną przez użytkownika:
-   - `rewrites`: catch-all `/.*` → `/index.html` (SPA fallback).
-   - `redirects`:
-     - `www.szortsy.pl` → `szortsy.pl` (permanent 301).
-     - `/redakcja/:slug` → `/autor/:slug` (permanent 301).
-     - `/redakcja` → `/autorzy` (permanent 301).
+## Plan działania
 
-Kroki:
-1. Utworzyć `vercel.json` z treścią przekazaną w wiadomości.
-2. Zweryfikować poprawność JSON (np. `python -m json.tool`).
-3. Nie modyfikować istniejących przekierowań klienta — pozostawiamy jako awaryjne/fallback.
+1. **Dodać dedykowany rewrite w `vercel.json`**
+   - W sekcji `rewrites` przed catch-all `/(.*)` → `/index.html` dodać:
+     ```json
+     {
+       "source": "/sitemap.xml",
+       "destination": "https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap"
+     }
+     ```
+   - Kolejność jest kluczowa: Vercel dopasowuje rewrites od góry, więc `/sitemap.xml` musi być pierwsze, inaczej catch-all przechwyci ścieżkę.
 
-Nie dotyczy:
-- Zmian w Lovable hosting (`.lovable` nie używa `vercel.json`).
-- Dodawania backendu, RLS, baz danych.
-- Modyfikacji `src/App.tsx` — konfiguracja jest komplementarna.
+2. **Zaktualizować `public/robots.txt`**
+   - Zmienić `Sitemap: https://sitemap.szortsy.pl/` na `Sitemap: https://szortsy.pl/sitemap.xml`.
+   - Dzięki temu Googlebot i inne crawlery trafią na dynamiczną wersję zamiast martwego/pustego subdomainu.
 
-Efekt końcowy: po deployu na Vercel wszystkie ścieżki SPA działają, a stare URL-e `/redakcja/*` oraz `www.szortsy.pl` zwracają 301 zgodnie z SEO-wymaganiami.
+3. **Usunąć/przenieść statyczny `public/sitemap.xml`**
+   - Statyczny plik może być mylący podczas debugowania i w niektórych konfiguracjach może konkurować z rewrite.
+   - Najbezpieczniej go usunąć (lub zarchiwizować jako `public/sitemap.xml.static`), bo Vercel powinien obsługiwać rewrite jako pierwszy, ale brak pliku eliminuje ryzyko dublowania.
+
+4. **Weryfikacja po wdrożeniu**
+   - `curl -I https://szortsy.pl/sitemap.xml` powinien zwrócić `200 OK` i `Content-Type: application/xml`.
+   - Treść XML powinna zawierać aktualne URL-e z Edge Function (sport, tech, pozytywne, autorzy, tagi, kategorie, news sitemap dla artykułów <2 dni).
+   - `curl -I https://www.szortsy.pl/sitemap.xml` powinien nadal 301 redirectować na `https://szortsy.pl/sitemap.xml` (istniejące przekierowanie www).
+
+## Zakres
+Tylko zmiany konfiguracyjne Vercel + statyczne pliki. Bez zmian w kodzie aplikacji, bazie danych ani Edge Function (zakładam, że `/functions/v1/sitemap` już działa poprawnie).
