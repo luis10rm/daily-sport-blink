@@ -98,7 +98,14 @@ const ReviewsList = () => {
                   filtered?.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell>
-                        <div className="font-medium">{r.title}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{r.title}</span>
+                          {r.is_topic_of_day && (
+                            <Badge className="bg-fuchsia-600 hover:bg-fuchsia-600 text-white">
+                              Temat dnia
+                            </Badge>
+                          )}
+                        </div>
                         {(r.product_brand || r.product_name) && (
                           <div className="text-xs text-muted-foreground">
                             {[r.product_brand, r.product_name].filter(Boolean).join(" · ")}
