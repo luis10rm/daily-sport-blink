@@ -17,4 +17,4 @@ User-agent: *
 Allow: /
 
 # Dynamic sitemap
-Sitemap: https://sitemap.szortsy.pl/
+Sitemap: https://szortsy.pl/sitemap.xml
