@@ -785,6 +785,9 @@ const ReviewEditor = () => {
             />
           </CardContent>
         </Card>
+      </div>
+    </AdminLayout>
+  );
 };
 
 export default ReviewEditor;
