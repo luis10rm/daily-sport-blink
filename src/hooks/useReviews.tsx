@@ -282,6 +282,16 @@ export const useUpsertReview = () => {
       if (payload.status === "published" && !payload.published_at) {
         payload.published_at = new Date().toISOString();
       }
+      // Tylko jeden artykuł Tech może być tematem dnia — zdejmij flagę z pozostałych.
+      if (payload.is_topic_of_day === true) {
+        let clear = (supabase as any)
+          .from("reviews")
+          .update({ is_topic_of_day: false })
+          .eq("is_topic_of_day", true);
+        if (payload.id) clear = clear.neq("id", payload.id);
+        const { error: clearError } = await clear;
+        if (clearError) throw clearError;
+      }
       const { data, error } = payload.id
         ? await (supabase as any).from("reviews").update(payload).eq("id", payload.id).select().single()
         : await (supabase as any).from("reviews").insert(payload).select().single();
