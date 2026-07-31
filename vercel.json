@@ -9,12 +9,16 @@
       "destination": "/index.html"
     }
   ],
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [{ "key": "Content-Type", "value": "application/xml" }]
+    }
+  ],
   "redirects": [
     {
       "source": "/:path*",
-      "has": [
-        { "type": "host", "value": "www.szortsy.pl" }
-      ],
+      "has": [{ "type": "host", "value": "www.szortsy.pl" }],
       "destination": "https://szortsy.pl/:path*",
       "permanent": true
     },
