@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Flame } from "lucide-react";
 import type { Review } from "@/hooks/useReviews";
 import { useNavLink } from "@/hooks/useNavLink";
 import { ScoreBadge } from "./ScoreBadge";
