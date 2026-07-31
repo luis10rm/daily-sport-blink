@@ -1,0 +1,28 @@
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        { "type": "host", "value": "www.szortsy.pl" }
+      ],
+      "destination": "https://szortsy.pl/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/redakcja/:slug",
+      "destination": "/autor/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/redakcja",
+      "destination": "/autorzy",
+      "permanent": true
+    }
+  ]
+}
