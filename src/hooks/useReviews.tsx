@@ -47,6 +47,7 @@ export interface Review {
   source_url: string | null;
   is_ai_generated: boolean;
   content_type: "review" | "news";
+  is_topic_of_day: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -280,6 +281,16 @@ export const useUpsertReview = () => {
       const payload: any = { ...input };
       if (payload.status === "published" && !payload.published_at) {
         payload.published_at = new Date().toISOString();
+      }
+      // Tylko jeden artykuł Tech może być tematem dnia — zdejmij flagę z pozostałych.
+      if (payload.is_topic_of_day === true) {
+        let clear = (supabase as any)
+          .from("reviews")
+          .update({ is_topic_of_day: false })
+          .eq("is_topic_of_day", true);
+        if (payload.id) clear = clear.neq("id", payload.id);
+        const { error: clearError } = await clear;
+        if (clearError) throw clearError;
       }
       const { data, error } = payload.id
         ? await (supabase as any).from("reviews").update(payload).eq("id", payload.id).select().single()

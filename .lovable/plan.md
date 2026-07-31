@@ -1,35 +1,18 @@
 ## Cel
-Skonfigurować Vercel tak, by żądanie `GET /sitemap.xml` zwracało dynamiczną mapę strony z Supabase Edge Function (`https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap`), a nie statyczny plik ani SPA fallback.
+Dziś hero na `/tech` to po prostu najnowszy opublikowany artykuł (`ReckiHome.tsx` bierze `reviews[0]`). Chcesz móc ręcznie decydować, co jest tematem dnia — tak jak „News dnia” działa w kanale sportowym.
 
-## Sprawdzony obecny stan
-- `vercel.json` ma tylko jeden rewrite: catch-all `/(.*)` → `/index.html`, który pochłonie `/sitemap.xml` jeśli zostanie ustawiony jako pierwszy.
-- `public/robots.txt` wskazuje `Sitemap: https://sitemap.szortsy.pl/` — domena prawdopodobnie nie istnieje/wskazuje na martwy endpoint (z poprzedniego audytu SEO).
-- `public/sitemap.xml` to przestarzały statyczny plik (zawiera jeszcze `/redakcja/`, brak Tech/Pozytywne), który obecnie jest serwowany zamiast dynamicznej wersji.
+## Jak to zadziała
+- W edytorze artykułu Tech (`/admin/recki/...`) pojawia się przełącznik **„Temat dnia”**.
+- Tylko jeden artykuł Tech może być tematem dnia — włączenie flagi automatycznie zdejmuje ją z poprzedniego.
+- Na `/tech` wybrany artykuł zawsze ląduje w dużym kafelku hero (z plakietką „Temat dnia”), niezależnie od daty publikacji. Trzy mini-karty obok to kolejne najnowsze artykuły.
+- Jeśli nic nie jest zaznaczone albo wybrany artykuł nie jest opublikowany — działa dotychczasowe zachowanie (hero = najnowszy).
+- Na liście artykułów Tech w panelu widać oznaczenie, który jest tematem dnia (analogicznie do „News dnia” w postach sportowych).
 
-## Plan działania
+## Zakres techniczny
+1. **Baza:** dodanie kolumny `is_topic_of_day boolean not null default false` do tabeli `reviews` + częściowy unikalny indeks gwarantujący maks. jeden wpis `true`.
+2. **Hooki (`src/hooks/useReviews.tsx`):** pobieranie flagi w zapytaniach, nowy `useTechTopicOfDay()`, oraz mutacja ustawiająca flagę (najpierw czyści poprzednią, potem ustawia nową).
+3. **Panel:** przełącznik w `ReviewEditor.tsx` (Zod + formularz), plakietka w `ReviewsList.tsx`.
+4. **Frontend:** `ReckiHome.tsx` — hero = temat dnia (fallback: najnowszy), wykluczenie go z dalszych sekcji, plakietka „Temat dnia” w `ReviewCard` (wariant `hero`) w kolorystyce Tech (fuchsia/pink).
 
-1. **Dodać dedykowany rewrite w `vercel.json`**
-   - W sekcji `rewrites` przed catch-all `/(.*)` → `/index.html` dodać:
-     ```json
-     {
-       "source": "/sitemap.xml",
-       "destination": "https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap"
-     }
-     ```
-   - Kolejność jest kluczowa: Vercel dopasowuje rewrites od góry, więc `/sitemap.xml` musi być pierwsze, inaczej catch-all przechwyci ścieżkę.
-
-2. **Zaktualizować `public/robots.txt`**
-   - Zmienić `Sitemap: https://sitemap.szortsy.pl/` na `Sitemap: https://szortsy.pl/sitemap.xml`.
-   - Dzięki temu Googlebot i inne crawlery trafią na dynamiczną wersję zamiast martwego/pustego subdomainu.
-
-3. **Usunąć/przenieść statyczny `public/sitemap.xml`**
-   - Statyczny plik może być mylący podczas debugowania i w niektórych konfiguracjach może konkurować z rewrite.
-   - Najbezpieczniej go usunąć (lub zarchiwizować jako `public/sitemap.xml.static`), bo Vercel powinien obsługiwać rewrite jako pierwszy, ale brak pliku eliminuje ryzyko dublowania.
-
-4. **Weryfikacja po wdrożeniu**
-   - `curl -I https://szortsy.pl/sitemap.xml` powinien zwrócić `200 OK` i `Content-Type: application/xml`.
-   - Treść XML powinna zawierać aktualne URL-e z Edge Function (sport, tech, pozytywne, autorzy, tagi, kategorie, news sitemap dla artykułów <2 dni).
-   - `curl -I https://www.szortsy.pl/sitemap.xml` powinien nadal 301 redirectować na `https://szortsy.pl/sitemap.xml` (istniejące przekierowanie www).
-
-## Zakres
-Tylko zmiany konfiguracyjne Vercel + statyczne pliki. Bez zmian w kodzie aplikacji, bazie danych ani Edge Function (zakładam, że `/functions/v1/sitemap` już działa poprawnie).
+## Uwaga
+Sekcja Tech opiera się na tabeli `reviews` (recenzje/newsy tech), a nie na `posts`, więc flagę dodaję tam — nie ruszam logiki „News dnia” w sporcie.

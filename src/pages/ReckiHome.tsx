@@ -32,9 +32,11 @@ const ReckiHome = () => {
   });
 
   const useHeroLayout = reviews.length >= 4;
-  const hero = useHeroLayout ? reviews[0] : null;
-  const secondary = useHeroLayout ? reviews.slice(1, 4) : [];
-  const rest = useHeroLayout ? reviews.slice(4) : reviews;
+  const topicOfDay = reviews.find((r) => r.is_topic_of_day) ?? null;
+  const hero = useHeroLayout ? topicOfDay ?? reviews[0] : null;
+  const withoutHero = hero ? reviews.filter((r) => r.id !== hero.id) : reviews;
+  const secondary = useHeroLayout ? withoutHero.slice(0, 3) : [];
+  const rest = useHeroLayout ? withoutHero.slice(3) : reviews;
 
   return (
     <div className="min-h-screen flex flex-col">
