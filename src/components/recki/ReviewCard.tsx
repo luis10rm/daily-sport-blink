@@ -33,11 +33,18 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           )}
         </div>
         <div className="flex flex-col p-5 md:p-6">
-          {review.category && (
-            <span className="inline-block w-fit rounded-full bg-fuchsia-600/95 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
-              {review.category.name}
-            </span>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {review.is_topic_of_day && (
+              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-600 to-pink-600 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                <Flame className="h-3 w-3" /> Temat dnia
+              </span>
+            )}
+            {review.category && (
+              <span className="inline-block w-fit rounded-full bg-fuchsia-600/95 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                {review.category.name}
+              </span>
+            )}
+          </div>
           <h2 className="mt-2 text-2xl md:text-3xl font-bold leading-tight text-foreground">
             {review.title}
           </h2>
