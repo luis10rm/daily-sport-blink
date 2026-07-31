@@ -769,9 +769,22 @@ const ReviewEditor = () => {
             />
           </CardContent>
         </Card>
-      </div>
-    </AdminLayout>
-  );
+
+        <Card>
+          <CardContent className="flex items-center justify-between pt-6">
+            <div>
+              <Label className="text-base">Temat dnia w Tech</Label>
+              <p className="text-xs text-muted-foreground">
+                Ten wpis trafi na główny kafelek /tech. Tematem dnia może być tylko jeden artykuł —
+                włączenie zdejmie flagę z poprzedniego.
+              </p>
+            </div>
+            <Switch
+              checked={!!form.is_topic_of_day}
+              onCheckedChange={(v) => set("is_topic_of_day", v)}
+            />
+          </CardContent>
+        </Card>
 };
 
 export default ReviewEditor;
