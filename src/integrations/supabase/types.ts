@@ -590,6 +590,7 @@ export type Database = {
           gallery: string[]
           id: string
           is_ai_generated: boolean
+          is_topic_of_day: boolean
           product_brand: string | null
           product_name: string | null
           pros: string[]
@@ -616,6 +617,7 @@ export type Database = {
           gallery?: string[]
           id?: string
           is_ai_generated?: boolean
+          is_topic_of_day?: boolean
           product_brand?: string | null
           product_name?: string | null
           pros?: string[]
@@ -642,6 +644,7 @@ export type Database = {
           gallery?: string[]
           id?: string
           is_ai_generated?: boolean
+          is_topic_of_day?: boolean
           product_brand?: string | null
           product_name?: string | null
           pros?: string[]
