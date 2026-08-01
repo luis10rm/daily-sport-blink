@@ -11,11 +11,6 @@
       "destination": "/api/sitemap"
     },
     {
-      "source": "/sitemap.xml",
-      "destination": "https://sitemap.szortsy.pl/",
-      "permanent": true
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -41,6 +36,11 @@
     {
       "source": "/redakcja",
       "destination": "/autorzy",
+      "permanent": true
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://sitemap.szortsy.pl/",
       "permanent": true
     }
   ]
