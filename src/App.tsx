@@ -85,6 +85,7 @@ function App() {
               <Routes>
 
               <Route path="/" element={<Index />} />
+              <Route path="/start" element={<StartPage />} />
               <Route path="/dzien/:date" element={<DailyPage />} />
               <Route path="/blink/:slug" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
