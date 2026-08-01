@@ -1,16 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/",
-      "has": [{ "type": "host", "value": "sitemap.szortsy.pl" }],
-      "destination": "/api/sitemap"
-    },
-    {
-      "source": "/sitemap.xml",
-      "has": [{ "type": "host", "value": "sitemap.szortsy.pl" }],
-      "destination": "/api/sitemap"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -45,3 +35,4 @@
     }
   ]
 }
+
