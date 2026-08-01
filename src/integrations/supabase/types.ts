@@ -587,6 +587,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           excerpt: string | null
+          faq: Json
           gallery: string[]
           id: string
           is_ai_generated: boolean
@@ -614,6 +615,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           excerpt?: string | null
+          faq?: Json
           gallery?: string[]
           id?: string
           is_ai_generated?: boolean
@@ -641,6 +643,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           excerpt?: string | null
+          faq?: Json
           gallery?: string[]
           id?: string
           is_ai_generated?: boolean
