@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plus, Save, Search, Sparkles, Star, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUp, Loader2, Plus, Save, Search, Sparkles, Star, Trash2, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
