@@ -60,6 +60,8 @@ const ReviewEditor = () => {
     score: null,
     pros: [],
     cons: [],
+    faq: [],
+
     gallery: [],
     cover_image_url: "",
     product_name: "",
