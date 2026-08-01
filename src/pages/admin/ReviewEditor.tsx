@@ -762,6 +762,85 @@ const ReviewEditor = () => {
         </Card>
         )}
 
+        {/* FAQ */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+            <div>
+              <CardTitle>FAQ (pytania i odpowiedzi)</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Wyświetlane w wyróżnionej sekcji pod treścią artykułu. {faqItems.length}/8 pozycji.
+              </p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={addFaq}>
+              <Plus className="mr-1 h-3 w-3" /> Dodaj pytanie
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {faqItems.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Brak pytań. Dodaj 3–5 krótkich pytań, które użytkownicy wpisują w Google.
+              </p>
+            )}
+            {faqItems.map((item, i) => (
+              <div key={i} className="space-y-2 rounded-lg border border-border p-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-muted-foreground">#{i + 1}</span>
+                  <div className="ml-auto flex gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={i === 0}
+                      onClick={() => moveFaq(i, -1)}
+                      title="W górę"
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={i === faqItems.length - 1}
+                      onClick={() => moveFaq(i, 1)}
+                      title="W dół"
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeFaq(i)}
+                      title="Usuń"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <Label>Pytanie</Label>
+                  <Input
+                    value={item.q ?? ""}
+                    placeholder="Np. Czy klawiatura jest cicha?"
+                    onChange={(e) => setFaqField(i, "q", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Odpowiedź</Label>
+                  <Textarea
+                    rows={3}
+                    value={item.a ?? ""}
+                    placeholder="Krótka, konkretna odpowiedź (2–4 zdania)."
+                    onChange={(e) => setFaqField(i, "a", e.target.value)}
+                  />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+
+
         {/* Content */}
         <Card>
           <CardHeader>
