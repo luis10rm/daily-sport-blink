@@ -11,10 +11,6 @@
       "destination": "/api/sitemap"
     },
     {
-      "source": "/sitemap.xml",
-      "destination": "https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -40,6 +36,11 @@
     {
       "source": "/redakcja",
       "destination": "/autorzy",
+      "permanent": true
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://sitemap.szortsy.pl/",
       "permanent": true
     }
   ]
