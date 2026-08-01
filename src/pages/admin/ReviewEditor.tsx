@@ -148,6 +148,20 @@ const ReviewEditor = () => {
 
   const addPro = () => set("pros", [...(form.pros ?? []), ""]);
   const addCon = () => set("cons", [...(form.cons ?? []), ""]);
+  const faqItems = form.faq ?? [];
+  const addFaq = () => set("faq", [...faqItems, { q: "", a: "" }]);
+  const setFaqField = (i: number, key: "q" | "a", value: string) => {
+    const next = faqItems.map((item, j) => (j === i ? { ...item, [key]: value } : item));
+    set("faq", next);
+  };
+  const removeFaq = (i: number) => set("faq", faqItems.filter((_, j) => j !== i));
+  const moveFaq = (i: number, dir: -1 | 1) => {
+    const target = i + dir;
+    if (target < 0 || target >= faqItems.length) return;
+    const next = [...faqItems];
+    [next[i], next[target]] = [next[target], next[i]];
+    set("faq", next);
+  };
 
   const handleSubmit = async (publish?: boolean) => {
     if (!form.title || !form.slug) {
@@ -160,8 +174,12 @@ const ReviewEditor = () => {
       content: form.content ? sanitizePastedHtml(form.content) : form.content,
       pros: (form.pros ?? []).filter((p) => p && p.trim()),
       cons: (form.cons ?? []).filter((c) => c && c.trim()),
+      faq: faqItems
+        .map((item) => ({ q: (item.q ?? "").trim(), a: (item.a ?? "").trim() }))
+        .filter((item) => item.q && item.a),
       status: publish ? "published" : form.status ?? "draft",
     };
+
     delete payload.category;
     const saved = await upsert.mutateAsync(payload);
     navigate(`/admin/recki/${saved.id}/edit`);
