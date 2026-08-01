@@ -35,6 +35,8 @@ export interface Review {
   score: number | null;
   pros: string[];
   cons: string[];
+  faq: { q: string; a: string }[];
+
   gallery: string[];
   cover_image_url: string | null;
   product_name: string | null;
