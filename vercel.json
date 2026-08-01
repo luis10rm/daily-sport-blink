@@ -12,7 +12,8 @@
     },
     {
       "source": "/sitemap.xml",
-      "destination": "https://izyknazjzdkfdxnekvos.supabase.co/functions/v1/sitemap"
+      "destination": "https://sitemap.szortsy.pl/",
+      "permanent": true
     },
     {
       "source": "/(.*)",
