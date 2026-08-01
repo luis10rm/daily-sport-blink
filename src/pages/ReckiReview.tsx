@@ -240,6 +240,11 @@ const ReckiReview = () => {
             </section>
           )}
 
+          {/* FAQ */}
+          <ReviewFaq items={normalizeFaq((review as any).faq)} canonicalUrl={canonicalPath} />
+
+
+
           {/* Inline banner */}
           {inlineBanner && (
             <div className="my-8">
