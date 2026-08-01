@@ -28,6 +28,7 @@ import ReckiHome from "./pages/ReckiHome";
 import ReckiReview from "./pages/ReckiReview";
 import PozytywneHome from "./pages/PozytywneHome";
 import PozytywneArchive from "./pages/PozytywneArchive";
+import StartPage from "./pages/StartPage";
 const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 const PostsList = lazy(() => import("./pages/admin/PostsList"));
 const PostEditor = lazy(() => import("./pages/admin/PostEditor"));
@@ -84,6 +85,7 @@ function App() {
               <Routes>
 
               <Route path="/" element={<Index />} />
+              <Route path="/start" element={<StartPage />} />
               <Route path="/dzien/:date" element={<DailyPage />} />
               <Route path="/blink/:slug" element={<BlinkPage />} />
               <Route path="/archiwum" element={<Archive />} />
