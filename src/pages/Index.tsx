@@ -59,6 +59,22 @@ const Index = () => {
 
   const { isTakeoverActive } = useWallpaperContext();
 
+  // Rendered once: above the fold on desktop, under News of the Day on mobile.
+  const topBannerBlock = topBanner ? (
+    <SponsorBanner
+      bannerId={topBanner.id}
+      title={topBanner.title}
+      description={topBanner.description}
+      ctaText={topBanner.cta_text}
+      ctaUrl={topBanner.click_tag}
+      imageDesktopUrl={topBanner.image_desktop_url || undefined}
+      imageMobileUrl={topBanner.image_mobile_url || undefined}
+      impressionTag={topBanner.impression_tag || undefined}
+      className="mb-8"
+    />
+  ) : null;
+
+
   return (
     <div className={cn(
       "min-h-screen relative z-10",
