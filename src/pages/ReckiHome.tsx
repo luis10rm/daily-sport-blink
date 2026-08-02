@@ -77,20 +77,8 @@ const ReckiHome = () => {
             )}
           </section>
 
-          {topBanner && (
-            <div className="mb-6">
-              <SponsorBanner
-                bannerId={topBanner.id}
-                title={topBanner.title}
-                description={topBanner.description ?? undefined}
-                ctaText={topBanner.cta_text}
-                ctaUrl={topBanner.click_tag}
-                imageDesktopUrl={topBanner.image_desktop_url ?? undefined}
-                imageMobileUrl={topBanner.image_mobile_url ?? undefined}
-                impressionTag={topBanner.impression_tag ?? undefined}
-              />
-            </div>
-          )}
+          {topBannerBlock && !isMobile && topBannerBlock}
+
 
           {isLoading && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
