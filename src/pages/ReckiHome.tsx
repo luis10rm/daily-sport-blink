@@ -38,6 +38,24 @@ const ReckiHome = () => {
   const secondary = useHeroLayout ? withoutHero.slice(0, 3) : [];
   const rest = useHeroLayout ? withoutHero.slice(3) : reviews;
 
+  // On mobile the 300x250 slot sits under the "news of the day" hero;
+  // on desktop it stays above it. Rendered once to avoid double impressions.
+  const topBannerBlock = topBanner ? (
+    <div className={isMobile ? "mb-8" : "mb-6"}>
+      <SponsorBanner
+        bannerId={topBanner.id}
+        title={topBanner.title}
+        description={topBanner.description ?? undefined}
+        ctaText={topBanner.cta_text}
+        ctaUrl={topBanner.click_tag}
+        imageDesktopUrl={topBanner.image_desktop_url ?? undefined}
+        imageMobileUrl={topBanner.image_mobile_url ?? undefined}
+        impressionTag={topBanner.impression_tag ?? undefined}
+      />
+    </div>
+  ) : null;
+
+
   return (
     <div className="min-h-screen flex flex-col">
       <ReckiHeader />
@@ -77,20 +95,8 @@ const ReckiHome = () => {
             )}
           </section>
 
-          {topBanner && (
-            <div className="mb-6">
-              <SponsorBanner
-                bannerId={topBanner.id}
-                title={topBanner.title}
-                description={topBanner.description ?? undefined}
-                ctaText={topBanner.cta_text}
-                ctaUrl={topBanner.click_tag}
-                imageDesktopUrl={topBanner.image_desktop_url ?? undefined}
-                imageMobileUrl={topBanner.image_mobile_url ?? undefined}
-                impressionTag={topBanner.impression_tag ?? undefined}
-              />
-            </div>
-          )}
+          {topBannerBlock && !isMobile && topBannerBlock}
+
 
           {isLoading && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -118,6 +124,9 @@ const ReckiHome = () => {
               </aside>
             </section>
           )}
+
+          {isMobile && topBannerBlock}
+
 
 
           {middleBanner && (
