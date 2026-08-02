@@ -1,36 +1,34 @@
-## Cel
+## Problem
 
-Redaktor Tech może dodać do artykułu listę pytań i odpowiedzi (FAQ). FAQ wyświetla się jako wyróżniona sekcja pod treścią artykułu i jest zoptymalizowane pod SEO (FAQPage JSON-LD).
+W Tech kafelki artykułów zachowują się różnie:
 
-## Baza danych
+- `variant="mini"` (kafelki w sidebarze hero na `/tech`) — **cały kafelek jest `<a>`** z `useNavLink`, który ma `onTouchEnd` z `preventDefault()` + `navigate()`. Na mobile oznacza to, że samo dotknięcie (nawet przy próbie przewijania) natychmiast przenosi na artykuł. Brak w ogóle przycisku „Czytaj więcej".
+- `variant="compact"` — kafelek nie jest linkiem, ale ma mały link „Czytaj" (`text-sm`, bez wyraźnego pola dotyku).
+- `variant="default"` i `"hero"` — mają już przycisk „Czytaj więcej", kafelek nie jest klikalny.
 
-Migracja: dodanie kolumny `faq jsonb not null default '[]'` do `public.reviews`.
-Format: `[{ "q": "pytanie", "a": "odpowiedź" }]`. Bez zmian w RLS/grantach (kolumna w istniejącej tabeli).
+## Rozwiązanie
 
-## Admin (`/admin/recki` → edytor)
+**1. Kafelek przestaje być klikalny (`mini`)**
+- Zamienić zewnętrzny `<a>` na `<article>` — obraz, kategoria i tytuł stają się nieklikalne.
+- Dodać na dole kafelka przycisk „Czytaj więcej" jako jedyny element nawigujący.
+- Zachować efekt hover na obrazku/tytule tylko na urządzeniach z myszką (`@media (hover: hover)` przez `group-hover` na desktopie), żeby na mobile nic nie sugerowało klikalności całego kafelka.
 
-W `src/pages/admin/ReviewEditor.tsx` nowa karta "FAQ (pytania i odpowiedzi)" pod sekcją Plusy/Minusy:
-- lista pozycji, każda z polem pytania (input) i odpowiedzi (textarea),
-- przyciski "Dodaj pytanie", usuwanie i zmiana kolejności (góra/dół),
-- puste pary są odfiltrowywane przy zapisie,
-- limit sugerowany 8 pozycji (miękki, z licznikiem).
+**2. Usunąć „instant redirect" z dotknięcia**
+- W przyciskach Tech nie używać `onTouchEnd` z `preventDefault()`. Zamiast tego zwykły `onClick` + `touch-manipulation` — nawigacja odpala się dopiero po pełnym tapie (touchstart + touchend na tym samym elemencie), więc przewijanie palcem po kafelku już nie przenosi na artykuł.
+- Zrobić to lokalnie dla kart Tech (nowy mały helper albo opcja w `useNavLink`), żeby nie zmieniać zachowania kart sportowych w tym kroku.
 
-`src/hooks/useReviews.tsx`: dodanie `faq` do typu `Review` oraz do zapisu/aktualizacji.
+**3. Poprawa UX samego przycisku „Czytaj więcej"**
+- Minimalna wysokość dotyku **44 px** (`min-h-11`), pełna szerokość na mobile w wariantach `mini` i `default`, wyśrodkowany tekst.
+- Spójna stylistyka Tech (fuksja): wypełniony `bg-fuchsia-600` dla `hero`, obrysowany (outline) dla `default`/`mini` — jedna wyraźna hierarchia.
+- Stan aktywny (`active:scale-[0.98]`), widoczny `focus-visible:ring` dla dostępności i klawiatury.
+- `aria-label` z tytułem artykułu (np. „Czytaj więcej: {tytuł}") — samo „Czytaj więcej" jest nieinformatywne dla czytników ekranu i wielokrotnie powtórzone na stronie.
+- Ikona strzałki przesuwa się w prawo tylko na hover z myszką.
+- `variant="compact"` — powiększyć „Czytaj" do tego samego, wyraźnego pola dotyku.
 
-## Layout artykułu (`/tech/:kategoria/:slug`)
-
-Nowy komponent `src/components/recki/ReviewFaq.tsx`, wstawiony w `ReckiReview.tsx` pod treścią i galerią (przed banerem inline / źródłem):
-- wyróżniony blok w stylistyce Tech (fuchsia): nagłówek `<h2>` "Najczęstsze pytania" z ikoną,
-- pozycje jako accordion (shadcn `Accordion`), pierwsze pytanie otwarte, semantyczny markup,
-- pytania widoczne w DOM od razu (odpowiedzi w accordionie renderowane, nie usuwane) — dla crawlerów,
-- sekcja renderuje się tylko gdy FAQ ma min. 1 pełną parę.
-
-## SEO
-
-W `ReckiReview.tsx` dodanie `FAQPage` JSON-LD (`@context`, `mainEntity` z `Question`/`Answer`) obok istniejących meta, tylko gdy FAQ istnieje.
+**4. Weryfikacja**
+- Test Playwright w widoku 393×852: sprawdzić, że tap na obrazku/tytule kafelka `mini` **nie** zmienia URL, a tap na „Czytaj więcej" prowadzi na `/tech/{kategoria}/{slug}`; zrzut ekranu kafelków.
 
 ## Szczegóły techniczne
 
-- Odpowiedzi traktowane jako tekst (escapowany), bez HTML — brak nowego wektora XSS.
-- Zakres: migracja + `useReviews.tsx`, `ReviewEditor.tsx`, `ReckiReview.tsx`, nowy `ReviewFaq.tsx`. Bez zmian w kanale sportowym i pozytywnym.
-- Weryfikacja: zapis FAQ w edytorze, render sekcji na stronie artykułu i obecność JSON-LD (Playwright + tsc).
+- Pliki: `src/components/recki/ReviewCard.tsx` (główna zmiana), ewentualnie `src/hooks/useNavLink.ts` (opcjonalny wariant bez `onTouchEnd`).
+- Bez zmian w danych, hookach recenzji i routingu — wyłącznie warstwa prezentacji i obsługa zdarzeń w karcie.
