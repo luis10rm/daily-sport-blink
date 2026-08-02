@@ -115,6 +115,9 @@ const Index = () => {
           />
         )}
 
+        {isMobile && topBannerBlock}
+
+
         {/* Cross-channel strip: latest from Tech + Pozytywne */}
         <CrossChannelStrip className="mb-10" />
 
