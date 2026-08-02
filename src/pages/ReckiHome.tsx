@@ -125,6 +125,9 @@ const ReckiHome = () => {
             </section>
           )}
 
+          {isMobile && topBannerBlock}
+
+
 
           {middleBanner && (
             <div className="mb-8">
