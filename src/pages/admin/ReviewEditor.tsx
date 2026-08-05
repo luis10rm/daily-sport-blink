@@ -43,6 +43,53 @@ const slugify = (s: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 
+type ContentType = "review" | "news" | "comparison";
+
+const CONTENT_TYPES: {
+  value: ContentType;
+  label: string;
+  accusative: string;
+  desc: string;
+  aiInputLabel: string;
+  aiPlaceholder: string;
+  aiButton: string;
+  aiHint: string;
+}[] = [
+  {
+    value: "review",
+    label: "Recenzja",
+    accusative: "recenzję",
+    desc: "Ocena 0–10, plusy i minusy, werdykt.",
+    aiInputLabel: "Produkt",
+    aiPlaceholder: "np. iPhone 16 Pro Max — codzienne użytkowanie",
+    aiButton: "Wygeneruj recenzję",
+    aiHint:
+      "AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne).",
+  },
+  {
+    value: "news",
+    label: "News",
+    accusative: "news",
+    desc: "Krótki artykuł informacyjny, bez oceny.",
+    aiInputLabel: "Temat newsa",
+    aiPlaceholder: "np. Apple ogłasza iOS 19 z nowym AI",
+    aiButton: "Wygeneruj news",
+    aiHint: "AI napisze krótki, rzeczowy news (300–600 słów) bez oceny i plusów/minusów.",
+  },
+  {
+    value: "comparison",
+    label: "Porównanie",
+    accusative: "porównanie",
+    desc: "Ranking / TOP-lista z sekcją FAQ i szybkim werdyktem.",
+    aiInputLabel: "Temat rankingu",
+    aiPlaceholder: "np. najlepsze słuchawki bezprzewodowe do 1000 zł",
+    aiButton: "Wygeneruj porównanie",
+    aiHint:
+      "AI zbuduje ranking pro-kliencki: pozycje z ceną w PLN, zalety i wady, sekcja „jak wybieraliśmy”, ściąga zakupowa i FAQ. Prompt edytujesz w Ustawieniach.",
+  },
+];
+
+
 const ReviewEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
