@@ -148,10 +148,23 @@ const ReviewsList = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={r.content_type === "news" ? "outline" : "secondary"}>
-                          {r.content_type === "news" ? "News" : "Recenzja"}
+                        <Badge
+                          variant={
+                            r.content_type === "news"
+                              ? "outline"
+                              : r.content_type === "comparison"
+                                ? "default"
+                                : "secondary"
+                          }
+                        >
+                          {r.content_type === "news"
+                            ? "News"
+                            : r.content_type === "comparison"
+                              ? "Porównanie"
+                              : "Recenzja"}
                         </Badge>
                       </TableCell>
+
                       <TableCell>{r.category?.name ?? "—"}</TableCell>
                       <TableCell>
                         {r.score !== null ? (
