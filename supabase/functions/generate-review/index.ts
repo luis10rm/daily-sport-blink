@@ -205,8 +205,10 @@ serve(async (req) => {
 
     const body = await req.json();
     const { product, topic, category, source_url } = body;
-    const content_type: "review" | "news" = body.content_type === "news" ? "news" : "review";
+    const content_type: "review" | "news" | "comparison" =
+      body.content_type === "news" || body.content_type === "comparison" ? body.content_type : "review";
     const subject = (topic ?? product ?? "").toString().trim();
+
     if (!subject && !source_url) {
       return new Response(JSON.stringify({ error: "Podaj temat/produkt lub 'source_url'" }), {
         status: 400,
