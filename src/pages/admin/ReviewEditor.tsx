@@ -189,6 +189,24 @@ const ReviewEditor = () => {
   const set = <K extends keyof Review>(key: K, value: Review[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  const changeContentType = (next: ContentType) => {
+    if (next === contentType) return;
+    const losesReviewFields =
+      contentType === "review" &&
+      next !== "review" &&
+      (form.score !== null && form.score !== undefined ||
+        (form.pros ?? []).some((p) => p?.trim()) ||
+        (form.cons ?? []).some((c) => c?.trim()));
+    if (losesReviewFields) {
+      const ok = window.confirm(
+        "Zmiana typu ukryje ocenę oraz plusy i minusy (dane zostaną w bazie, ale nie będą widoczne w artykule). Kontynuować?",
+      );
+      if (!ok) return;
+    }
+    set("content_type", next as any);
+  };
+
+
   const addPro = () => set("pros", [...(form.pros ?? []), ""]);
   const addCon = () => set("cons", [...(form.cons ?? []), ""]);
   const faqItems = form.faq ?? [];
