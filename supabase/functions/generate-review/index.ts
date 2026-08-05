@@ -238,15 +238,21 @@ serve(async (req) => {
     }
 
     const isNews = content_type === "news";
+    const isComparison = content_type === "comparison";
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
     );
     const prompts = await loadPrompts(supabaseAdmin);
-    const systemPrompt = isNews ? prompts.news : prompts.review;
-    const intro = isNews
-      ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
-      : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);
+    const systemPrompt = isComparison ? prompts.comparison : isNews ? prompts.news : prompts.review;
+    const intro = isComparison
+      ? (subject
+        ? `Zbuduj ranking / porównanie na temat: ${subject}.`
+        : `Zbuduj ranking / porównanie na podstawie poniższego artykułu źródłowego.`)
+      : isNews
+        ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
+        : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);
+
 
     const buildUserPrompt = (textLimit: number) => [
       intro,
