@@ -253,10 +253,21 @@ serve(async (req) => {
         ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
         : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);
 
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const todayPl = now.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" });
+
+    const dateRules = `\n\nDATY I AKTUALNOŚĆ (nadrzędne nad źródłem):\n- Dzisiejsza data: ${todayPl}. Bieżący rok: ${currentYear}.\n- W tytule i treści używaj WYŁĄCZNIE roku ${currentYear}. Jeśli źródło podaje starszy rok (np. 2024), zignoruj go — NIE przepisuj go do tytułu ani treści.\n- Ceny podawaj jako orientacyjne: "ok. X zł (stan na ${todayPl})". Nigdy nie twierdź, że cena jest "aktualna" ani nie zmyślaj kwot — jeśli źródło nie podaje ceny, napisz "cena orientacyjna niepotwierdzona".`;
+
+    const comparisonCompletenessRules = isComparison
+      ? `\n\nKOMPLETNOŚĆ RANKINGU:\n- Uwzględnij WSZYSTKIE pozycje obecne w źródle (minimum 5, jeśli źródło je zawiera). Nie skracaj rankingu do 2-3 modeli.\n- Każda pozycja to osobny <h3> z numerem, pełną nazwą i wyróżnikiem.`
+      : "";
 
     const buildUserPrompt = (textLimit: number) => [
       intro,
       category ? `Kategoria: ${category}.` : "",
+      dateRules,
+      comparisonCompletenessRules,
       scraped?.text ? `\n\n--- Artykuł źródłowy ---\n${scraped.text.slice(0, textLimit)}\n--- koniec ---` : "",
     ].filter(Boolean).join(" ");
 
@@ -270,7 +281,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: systemPrompt + dateRules },
             { role: "user", content: buildUserPrompt(textLimit) },
           ],
           response_format: { type: "json_object" },
@@ -279,7 +290,8 @@ serve(async (req) => {
       return res;
     };
 
-    let aiResponse = await callAi(8000);
+    let aiResponse = await callAi(isComparison ? 30000 : 12000);
+
 
     if (!aiResponse.ok) {
       const text = await aiResponse.text();
