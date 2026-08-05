@@ -294,49 +294,54 @@ const ReviewEditor = () => {
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold">{isNew ? "Nowa recenzja" : "Edycja recenzji"}</h1>
+        <h1 className="text-3xl font-bold">
+          {isNew ? `Nowy wpis: ${typeMeta.label}` : `Edycja: ${typeMeta.label}`}
+        </h1>
 
-        {/* AI generator */}
+        {/* Step 1 — content type (single source of truth) */}
+        <Card className="border-fuchsia-600/40">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Krok 1 — Typ wpisu</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {CONTENT_TYPES.map((opt) => {
+                const active = contentType === opt.value;
+                return (
+                  <button
+                    type="button"
+                    key={opt.value}
+                    onClick={() => changeContentType(opt.value)}
+                    className={`text-left rounded-lg border p-3 transition-colors ${
+                      active
+                        ? "border-fuchsia-600 bg-fuchsia-600/10"
+                        : "border-border hover:border-fuchsia-600/50"
+                    }`}
+                  >
+                    <div className="text-sm font-semibold">{opt.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Typ wybierasz raz — sterują nim zarówno generator AI, jak i pola formularza poniżej.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Step 2 — AI generator */}
         <Card className="border-fuchsia-600/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI — {aiIsReview ? "Recenzja" : "News"}
+              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Krok 2 — Generator AI ({typeMeta.label})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground">Tryb generowania</Label>
-              <div className="mt-1 inline-flex rounded-md border border-border bg-muted p-1">
-                <button
-                  type="button"
-                  onClick={() => setAiMode("review")}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                    aiMode === "review"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Recenzja
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAiMode("news")}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                    aiMode === "news"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  News
-                </button>
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">{aiIsReview ? "Produkt" : "Temat newsa"}</Label>
+              <Label className="text-xs text-muted-foreground">{typeMeta.aiInputLabel}</Label>
               <Input
-                placeholder={aiIsReview
-                  ? "np. iPhone 16 Pro Max — codzienne użytkowanie"
-                  : "np. Apple ogłasza iOS 19 z nowym AI"}
+                placeholder={typeMeta.aiPlaceholder}
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
               />
@@ -351,39 +356,21 @@ const ReviewEditor = () => {
             </div>
             <Button onClick={generateAI} disabled={aiLoading}>
               {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              {aiIsReview ? "Wygeneruj recenzję" : "Wygeneruj news"}
+              {typeMeta.aiButton}
             </Button>
-            <p className="text-xs text-muted-foreground">
-              {aiIsReview
-                ? "AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne)."
-                : "AI napisze krótki, rzeczowy news (400–800 słów) bez oceny i plusów/minusów. Typ wpisu zostanie automatycznie ustawiony na News."}
-            </p>
+            <p className="text-xs text-muted-foreground">{typeMeta.aiHint}</p>
           </CardContent>
 
         </Card>
 
 
-        {/* Basic info */}
+        {/* Step 3 — Basic info */}
         <Card>
           <CardHeader>
-            <CardTitle>Podstawowe</CardTitle>
+            <CardTitle>Krok 3 — Podstawowe</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label>Typ wpisu</Label>
-              <Select
-                value={form.content_type ?? "review"}
-                onValueChange={(v) => set("content_type", v as "review" | "news")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="review">Recenzja (z oceną, plusami i minusami)</SelectItem>
-                  <SelectItem value="news">News / artykuł (bez oceny)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="rounded-lg border border-fuchsia-600/30 bg-fuchsia-600/5 p-3">
               <Label className="text-sm font-semibold">Skąd pochodzi treść?</Label>
               <p className="text-xs text-muted-foreground mt-0.5 mb-2">
