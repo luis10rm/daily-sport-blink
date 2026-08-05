@@ -516,6 +516,12 @@ const Settings = () => {
   };
   const handleResetTechNewsPrompt = () => setLocalTechNewsPrompt(DEFAULT_TECH_NEWS_PROMPT);
 
+  const handleSaveTechComparisonPrompt = async () => {
+    await updateSetting.mutateAsync({ key: "tech_comparison_prompt", value: localTechComparisonPrompt });
+    setHasTechComparisonPromptChanges(false);
+  };
+  const handleResetTechComparisonPrompt = () => setLocalTechComparisonPrompt(DEFAULT_TECH_COMPARISON_PROMPT);
+
   const handleSaveMakeWebhook = async () => {
     await updateSetting.mutateAsync({
       key: "make_webhook_url",
