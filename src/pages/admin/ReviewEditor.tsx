@@ -183,16 +183,16 @@ const ReviewEditor = () => {
 
   const generateAI = async () => {
     if (!aiPrompt.trim() && !form.source_url) {
-      toast.error(aiIsReview ? "Podaj produkt lub URL źródła" : "Podaj temat newsa lub URL źródła");
+      toast.error(`${typeMeta.aiInputLabel} lub URL źródła jest wymagany`);
       return;
     }
     setAiLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-review", {
         body: {
-          content_type: aiMode,
-          product: aiIsReview ? (aiPrompt || form.product_name || form.title) : undefined,
-          topic: !aiIsReview ? (aiPrompt || form.title) : undefined,
+          content_type: contentType,
+          product: isReview ? (aiPrompt || form.product_name || form.title) : undefined,
+          topic: !isReview ? (aiPrompt || form.title) : undefined,
           category: categories.find((c) => c.id === form.category_id)?.name,
           source_url: form.source_url || undefined,
         },
@@ -223,19 +223,25 @@ const ReviewEditor = () => {
       const nextCover = existingCover && existingCover.trim()
         ? existingCover
         : suggested[0] ?? existingCover;
+      const aiFaq = Array.isArray(data.faq)
+        ? data.faq
+            .map((item: any) => ({ q: String(item?.q ?? "").trim(), a: String(item?.a ?? "").trim() }))
+            .filter((item: any) => item.q && item.a)
+        : [];
       setForm((f) => ({
         ...f,
-        content_type: aiMode,
+        content_type: contentType,
         title: data.title ?? f.title,
         slug: f.slug || slugify(data.title ?? ""),
         excerpt: data.excerpt ?? f.excerpt,
         content: data.content ? sanitizePastedHtml(data.content) : f.content,
-        verdict: aiIsReview ? (data.verdict ?? f.verdict) : f.verdict,
-        score: aiIsReview ? (data.score ?? f.score) : f.score,
-        pros: aiIsReview ? (data.pros ?? f.pros) : f.pros,
-        cons: aiIsReview ? (data.cons ?? f.cons) : f.cons,
-        product_name: aiIsReview ? (data.product_name ?? f.product_name) : f.product_name,
-        product_brand: aiIsReview ? (data.product_brand ?? f.product_brand) : f.product_brand,
+        verdict: isReview || isComparison ? (data.verdict ?? f.verdict) : f.verdict,
+        score: isReview ? (data.score ?? f.score) : f.score,
+        pros: isReview ? (data.pros ?? f.pros) : f.pros,
+        cons: isReview ? (data.cons ?? f.cons) : f.cons,
+        faq: aiFaq.length && !(f.faq ?? []).length ? aiFaq : f.faq,
+        product_name: isReview ? (data.product_name ?? f.product_name) : f.product_name,
+        product_brand: isReview ? (data.product_brand ?? f.product_brand) : f.product_brand,
         cover_image_url: nextCover,
         gallery: mergedGallery,
         is_ai_generated: true,
@@ -244,7 +250,11 @@ const ReviewEditor = () => {
       const imgInfo = suggested.length
         ? ` (+${existingGallery.length ? 0 : Math.min(suggested.length, 8)} obrazków ze źródła)`
         : "";
-      toast.success(`Wygenerowano ${aiIsReview ? "recenzję" : "news"} AI${imgInfo} — edytuj i opublikuj`);
+      if (Array.isArray(data.internal_links) && data.internal_links.length) {
+        toast.info(`Propozycje linkowania: ${data.internal_links.slice(0, 3).join(" · ")}`, { duration: 10000 });
+      }
+      toast.success(`Wygenerowano: ${typeMeta.accusative} AI${imgInfo} — edytuj i opublikuj`);
+
     } catch (e: any) {
       toast.error(e.message ?? "Błąd generowania");
     } finally {
