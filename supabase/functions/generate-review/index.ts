@@ -385,9 +385,34 @@ serve(async (req) => {
       parsed.faq = Array.isArray(parsed.faq) ? parsed.faq : [];
     }
 
+    const warnings: string[] = [];
 
+    // Wymuś bieżący rok w tytule (źródła często mają stary rok)
+    if (typeof parsed.title === "string") {
+      const staleYear = parsed.title.match(/\b(20\d{2})\b/)?.[1];
+      if (staleYear && Number(staleYear) !== currentYear) {
+        parsed.title = parsed.title.replace(/\b20\d{2}\b/g, String(currentYear));
+        warnings.push(`Tytuł zawierał rok ${staleYear} — poprawiono na ${currentYear}. Sprawdź też daty i ceny w treści.`);
+      }
+    }
+
+    if (isComparison) {
+      const items = (String(parsed.content ?? "").match(/<h3/gi) ?? []).length;
+      if (items < 5) {
+        warnings.push(`Ranking ma tylko ${items} pozycji — źródło może zawierać więcej. Uzupełnij ręcznie lub wygeneruj ponownie.`);
+      }
+      if (!parsed.faq?.length) {
+        warnings.push("Brak sekcji FAQ — dodaj 3-5 pytań w edytorze.");
+      }
+      if (!parsed.verdict) {
+        warnings.push("Brak szybkiego werdyktu.");
+      }
+    }
+
+    parsed.warnings = warnings;
     parsed.content_type = content_type;
     parsed.gallery_suggestions = scraped?.images ?? [];
+
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
