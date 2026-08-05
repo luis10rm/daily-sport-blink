@@ -392,6 +392,17 @@ const Settings = () => {
   }, [localTechNewsPrompt, techNewsPromptValue]);
 
   useEffect(() => {
+    setLocalTechComparisonPrompt(techComparisonPromptValue || DEFAULT_TECH_COMPARISON_PROMPT);
+  }, [techComparisonPromptValue]);
+
+  useEffect(() => {
+    setHasTechComparisonPromptChanges(
+      localTechComparisonPrompt !== (techComparisonPromptValue ?? "") && localTechComparisonPrompt !== "",
+    );
+  }, [localTechComparisonPrompt, techComparisonPromptValue]);
+
+
+  useEffect(() => {
     if (makeWebhookValue !== undefined) {
       setLocalMakeWebhook(makeWebhookValue || "");
     }
