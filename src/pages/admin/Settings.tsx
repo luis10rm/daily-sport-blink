@@ -1177,6 +1177,54 @@ const Settings = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Tech Comparison Prompt */}
+              <div className="space-y-2 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Newspaper className="h-4 w-4 text-amber-600" />
+                  <Label htmlFor="tech-comparison-prompt">Prompt — Porównania / rankingi TECH</Label>
+                </div>
+                {isLoadingTechComparisonPrompt ? (
+                  <Skeleton className="h-64 w-full" />
+                ) : (
+                  <Textarea
+                    id="tech-comparison-prompt"
+                    value={localTechComparisonPrompt}
+                    onChange={(e) => setLocalTechComparisonPrompt(e.target.value)}
+                    rows={20}
+                    className="font-mono text-sm"
+                    placeholder="Prompt systemowy dla generatora porównań..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Używany dla typu „porównanie". Ranking pro-kliencki: ceny w PLN, zalety i wady każdej
+                  pozycji, sekcja „jak wybieraliśmy", ściąga zakupowa i FAQ (zapisywane w polu FAQ artykułu).
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveTechComparisonPrompt}
+                    disabled={!hasTechComparisonPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleResetTechComparisonPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
+              </div>
+
             </CardContent>
           </Card>
         )}
