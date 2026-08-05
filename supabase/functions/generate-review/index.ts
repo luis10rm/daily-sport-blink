@@ -127,7 +127,7 @@ async function firecrawlScrape(url: string, key: string): Promise<{ text: string
     const md: string = json?.data?.markdown ?? json?.markdown ?? "";
     const html: string = json?.data?.html ?? json?.html ?? "";
     const images = extractImages(html, md, url);
-    const text = (md || html.replace(/<[^>]+>/g, " ")).slice(0, 12000);
+    const text = (md || html.replace(/<[^>]+>/g, " ")).slice(0, 45000);
     return { text, images };
   } catch (e) {
     console.error("firecrawlScrape failed:", e);
@@ -169,7 +169,7 @@ async function directFetchScrape(url: string): Promise<{ text: string; images: s
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-      .slice(0, 12000);
+      .slice(0, 45000);
     // Images: og:image first, then <img> from article
     const ogImg = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)/i)?.[1];
     const imgs = extractImages(articleMatch, "", url);
