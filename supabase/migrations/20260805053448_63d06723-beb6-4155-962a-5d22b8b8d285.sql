@@ -1,0 +1,2 @@
+ALTER TABLE public.reviews DROP CONSTRAINT IF EXISTS reviews_content_type_check;
+ALTER TABLE public.reviews ADD CONSTRAINT reviews_content_type_check CHECK (content_type IN ('review','news','comparison'));

@@ -43,6 +43,53 @@ const slugify = (s: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 
+type ContentType = "review" | "news" | "comparison";
+
+const CONTENT_TYPES: {
+  value: ContentType;
+  label: string;
+  accusative: string;
+  desc: string;
+  aiInputLabel: string;
+  aiPlaceholder: string;
+  aiButton: string;
+  aiHint: string;
+}[] = [
+  {
+    value: "review",
+    label: "Recenzja",
+    accusative: "recenzję",
+    desc: "Ocena 0–10, plusy i minusy, werdykt.",
+    aiInputLabel: "Produkt",
+    aiPlaceholder: "np. iPhone 16 Pro Max — codzienne użytkowanie",
+    aiButton: "Wygeneruj recenzję",
+    aiHint:
+      "AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne).",
+  },
+  {
+    value: "news",
+    label: "News",
+    accusative: "news",
+    desc: "Krótki artykuł informacyjny, bez oceny.",
+    aiInputLabel: "Temat newsa",
+    aiPlaceholder: "np. Apple ogłasza iOS 19 z nowym AI",
+    aiButton: "Wygeneruj news",
+    aiHint: "AI napisze krótki, rzeczowy news (300–600 słów) bez oceny i plusów/minusów.",
+  },
+  {
+    value: "comparison",
+    label: "Porównanie",
+    accusative: "porównanie",
+    desc: "Ranking / TOP-lista z sekcją FAQ i szybkim werdyktem.",
+    aiInputLabel: "Temat rankingu",
+    aiPlaceholder: "np. najlepsze słuchawki bezprzewodowe do 1000 zł",
+    aiButton: "Wygeneruj porównanie",
+    aiHint:
+      "AI zbuduje ranking pro-kliencki: pozycje z ceną w PLN, zalety i wady, sekcja „jak wybieraliśmy”, ściąga zakupowa i FAQ. Prompt edytujesz w Ustawieniach.",
+  },
+];
+
+
 const ReviewEditor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -72,18 +119,14 @@ const ReviewEditor = () => {
     is_ai_generated: false,
     content_type: "review",
   });
-  const isReview = (form.content_type ?? "review") === "review";
+  const contentType = (form.content_type ?? "review") as ContentType;
+  const isReview = contentType === "review";
+  const isComparison = contentType === "comparison";
+  const typeMeta = CONTENT_TYPES.find((t) => t.value === contentType) ?? CONTENT_TYPES[0];
   const [slugTouched, setSlugTouched] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiMode, setAiMode] = useState<"review" | "news">("review");
 
-  useEffect(() => {
-    if (existing?.content_type === "news" || existing?.content_type === "review") {
-      setAiMode(existing.content_type);
-    }
-  }, [existing]);
-  const aiIsReview = aiMode === "review";
 
   // Image search (SerpApi / Google Images)
   type SearchedImage = {
@@ -146,6 +189,24 @@ const ReviewEditor = () => {
   const set = <K extends keyof Review>(key: K, value: Review[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  const changeContentType = (next: ContentType) => {
+    if (next === contentType) return;
+    const losesReviewFields =
+      contentType === "review" &&
+      next !== "review" &&
+      (form.score !== null && form.score !== undefined ||
+        (form.pros ?? []).some((p) => p?.trim()) ||
+        (form.cons ?? []).some((c) => c?.trim()));
+    if (losesReviewFields) {
+      const ok = window.confirm(
+        "Zmiana typu ukryje ocenę oraz plusy i minusy (dane zostaną w bazie, ale nie będą widoczne w artykule). Kontynuować?",
+      );
+      if (!ok) return;
+    }
+    set("content_type", next as any);
+  };
+
+
   const addPro = () => set("pros", [...(form.pros ?? []), ""]);
   const addCon = () => set("cons", [...(form.cons ?? []), ""]);
   const faqItems = form.faq ?? [];
@@ -187,16 +248,16 @@ const ReviewEditor = () => {
 
   const generateAI = async () => {
     if (!aiPrompt.trim() && !form.source_url) {
-      toast.error(aiIsReview ? "Podaj produkt lub URL źródła" : "Podaj temat newsa lub URL źródła");
+      toast.error(`${typeMeta.aiInputLabel} lub URL źródła jest wymagany`);
       return;
     }
     setAiLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-review", {
         body: {
-          content_type: aiMode,
-          product: aiIsReview ? (aiPrompt || form.product_name || form.title) : undefined,
-          topic: !aiIsReview ? (aiPrompt || form.title) : undefined,
+          content_type: contentType,
+          product: isReview ? (aiPrompt || form.product_name || form.title) : undefined,
+          topic: !isReview ? (aiPrompt || form.title) : undefined,
           category: categories.find((c) => c.id === form.category_id)?.name,
           source_url: form.source_url || undefined,
         },
@@ -227,19 +288,25 @@ const ReviewEditor = () => {
       const nextCover = existingCover && existingCover.trim()
         ? existingCover
         : suggested[0] ?? existingCover;
+      const aiFaq = Array.isArray(data.faq)
+        ? data.faq
+            .map((item: any) => ({ q: String(item?.q ?? "").trim(), a: String(item?.a ?? "").trim() }))
+            .filter((item: any) => item.q && item.a)
+        : [];
       setForm((f) => ({
         ...f,
-        content_type: aiMode,
+        content_type: contentType,
         title: data.title ?? f.title,
         slug: f.slug || slugify(data.title ?? ""),
         excerpt: data.excerpt ?? f.excerpt,
         content: data.content ? sanitizePastedHtml(data.content) : f.content,
-        verdict: aiIsReview ? (data.verdict ?? f.verdict) : f.verdict,
-        score: aiIsReview ? (data.score ?? f.score) : f.score,
-        pros: aiIsReview ? (data.pros ?? f.pros) : f.pros,
-        cons: aiIsReview ? (data.cons ?? f.cons) : f.cons,
-        product_name: aiIsReview ? (data.product_name ?? f.product_name) : f.product_name,
-        product_brand: aiIsReview ? (data.product_brand ?? f.product_brand) : f.product_brand,
+        verdict: isReview || isComparison ? (data.verdict ?? f.verdict) : f.verdict,
+        score: isReview ? (data.score ?? f.score) : f.score,
+        pros: isReview ? (data.pros ?? f.pros) : f.pros,
+        cons: isReview ? (data.cons ?? f.cons) : f.cons,
+        faq: aiFaq.length && !(f.faq ?? []).length ? aiFaq : f.faq,
+        product_name: isReview ? (data.product_name ?? f.product_name) : f.product_name,
+        product_brand: isReview ? (data.product_brand ?? f.product_brand) : f.product_brand,
         cover_image_url: nextCover,
         gallery: mergedGallery,
         is_ai_generated: true,
@@ -248,7 +315,11 @@ const ReviewEditor = () => {
       const imgInfo = suggested.length
         ? ` (+${existingGallery.length ? 0 : Math.min(suggested.length, 8)} obrazków ze źródła)`
         : "";
-      toast.success(`Wygenerowano ${aiIsReview ? "recenzję" : "news"} AI${imgInfo} — edytuj i opublikuj`);
+      if (Array.isArray(data.internal_links) && data.internal_links.length) {
+        toast.info(`Propozycje linkowania: ${data.internal_links.slice(0, 3).join(" · ")}`, { duration: 10000 });
+      }
+      toast.success(`Wygenerowano: ${typeMeta.accusative} AI${imgInfo} — edytuj i opublikuj`);
+
     } catch (e: any) {
       toast.error(e.message ?? "Błąd generowania");
     } finally {
@@ -288,49 +359,54 @@ const ReviewEditor = () => {
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold">{isNew ? "Nowa recenzja" : "Edycja recenzji"}</h1>
+        <h1 className="text-3xl font-bold">
+          {isNew ? `Nowy wpis: ${typeMeta.label}` : `Edycja: ${typeMeta.label}`}
+        </h1>
 
-        {/* AI generator */}
+        {/* Step 1 — content type (single source of truth) */}
+        <Card className="border-fuchsia-600/40">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Krok 1 — Typ wpisu</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {CONTENT_TYPES.map((opt) => {
+                const active = contentType === opt.value;
+                return (
+                  <button
+                    type="button"
+                    key={opt.value}
+                    onClick={() => changeContentType(opt.value)}
+                    className={`text-left rounded-lg border p-3 transition-colors ${
+                      active
+                        ? "border-fuchsia-600 bg-fuchsia-600/10"
+                        : "border-border hover:border-fuchsia-600/50"
+                    }`}
+                  >
+                    <div className="text-sm font-semibold">{opt.label}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Typ wybierasz raz — sterują nim zarówno generator AI, jak i pola formularza poniżej.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Step 2 — AI generator */}
         <Card className="border-fuchsia-600/30">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Generator AI — {aiIsReview ? "Recenzja" : "News"}
+              <Sparkles className="h-4 w-4 text-fuchsia-600" /> Krok 2 — Generator AI ({typeMeta.label})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <Label className="text-xs text-muted-foreground">Tryb generowania</Label>
-              <div className="mt-1 inline-flex rounded-md border border-border bg-muted p-1">
-                <button
-                  type="button"
-                  onClick={() => setAiMode("review")}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                    aiMode === "review"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Recenzja
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAiMode("news")}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
-                    aiMode === "news"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  News
-                </button>
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">{aiIsReview ? "Produkt" : "Temat newsa"}</Label>
+              <Label className="text-xs text-muted-foreground">{typeMeta.aiInputLabel}</Label>
               <Input
-                placeholder={aiIsReview
-                  ? "np. iPhone 16 Pro Max — codzienne użytkowanie"
-                  : "np. Apple ogłasza iOS 19 z nowym AI"}
+                placeholder={typeMeta.aiPlaceholder}
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
               />
@@ -345,39 +421,21 @@ const ReviewEditor = () => {
             </div>
             <Button onClick={generateAI} disabled={aiLoading}>
               {aiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              {aiIsReview ? "Wygeneruj recenzję" : "Wygeneruj news"}
+              {typeMeta.aiButton}
             </Button>
-            <p className="text-xs text-muted-foreground">
-              {aiIsReview
-                ? "AI zaproponuje tytuł, werdykt, ocenę 1–10, plusy, minusy i treść. Jeśli podasz URL, automatycznie pobierze obrazki do galerii (chyba że już dodałeś własne)."
-                : "AI napisze krótki, rzeczowy news (400–800 słów) bez oceny i plusów/minusów. Typ wpisu zostanie automatycznie ustawiony na News."}
-            </p>
+            <p className="text-xs text-muted-foreground">{typeMeta.aiHint}</p>
           </CardContent>
 
         </Card>
 
 
-        {/* Basic info */}
+        {/* Step 3 — Basic info */}
         <Card>
           <CardHeader>
-            <CardTitle>Podstawowe</CardTitle>
+            <CardTitle>Krok 3 — Podstawowe</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label>Typ wpisu</Label>
-              <Select
-                value={form.content_type ?? "review"}
-                onValueChange={(v) => set("content_type", v as "review" | "news")}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="review">Recenzja (z oceną, plusami i minusami)</SelectItem>
-                  <SelectItem value="news">News / artykuł (bez oceny)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
             <div className="rounded-lg border border-fuchsia-600/30 bg-fuchsia-600/5 p-3">
               <Label className="text-sm font-semibold">Skąd pochodzi treść?</Label>
               <p className="text-xs text-muted-foreground mt-0.5 mb-2">
@@ -471,31 +529,34 @@ const ReviewEditor = () => {
                 onChange={(e) => set("excerpt", e.target.value)}
               />
             </div>
-            {isReview && (
-              <div className="grid grid-cols-1 sm:grid-cols-[1fr,200px] gap-3">
+            {(isReview || isComparison) && (
+              <div className={`grid grid-cols-1 gap-3 ${isReview ? "sm:grid-cols-[1fr,200px]" : ""}`}>
                 <div>
-                  <Label>Werdykt</Label>
+                  <Label>{isComparison ? "Szybki werdykt (zwycięzca rankingu)" : "Werdykt"}</Label>
                   <Textarea
                     rows={3}
                     value={form.verdict ?? ""}
                     onChange={(e) => set("verdict", e.target.value)}
                   />
                 </div>
-                <div>
-                  <Label>Ocena 0–10</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={10}
-                    step={0.1}
-                    value={form.score ?? ""}
-                    onChange={(e) =>
-                      set("score", e.target.value === "" ? null : Number(e.target.value))
-                    }
-                  />
-                </div>
+                {isReview && (
+                  <div>
+                    <Label>Ocena 0–10</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={10}
+                      step={0.1}
+                      value={form.score ?? ""}
+                      onChange={(e) =>
+                        set("score", e.target.value === "" ? null : Number(e.target.value))
+                      }
+                    />
+                  </div>
+                )}
               </div>
             )}
+
             <div>
               <Label>URL źródła (opcjonalnie)</Label>
               <Input value={form.source_url ?? ""} onChange={(e) => set("source_url", e.target.value)} />

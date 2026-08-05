@@ -33,14 +33,31 @@ const ReviewsList = () => {
   const del = useDeleteReview();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "review" | "news" | "comparison">("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  const matchesSearch = (r: { title: string; product_name: string | null; product_brand: string | null }) =>
+    r.title.toLowerCase().includes(search.toLowerCase()) ||
+    (r.product_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (r.product_brand ?? "").toLowerCase().includes(search.toLowerCase());
+
   const filtered = reviews?.filter(
-    (r) =>
-      r.title.toLowerCase().includes(search.toLowerCase()) ||
-      (r.product_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
-      (r.product_brand ?? "").toLowerCase().includes(search.toLowerCase())
+    (r) => matchesSearch(r) && (typeFilter === "all" || r.content_type === typeFilter),
   );
+
+  const counts = {
+    all: reviews?.length ?? 0,
+    review: reviews?.filter((r) => r.content_type === "review").length ?? 0,
+    news: reviews?.filter((r) => r.content_type === "news").length ?? 0,
+    comparison: reviews?.filter((r) => r.content_type === "comparison").length ?? 0,
+  };
+
+  const TYPE_TABS = [
+    { value: "all" as const, label: "Wszystkie" },
+    { value: "review" as const, label: "Recenzje" },
+    { value: "news" as const, label: "Newsy" },
+    { value: "comparison" as const, label: "Porównania" },
+  ];
 
   return (
     <AdminLayout>
@@ -48,13 +65,30 @@ const ReviewsList = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold font-heading">Tech</h1>
-            <p className="text-muted-foreground">Recenzje i newsy technologiczne</p>
+            <p className="text-muted-foreground">Recenzje, newsy i porównania technologiczne</p>
           </div>
           <Link to="/admin/recki/new">
             <Button>
               <Plus className="mr-2 h-4 w-4" /> Nowy wpis
             </Button>
           </Link>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1 rounded-md border border-border bg-muted p-1 w-fit">
+          {TYPE_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => setTypeFilter(tab.value)}
+              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                typeFilter === tab.value
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {tab.label} ({counts[tab.value]})
+            </button>
+          ))}
         </div>
 
         <div className="relative">
@@ -66,6 +100,7 @@ const ReviewsList = () => {
             className="pl-9"
           />
         </div>
+
 
         {isLoading ? (
           <div className="space-y-2">
@@ -113,10 +148,23 @@ const ReviewsList = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={r.content_type === "news" ? "outline" : "secondary"}>
-                          {r.content_type === "news" ? "News" : "Recenzja"}
+                        <Badge
+                          variant={
+                            r.content_type === "news"
+                              ? "outline"
+                              : r.content_type === "comparison"
+                                ? "default"
+                                : "secondary"
+                          }
+                        >
+                          {r.content_type === "news"
+                            ? "News"
+                            : r.content_type === "comparison"
+                              ? "Porównanie"
+                              : "Recenzja"}
                         </Badge>
                       </TableCell>
+
                       <TableCell>{r.category?.name ?? "—"}</TableCell>
                       <TableCell>
                         {r.score !== null ? (

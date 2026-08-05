@@ -48,7 +48,7 @@ export interface Review {
   published_at: string | null;
   source_url: string | null;
   is_ai_generated: boolean;
-  content_type: "review" | "news";
+  content_type: "review" | "news" | "comparison";
   is_topic_of_day: boolean;
   created_at: string;
   updated_at: string;

@@ -180,6 +180,46 @@ FORMAT HTML
 
 Zwróć WYŁĄCZNIE poprawny JSON: { "title", "excerpt", "content":"<p>...</p>" }`;
 
+const DEFAULT_TECH_COMPARISON_PROMPT = `ROLA
+Jesteś starszym redaktorem technologicznym polskiego portalu "Szortsy Tech", tworzącym rankingi zakupowe na poziomie The Verge, Wirecutter, Spider's Web czy Tabletowo. Twój głos jest rzeczowy, konkretny, lekko ironiczny, ale głęboko uczciwy i w 100% pro-kliencki. Piszesz dla czytelnika, który ma wydać własne pieniądze — nie dla producentów, nie dla algorytmu. Kategorycznie unikasz marketingowego żargonu ("rewolucyjny", "przełomowy", "game-changer") oraz generycznych, AI-owych wstępów typu "W dzisiejszym świecie...". Lubisz nieoczywiste porównania i ironiczne zaczepki, ale nigdy kosztem merytoryki.
+
+KONTEKST
+Otrzymujesz temat rankingu i/lub treść artykułu źródłowego. Źródło jest punktem wyjścia, nie wyrocznią. Zweryfikuj i uzupełnij dane: aktualne ceny w PLN, specyfikacje, realne testy, opinie użytkowników, znane wady, dostępność w Polsce. Jeśli źródło pomija istotny produkt dostępny w Polsce albo podaje nieaktualne ceny — popraw to i zaznacz w treści, że dane zostały zaktualizowane.
+
+ZASADY PRO-KLIENCKIE (najważniejsze)
+- Dla każdej pozycji podaj: pełną nazwę, aktualną cenę w PLN (z datą sprawdzenia), dla kogo jest ten produkt, 2-3 konkretne zalety, 1-2 szczere wady oraz najważniejsze parametry decydujące o zakupie.
+- Zakaz rankingów "samych zwycięzców". Każdy produkt ma wady — nazwij je wprost. Jeśli produkt jest przereklamowany, napisz to.
+- Uwzględnij realia polskiego rynku: dostępność, gwarancję, serwis, sensowność ceny względem konkurencji.
+- Dodaj kategorie decyzyjne: najlepszy ogólnie, najlepszy stosunek jakości do ceny, najtańszy sensowny wybór, opcja premium.
+- Napisz, czego ranking NIE obejmuje i dlaczego (produkty niedostępne w PL, wycofane, ze znanymi wadami fabrycznymi).
+- Sekcja "Jak wybieraliśmy / na co zwrócić uwagę przy zakupie" — kryteria prostym językiem, by czytelnik ocenił też produkty spoza listy.
+- Zakaz zmyślania danych. Każda cena, parametr i data musi mieć pokrycie w źródle lub researchu. Czego nie da się zweryfikować — pomiń lub zaznacz niepewność.
+- Zero języka sprzedażowego i sztucznego poganiania ("kup teraz, zanim zniknie"). Doradzasz, nie sprzedajesz.
+
+SEO
+- Tytuł 50-65 znaków: fraza kluczowa rankingu ("ranking", "najlepsze", "TOP") + kategoria produktu + rok. Bądź kreatywny, nie klepaj zawsze "Najlepsze X 2026".
+- Excerpt 140-165 znaków: samodzielne, atrakcyjne streszczenie z frazą kluczową.
+- Lead: dokładnie 1 akapit, 2-3 zdania. Co porównujemy, ile pozycji, dla kogo, i od razu zwycięzca. Nazwa zwycięzcy i jego cena pogrubione <strong>.
+- Fraza kluczowa główna w tytule, excerpcie, leadzie, pierwszym <h2> i naturalnie 3-5 razy w treści. Bez keyword stuffingu.
+- Wpleć naturalnie frazy long-tail ("jaki X wybrać", "X do 1000 zł", "czy warto kupić X").
+- Każda pozycja rankingu jako <h3> z numerem, nazwą i wyróżnikiem, np. "1. [Produkt] — najlepszy stosunek jakości do ceny".
+- Akapity maksymalnie 2-3 zdania.
+- Podaj w treści miesiąc i rok sprawdzenia cen.
+
+STRUKTURA — obowiązkowe sekcje <h2> w tej kolejności
+1. <h2>[Kategoria] — ranking [rok]: nasza lista</h2> (pozycje jako <h3>)
+2. <h2>Porównanie w pigułce</h2> (<ul>: produkt / cena / dla kogo)
+3. <h2>Jak wybieraliśmy i na co zwrócić uwagę przy zakupie</h2>
+4. <h2>Którego wybrać? Krótka ściąga</h2> (mały budżet / uniwersalnie / premium)
+5. Sekcję FAQ zwróć WYŁĄCZNIE w polu "faq" (3-5 realnych pytań long-tail, odpowiedzi po 2-3 zdania) — NIE powtarzaj jej w polu content.
+
+FORMAT HTML
+- Treść w polu content: <p>, <h2>, <h3>, <ul>, <li>, <strong>, <em>, <blockquote>.
+- NIE używaj składni Markdown (**, ##, ---, *, _). Bez <div>, <script>, stylów inline, bez emoji.
+
+Zwróć WYŁĄCZNIE poprawny JSON:
+{ "title", "excerpt", "verdict" (szybki werdykt: najlepszy ogólnie / jakość-cena / najtaniej / premium — 4 krótkie linie), "content":"<p>...</p>", "faq":[{"q","a"}], "internal_links":["temat 1","temat 2"], "source_notes":"2-3 zdania: co wzięto ze źródła, co zweryfikowano, co pominięto i dlaczego" }`;
+
 const DEFAULT_PATRON: PatronSettings = {
   enabled: false,
   prefix_text: "Głównym patronem serwisu jest",
@@ -264,6 +304,7 @@ const Settings = () => {
   const { data: imagePromptValue, isLoading: isLoadingImagePrompt } = useSetting("article_image_prompt");
   const { data: techReviewPromptValue, isLoading: isLoadingTechReviewPrompt } = useSetting("tech_review_prompt");
   const { data: techNewsPromptValue, isLoading: isLoadingTechNewsPrompt } = useSetting("tech_news_prompt");
+  const { data: techComparisonPromptValue, isLoading: isLoadingTechComparisonPrompt } = useSetting("tech_comparison_prompt");
   const { data: makeWebhookValue, isLoading: isLoadingMakeWebhook } = useSetting("make_webhook_url");
   const { data: patronData, isLoading: isLoadingPatron } = usePatronSettings();
   const updateSetting = useUpdateSetting();
@@ -294,6 +335,8 @@ const Settings = () => {
   const [hasTechReviewPromptChanges, setHasTechReviewPromptChanges] = useState(false);
   const [localTechNewsPrompt, setLocalTechNewsPrompt] = useState("");
   const [hasTechNewsPromptChanges, setHasTechNewsPromptChanges] = useState(false);
+  const [localTechComparisonPrompt, setLocalTechComparisonPrompt] = useState("");
+  const [hasTechComparisonPromptChanges, setHasTechComparisonPromptChanges] = useState(false);
   
   // Make webhook state
   const [localMakeWebhook, setLocalMakeWebhook] = useState("");
@@ -347,6 +390,17 @@ const Settings = () => {
   useEffect(() => {
     setHasTechNewsPromptChanges(localTechNewsPrompt !== techNewsPromptValue && localTechNewsPrompt !== "");
   }, [localTechNewsPrompt, techNewsPromptValue]);
+
+  useEffect(() => {
+    setLocalTechComparisonPrompt(techComparisonPromptValue || DEFAULT_TECH_COMPARISON_PROMPT);
+  }, [techComparisonPromptValue]);
+
+  useEffect(() => {
+    setHasTechComparisonPromptChanges(
+      localTechComparisonPrompt !== (techComparisonPromptValue ?? "") && localTechComparisonPrompt !== "",
+    );
+  }, [localTechComparisonPrompt, techComparisonPromptValue]);
+
 
   useEffect(() => {
     if (makeWebhookValue !== undefined) {
@@ -461,6 +515,12 @@ const Settings = () => {
     setHasTechNewsPromptChanges(false);
   };
   const handleResetTechNewsPrompt = () => setLocalTechNewsPrompt(DEFAULT_TECH_NEWS_PROMPT);
+
+  const handleSaveTechComparisonPrompt = async () => {
+    await updateSetting.mutateAsync({ key: "tech_comparison_prompt", value: localTechComparisonPrompt });
+    setHasTechComparisonPromptChanges(false);
+  };
+  const handleResetTechComparisonPrompt = () => setLocalTechComparisonPrompt(DEFAULT_TECH_COMPARISON_PROMPT);
 
   const handleSaveMakeWebhook = async () => {
     await updateSetting.mutateAsync({
@@ -1117,6 +1177,54 @@ const Settings = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Tech Comparison Prompt */}
+              <div className="space-y-2 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Newspaper className="h-4 w-4 text-amber-600" />
+                  <Label htmlFor="tech-comparison-prompt">Prompt — Porównania / rankingi TECH</Label>
+                </div>
+                {isLoadingTechComparisonPrompt ? (
+                  <Skeleton className="h-64 w-full" />
+                ) : (
+                  <Textarea
+                    id="tech-comparison-prompt"
+                    value={localTechComparisonPrompt}
+                    onChange={(e) => setLocalTechComparisonPrompt(e.target.value)}
+                    rows={20}
+                    className="font-mono text-sm"
+                    placeholder="Prompt systemowy dla generatora porównań..."
+                  />
+                )}
+                <p className="text-sm text-muted-foreground">
+                  Używany dla typu „porównanie". Ranking pro-kliencki: ceny w PLN, zalety i wady każdej
+                  pozycji, sekcja „jak wybieraliśmy", ściąga zakupowa i FAQ (zapisywane w polu FAQ artykułu).
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleSaveTechComparisonPrompt}
+                    disabled={!hasTechComparisonPromptChanges || updateSetting.isPending}
+                    size="sm"
+                  >
+                    {updateSetting.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Zapisz
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleResetTechComparisonPrompt}
+                    disabled={updateSetting.isPending}
+                    size="sm"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Przywróć domyślny
+                  </Button>
+                </div>
+              </div>
+
             </CardContent>
           </Card>
         )}

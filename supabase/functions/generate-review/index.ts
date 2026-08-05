@@ -52,10 +52,19 @@ WAŻNE — FORMATOWANIE:
 - NIE używaj składni Markdown (**, ##, ---, *, _).
 - Pogrubienia: <strong>tekst</strong>. Bez <div>, <script>, stylów inline.`;
 
+const DEFAULT_COMPARISON_SYSTEM_PROMPT = `Jesteś starszym redaktorem technologicznym polskiego portalu "Szortsy Tech", tworzącym rankingi zakupowe na poziomie Wirecutter / Spider's Web. Głos: rzeczowy, konkretny, lekko ironiczny, w 100% pro-kliencki. Bez marketingowego żargonu i bez AI-owych otwarć typu "W dzisiejszym świecie...".
+
+Dla każdej pozycji: pełna nazwa, aktualna cena w PLN (z datą sprawdzenia), dla kogo, 2-3 zalety, 1-2 szczere wady, kluczowe parametry. Zakaz rankingów "samych zwycięzców" — nazwij wady wprost. Uwzględnij realia polskiego rynku (dostępność, gwarancja, serwis). Zakaz zmyślania cen i parametrów. Zero języka sprzedażowego.
+
+Tytuł 50-65 zn. (fraza "ranking"/"najlepsze"/"TOP" + kategoria + rok), excerpt 140-165 zn., lead 2-3 zdania ze <strong>zwycięzcą</strong> i <strong>ceną</strong>. Akapity max 2-3 zdania. Sekcje <h2> w kolejności: ranking (pozycje jako <h3> z numerem, nazwą i wyróżnikiem), Porównanie w pigułce (<ul>), Jak wybieraliśmy i na co zwrócić uwagę przy zakupie, Którego wybrać? Krótka ściąga. FAQ NIE w content — tylko w polu "faq".
+
+Zwróć WYŁĄCZNIE JSON: { "title", "excerpt", "verdict" (szybki werdykt: najlepszy ogólnie / jakość-cena / najtaniej / premium), "content":"<p>...</p>", "faq":[{"q","a"}] (3-5 pytań long-tail, odpowiedzi 2-3 zdania), "internal_links":["temat 1","temat 2"], "source_notes":"2-3 zdania" }. Bez score/pros/cons, bez emoji.`;
+
 async function loadPrompts(supabase: any) {
-  const [reviewRes, newsRes] = await Promise.all([
+  const [reviewRes, newsRes, comparisonRes] = await Promise.all([
     supabase.from("settings").select("value").eq("key", "tech_review_prompt").maybeSingle(),
     supabase.from("settings").select("value").eq("key", "tech_news_prompt").maybeSingle(),
+    supabase.from("settings").select("value").eq("key", "tech_comparison_prompt").maybeSingle(),
   ]);
   const ensureHtmlRules = (p: string) =>
     p.includes("<strong>") || p.includes("NIE używaj Markdown") || p.includes("NIE używaj składni Markdown")
@@ -64,8 +73,10 @@ async function loadPrompts(supabase: any) {
   return {
     review: ensureHtmlRules(reviewRes.data?.value || DEFAULT_REVIEW_SYSTEM_PROMPT),
     news: ensureHtmlRules(newsRes.data?.value || DEFAULT_NEWS_SYSTEM_PROMPT),
+    comparison: ensureHtmlRules(comparisonRes.data?.value || DEFAULT_COMPARISON_SYSTEM_PROMPT),
   };
 }
+
 
 // Extract <img src="..."> + markdown ![](url) — return absolute URLs only
 function extractImages(html: string, markdown: string, baseUrl?: string): string[] {
@@ -194,8 +205,10 @@ serve(async (req) => {
 
     const body = await req.json();
     const { product, topic, category, source_url } = body;
-    const content_type: "review" | "news" = body.content_type === "news" ? "news" : "review";
+    const content_type: "review" | "news" | "comparison" =
+      body.content_type === "news" || body.content_type === "comparison" ? body.content_type : "review";
     const subject = (topic ?? product ?? "").toString().trim();
+
     if (!subject && !source_url) {
       return new Response(JSON.stringify({ error: "Podaj temat/produkt lub 'source_url'" }), {
         status: 400,
@@ -225,15 +238,21 @@ serve(async (req) => {
     }
 
     const isNews = content_type === "news";
+    const isComparison = content_type === "comparison";
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!,
     );
     const prompts = await loadPrompts(supabaseAdmin);
-    const systemPrompt = isNews ? prompts.news : prompts.review;
-    const intro = isNews
-      ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
-      : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);
+    const systemPrompt = isComparison ? prompts.comparison : isNews ? prompts.news : prompts.review;
+    const intro = isComparison
+      ? (subject
+        ? `Zbuduj ranking / porównanie na temat: ${subject}.`
+        : `Zbuduj ranking / porównanie na podstawie poniższego artykułu źródłowego.`)
+      : isNews
+        ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
+        : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);
+
 
     const buildUserPrompt = (textLimit: number) => [
       intro,
@@ -326,12 +345,33 @@ serve(async (req) => {
       parsed.verdict = null;
       parsed.product_brand = null;
       parsed.product_name = null;
+      parsed.faq = [];
+    } else if (isComparison) {
+      parsed.score = null;
+      parsed.pros = [];
+      parsed.cons = [];
+      parsed.product_brand = null;
+      parsed.product_name = null;
+      const rawFaq = Array.isArray(parsed.faq) ? parsed.faq : [];
+      parsed.faq = rawFaq
+        .map((item: any) => ({
+          q: String(item?.q ?? item?.question ?? "").trim(),
+          a: String(item?.a ?? item?.answer ?? "").trim(),
+        }))
+        .filter((item: any) => item.q && item.a)
+        .slice(0, 8);
+      parsed.internal_links = Array.isArray(parsed.internal_links)
+        ? parsed.internal_links.map((s: any) => String(s)).filter(Boolean).slice(0, 5)
+        : [];
+      parsed.source_notes = typeof parsed.source_notes === "string" ? parsed.source_notes : null;
     } else {
       parsed.pros = Array.isArray(parsed.pros) ? parsed.pros : [];
       parsed.cons = Array.isArray(parsed.cons) ? parsed.cons : [];
       if (typeof parsed.score === "string") parsed.score = parseFloat(parsed.score);
       if (typeof parsed.score === "number") parsed.score = Math.max(0, Math.min(10, parsed.score));
+      parsed.faq = Array.isArray(parsed.faq) ? parsed.faq : [];
     }
+
 
     parsed.content_type = content_type;
     parsed.gallery_suggestions = scraped?.images ?? [];
