@@ -345,12 +345,33 @@ serve(async (req) => {
       parsed.verdict = null;
       parsed.product_brand = null;
       parsed.product_name = null;
+      parsed.faq = [];
+    } else if (isComparison) {
+      parsed.score = null;
+      parsed.pros = [];
+      parsed.cons = [];
+      parsed.product_brand = null;
+      parsed.product_name = null;
+      const rawFaq = Array.isArray(parsed.faq) ? parsed.faq : [];
+      parsed.faq = rawFaq
+        .map((item: any) => ({
+          q: String(item?.q ?? item?.question ?? "").trim(),
+          a: String(item?.a ?? item?.answer ?? "").trim(),
+        }))
+        .filter((item: any) => item.q && item.a)
+        .slice(0, 8);
+      parsed.internal_links = Array.isArray(parsed.internal_links)
+        ? parsed.internal_links.map((s: any) => String(s)).filter(Boolean).slice(0, 5)
+        : [];
+      parsed.source_notes = typeof parsed.source_notes === "string" ? parsed.source_notes : null;
     } else {
       parsed.pros = Array.isArray(parsed.pros) ? parsed.pros : [];
       parsed.cons = Array.isArray(parsed.cons) ? parsed.cons : [];
       if (typeof parsed.score === "string") parsed.score = parseFloat(parsed.score);
       if (typeof parsed.score === "number") parsed.score = Math.max(0, Math.min(10, parsed.score));
+      parsed.faq = Array.isArray(parsed.faq) ? parsed.faq : [];
     }
+
 
     parsed.content_type = content_type;
     parsed.gallery_suggestions = scraped?.images ?? [];
