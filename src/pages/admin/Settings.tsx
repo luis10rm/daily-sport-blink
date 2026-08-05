@@ -335,6 +335,8 @@ const Settings = () => {
   const [hasTechReviewPromptChanges, setHasTechReviewPromptChanges] = useState(false);
   const [localTechNewsPrompt, setLocalTechNewsPrompt] = useState("");
   const [hasTechNewsPromptChanges, setHasTechNewsPromptChanges] = useState(false);
+  const [localTechComparisonPrompt, setLocalTechComparisonPrompt] = useState("");
+  const [hasTechComparisonPromptChanges, setHasTechComparisonPromptChanges] = useState(false);
   
   // Make webhook state
   const [localMakeWebhook, setLocalMakeWebhook] = useState("");
