@@ -127,7 +127,7 @@ async function firecrawlScrape(url: string, key: string): Promise<{ text: string
     const md: string = json?.data?.markdown ?? json?.markdown ?? "";
     const html: string = json?.data?.html ?? json?.html ?? "";
     const images = extractImages(html, md, url);
-    const text = (md || html.replace(/<[^>]+>/g, " ")).slice(0, 12000);
+    const text = (md || html.replace(/<[^>]+>/g, " ")).slice(0, 45000);
     return { text, images };
   } catch (e) {
     console.error("firecrawlScrape failed:", e);
@@ -169,7 +169,7 @@ async function directFetchScrape(url: string): Promise<{ text: string; images: s
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-      .slice(0, 12000);
+      .slice(0, 45000);
     // Images: og:image first, then <img> from article
     const ogImg = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)/i)?.[1];
     const imgs = extractImages(articleMatch, "", url);
@@ -253,10 +253,21 @@ serve(async (req) => {
         ? (subject ? `Napisz news technologiczny na temat: ${subject}.` : `Napisz news technologiczny na podstawie poniższego artykułu źródłowego.`)
         : (subject ? `Napisz recenzję: ${subject}.` : `Napisz recenzję na podstawie poniższego artykułu źródłowego.`);
 
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const todayPl = now.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" });
+
+    const dateRules = `\n\nDATY I AKTUALNOŚĆ (nadrzędne nad źródłem):\n- Dzisiejsza data: ${todayPl}. Bieżący rok: ${currentYear}.\n- W tytule i treści używaj WYŁĄCZNIE roku ${currentYear}. Jeśli źródło podaje starszy rok (np. 2024), zignoruj go — NIE przepisuj go do tytułu ani treści.\n- Ceny podawaj jako orientacyjne: "ok. X zł (stan na ${todayPl})". Nigdy nie twierdź, że cena jest "aktualna" ani nie zmyślaj kwot — jeśli źródło nie podaje ceny, napisz "cena orientacyjna niepotwierdzona".`;
+
+    const comparisonCompletenessRules = isComparison
+      ? `\n\nKOMPLETNOŚĆ RANKINGU:\n- Uwzględnij WSZYSTKIE pozycje obecne w źródle (minimum 5, jeśli źródło je zawiera). Nie skracaj rankingu do 2-3 modeli.\n- Każda pozycja to osobny <h3> z numerem, pełną nazwą i wyróżnikiem.`
+      : "";
 
     const buildUserPrompt = (textLimit: number) => [
       intro,
       category ? `Kategoria: ${category}.` : "",
+      dateRules,
+      comparisonCompletenessRules,
       scraped?.text ? `\n\n--- Artykuł źródłowy ---\n${scraped.text.slice(0, textLimit)}\n--- koniec ---` : "",
     ].filter(Boolean).join(" ");
 
@@ -270,7 +281,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: systemPrompt + dateRules },
             { role: "user", content: buildUserPrompt(textLimit) },
           ],
           response_format: { type: "json_object" },
@@ -279,7 +290,8 @@ serve(async (req) => {
       return res;
     };
 
-    let aiResponse = await callAi(8000);
+    let aiResponse = await callAi(isComparison ? 30000 : 12000);
+
 
     if (!aiResponse.ok) {
       const text = await aiResponse.text();
@@ -308,8 +320,9 @@ serve(async (req) => {
     // Retry once with shorter context if model errored/timed out or returned empty content
     const isEmpty = !raw || raw.trim() === "" || raw.trim() === "{}";
     if ((finishReason === "error" || finishReason === "length" || isEmpty) && scraped?.text) {
-      console.warn("[ai] retrying with shorter context (5000 chars)");
-      aiResponse = await callAi(5000);
+      console.warn("[ai] retrying with shorter context");
+      aiResponse = await callAi(isComparison ? 15000 : 6000);
+
       if (aiResponse.ok) {
         aiJson = await aiResponse.json();
         choice = aiJson?.choices?.[0];
@@ -372,9 +385,34 @@ serve(async (req) => {
       parsed.faq = Array.isArray(parsed.faq) ? parsed.faq : [];
     }
 
+    const warnings: string[] = [];
 
+    // Wymuś bieżący rok w tytule (źródła często mają stary rok)
+    if (typeof parsed.title === "string") {
+      const staleYear = parsed.title.match(/\b(20\d{2})\b/)?.[1];
+      if (staleYear && Number(staleYear) !== currentYear) {
+        parsed.title = parsed.title.replace(/\b20\d{2}\b/g, String(currentYear));
+        warnings.push(`Tytuł zawierał rok ${staleYear} — poprawiono na ${currentYear}. Sprawdź też daty i ceny w treści.`);
+      }
+    }
+
+    if (isComparison) {
+      const items = (String(parsed.content ?? "").match(/<h3/gi) ?? []).length;
+      if (items < 5) {
+        warnings.push(`Ranking ma tylko ${items} pozycji — źródło może zawierać więcej. Uzupełnij ręcznie lub wygeneruj ponownie.`);
+      }
+      if (!parsed.faq?.length) {
+        warnings.push("Brak sekcji FAQ — dodaj 3-5 pytań w edytorze.");
+      }
+      if (!parsed.verdict) {
+        warnings.push("Brak szybkiego werdyktu.");
+      }
+    }
+
+    parsed.warnings = warnings;
     parsed.content_type = content_type;
     parsed.gallery_suggestions = scraped?.images ?? [];
+
 
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

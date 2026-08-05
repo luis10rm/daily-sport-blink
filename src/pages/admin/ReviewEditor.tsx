@@ -319,6 +319,13 @@ const ReviewEditor = () => {
         toast.info(`Propozycje linkowania: ${data.internal_links.slice(0, 3).join(" · ")}`, { duration: 10000 });
       }
       toast.success(`Wygenerowano: ${typeMeta.accusative} AI${imgInfo} — edytuj i opublikuj`);
+      if (Array.isArray(data.warnings)) {
+        for (const w of data.warnings.slice(0, 3)) {
+          toast.warning(String(w), { duration: 12000 });
+        }
+      }
+
+
 
     } catch (e: any) {
       toast.error(e.message ?? "Błąd generowania");
