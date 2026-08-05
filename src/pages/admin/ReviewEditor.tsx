@@ -72,18 +72,14 @@ const ReviewEditor = () => {
     is_ai_generated: false,
     content_type: "review",
   });
-  const isReview = (form.content_type ?? "review") === "review";
+  const contentType = (form.content_type ?? "review") as ContentType;
+  const isReview = contentType === "review";
+  const isComparison = contentType === "comparison";
+  const typeMeta = CONTENT_TYPES.find((t) => t.value === contentType) ?? CONTENT_TYPES[0];
   const [slugTouched, setSlugTouched] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiMode, setAiMode] = useState<"review" | "news">("review");
 
-  useEffect(() => {
-    if (existing?.content_type === "news" || existing?.content_type === "review") {
-      setAiMode(existing.content_type);
-    }
-  }, [existing]);
-  const aiIsReview = aiMode === "review";
 
   // Image search (SerpApi / Google Images)
   type SearchedImage = {
