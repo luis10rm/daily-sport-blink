@@ -320,8 +320,9 @@ serve(async (req) => {
     // Retry once with shorter context if model errored/timed out or returned empty content
     const isEmpty = !raw || raw.trim() === "" || raw.trim() === "{}";
     if ((finishReason === "error" || finishReason === "length" || isEmpty) && scraped?.text) {
-      console.warn("[ai] retrying with shorter context (5000 chars)");
-      aiResponse = await callAi(5000);
+      console.warn("[ai] retrying with shorter context");
+      aiResponse = await callAi(isComparison ? 15000 : 6000);
+
       if (aiResponse.ok) {
         aiJson = await aiResponse.json();
         choice = aiJson?.choices?.[0];
