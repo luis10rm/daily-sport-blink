@@ -52,10 +52,19 @@ WAŻNE — FORMATOWANIE:
 - NIE używaj składni Markdown (**, ##, ---, *, _).
 - Pogrubienia: <strong>tekst</strong>. Bez <div>, <script>, stylów inline.`;
 
+const DEFAULT_COMPARISON_SYSTEM_PROMPT = `Jesteś starszym redaktorem technologicznym polskiego portalu "Szortsy Tech", tworzącym rankingi zakupowe na poziomie Wirecutter / Spider's Web. Głos: rzeczowy, konkretny, lekko ironiczny, w 100% pro-kliencki. Bez marketingowego żargonu i bez AI-owych otwarć typu "W dzisiejszym świecie...".
+
+Dla każdej pozycji: pełna nazwa, aktualna cena w PLN (z datą sprawdzenia), dla kogo, 2-3 zalety, 1-2 szczere wady, kluczowe parametry. Zakaz rankingów "samych zwycięzców" — nazwij wady wprost. Uwzględnij realia polskiego rynku (dostępność, gwarancja, serwis). Zakaz zmyślania cen i parametrów. Zero języka sprzedażowego.
+
+Tytuł 50-65 zn. (fraza "ranking"/"najlepsze"/"TOP" + kategoria + rok), excerpt 140-165 zn., lead 2-3 zdania ze <strong>zwycięzcą</strong> i <strong>ceną</strong>. Akapity max 2-3 zdania. Sekcje <h2> w kolejności: ranking (pozycje jako <h3> z numerem, nazwą i wyróżnikiem), Porównanie w pigułce (<ul>), Jak wybieraliśmy i na co zwrócić uwagę przy zakupie, Którego wybrać? Krótka ściąga. FAQ NIE w content — tylko w polu "faq".
+
+Zwróć WYŁĄCZNIE JSON: { "title", "excerpt", "verdict" (szybki werdykt: najlepszy ogólnie / jakość-cena / najtaniej / premium), "content":"<p>...</p>", "faq":[{"q","a"}] (3-5 pytań long-tail, odpowiedzi 2-3 zdania), "internal_links":["temat 1","temat 2"], "source_notes":"2-3 zdania" }. Bez score/pros/cons, bez emoji.`;
+
 async function loadPrompts(supabase: any) {
-  const [reviewRes, newsRes] = await Promise.all([
+  const [reviewRes, newsRes, comparisonRes] = await Promise.all([
     supabase.from("settings").select("value").eq("key", "tech_review_prompt").maybeSingle(),
     supabase.from("settings").select("value").eq("key", "tech_news_prompt").maybeSingle(),
+    supabase.from("settings").select("value").eq("key", "tech_comparison_prompt").maybeSingle(),
   ]);
   const ensureHtmlRules = (p: string) =>
     p.includes("<strong>") || p.includes("NIE używaj Markdown") || p.includes("NIE używaj składni Markdown")
@@ -64,8 +73,10 @@ async function loadPrompts(supabase: any) {
   return {
     review: ensureHtmlRules(reviewRes.data?.value || DEFAULT_REVIEW_SYSTEM_PROMPT),
     news: ensureHtmlRules(newsRes.data?.value || DEFAULT_NEWS_SYSTEM_PROMPT),
+    comparison: ensureHtmlRules(comparisonRes.data?.value || DEFAULT_COMPARISON_SYSTEM_PROMPT),
   };
 }
+
 
 // Extract <img src="..."> + markdown ![](url) — return absolute URLs only
 function extractImages(html: string, markdown: string, baseUrl?: string): string[] {
