@@ -46,10 +46,6 @@ export const WorldCupBadge = ({ className, size = "sm", asLink = true }: WorldCu
         e.stopPropagation();
         linkProps.onClick(e);
       }}
-      onTouchEnd={(e) => {
-        e.stopPropagation();
-        linkProps.onTouchEnd(e);
-      }}
       aria-label="Strefa Mistrzostw Świata 2026"
       className={classes}
     >
