@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import BlinkPage from "@/pages/BlinkPage";
 import { postBySlugQueryOptions, type SsrPost } from "@/lib/postQuery";
+import { resolvePostRedirect } from "@/lib/postRedirects";
 import { buildSeoTitle, buildSeoDescription } from "@/lib/seoTitle";
 import {
   SITE_URL,
@@ -10,8 +11,19 @@ import {
 } from "@/lib/articleSchema";
 
 export const Route = createFileRoute("/blink/$slug")({
-  loader: ({ params, context }) =>
-    context.queryClient.ensureQueryData(postBySlugQueryOptions(params.slug)),
+  loader: async ({ params, context }) => {
+    const post = await context.queryClient.ensureQueryData(
+      postBySlugQueryOptions(params.slug),
+    );
+    if (post) return post;
+
+    // Artykuł scalony jako duplikat → trwałe przekierowanie na wersję główną,
+    // zamiast 404 (zachowujemy sygnały SEO ze starego adresu).
+    const target = await resolvePostRedirect(params.slug);
+    if (target) throw redirect({ href: target, statusCode: 301 });
+    return null;
+  },
+
   head: ({ params, loaderData }) => {
     const post = loaderData as SsrPost | null | undefined;
     if (!post) {
