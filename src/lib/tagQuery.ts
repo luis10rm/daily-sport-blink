@@ -43,3 +43,12 @@ export const tagSeoQueryOptions = (slug: string) =>
   });
 
 export const MIN_TAG_POSTS_FOR_INDEX = 4;
+
+/** Poprawna polska odmiana: 1 skrót, 2-4 skróty, 5+ skrótów. */
+export function pluralizeSkrot(count: number): string {
+  const mod100 = count % 100;
+  const mod10 = count % 10;
+  if (count === 1) return "1 skrót";
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return `${count} skróty`;
+  return `${count} skrótów`;
+}

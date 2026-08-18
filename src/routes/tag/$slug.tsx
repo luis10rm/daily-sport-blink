@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import TagPage from "@/pages/TagPage";
-import { tagSeoQueryOptions, MIN_TAG_POSTS_FOR_INDEX, type SsrTagSeo } from "@/lib/tagQuery";
+import {
+  tagSeoQueryOptions,
+  MIN_TAG_POSTS_FOR_INDEX,
+  pluralizeSkrot,
+  type SsrTagSeo,
+} from "@/lib/tagQuery";
 import { buildSeoTitle, buildSeoDescription } from "@/lib/seoTitle";
 
 const SITE_URL = "https://szortsy.pl";
@@ -33,7 +38,7 @@ export const Route = createFileRoute("/tag/$slug")({
     const title = buildSeoTitle(`${tag.name} — najnowsze wiadomości`);
     const description = buildSeoDescription(
       tag.description,
-      `${tag.name}: ${tag.postCount} skrótów wiadomości do przeczytania w 60 sekund. Najnowsze informacje, wyniki i kontekst w jednym miejscu.`,
+      `${tag.name}: ${pluralizeSkrot(tag.postCount)} wiadomości do przeczytania w 60 sekund. Najnowsze informacje, wyniki i kontekst w jednym miejscu.`,
     );
 
     return {
