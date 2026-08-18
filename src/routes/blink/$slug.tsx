@@ -2,8 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import BlinkPage from "@/pages/BlinkPage";
 import { postBySlugQueryOptions, type SsrPost } from "@/lib/postQuery";
 import { buildSeoTitle, buildSeoDescription } from "@/lib/seoTitle";
-
-const SITE_URL = "https://szortsy.pl";
+import {
+  SITE_URL,
+  buildArticleSchema,
+  buildArticleTimeMeta,
+  buildBreadcrumbList,
+} from "@/lib/articleSchema";
 
 export const Route = createFileRoute("/blink/$slug")({
   loader: ({ params, context }) =>
@@ -24,6 +28,7 @@ export const Route = createFileRoute("/blink/$slug")({
     const title = buildSeoTitle(post.title);
     const description = buildSeoDescription(post.excerpt);
     const image = post.image_url || `${SITE_URL}/og-image.png`;
+    const sectionName = post.sport_category?.name;
 
     return {
       meta: [
@@ -38,51 +43,46 @@ export const Route = createFileRoute("/blink/$slug")({
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: image },
-        ...(post.published_at
-          ? [{ property: "article:published_time", content: post.published_at }]
-          : []),
-        ...(post.updated_at
-          ? [{ property: "article:modified_time", content: post.updated_at }]
-          : []),
+        ...buildArticleTimeMeta(post.published_at, post.updated_at),
         ...(post.author?.display_name
           ? [{ property: "article:author", content: post.author.display_name }]
           : []),
-        ...(post.sport_category?.name
-          ? [{ property: "article:section", content: post.sport_category.name }]
-          : []),
+        ...(sectionName ? [{ property: "article:section", content: sectionName }] : []),
       ],
       links: [{ rel: "canonical", href: canonical }],
       scripts: [
         {
           type: "application/ld+json",
-          children: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "NewsArticle",
-            mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
-            headline: post.title,
-            description: post.excerpt,
-            ...(post.image_url && {
-              image: { "@type": "ImageObject", url: post.image_url, width: 1200, height: 675 },
+          children: JSON.stringify(
+            buildArticleSchema({
+              type: "NewsArticle",
+              canonical,
+              headline: post.title,
+              description: post.excerpt,
+              imageUrl: post.image_url,
+              imageWidth: post.image_width,
+              imageHeight: post.image_height,
+              publishedAt: post.published_at,
+              updatedAt: post.updated_at,
+              authorName: post.author?.display_name,
+              authorSlug: post.author?.slug,
+              section: sectionName,
+              keywords: post.tags,
+              sourceUrl: post.source_url,
             }),
-            datePublished: post.published_at,
-            dateModified: post.updated_at,
-            author: post.author?.display_name
-              ? {
-                  "@type": "Person",
-                  name: post.author.display_name,
-                  ...(post.author.slug && { url: `${SITE_URL}/autor/${post.author.slug}` }),
-                }
-              : { "@type": "Organization", name: "Szortsy" },
-            publisher: {
-              "@type": "Organization",
-              name: "Szortsy",
-              logo: { "@type": "ImageObject", url: `${SITE_URL}/logo-seo.png` },
-            },
-            ...(post.source_url && { isBasedOn: post.source_url }),
-            ...(post.sport_category?.name && { articleSection: post.sport_category.name }),
-            ...(post.tags?.length && { keywords: post.tags }),
-            inLanguage: "pl-PL",
-          }),
+          ),
+        },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify(
+            buildBreadcrumbList([
+              { name: "Szortsy", url: SITE_URL },
+              ...(sectionName && post.sport_category
+                ? [{ name: sectionName, url: `${SITE_URL}/blink/${params.slug}` }]
+                : []),
+              { name: post.title, url: canonical },
+            ]),
+          ),
         },
       ],
     };
