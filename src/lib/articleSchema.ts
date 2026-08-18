@@ -125,3 +125,57 @@ export function buildArticleTimeMeta(publishedAt?: string | null, updatedAt?: st
     ...(dateModified ? [{ property: "article:modified_time", content: dateModified }] : []),
   ];
 }
+
+export interface ReviewSchemaInput {
+  canonical: string;
+  headline: string;
+  /** Ocena w skali 0-10 (jak w CMS-ie). */
+  score?: number | null;
+  productName?: string | null;
+  productBrand?: string | null;
+  imageUrl?: string | null;
+  description?: string | null;
+  publishedAt?: string | null;
+  updatedAt?: string | null;
+  authorName?: string | null;
+  authorSlug?: string | null;
+}
+
+/**
+ * Schema.org Review dla recenzji Tech — warunek gwiazdek w wynikach Google.
+ * Zwraca undefined, gdy nie mamy oceny lub nazwy produktu: bez tych dwóch pól
+ * Google odrzuca rich result, a niepełny markup szkodzi bardziej niż jego brak.
+ */
+export function buildReviewSchema(input: ReviewSchemaInput) {
+  const productName = input.productName?.trim();
+  const hasScore = typeof input.score === "number" && input.score > 0;
+  if (!productName || !hasScore) return undefined;
+
+  const dates = resolveArticleDates(input.publishedAt, input.updatedAt);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Review",
+    url: input.canonical,
+    name: input.headline,
+    ...(input.description ? { reviewBody: input.description } : {}),
+    ...dates,
+    itemReviewed: {
+      "@type": "Product",
+      name: productName,
+      ...(input.productBrand
+        ? { brand: { "@type": "Brand", name: input.productBrand } }
+        : {}),
+      ...(input.imageUrl ? { image: input.imageUrl } : {}),
+    },
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: Number(input.score).toFixed(1),
+      bestRating: "10",
+      worstRating: "1",
+    },
+    author: buildAuthor(input.authorName, input.authorSlug),
+    publisher: PUBLISHER,
+    inLanguage: "pl-PL",
+  };
+}

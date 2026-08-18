@@ -11,6 +11,10 @@ export interface SsrReview {
   cover_image_url?: string | null;
   image_width?: number | null;
   image_height?: number | null;
+  score?: number | null;
+  content_type?: string | null;
+  product_name?: string | null;
+  product_brand?: string | null;
   published_at?: string | null;
   updated_at?: string | null;
   category?: { slug?: string | null; name?: string | null } | null;
