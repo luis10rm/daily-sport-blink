@@ -37,6 +37,8 @@ export const ImageSourceSection = ({ form, category }: ImageSourceSectionProps) 
 
   const handleRemoveImage = () => {
     form.setValue("image_url", "");
+    form.setValue("image_width", null);
+    form.setValue("image_height", null);
   };
 
   const handleGenerateAI = async () => {
@@ -152,6 +154,11 @@ export const ImageSourceSection = ({ form, category }: ImageSourceSectionProps) 
                   }
                   onChange={handleUploadSuccess}
                   onRemove={handleRemoveImage}
+                  minWidth={1200}
+                  onDimensionsChange={({ width, height }) => {
+                    form.setValue("image_width", width);
+                    form.setValue("image_height", height);
+                  }}
                 />
               </TabsContent>
 
@@ -162,7 +169,11 @@ export const ImageSourceSection = ({ form, category }: ImageSourceSectionProps) 
                     id="image_url"
                     placeholder="https://..."
                     value={currentImageUrl || ""}
-                    onChange={(e) => form.setValue("image_url", e.target.value)}
+                    onChange={(e) => {
+                      form.setValue("image_url", e.target.value);
+                      form.setValue("image_width", null);
+                      form.setValue("image_height", null);
+                    }}
                   />
                   <p className="text-xs text-muted-foreground">
                     Wklej link do obrazka zewnętrznego
