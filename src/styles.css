@@ -1,0 +1,718 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Szortsy design system — ported from the Classic stack (index.css + tailwind.config.ts).
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * Token values use full hsl(...) colors (ported from the old HSL triplets).
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-heading: "Outfit", sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+
+  /* Sport category colors */
+  --color-sport-football: var(--sport-football);
+  --color-sport-basketball: var(--sport-basketball);
+  --color-sport-tennis: var(--sport-tennis);
+  --color-sport-f1: var(--sport-f1);
+  --color-sport-mma: var(--sport-mma);
+  --color-sport-other: var(--sport-other);
+
+  /* News of the day */
+  --color-news-of-day: var(--news-of-day);
+  --color-news-of-day-foreground: var(--news-of-day-foreground);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Animations (ported from tailwind.config.ts) */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-in: fade-in 0.5s ease-out forwards;
+  --animate-shimmer-border: shimmer-border 3s ease-in-out infinite;
+  --animate-delayed-fade-in: delayed-fade-in 2s ease-out forwards;
+  --animate-celebration-pop: celebration-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  --animate-celebration-text: celebration-text 0.5s ease-out forwards;
+  --animate-confetti-1: confetti-1 0.8s ease-out forwards;
+  --animate-confetti-2: confetti-2 0.9s ease-out forwards;
+  --animate-confetti-3: confetti-3 0.85s ease-out forwards;
+  --animate-confetti-4: confetti-4 0.95s ease-out forwards;
+  --animate-confetti-5: confetti-5 0.75s ease-out forwards;
+  --animate-confetti-6: confetti-6 0.88s ease-out forwards;
+  --animate-wiggle: wiggle 0.5s ease-in-out;
+  --animate-float-slow-a: float-slow-a 20s ease-in-out infinite;
+  --animate-float-slow-b: float-slow-b 28s ease-in-out infinite;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer-border {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes delayed-fade-in {
+  0%, 50% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes celebration-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.25); opacity: 1; }
+  80% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+@keyframes celebration-text {
+  0% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes confetti-1 {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-60px, -80px) rotate(200deg); opacity: 0; }
+}
+@keyframes confetti-2 {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(70px, -90px) rotate(-180deg); opacity: 0; }
+}
+@keyframes confetti-3 {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-80px, 30px) rotate(160deg); opacity: 0; }
+}
+@keyframes confetti-4 {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(50px, 60px) rotate(-220deg); opacity: 0; }
+}
+@keyframes confetti-5 {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-30px, -100px) rotate(140deg); opacity: 0; }
+}
+@keyframes confetti-6 {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(90px, -40px) rotate(-160deg); opacity: 0; }
+}
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-4deg) scale(1.05); }
+  75% { transform: rotate(4deg) scale(1.05); }
+}
+@keyframes float-slow-a {
+  0%, 100% { transform: translate(-10%, -10%) scale(1); }
+  50% { transform: translate(10%, 10%) scale(1.08); }
+}
+@keyframes float-slow-b {
+  0%, 100% { transform: translate(15%, 20%) scale(1.05); }
+  50% { transform: translate(-15%, -10%) scale(0.95); }
+}
+
+/* Container ported from tailwind.config.ts (center, 1.5rem padding, 1200px cap) */
+@utility container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+  max-width: 1200px;
+}
+
+:root {
+  --background: hsl(60 20% 99%);
+  --foreground: hsl(210 20% 10%);
+
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(210 20% 10%);
+
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(210 20% 10%);
+
+  --primary: hsl(160 84% 39%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  --secondary: hsl(210 20% 96%);
+  --secondary-foreground: hsl(210 20% 20%);
+
+  --muted: hsl(210 15% 94%);
+  --muted-foreground: hsl(210 10% 50%);
+
+  --accent: hsl(160 84% 39%);
+  --accent-foreground: hsl(0 0% 100%);
+
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(210 20% 90%);
+  --input: hsl(210 20% 90%);
+  --ring: hsl(160 84% 39%);
+
+  --radius: 0.75rem;
+
+  /* Custom tokens */
+  --font-heading: "Outfit", sans-serif;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Sport category colors */
+  --sport-football: hsl(142 76% 36%);
+  --sport-basketball: hsl(25 95% 53%);
+  --sport-tennis: hsl(48 96% 53%);
+  --sport-f1: hsl(0 84% 60%);
+  --sport-mma: hsl(280 87% 65%);
+  --sport-other: hsl(210 20% 50%);
+
+  /* News of the day */
+  --news-of-day: hsl(45 93% 47%);
+  --news-of-day-foreground: hsl(0 0% 10%);
+
+  --sidebar-background: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+.dark {
+  --background: hsl(210 25% 8%);
+  --foreground: hsl(45 30% 97%);
+
+  --card: hsl(208 23% 14%);
+  --card-foreground: hsl(45 30% 97%);
+
+  --popover: hsl(208 23% 14%);
+  --popover-foreground: hsl(45 30% 97%);
+
+  --primary: hsl(162 72% 48%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  --secondary: hsl(210 20% 18%);
+  --secondary-foreground: hsl(45 20% 90%);
+
+  --muted: hsl(210 18% 22%);
+  --muted-foreground: hsl(210 12% 65%);
+
+  --accent: hsl(162 72% 48%);
+  --accent-foreground: hsl(0 0% 100%);
+
+  --destructive: hsl(0 62% 40%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  --border: hsl(210 18% 22%);
+  --input: hsl(210 18% 22%);
+  --ring: hsl(162 72% 48%);
+
+  --sidebar-background: hsl(210 25% 10%);
+  --sidebar-foreground: hsl(45 30% 97%);
+  --sidebar-primary: hsl(162 72% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(210 18% 18%);
+  --sidebar-accent-foreground: hsl(45 30% 97%);
+  --sidebar-border: hsl(210 18% 22%);
+  --sidebar-ring: hsl(162 72% 48%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: "Outfit", system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+  }
+
+  /* Disable 300ms tap delay on all interactive elements for iOS */
+  a, button, [role="button"], input, textarea, select, summary {
+    touch-action: manipulation;
+  }
+
+  /* iOS Safari: disable focus-first-tap heuristic and gray tap highlight */
+  @media (hover: none) and (pointer: coarse) {
+    a, button, [role="button"] {
+      -webkit-tap-highlight-color: transparent;
+      cursor: default;
+    }
+  }
+}
+
+@layer components {
+  .card-hover {
+    /* No transition on mobile - prevents iOS double-tap */
+  }
+
+  /* Olympic Winter Theme - always visible */
+  .olympic-card {
+    border-image: linear-gradient(135deg, hsl(200 80% 70%), hsl(220 70% 80%), hsl(200 80% 70%)) 1;
+    border-width: 2px;
+    position: relative;
+  }
+
+  .olympic-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(180deg, hsl(200 80% 90% / 0.08) 0%, transparent 40%);
+    border-radius: inherit;
+  }
+
+  .olympic-frost-overlay {
+    position: relative;
+  }
+
+  .olympic-frost-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(180deg, hsl(210 60% 95% / 0.15) 0%, transparent 50%);
+    border-radius: inherit;
+  }
+
+  .dark .olympic-card {
+    border-image: linear-gradient(135deg, hsl(200 60% 40%), hsl(220 50% 50%), hsl(200 60% 40%)) 1;
+  }
+
+  .dark .olympic-card::before {
+    background: linear-gradient(180deg, hsl(200 60% 40% / 0.1) 0%, transparent 40%);
+  }
+
+  .dark .olympic-frost-overlay::after {
+    background: linear-gradient(180deg, hsl(210 40% 30% / 0.2) 0%, transparent 50%);
+  }
+
+  /* FIFA World Cup 2026 Theme - golden accents */
+  .worldcup-card {
+    border-image: linear-gradient(135deg, hsl(43 96% 56%), hsl(38 92% 65%), hsl(43 96% 56%)) 1;
+    border-width: 2px;
+    position: relative;
+  }
+
+  .worldcup-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(180deg, hsl(43 96% 56% / 0.1) 0%, transparent 40%);
+    border-radius: inherit;
+  }
+
+  .dark .worldcup-card {
+    border-image: linear-gradient(135deg, hsl(43 90% 50%), hsl(38 85% 55%), hsl(43 90% 50%)) 1;
+  }
+
+  .dark .worldcup-card::before {
+    background: linear-gradient(180deg, hsl(43 90% 50% / 0.12) 0%, transparent 40%);
+  }
+}
+
+/* Hover effects ONLY for mouse/trackpad devices (pointer: fine excludes touch) */
+@media (hover: hover) and (pointer: fine) {
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+
+  .cta-hover {
+    transition:
+      color 0.2s,
+      background-color 0.2s;
+  }
+  .cta-hover:hover {
+    @apply bg-primary text-primary-foreground;
+  }
+  .cta-sponsored-hover {
+    transition:
+      color 0.2s,
+      background-color 0.2s,
+      box-shadow 0.2s;
+  }
+  .cta-sponsored-hover:hover {
+    @apply bg-primary/90 shadow-lg;
+  }
+
+  .cta-notd-hover {
+    transition:
+      filter 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .card-img-hover {
+    transition: transform 0.5s ease;
+  }
+
+  .stories-circle-hover {
+    transition: transform 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    .cta-notd-hover:hover {
+      @apply shadow-lg brightness-110;
+    }
+
+    .group:hover .card-img-hover {
+      transform: scale(1.05);
+    }
+
+    .group:hover .stories-circle-hover {
+      transform: scale(1.05);
+    }
+
+    .tag-hover:hover {
+      @apply bg-primary/10 text-primary;
+    }
+  }
+
+  .patron-cta-hover {
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .patron-cta-hover:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ============================================================
+   TOURNAMENT MODE — FIFA World Cup 2026 re-skin
+   Activated by adding `tournament-worldcup` class on <html>.
+   Removing the class instantly reverts to the normal Szortsy theme.
+   ============================================================ */
+.tournament-worldcup {
+  /* Light mode overrides */
+  --primary: hsl(43 96% 50%);
+  --primary-foreground: hsl(36 60% 12%);
+  --accent: hsl(150 55% 28%);
+  --accent-foreground: hsl(0 0% 100%);
+  --ring: hsl(43 96% 50%);
+  --news-of-day: hsl(43 96% 50%);
+  --news-of-day-foreground: hsl(36 60% 12%);
+  --sport-football: hsl(150 55% 30%);
+  /* Czytelność tekstu na jasnej murawie */
+  --foreground: hsl(150 40% 8%);
+  --muted-foreground: hsl(150 20% 28%);
+  --card: hsl(0 0% 100%);
+  --popover: hsl(0 0% 100%);
+}
+
+.tournament-worldcup.dark,
+.dark .tournament-worldcup {
+  /* Dark mode overrides — deep stadium turf, wysoki kontrast */
+  --background: hsl(158 42% 7%);
+  --foreground: hsl(45 35% 96%);
+  --card: hsl(158 32% 11%);
+  --card-foreground: hsl(45 30% 97%);
+  --popover: hsl(158 32% 11%);
+  --popover-foreground: hsl(45 30% 97%);
+  --secondary: hsl(158 25% 16%);
+  --secondary-foreground: hsl(45 25% 94%);
+  --muted: hsl(158 22% 14%);
+  --muted-foreground: hsl(45 25% 80%);
+  --primary: hsl(43 96% 58%);
+  --primary-foreground: hsl(36 60% 10%);
+  --accent: hsl(150 60% 40%);
+  --accent-foreground: hsl(0 0% 100%);
+  --ring: hsl(43 96% 58%);
+  --news-of-day: hsl(43 96% 58%);
+  --news-of-day-foreground: hsl(36 60% 10%);
+  --border: hsl(158 28% 22%);
+  --input: hsl(158 28% 22%);
+}
+
+/* Stadium turf background — light mode (bardzo jasna murawa, mocny kontrast tekstu) */
+.tournament-worldcup body {
+  background-image:
+    /* Delikatny reflektor u góry */
+    radial-gradient(ellipse 60% 30% at 50% 0%, hsl(43 96% 56% / 0.10), transparent 70%),
+    /* Pasy koszenia — subtelny efekt, bliski bieli */
+    repeating-linear-gradient(
+      100deg,
+      hsl(140 35% 90%) 0px,
+      hsl(140 35% 90%) 110px,
+      hsl(140 40% 84%) 110px,
+      hsl(140 40% 84%) 220px
+    );
+  background-attachment: fixed;
+}
+
+.tournament-worldcup.dark body,
+.dark .tournament-worldcup body {
+  background-image:
+    radial-gradient(ellipse 70% 35% at 50% 0%, hsl(43 96% 60% / 0.10), transparent 70%),
+    repeating-linear-gradient(
+      100deg,
+      hsl(158 40% 10%) 0px,
+      hsl(158 40% 10%) 110px,
+      hsl(158 35% 13%) 110px,
+      hsl(158 35% 13%) 220px
+    ),
+    linear-gradient(180deg, hsl(158 45% 8%), hsl(158 50% 5%));
+  background-attachment: fixed;
+}
+
+/* Header gets a subtle golden bottom highlight */
+.tournament-worldcup header {
+  box-shadow: inset 0 -1px 0 hsl(43 96% 50% / 0.25);
+}
+
+/* Article cards get a soft golden ring (all NewsCard articles are <article>) */
+.tournament-worldcup main article {
+  box-shadow: 0 0 0 1px hsl(43 96% 50% / 0.15);
+  transition: box-shadow 0.3s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tournament-worldcup main article:hover {
+    box-shadow: 0 0 0 1px hsl(43 96% 50% / 0.5), 0 10px 30px -10px hsl(43 96% 50% / 0.25);
+  }
+}
+
+/* News of the Day in tournament mode — gold-on-gold premium feel */
+.tournament-worldcup [data-news-of-day] {
+  border-color: hsl(43 96% 50% / 0.5);
+}
+
+/* Pinned World Cup story circle — animated golden ring */
+.wc-gold-ring {
+  background: conic-gradient(
+    from 0deg,
+    hsl(43 96% 56%),
+    hsl(38 92% 65%),
+    hsl(150 55% 35%),
+    hsl(43 96% 56%)
+  );
+  animation: wc-gold-spin 6s linear infinite;
+}
+@keyframes wc-gold-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wc-gold-ring { animation: none; }
+}
+
+/* ----------------------------------------------------------------
+   STADIUM NIGHT — auto-enabled in evenings during tournament mode
+   ---------------------------------------------------------------- */
+.tournament-worldcup.stadium-night,
+.stadium-night .tournament-worldcup {
+  --background: hsl(158 50% 5%);
+  --foreground: hsl(45 40% 97%);
+  --card: hsl(158 38% 10%);
+  --card-foreground: hsl(45 35% 97%);
+  --popover: hsl(158 38% 10%);
+  --popover-foreground: hsl(45 35% 97%);
+  --secondary: hsl(158 28% 15%);
+  --secondary-foreground: hsl(45 30% 95%);
+  --muted: hsl(158 28% 13%);
+  --muted-foreground: hsl(45 25% 82%);
+  --border: hsl(158 32% 20%);
+  --input: hsl(158 32% 20%);
+  color-scheme: dark;
+}
+
+.tournament-worldcup.stadium-night body {
+  background-image:
+    /* Snopy reflektorów z górnych rogów */
+    radial-gradient(ellipse 70% 45% at 15% -10%, hsl(43 96% 60% / 0.20), transparent 60%),
+    radial-gradient(ellipse 70% 45% at 85% -10%, hsl(43 96% 60% / 0.16), transparent 60%),
+    /* Pasy koszenia — czytelne, ale nie czarne */
+    repeating-linear-gradient(
+      100deg,
+      hsl(158 45% 8%) 0px,
+      hsl(158 45% 8%) 110px,
+      hsl(158 40% 11%) 110px,
+      hsl(158 40% 11%) 220px
+    ),
+    linear-gradient(180deg, hsl(158 50% 7%), hsl(158 55% 4%));
+  background-attachment: fixed;
+}
+
+.tournament-worldcup.stadium-night header {
+  box-shadow: inset 0 -1px 0 hsl(43 96% 56% / 0.4), 0 4px 24px -8px hsl(43 96% 56% / 0.25);
+}
+
+/* ============================================== */
+/* RECKI MODE - tech reviews sub-brand (magenta)  */
+/* ============================================== */
+.mode-recki {
+  --primary: hsl(295 85% 50%);
+  --primary-foreground: hsl(0 0% 100%);
+  --accent: hsl(330 85% 55%);
+  --accent-foreground: hsl(0 0% 100%);
+  --ring: hsl(295 85% 50%);
+  --background: hsl(300 20% 99%);
+}
+
+.dark.mode-recki,
+.mode-recki.dark {
+  --primary: hsl(295 90% 60%);
+  --accent: hsl(330 90% 62%);
+  --ring: hsl(295 90% 60%);
+  --background: hsl(290 15% 7%);
+}
+
+/* Hard reset of any inherited textured backgrounds (e.g. tournament turf) */
+html.mode-recki,
+html.mode-recki body {
+  background-image: none !important;
+  background-color: var(--background) !important;
+  background-attachment: initial !important;
+}
+
+/* Subtle magenta signature fog — fixed, behind content */
+html.mode-recki body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 100% 0%, hsl(295 85% 50% / 0.06), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, hsl(330 85% 55% / 0.04), transparent 60%);
+}
+
+html.dark.mode-recki body::before,
+html.mode-recki.dark body::before {
+  background:
+    radial-gradient(900px 600px at 100% 0%, hsl(295 85% 50% / 0.14), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, hsl(330 85% 55% / 0.10), transparent 60%);
+}
+
+.recki-gradient-text {
+  background: linear-gradient(135deg, hsl(295 85% 50%), hsl(330 85% 55%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================== */
+/* POZYTYWNE MODE - good news channel (lime)      */
+/* ============================================== */
+.mode-pozytywne {
+  --primary: hsl(84 81% 44%);
+  --primary-foreground: hsl(0 0% 100%);
+  --accent: hsl(82 78% 55%);
+  --accent-foreground: hsl(84 60% 15%);
+  --ring: hsl(84 81% 44%);
+  --background: hsl(80 40% 99%);
+}
+
+.dark.mode-pozytywne,
+.mode-pozytywne.dark {
+  --primary: hsl(82 78% 55%);
+  --accent: hsl(82 78% 55%);
+  --ring: hsl(82 78% 55%);
+  --background: hsl(90 15% 6%);
+}
+
+/* Reset any inherited textured backgrounds */
+html.mode-pozytywne,
+html.mode-pozytywne body {
+  background-image: none !important;
+  background-color: var(--background) !important;
+  background-attachment: initial !important;
+}
+
+/* Sunlight signature glow */
+html.mode-pozytywne body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 100% 0%, hsl(84 81% 55% / 0.08), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, hsl(50 96% 60% / 0.05), transparent 60%);
+}
+
+html.dark.mode-pozytywne body::before,
+html.mode-pozytywne.dark body::before {
+  background:
+    radial-gradient(900px 600px at 100% 0%, hsl(82 78% 55% / 0.14), transparent 60%),
+    radial-gradient(700px 500px at 0% 100%, hsl(50 96% 60% / 0.08), transparent 60%);
+}
+
+.pozytywne-gradient-text {
+  background: linear-gradient(135deg, hsl(84 81% 44%), hsl(50 96% 55%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
