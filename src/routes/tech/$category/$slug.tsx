@@ -19,7 +19,8 @@ export const Route = createFileRoute("/tech/$category/$slug")({
     const canonical = `${SITE_URL}/tech/${params.category}/${params.slug}`;
     const title = buildSeoTitle(review.title, "Szortsy Tech");
     const description = buildSeoDescription(review.excerpt);
-    const image = review.image_url || `${SITE_URL}/og-image.png`;
+    const coverImage = review.cover_image_url || review.image_url || null;
+    const image = coverImage || `${SITE_URL}/og-image.png`;
     const categoryName = review.category?.name || "Tech";
 
     return {
@@ -48,7 +49,7 @@ export const Route = createFileRoute("/tech/$category/$slug")({
               canonical,
               headline: review.title,
               description: review.excerpt,
-              imageUrl: review.image_url,
+              imageUrl: coverImage,
               imageWidth: review.image_width,
               imageHeight: review.image_height,
               publishedAt: review.published_at,
