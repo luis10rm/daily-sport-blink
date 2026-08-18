@@ -257,7 +257,7 @@ export default function SuggestionsList() {
 
         {/* Sticky bulk actions bar */}
         {status === "pending" && selectableIds.length > 0 && (
-          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-lg border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-lg border bg-background/95 p-3 shadow-xs backdrop-blur supports-[backdrop-filter]:bg-background/80">
             <div className="text-sm font-medium">
               Zaznaczono: <span className="text-primary">{selectedIds.size}</span> / {MAX_BULK}
             </div>

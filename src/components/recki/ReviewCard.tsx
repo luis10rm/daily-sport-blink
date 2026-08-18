@@ -29,7 +29,7 @@ const useReadMoreLink = () => {
 const ctaBase =
   "touch-manipulation inline-flex min-h-11 items-center justify-center gap-1.5 text-sm font-semibold transition-all active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-fuchsia-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
-const ctaFilled = "rounded-full bg-fuchsia-600 px-5 text-white shadow-sm hover:bg-fuchsia-700";
+const ctaFilled = "rounded-full bg-fuchsia-600 px-5 text-white shadow-xs hover:bg-fuchsia-700";
 
 const ctaOutline =
   "rounded-lg border border-fuchsia-600/40 px-4 text-fuchsia-600 hover:bg-fuchsia-600 hover:text-white dark:text-fuchsia-300 dark:hover:text-white";
@@ -121,7 +121,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
 
   if (variant === "mini") {
     return (
-      <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow [@media(hover:hover)]:hover:shadow-md">
+      <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xs transition-shadow [@media(hover:hover)]:hover:shadow-md">
         <div className="relative aspect-[16/9] overflow-hidden bg-muted">
           {review.cover_image_url ? (
             <img
@@ -161,7 +161,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
   }
 
   return (
-    <article className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow [@media(hover:hover)]:hover:shadow-lg">
+    <article className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-shadow [@media(hover:hover)]:hover:shadow-lg">
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {review.cover_image_url ? (
           <img

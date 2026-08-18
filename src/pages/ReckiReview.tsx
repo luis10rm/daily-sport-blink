@@ -143,7 +143,7 @@ const ReckiReview = () => {
 
           {/* Score + Verdict box */}
           {(review.score !== null || review.verdict) && (
-            <aside className="mb-8 flex flex-col sm:flex-row gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <aside className="mb-8 flex flex-col sm:flex-row gap-4 rounded-2xl border border-border bg-card p-5 shadow-xs">
               {review.score !== null && (
                 <div className="flex flex-col items-center gap-1 shrink-0">
                   <ScoreBadge score={review.score} size="xl" />

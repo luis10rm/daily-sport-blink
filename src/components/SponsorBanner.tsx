@@ -99,7 +99,7 @@ export const SponsorBanner = ({
   if (isPlaceholder || isHiddenByAdBlock) {
     return (
       <div className={cn("flex justify-center", className)}>
-        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-muted/50 border border-border shadow-sm">
+        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-muted/50 border border-border shadow-xs">
           <span className="text-xs font-medium text-muted-foreground">
             Partner Szortsy
           </span>
@@ -213,7 +213,7 @@ export const SponsorBanner = ({
         )}
 
         {/* Framed banner container - ref for AdBlock detection */}
-        <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
           {/* Header - Partner label */}
           <div className="bg-muted/50 px-4 py-2 border-b border-border">
             <span className="text-xs font-medium text-muted-foreground">
@@ -326,7 +326,7 @@ export const SponsorBanner = ({
   return (
     <div className={cn("flex justify-center", className)}>
       {/* ref for AdBlock detection */}
-      <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
         {/* Header - Partner label */}
         <div className="bg-muted/50 px-4 py-2 border-b border-border">
           <span className="text-xs font-medium text-muted-foreground">
