@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useParams } from "@/lib/router-compat";
-import { useNavLink } from "@/hooks/useNavLink";
 import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake, Sun } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
@@ -79,7 +78,6 @@ const SITE_URL = "https://szortsy.pl";
 const BlinkPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = usePostBySlug(slug || "");
-  const navLink = useNavLink();
 
   const isPositive = (post as any)?.channel === "positive";
   const ActiveHeader = isPositive ? PozytywneHeader : Header;
@@ -144,10 +142,10 @@ const BlinkPage = () => {
             Przepraszamy, nie udało się znaleźć tego artykułu.
           </p>
           <Button asChild>
-            <a {...navLink(homeHref)}>
+            <Link to={homeHref}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Wróć na stronę główną
-            </a>
+            </Link>
           </Button>
         </main>
       </div>
@@ -167,10 +165,10 @@ const BlinkPage = () => {
             Aktualna wersja jest dostępna pod nowym adresem.
           </p>
           <Button asChild>
-            <a {...navLink(homeHref)}>
+            <Link to={homeHref}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Wróć na stronę główną
-            </a>
+            </Link>
           </Button>
         </main>
       </div>
@@ -239,13 +237,13 @@ const BlinkPage = () => {
       <main className="container mx-auto px-4 py-8">
         <article className={cn("max-w-3xl mx-auto", isOlympic && "relative")}>
           {/* Back button */}
-          <a 
-            {...navLink(homeHref)} 
+          <Link
+            to={homeHref}
             className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {isPositive ? "Powrót do Pozytywnych" : "Powrót do strony głównej"}
-          </a>
+          </Link>
 
           {/* Olympic winter banner */}
           {isOlympic && (
@@ -354,13 +352,13 @@ const BlinkPage = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <Tag className="h-4 w-4 text-muted-foreground" />
               {post.tags.map((tag) => (
-                <a
+                <Link
                   key={tag}
-                  {...navLink(`/tag/${generateSlug(tag)}`)}
+                  to={`/tag/${generateSlug(tag)}`}
                   className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                 >
                   #{tag}
-                </a>
+                </Link>
               ))}
             </div>
           )}
