@@ -15,7 +15,7 @@ export const Route = createFileRoute("/blink/$slug")({
     const post = await context.queryClient.ensureQueryData(
       postBySlugQueryOptions(params.slug),
     );
-    if (post) return post;
+    if (post && !post.is_hidden) return post;
 
     // Artykuł scalony jako duplikat → trwałe przekierowanie na wersję główną,
     // zamiast 404 (zachowujemy sygnały SEO ze starego adresu).
