@@ -5,22 +5,6 @@ import {
   worldCupStandingsQueryOptions,
 } from "@/lib/worldCupQuery";
 
-type Resource = "matches" | "standings" | "scorers" | "teams";
-
-interface ApiResponse<T = unknown> {
-  source: "cache" | "upstream" | "stale-cache";
-  fetched_at: string;
-  data: T;
-}
-
-async function fetchResource<T>(resource: Resource): Promise<ApiResponse<T>> {
-  const { data, error } = await supabase.functions.invoke("worldcup-data", {
-    body: { resource },
-  });
-  if (error) throw error;
-  return data as ApiResponse<T>;
-}
-
 // --- Domain types (subset of football-data.org schema) ---
 export interface FDTeam {
   id: number;
