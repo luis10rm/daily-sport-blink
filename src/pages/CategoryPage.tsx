@@ -1,4 +1,4 @@
-import { useParams } from "@/lib/router-compat";
+import { Link, useParams } from "@/lib/router-compat";
 import { useNavLink } from "@/hooks/useNavLink";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -66,13 +66,13 @@ const CategoryPage = () => {
           <p className="text-muted-foreground mb-6">
             Nie udało się znaleźć kategorii o podanej nazwie.
           </p>
-          <a
-            {...navLink("/")}
+          <Link
+            to="/"
             className="inline-flex items-center gap-2 text-primary hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />
             Wróć na stronę główną
-          </a>
+          </Link>
         </main>
       </div>
     );
@@ -90,7 +90,7 @@ const CategoryPage = () => {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <a {...navLink("/")}>Strona główna</a>
+                <Link to="/">Strona główna</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -153,13 +153,13 @@ const CategoryPage = () => {
 
             {/* Link to archive */}
             <div className="mt-10 text-center">
-              <a
-                {...navLink(`/archiwum?kategoria=${slug}`)}
+              <Link
+                to=`/archiwum?kategoria=${slug}`
                 className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
               >
                 <Archive className="h-4 w-4" />
                 Zobacz starsze artykuły z kategorii {category.name}
-              </a>
+              </Link>
             </div>
           </>
         ) : (
@@ -175,13 +175,13 @@ const CategoryPage = () => {
             <p className="text-muted-foreground mb-6">
               W tej kategorii nie ma jeszcze żadnych artykułów z ostatnich 7 dni.
             </p>
-            <a
-              {...navLink(`/archiwum?kategoria=${slug}`)}
+            <Link
+              to=`/archiwum?kategoria=${slug}`
               className="inline-flex items-center gap-2 text-primary hover:underline"
             >
               <Archive className="h-4 w-4" />
               Sprawdź archiwum
-            </a>
+            </Link>
           </div>
         )}
       </main>
