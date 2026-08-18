@@ -121,11 +121,6 @@ export const PatronBar = () => {
               e.stopPropagation();
               handleDismiss();
             }}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleDismiss();
-            }}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full opacity-40 hover:opacity-100 transition-opacity"
             aria-label="Zamknij pasek patrona"
             style={{ color: patron.text_color }}

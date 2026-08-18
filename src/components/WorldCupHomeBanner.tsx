@@ -69,7 +69,6 @@ export const WorldCupHomeBanner = ({ className }: Props) => {
       <button
         type="button"
         onClick={handleDismiss}
-        onTouchEnd={handleDismiss}
         aria-label="Ukryj baner"
         className="ml-1 hidden sm:inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground"
       >
