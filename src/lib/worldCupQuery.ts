@@ -144,6 +144,27 @@ export function buildWorldCupMeta(matches: FDMatch[] | undefined) {
     .sort((a, b) => +new Date(a.utcDate) - +new Date(b.utcDate));
   const live = knockout.find((m) => m.status === "IN_PLAY" || m.status === "PAUSED");
 
+  const finalMatch = knockout.find((m) => m.stage === "FINAL");
+  const tournamentOver = finalMatch?.status === "FINISHED" || (!upcoming.length && !live);
+
+  // Turniej rozstrzygnięty → intencja zapytań zmienia się z "kiedy/terminarz" na
+  // "kto wygrał / wyniki", więc tytuł i opis eksponują mistrza.
+  if (tournamentOver && finalMatch?.status === "FINISHED") {
+    const home = finalMatch.score.fullTime.home ?? 0;
+    const away = finalMatch.score.fullTime.away ?? 0;
+    const winner =
+      finalMatch.score.winner === "AWAY_TEAM" ? finalMatch.awayTeam : finalMatch.homeTeam;
+    const champion = teamPl(winner);
+    return {
+      title: `Mistrzostwa Świata 2026: ${champion} mistrzem — wyniki i drabinka | Szortsy`,
+      description: `Mistrzem świata 2026 została ${champion}. Finał: ${teamPl(
+        finalMatch.homeTeam,
+      )} ${home}:${away} ${teamPl(
+        finalMatch.awayTeam,
+      )}. Pełne wyniki wszystkich meczów, drabinka fazy pucharowej, tabele grup i najlepsi strzelcy turnieju.`,
+    };
+  }
+
   const currentStage = live?.stage ?? upcoming[0]?.stage ?? finished[0]?.stage;
   const stageLabel = currentStage ? STAGE_LABEL[currentStage] : undefined;
 
@@ -151,26 +172,24 @@ export function buildWorldCupMeta(matches: FDMatch[] | undefined) {
     ? `MŚ 2026: ${stageLabel} — wyniki, drabinka, terminarz | Szortsy`
     : fallbackTitle;
 
-  const shortName = (t: { shortName?: string; name: string }) => t.shortName || t.name;
   const parts: string[] = [];
 
   if (live) {
     parts.push(
-      `Na żywo: ${shortName(live.homeTeam)} ${live.score.fullTime.home ?? 0}:${
+      `Na żywo: ${teamPl(live.homeTeam)} ${live.score.fullTime.home ?? 0}:${
         live.score.fullTime.away ?? 0
-      } ${shortName(live.awayTeam)}.`,
+      } ${teamPl(live.awayTeam)}.`,
     );
   }
   if (finished[0]) {
     parts.push(
-      `Ostatni wynik: ${shortName(finished[0].homeTeam)} ${finished[0].score.fullTime.home ?? 0}:${
+      `Ostatni wynik: ${teamPl(finished[0].homeTeam)} ${finished[0].score.fullTime.home ?? 0}:${
         finished[0].score.fullTime.away ?? 0
-      } ${shortName(finished[0].awayTeam)}.`,
+      } ${teamPl(finished[0].awayTeam)}.`,
     );
   }
   if (upcoming[0]) {
-    const d = new Date(upcoming[0].utcDate);
-    const when = d.toLocaleString("pl-PL", {
+    const when = new Date(upcoming[0].utcDate).toLocaleString("pl-PL", {
       day: "numeric",
       month: "long",
       hour: "2-digit",
@@ -178,12 +197,12 @@ export function buildWorldCupMeta(matches: FDMatch[] | undefined) {
       timeZone: "Europe/Warsaw",
     });
     parts.push(
-      `Następny mecz: ${shortName(upcoming[0].homeTeam)} — ${shortName(
+      `Następny mecz: ${teamPl(upcoming[0].homeTeam)} — ${teamPl(
         upcoming[0].awayTeam,
       )}, ${when}.`,
     );
   }
-  parts.push("Pełna drabinka, terminarz, tabele grup i strzelcy.");
+  parts.push("Pełna drabinka, terminarz, tabele grup i najlepsi strzelcy.");
 
   const description = parts.join(" ").slice(0, 300);
   return { title, description };
