@@ -3,8 +3,6 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
-import { useCategorySEOMeta } from "@/hooks/useSEOMeta";
-import { SEO, getRichItemListSEO } from "@/components/SEO";
 import { useSportCategoryBySlug } from "@/hooks/useSportCategories";
 import { usePostsByCategory } from "@/hooks/usePostsByCategory";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,16 +22,7 @@ const CategoryPage = () => {
   const { data: category, isLoading: categoryLoading } = useSportCategoryBySlug(slug);
   const { data: posts = [], isLoading: postsLoading } = usePostsByCategory(slug);
 
-  // SEO meta tags
-  useCategorySEOMeta({
-    name: category?.name || "Kategoria",
-    slug: slug || "",
-  });
-  // Rich SEO with full NewsArticle schema including isBasedOn for E-E-A-T
-  const seoData = getRichItemListSEO(
-    `Wiadomości - ${category?.name || "Sport"}`,
-    posts
-  );
+  // Meta tagi i JSON-LD generuje trasa SSR (src/routes/kategoria/$slug.tsx).
 
   if (categoryLoading) {
     return (
@@ -78,7 +67,6 @@ const CategoryPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO {...seoData} />
       <Header />
       <PatronBar />
 
