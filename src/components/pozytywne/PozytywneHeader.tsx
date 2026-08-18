@@ -44,7 +44,7 @@ export const PozytywneHeader = () => {
               {categories.map((c) => (
                 <DropdownMenuItem key={c.id} asChild>
                   <Link
-                    to=`/pozytywne/kategoria/${c.slug}`
+                    to={`/pozytywne/kategoria/${c.slug}`}
                     className="cursor-pointer"
                   >
                     {c.name}

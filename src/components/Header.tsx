@@ -58,7 +58,7 @@ export const Header = () => {
               {categories.map((category) => (
                 <DropdownMenuItem key={category.id} asChild>
                   <Link
-                    to=`/kategoria/${category.slug}`
+                    to={`/kategoria/${category.slug}`}
                     className="flex items-center gap-2 cursor-pointer"
                   >
                     <DynamicSportIcon

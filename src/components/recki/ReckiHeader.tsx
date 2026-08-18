@@ -39,7 +39,7 @@ export const ReckiHeader = () => {
               <DropdownMenuContent align="end" className="w-48">
                 {categories.map((c) => (
                   <DropdownMenuItem key={c.id} asChild>
-                    <Link to=`/tech/kategoria/${c.slug}` className="cursor-pointer">
+                    <Link to={`/tech/kategoria/${c.slug}`} className="cursor-pointer">
                       {c.name}
                     </Link>
                   </DropdownMenuItem>

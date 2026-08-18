@@ -152,7 +152,7 @@ const CategoryPage = () => {
             {/* Link to archive */}
             <div className="mt-10 text-center">
               <Link
-                to=`/archiwum?kategoria=${slug}`
+                to={`/archiwum?kategoria=${slug}`}
                 className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
               >
                 <Archive className="h-4 w-4" />
@@ -174,7 +174,7 @@ const CategoryPage = () => {
               W tej kategorii nie ma jeszcze żadnych artykułów z ostatnich 7 dni.
             </p>
             <Link
-              to=`/archiwum?kategoria=${slug}`
+              to={`/archiwum?kategoria=${slug}`}
               className="inline-flex items-center gap-2 text-primary hover:underline"
             >
               <Archive className="h-4 w-4" />
