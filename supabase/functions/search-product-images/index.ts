@@ -1,11 +1,44 @@
 // Search product images via SerpApi (Google Images engine)
 // Returns: { images: Array<{ imageUrl, thumbnailUrl, sourceDomain, title, width, height }> }
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+const json = (body: unknown, status: number) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+// Only signed-in admins/editors may trigger paid SerpApi queries.
+async function authorize(req: Request): Promise<Response | null> {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) return json({ error: "Brak autoryzacji" }, 401);
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+
+  const { data, error } = await supabase.auth.getClaims(authHeader.replace("Bearer ", ""));
+  if (error || !data?.claims) return json({ error: "Nieprawidłowy token" }, 401);
+
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", data.claims.sub);
+
+  const hasAccess = (roles ?? []).some((r: any) => ["admin", "editor"].includes(r.role));
+  if (!hasAccess) return json({ error: "Brak uprawnień" }, 403);
+
+  return null;
+}
 
 interface SerpApiImage {
   position?: number;
