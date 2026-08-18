@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ImageCropModalProps {
   open: boolean;
@@ -116,13 +117,21 @@ export const ImageCropModal = ({
   );
 };
 
-async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+async function getCroppedImg(
+  imageSrc: string,
+  pixelCrop: Area,
+  maxWidth: number,
+): Promise<{ blob: Blob; width: number; height: number }> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d")!;
 
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
+  const scale = pixelCrop.width > maxWidth ? maxWidth / pixelCrop.width : 1;
+  const outWidth = Math.round(pixelCrop.width * scale);
+  const outHeight = Math.round(pixelCrop.height * scale);
+
+  canvas.width = outWidth;
+  canvas.height = outHeight;
 
   ctx.drawImage(
     image,
@@ -132,15 +141,15 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
     pixelCrop.height,
     0,
     0,
-    pixelCrop.width,
-    pixelCrop.height
+    outWidth,
+    outHeight
   );
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (blob) {
-          resolve(blob);
+          resolve({ blob, width: outWidth, height: outHeight });
         } else {
           reject(new Error("Failed to create blob"));
         }
