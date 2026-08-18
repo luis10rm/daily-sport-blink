@@ -77,8 +77,8 @@ export const Route = createFileRoute("/blink/$slug")({
           children: JSON.stringify(
             buildBreadcrumbList([
               { name: "Szortsy", url: SITE_URL },
-              ...(sectionName && post.sport_category
-                ? [{ name: sectionName, url: `${SITE_URL}/blink/${params.slug}` }]
+              ...(sectionName && post.sport_category?.slug
+                ? [{ name: sectionName, url: `${SITE_URL}/kategoria/${post.sport_category.slug}` }]
                 : []),
               { name: post.title, url: canonical },
             ]),
