@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useParams } from "@/lib/router-compat";
+import { Link, useParams } from "@/lib/router-compat";
 import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake, Sun } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
