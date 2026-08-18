@@ -10,33 +10,809 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ArchiwumRouteImport } from './routes/archiwum'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AutorzyRouteImport } from './routes/autorzy'
+import { Route as MistrzostwaSwiata2026RouteImport } from './routes/mistrzostwa-swiata-2026'
+import { Route as StartRouteImport } from './routes/start'
+import { Route as TagiRouteImport } from './routes/tagi'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminDuplikatyRouteImport } from './routes/admin/duplikaty'
+import { Route as AdminFeedbackRouteImport } from './routes/admin/feedback'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminSourcesRouteImport } from './routes/admin/sources'
+import { Route as AdminSuggestionsRouteImport } from './routes/admin/suggestions'
+import { Route as AdminTagiRouteImport } from './routes/admin/tagi'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
+import { Route as AutorSlugRouteImport } from './routes/autor/$slug'
+import { Route as BlinkSlugRouteImport } from './routes/blink/$slug'
+import { Route as DzienDateRouteImport } from './routes/dzien/$date'
+import { Route as KategoriaSlugRouteImport } from './routes/kategoria/$slug'
+import { Route as NewsSplatRouteImport } from './routes/news/$'
+import { Route as PozytywneIndexRouteImport } from './routes/pozytywne/index'
+import { Route as PozytywneArchiwumRouteImport } from './routes/pozytywne/archiwum'
+import { Route as ReckiIndexRouteImport } from './routes/recki/index'
+import { Route as RedakcjaIndexRouteImport } from './routes/redakcja/index'
+import { Route as RedakcjaSlugRouteImport } from './routes/redakcja/$slug'
+import { Route as TagSlugRouteImport } from './routes/tag/$slug'
+import { Route as TechIndexRouteImport } from './routes/tech/index'
+import { Route as AdminAuthorsIndexRouteImport } from './routes/admin/authors/index'
+import { Route as AdminAuthorsNewRouteImport } from './routes/admin/authors/new'
+import { Route as AdminBannersIndexRouteImport } from './routes/admin/banners/index'
+import { Route as AdminBannersNewRouteImport } from './routes/admin/banners/new'
+import { Route as AdminCategoriesIndexRouteImport } from './routes/admin/categories/index'
+import { Route as AdminCategoriesNewRouteImport } from './routes/admin/categories/new'
+import { Route as AdminPostsIndexRouteImport } from './routes/admin/posts/index'
+import { Route as AdminPostsNewRouteImport } from './routes/admin/posts/new'
+import { Route as AdminPozytywneIndexRouteImport } from './routes/admin/pozytywne/index'
+import { Route as AdminPozytywneNewRouteImport } from './routes/admin/pozytywne/new'
+import { Route as AdminReckiIndexRouteImport } from './routes/admin/recki/index'
+import { Route as AdminReckiNewRouteImport } from './routes/admin/recki/new'
+import { Route as AdminWallpapersIndexRouteImport } from './routes/admin/wallpapers/index'
+import { Route as AdminWallpapersNewRouteImport } from './routes/admin/wallpapers/new'
+import { Route as PozytywneCategorySlugRouteImport } from './routes/pozytywne/$category/$slug'
+import { Route as PozytywneKategoriaSlugRouteImport } from './routes/pozytywne/kategoria/$slug'
+import { Route as ReckiCategorySlugRouteImport } from './routes/recki/$category/$slug'
+import { Route as ReckiKategoriaSlugRouteImport } from './routes/recki/kategoria/$slug'
+import { Route as TechCategorySlugRouteImport } from './routes/tech/$category/$slug'
+import { Route as TechKategoriaSlugRouteImport } from './routes/tech/kategoria/$slug'
+import { Route as AdminAuthorsIdEditRouteImport } from './routes/admin/authors/$id/edit'
+import { Route as AdminBannersIdEditRouteImport } from './routes/admin/banners/$id/edit'
+import { Route as AdminCategoriesIdEditRouteImport } from './routes/admin/categories/$id/edit'
+import { Route as AdminPostsIdEditRouteImport } from './routes/admin/posts/$id/edit'
+import { Route as AdminPozytywneIdEditRouteImport } from './routes/admin/pozytywne/$id/edit'
+import { Route as AdminPozytywneKategorieIndexRouteImport } from './routes/admin/pozytywne/kategorie/index'
+import { Route as AdminPozytywneKategorieNewRouteImport } from './routes/admin/pozytywne/kategorie/new'
+import { Route as AdminReckiIdEditRouteImport } from './routes/admin/recki/$id/edit'
+import { Route as AdminReckiKategorieIndexRouteImport } from './routes/admin/recki/kategorie/index'
+import { Route as AdminReckiKategorieNewRouteImport } from './routes/admin/recki/kategorie/new'
+import { Route as AdminWallpapersIdEditRouteImport } from './routes/admin/wallpapers/$id/edit'
+import { Route as AdminPozytywneKategorieIdEditRouteImport } from './routes/admin/pozytywne/kategorie/$id/edit'
+import { Route as AdminReckiKategorieIdEditRouteImport } from './routes/admin/recki/kategorie/$id/edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArchiwumRoute = ArchiwumRouteImport.update({
+  id: '/archiwum',
+  path: '/archiwum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutorzyRoute = AutorzyRouteImport.update({
+  id: '/autorzy',
+  path: '/autorzy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MistrzostwaSwiata2026Route = MistrzostwaSwiata2026RouteImport.update({
+  id: '/mistrzostwa-swiata-2026',
+  path: '/mistrzostwa-swiata-2026',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TagiRoute = TagiRouteImport.update({
+  id: '/tagi',
+  path: '/tagi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDuplikatyRoute = AdminDuplikatyRouteImport.update({
+  id: '/admin/duplikaty',
+  path: '/admin/duplikaty',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
+  id: '/admin/feedback',
+  path: '/admin/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSourcesRoute = AdminSourcesRouteImport.update({
+  id: '/admin/sources',
+  path: '/admin/sources',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSuggestionsRoute = AdminSuggestionsRouteImport.update({
+  id: '/admin/suggestions',
+  path: '/admin/suggestions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTagiRoute = AdminTagiRouteImport.update({
+  id: '/admin/tagi',
+  path: '/admin/tagi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AutorSlugRoute = AutorSlugRouteImport.update({
+  id: '/autor/$slug',
+  path: '/autor/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlinkSlugRoute = BlinkSlugRouteImport.update({
+  id: '/blink/$slug',
+  path: '/blink/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DzienDateRoute = DzienDateRouteImport.update({
+  id: '/dzien/$date',
+  path: '/dzien/$date',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KategoriaSlugRoute = KategoriaSlugRouteImport.update({
+  id: '/kategoria/$slug',
+  path: '/kategoria/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NewsSplatRoute = NewsSplatRouteImport.update({
+  id: '/news/$',
+  path: '/news/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PozytywneIndexRoute = PozytywneIndexRouteImport.update({
+  id: '/pozytywne/',
+  path: '/pozytywne/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PozytywneArchiwumRoute = PozytywneArchiwumRouteImport.update({
+  id: '/pozytywne/archiwum',
+  path: '/pozytywne/archiwum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReckiIndexRoute = ReckiIndexRouteImport.update({
+  id: '/recki/',
+  path: '/recki/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedakcjaIndexRoute = RedakcjaIndexRouteImport.update({
+  id: '/redakcja/',
+  path: '/redakcja/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedakcjaSlugRoute = RedakcjaSlugRouteImport.update({
+  id: '/redakcja/$slug',
+  path: '/redakcja/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TagSlugRoute = TagSlugRouteImport.update({
+  id: '/tag/$slug',
+  path: '/tag/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TechIndexRoute = TechIndexRouteImport.update({
+  id: '/tech/',
+  path: '/tech/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAuthorsIndexRoute = AdminAuthorsIndexRouteImport.update({
+  id: '/admin/authors/',
+  path: '/admin/authors/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAuthorsNewRoute = AdminAuthorsNewRouteImport.update({
+  id: '/admin/authors/new',
+  path: '/admin/authors/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBannersIndexRoute = AdminBannersIndexRouteImport.update({
+  id: '/admin/banners/',
+  path: '/admin/banners/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBannersNewRoute = AdminBannersNewRouteImport.update({
+  id: '/admin/banners/new',
+  path: '/admin/banners/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCategoriesIndexRoute = AdminCategoriesIndexRouteImport.update({
+  id: '/admin/categories/',
+  path: '/admin/categories/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCategoriesNewRoute = AdminCategoriesNewRouteImport.update({
+  id: '/admin/categories/new',
+  path: '/admin/categories/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
+  id: '/admin/posts/',
+  path: '/admin/posts/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPostsNewRoute = AdminPostsNewRouteImport.update({
+  id: '/admin/posts/new',
+  path: '/admin/posts/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPozytywneIndexRoute = AdminPozytywneIndexRouteImport.update({
+  id: '/admin/pozytywne/',
+  path: '/admin/pozytywne/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPozytywneNewRoute = AdminPozytywneNewRouteImport.update({
+  id: '/admin/pozytywne/new',
+  path: '/admin/pozytywne/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReckiIndexRoute = AdminReckiIndexRouteImport.update({
+  id: '/admin/recki/',
+  path: '/admin/recki/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReckiNewRoute = AdminReckiNewRouteImport.update({
+  id: '/admin/recki/new',
+  path: '/admin/recki/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWallpapersIndexRoute = AdminWallpapersIndexRouteImport.update({
+  id: '/admin/wallpapers/',
+  path: '/admin/wallpapers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWallpapersNewRoute = AdminWallpapersNewRouteImport.update({
+  id: '/admin/wallpapers/new',
+  path: '/admin/wallpapers/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PozytywneCategorySlugRoute = PozytywneCategorySlugRouteImport.update({
+  id: '/pozytywne/$category/$slug',
+  path: '/pozytywne/$category/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PozytywneKategoriaSlugRoute = PozytywneKategoriaSlugRouteImport.update({
+  id: '/pozytywne/kategoria/$slug',
+  path: '/pozytywne/kategoria/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReckiCategorySlugRoute = ReckiCategorySlugRouteImport.update({
+  id: '/recki/$category/$slug',
+  path: '/recki/$category/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReckiKategoriaSlugRoute = ReckiKategoriaSlugRouteImport.update({
+  id: '/recki/kategoria/$slug',
+  path: '/recki/kategoria/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TechCategorySlugRoute = TechCategorySlugRouteImport.update({
+  id: '/tech/$category/$slug',
+  path: '/tech/$category/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TechKategoriaSlugRoute = TechKategoriaSlugRouteImport.update({
+  id: '/tech/kategoria/$slug',
+  path: '/tech/kategoria/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAuthorsIdEditRoute = AdminAuthorsIdEditRouteImport.update({
+  id: '/admin/authors/$id/edit',
+  path: '/admin/authors/$id/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBannersIdEditRoute = AdminBannersIdEditRouteImport.update({
+  id: '/admin/banners/$id/edit',
+  path: '/admin/banners/$id/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCategoriesIdEditRoute = AdminCategoriesIdEditRouteImport.update({
+  id: '/admin/categories/$id/edit',
+  path: '/admin/categories/$id/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPostsIdEditRoute = AdminPostsIdEditRouteImport.update({
+  id: '/admin/posts/$id/edit',
+  path: '/admin/posts/$id/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPozytywneIdEditRoute = AdminPozytywneIdEditRouteImport.update({
+  id: '/admin/pozytywne/$id/edit',
+  path: '/admin/pozytywne/$id/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPozytywneKategorieIndexRoute =
+  AdminPozytywneKategorieIndexRouteImport.update({
+    id: '/admin/pozytywne/kategorie/',
+    path: '/admin/pozytywne/kategorie/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminPozytywneKategorieNewRoute =
+  AdminPozytywneKategorieNewRouteImport.update({
+    id: '/admin/pozytywne/kategorie/new',
+    path: '/admin/pozytywne/kategorie/new',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminReckiIdEditRoute = AdminReckiIdEditRouteImport.update({
+  id: '/admin/recki/$id/edit',
+  path: '/admin/recki/$id/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReckiKategorieIndexRoute =
+  AdminReckiKategorieIndexRouteImport.update({
+    id: '/admin/recki/kategorie/',
+    path: '/admin/recki/kategorie/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminReckiKategorieNewRoute = AdminReckiKategorieNewRouteImport.update({
+  id: '/admin/recki/kategorie/new',
+  path: '/admin/recki/kategorie/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminWallpapersIdEditRoute = AdminWallpapersIdEditRouteImport.update({
+  id: '/admin/wallpapers/$id/edit',
+  path: '/admin/wallpapers/$id/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPozytywneKategorieIdEditRoute =
+  AdminPozytywneKategorieIdEditRouteImport.update({
+    id: '/admin/pozytywne/kategorie/$id/edit',
+    path: '/admin/pozytywne/kategorie/$id/edit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminReckiKategorieIdEditRoute =
+  AdminReckiKategorieIdEditRouteImport.update({
+    id: '/admin/recki/kategorie/$id/edit',
+    path: '/admin/recki/kategorie/$id/edit',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/archiwum': typeof ArchiwumRoute
+  '/auth': typeof AuthRoute
+  '/autorzy': typeof AutorzyRoute
+  '/mistrzostwa-swiata-2026': typeof MistrzostwaSwiata2026Route
+  '/start': typeof StartRoute
+  '/tagi': typeof TagiRoute
+  '/admin/duplikaty': typeof AdminDuplikatyRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sources': typeof AdminSourcesRoute
+  '/admin/suggestions': typeof AdminSuggestionsRoute
+  '/admin/tagi': typeof AdminTagiRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/autor/$slug': typeof AutorSlugRoute
+  '/blink/$slug': typeof BlinkSlugRoute
+  '/dzien/$date': typeof DzienDateRoute
+  '/kategoria/$slug': typeof KategoriaSlugRoute
+  '/news/$': typeof NewsSplatRoute
+  '/pozytywne/archiwum': typeof PozytywneArchiwumRoute
+  '/redakcja/$slug': typeof RedakcjaSlugRoute
+  '/tag/$slug': typeof TagSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/pozytywne/': typeof PozytywneIndexRoute
+  '/recki/': typeof ReckiIndexRoute
+  '/redakcja/': typeof RedakcjaIndexRoute
+  '/tech/': typeof TechIndexRoute
+  '/admin/authors/new': typeof AdminAuthorsNewRoute
+  '/admin/banners/new': typeof AdminBannersNewRoute
+  '/admin/categories/new': typeof AdminCategoriesNewRoute
+  '/admin/posts/new': typeof AdminPostsNewRoute
+  '/admin/pozytywne/new': typeof AdminPozytywneNewRoute
+  '/admin/recki/new': typeof AdminReckiNewRoute
+  '/admin/wallpapers/new': typeof AdminWallpapersNewRoute
+  '/pozytywne/$category/$slug': typeof PozytywneCategorySlugRoute
+  '/pozytywne/kategoria/$slug': typeof PozytywneKategoriaSlugRoute
+  '/recki/$category/$slug': typeof ReckiCategorySlugRoute
+  '/recki/kategoria/$slug': typeof ReckiKategoriaSlugRoute
+  '/tech/$category/$slug': typeof TechCategorySlugRoute
+  '/tech/kategoria/$slug': typeof TechKategoriaSlugRoute
+  '/admin/authors/': typeof AdminAuthorsIndexRoute
+  '/admin/banners/': typeof AdminBannersIndexRoute
+  '/admin/categories/': typeof AdminCategoriesIndexRoute
+  '/admin/posts/': typeof AdminPostsIndexRoute
+  '/admin/pozytywne/': typeof AdminPozytywneIndexRoute
+  '/admin/recki/': typeof AdminReckiIndexRoute
+  '/admin/wallpapers/': typeof AdminWallpapersIndexRoute
+  '/admin/authors/$id/edit': typeof AdminAuthorsIdEditRoute
+  '/admin/banners/$id/edit': typeof AdminBannersIdEditRoute
+  '/admin/categories/$id/edit': typeof AdminCategoriesIdEditRoute
+  '/admin/posts/$id/edit': typeof AdminPostsIdEditRoute
+  '/admin/pozytywne/$id/edit': typeof AdminPozytywneIdEditRoute
+  '/admin/pozytywne/kategorie/new': typeof AdminPozytywneKategorieNewRoute
+  '/admin/recki/$id/edit': typeof AdminReckiIdEditRoute
+  '/admin/recki/kategorie/new': typeof AdminReckiKategorieNewRoute
+  '/admin/wallpapers/$id/edit': typeof AdminWallpapersIdEditRoute
+  '/admin/pozytywne/kategorie/': typeof AdminPozytywneKategorieIndexRoute
+  '/admin/recki/kategorie/': typeof AdminReckiKategorieIndexRoute
+  '/admin/pozytywne/kategorie/$id/edit': typeof AdminPozytywneKategorieIdEditRoute
+  '/admin/recki/kategorie/$id/edit': typeof AdminReckiKategorieIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/archiwum': typeof ArchiwumRoute
+  '/auth': typeof AuthRoute
+  '/autorzy': typeof AutorzyRoute
+  '/mistrzostwa-swiata-2026': typeof MistrzostwaSwiata2026Route
+  '/start': typeof StartRoute
+  '/tagi': typeof TagiRoute
+  '/admin/duplikaty': typeof AdminDuplikatyRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sources': typeof AdminSourcesRoute
+  '/admin/suggestions': typeof AdminSuggestionsRoute
+  '/admin/tagi': typeof AdminTagiRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/autor/$slug': typeof AutorSlugRoute
+  '/blink/$slug': typeof BlinkSlugRoute
+  '/dzien/$date': typeof DzienDateRoute
+  '/kategoria/$slug': typeof KategoriaSlugRoute
+  '/news/$': typeof NewsSplatRoute
+  '/pozytywne/archiwum': typeof PozytywneArchiwumRoute
+  '/redakcja/$slug': typeof RedakcjaSlugRoute
+  '/tag/$slug': typeof TagSlugRoute
+  '/admin': typeof AdminIndexRoute
+  '/pozytywne': typeof PozytywneIndexRoute
+  '/recki': typeof ReckiIndexRoute
+  '/redakcja': typeof RedakcjaIndexRoute
+  '/tech': typeof TechIndexRoute
+  '/admin/authors/new': typeof AdminAuthorsNewRoute
+  '/admin/banners/new': typeof AdminBannersNewRoute
+  '/admin/categories/new': typeof AdminCategoriesNewRoute
+  '/admin/posts/new': typeof AdminPostsNewRoute
+  '/admin/pozytywne/new': typeof AdminPozytywneNewRoute
+  '/admin/recki/new': typeof AdminReckiNewRoute
+  '/admin/wallpapers/new': typeof AdminWallpapersNewRoute
+  '/pozytywne/$category/$slug': typeof PozytywneCategorySlugRoute
+  '/pozytywne/kategoria/$slug': typeof PozytywneKategoriaSlugRoute
+  '/recki/$category/$slug': typeof ReckiCategorySlugRoute
+  '/recki/kategoria/$slug': typeof ReckiKategoriaSlugRoute
+  '/tech/$category/$slug': typeof TechCategorySlugRoute
+  '/tech/kategoria/$slug': typeof TechKategoriaSlugRoute
+  '/admin/authors': typeof AdminAuthorsIndexRoute
+  '/admin/banners': typeof AdminBannersIndexRoute
+  '/admin/categories': typeof AdminCategoriesIndexRoute
+  '/admin/posts': typeof AdminPostsIndexRoute
+  '/admin/pozytywne': typeof AdminPozytywneIndexRoute
+  '/admin/recki': typeof AdminReckiIndexRoute
+  '/admin/wallpapers': typeof AdminWallpapersIndexRoute
+  '/admin/authors/$id/edit': typeof AdminAuthorsIdEditRoute
+  '/admin/banners/$id/edit': typeof AdminBannersIdEditRoute
+  '/admin/categories/$id/edit': typeof AdminCategoriesIdEditRoute
+  '/admin/posts/$id/edit': typeof AdminPostsIdEditRoute
+  '/admin/pozytywne/$id/edit': typeof AdminPozytywneIdEditRoute
+  '/admin/pozytywne/kategorie/new': typeof AdminPozytywneKategorieNewRoute
+  '/admin/recki/$id/edit': typeof AdminReckiIdEditRoute
+  '/admin/recki/kategorie/new': typeof AdminReckiKategorieNewRoute
+  '/admin/wallpapers/$id/edit': typeof AdminWallpapersIdEditRoute
+  '/admin/pozytywne/kategorie': typeof AdminPozytywneKategorieIndexRoute
+  '/admin/recki/kategorie': typeof AdminReckiKategorieIndexRoute
+  '/admin/pozytywne/kategorie/$id/edit': typeof AdminPozytywneKategorieIdEditRoute
+  '/admin/recki/kategorie/$id/edit': typeof AdminReckiKategorieIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/archiwum': typeof ArchiwumRoute
+  '/auth': typeof AuthRoute
+  '/autorzy': typeof AutorzyRoute
+  '/mistrzostwa-swiata-2026': typeof MistrzostwaSwiata2026Route
+  '/start': typeof StartRoute
+  '/tagi': typeof TagiRoute
+  '/admin/duplikaty': typeof AdminDuplikatyRoute
+  '/admin/feedback': typeof AdminFeedbackRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/sources': typeof AdminSourcesRoute
+  '/admin/suggestions': typeof AdminSuggestionsRoute
+  '/admin/tagi': typeof AdminTagiRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/autor/$slug': typeof AutorSlugRoute
+  '/blink/$slug': typeof BlinkSlugRoute
+  '/dzien/$date': typeof DzienDateRoute
+  '/kategoria/$slug': typeof KategoriaSlugRoute
+  '/news/$': typeof NewsSplatRoute
+  '/pozytywne/archiwum': typeof PozytywneArchiwumRoute
+  '/redakcja/$slug': typeof RedakcjaSlugRoute
+  '/tag/$slug': typeof TagSlugRoute
+  '/admin/': typeof AdminIndexRoute
+  '/pozytywne/': typeof PozytywneIndexRoute
+  '/recki/': typeof ReckiIndexRoute
+  '/redakcja/': typeof RedakcjaIndexRoute
+  '/tech/': typeof TechIndexRoute
+  '/admin/authors/new': typeof AdminAuthorsNewRoute
+  '/admin/banners/new': typeof AdminBannersNewRoute
+  '/admin/categories/new': typeof AdminCategoriesNewRoute
+  '/admin/posts/new': typeof AdminPostsNewRoute
+  '/admin/pozytywne/new': typeof AdminPozytywneNewRoute
+  '/admin/recki/new': typeof AdminReckiNewRoute
+  '/admin/wallpapers/new': typeof AdminWallpapersNewRoute
+  '/pozytywne/$category/$slug': typeof PozytywneCategorySlugRoute
+  '/pozytywne/kategoria/$slug': typeof PozytywneKategoriaSlugRoute
+  '/recki/$category/$slug': typeof ReckiCategorySlugRoute
+  '/recki/kategoria/$slug': typeof ReckiKategoriaSlugRoute
+  '/tech/$category/$slug': typeof TechCategorySlugRoute
+  '/tech/kategoria/$slug': typeof TechKategoriaSlugRoute
+  '/admin/authors/': typeof AdminAuthorsIndexRoute
+  '/admin/banners/': typeof AdminBannersIndexRoute
+  '/admin/categories/': typeof AdminCategoriesIndexRoute
+  '/admin/posts/': typeof AdminPostsIndexRoute
+  '/admin/pozytywne/': typeof AdminPozytywneIndexRoute
+  '/admin/recki/': typeof AdminReckiIndexRoute
+  '/admin/wallpapers/': typeof AdminWallpapersIndexRoute
+  '/admin/authors/$id/edit': typeof AdminAuthorsIdEditRoute
+  '/admin/banners/$id/edit': typeof AdminBannersIdEditRoute
+  '/admin/categories/$id/edit': typeof AdminCategoriesIdEditRoute
+  '/admin/posts/$id/edit': typeof AdminPostsIdEditRoute
+  '/admin/pozytywne/$id/edit': typeof AdminPozytywneIdEditRoute
+  '/admin/pozytywne/kategorie/new': typeof AdminPozytywneKategorieNewRoute
+  '/admin/recki/$id/edit': typeof AdminReckiIdEditRoute
+  '/admin/recki/kategorie/new': typeof AdminReckiKategorieNewRoute
+  '/admin/wallpapers/$id/edit': typeof AdminWallpapersIdEditRoute
+  '/admin/pozytywne/kategorie/': typeof AdminPozytywneKategorieIndexRoute
+  '/admin/recki/kategorie/': typeof AdminReckiKategorieIndexRoute
+  '/admin/pozytywne/kategorie/$id/edit': typeof AdminPozytywneKategorieIdEditRoute
+  '/admin/recki/kategorie/$id/edit': typeof AdminReckiKategorieIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/archiwum'
+    | '/auth'
+    | '/autorzy'
+    | '/mistrzostwa-swiata-2026'
+    | '/start'
+    | '/tagi'
+    | '/admin/duplikaty'
+    | '/admin/feedback'
+    | '/admin/settings'
+    | '/admin/sources'
+    | '/admin/suggestions'
+    | '/admin/tagi'
+    | '/admin/users'
+    | '/autor/$slug'
+    | '/blink/$slug'
+    | '/dzien/$date'
+    | '/kategoria/$slug'
+    | '/news/$'
+    | '/pozytywne/archiwum'
+    | '/redakcja/$slug'
+    | '/tag/$slug'
+    | '/admin/'
+    | '/pozytywne/'
+    | '/recki/'
+    | '/redakcja/'
+    | '/tech/'
+    | '/admin/authors/new'
+    | '/admin/banners/new'
+    | '/admin/categories/new'
+    | '/admin/posts/new'
+    | '/admin/pozytywne/new'
+    | '/admin/recki/new'
+    | '/admin/wallpapers/new'
+    | '/pozytywne/$category/$slug'
+    | '/pozytywne/kategoria/$slug'
+    | '/recki/$category/$slug'
+    | '/recki/kategoria/$slug'
+    | '/tech/$category/$slug'
+    | '/tech/kategoria/$slug'
+    | '/admin/authors/'
+    | '/admin/banners/'
+    | '/admin/categories/'
+    | '/admin/posts/'
+    | '/admin/pozytywne/'
+    | '/admin/recki/'
+    | '/admin/wallpapers/'
+    | '/admin/authors/$id/edit'
+    | '/admin/banners/$id/edit'
+    | '/admin/categories/$id/edit'
+    | '/admin/posts/$id/edit'
+    | '/admin/pozytywne/$id/edit'
+    | '/admin/pozytywne/kategorie/new'
+    | '/admin/recki/$id/edit'
+    | '/admin/recki/kategorie/new'
+    | '/admin/wallpapers/$id/edit'
+    | '/admin/pozytywne/kategorie/'
+    | '/admin/recki/kategorie/'
+    | '/admin/pozytywne/kategorie/$id/edit'
+    | '/admin/recki/kategorie/$id/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/archiwum'
+    | '/auth'
+    | '/autorzy'
+    | '/mistrzostwa-swiata-2026'
+    | '/start'
+    | '/tagi'
+    | '/admin/duplikaty'
+    | '/admin/feedback'
+    | '/admin/settings'
+    | '/admin/sources'
+    | '/admin/suggestions'
+    | '/admin/tagi'
+    | '/admin/users'
+    | '/autor/$slug'
+    | '/blink/$slug'
+    | '/dzien/$date'
+    | '/kategoria/$slug'
+    | '/news/$'
+    | '/pozytywne/archiwum'
+    | '/redakcja/$slug'
+    | '/tag/$slug'
+    | '/admin'
+    | '/pozytywne'
+    | '/recki'
+    | '/redakcja'
+    | '/tech'
+    | '/admin/authors/new'
+    | '/admin/banners/new'
+    | '/admin/categories/new'
+    | '/admin/posts/new'
+    | '/admin/pozytywne/new'
+    | '/admin/recki/new'
+    | '/admin/wallpapers/new'
+    | '/pozytywne/$category/$slug'
+    | '/pozytywne/kategoria/$slug'
+    | '/recki/$category/$slug'
+    | '/recki/kategoria/$slug'
+    | '/tech/$category/$slug'
+    | '/tech/kategoria/$slug'
+    | '/admin/authors'
+    | '/admin/banners'
+    | '/admin/categories'
+    | '/admin/posts'
+    | '/admin/pozytywne'
+    | '/admin/recki'
+    | '/admin/wallpapers'
+    | '/admin/authors/$id/edit'
+    | '/admin/banners/$id/edit'
+    | '/admin/categories/$id/edit'
+    | '/admin/posts/$id/edit'
+    | '/admin/pozytywne/$id/edit'
+    | '/admin/pozytywne/kategorie/new'
+    | '/admin/recki/$id/edit'
+    | '/admin/recki/kategorie/new'
+    | '/admin/wallpapers/$id/edit'
+    | '/admin/pozytywne/kategorie'
+    | '/admin/recki/kategorie'
+    | '/admin/pozytywne/kategorie/$id/edit'
+    | '/admin/recki/kategorie/$id/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/archiwum'
+    | '/auth'
+    | '/autorzy'
+    | '/mistrzostwa-swiata-2026'
+    | '/start'
+    | '/tagi'
+    | '/admin/duplikaty'
+    | '/admin/feedback'
+    | '/admin/settings'
+    | '/admin/sources'
+    | '/admin/suggestions'
+    | '/admin/tagi'
+    | '/admin/users'
+    | '/autor/$slug'
+    | '/blink/$slug'
+    | '/dzien/$date'
+    | '/kategoria/$slug'
+    | '/news/$'
+    | '/pozytywne/archiwum'
+    | '/redakcja/$slug'
+    | '/tag/$slug'
+    | '/admin/'
+    | '/pozytywne/'
+    | '/recki/'
+    | '/redakcja/'
+    | '/tech/'
+    | '/admin/authors/new'
+    | '/admin/banners/new'
+    | '/admin/categories/new'
+    | '/admin/posts/new'
+    | '/admin/pozytywne/new'
+    | '/admin/recki/new'
+    | '/admin/wallpapers/new'
+    | '/pozytywne/$category/$slug'
+    | '/pozytywne/kategoria/$slug'
+    | '/recki/$category/$slug'
+    | '/recki/kategoria/$slug'
+    | '/tech/$category/$slug'
+    | '/tech/kategoria/$slug'
+    | '/admin/authors/'
+    | '/admin/banners/'
+    | '/admin/categories/'
+    | '/admin/posts/'
+    | '/admin/pozytywne/'
+    | '/admin/recki/'
+    | '/admin/wallpapers/'
+    | '/admin/authors/$id/edit'
+    | '/admin/banners/$id/edit'
+    | '/admin/categories/$id/edit'
+    | '/admin/posts/$id/edit'
+    | '/admin/pozytywne/$id/edit'
+    | '/admin/pozytywne/kategorie/new'
+    | '/admin/recki/$id/edit'
+    | '/admin/recki/kategorie/new'
+    | '/admin/wallpapers/$id/edit'
+    | '/admin/pozytywne/kategorie/'
+    | '/admin/recki/kategorie/'
+    | '/admin/pozytywne/kategorie/$id/edit'
+    | '/admin/recki/kategorie/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ArchiwumRoute: typeof ArchiwumRoute
+  AuthRoute: typeof AuthRoute
+  AutorzyRoute: typeof AutorzyRoute
+  MistrzostwaSwiata2026Route: typeof MistrzostwaSwiata2026Route
+  StartRoute: typeof StartRoute
+  TagiRoute: typeof TagiRoute
+  AdminDuplikatyRoute: typeof AdminDuplikatyRoute
+  AdminFeedbackRoute: typeof AdminFeedbackRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminSourcesRoute: typeof AdminSourcesRoute
+  AdminSuggestionsRoute: typeof AdminSuggestionsRoute
+  AdminTagiRoute: typeof AdminTagiRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AutorSlugRoute: typeof AutorSlugRoute
+  BlinkSlugRoute: typeof BlinkSlugRoute
+  DzienDateRoute: typeof DzienDateRoute
+  KategoriaSlugRoute: typeof KategoriaSlugRoute
+  NewsSplatRoute: typeof NewsSplatRoute
+  PozytywneArchiwumRoute: typeof PozytywneArchiwumRoute
+  RedakcjaSlugRoute: typeof RedakcjaSlugRoute
+  TagSlugRoute: typeof TagSlugRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+  PozytywneIndexRoute: typeof PozytywneIndexRoute
+  ReckiIndexRoute: typeof ReckiIndexRoute
+  RedakcjaIndexRoute: typeof RedakcjaIndexRoute
+  TechIndexRoute: typeof TechIndexRoute
+  AdminAuthorsNewRoute: typeof AdminAuthorsNewRoute
+  AdminBannersNewRoute: typeof AdminBannersNewRoute
+  AdminCategoriesNewRoute: typeof AdminCategoriesNewRoute
+  AdminPostsNewRoute: typeof AdminPostsNewRoute
+  AdminPozytywneNewRoute: typeof AdminPozytywneNewRoute
+  AdminReckiNewRoute: typeof AdminReckiNewRoute
+  AdminWallpapersNewRoute: typeof AdminWallpapersNewRoute
+  PozytywneCategorySlugRoute: typeof PozytywneCategorySlugRoute
+  PozytywneKategoriaSlugRoute: typeof PozytywneKategoriaSlugRoute
+  ReckiCategorySlugRoute: typeof ReckiCategorySlugRoute
+  ReckiKategoriaSlugRoute: typeof ReckiKategoriaSlugRoute
+  TechCategorySlugRoute: typeof TechCategorySlugRoute
+  TechKategoriaSlugRoute: typeof TechKategoriaSlugRoute
+  AdminAuthorsIndexRoute: typeof AdminAuthorsIndexRoute
+  AdminBannersIndexRoute: typeof AdminBannersIndexRoute
+  AdminCategoriesIndexRoute: typeof AdminCategoriesIndexRoute
+  AdminPostsIndexRoute: typeof AdminPostsIndexRoute
+  AdminPozytywneIndexRoute: typeof AdminPozytywneIndexRoute
+  AdminReckiIndexRoute: typeof AdminReckiIndexRoute
+  AdminWallpapersIndexRoute: typeof AdminWallpapersIndexRoute
+  AdminAuthorsIdEditRoute: typeof AdminAuthorsIdEditRoute
+  AdminBannersIdEditRoute: typeof AdminBannersIdEditRoute
+  AdminCategoriesIdEditRoute: typeof AdminCategoriesIdEditRoute
+  AdminPostsIdEditRoute: typeof AdminPostsIdEditRoute
+  AdminPozytywneIdEditRoute: typeof AdminPozytywneIdEditRoute
+  AdminPozytywneKategorieNewRoute: typeof AdminPozytywneKategorieNewRoute
+  AdminReckiIdEditRoute: typeof AdminReckiIdEditRoute
+  AdminReckiKategorieNewRoute: typeof AdminReckiKategorieNewRoute
+  AdminWallpapersIdEditRoute: typeof AdminWallpapersIdEditRoute
+  AdminPozytywneKategorieIndexRoute: typeof AdminPozytywneKategorieIndexRoute
+  AdminReckiKategorieIndexRoute: typeof AdminReckiKategorieIndexRoute
+  AdminPozytywneKategorieIdEditRoute: typeof AdminPozytywneKategorieIdEditRoute
+  AdminReckiKategorieIdEditRoute: typeof AdminReckiKategorieIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +824,483 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/archiwum': {
+      id: '/archiwum'
+      path: '/archiwum'
+      fullPath: '/archiwum'
+      preLoaderRoute: typeof ArchiwumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/autorzy': {
+      id: '/autorzy'
+      path: '/autorzy'
+      fullPath: '/autorzy'
+      preLoaderRoute: typeof AutorzyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mistrzostwa-swiata-2026': {
+      id: '/mistrzostwa-swiata-2026'
+      path: '/mistrzostwa-swiata-2026'
+      fullPath: '/mistrzostwa-swiata-2026'
+      preLoaderRoute: typeof MistrzostwaSwiata2026RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tagi': {
+      id: '/tagi'
+      path: '/tagi'
+      fullPath: '/tagi'
+      preLoaderRoute: typeof TagiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/duplikaty': {
+      id: '/admin/duplikaty'
+      path: '/admin/duplikaty'
+      fullPath: '/admin/duplikaty'
+      preLoaderRoute: typeof AdminDuplikatyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/feedback': {
+      id: '/admin/feedback'
+      path: '/admin/feedback'
+      fullPath: '/admin/feedback'
+      preLoaderRoute: typeof AdminFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/sources': {
+      id: '/admin/sources'
+      path: '/admin/sources'
+      fullPath: '/admin/sources'
+      preLoaderRoute: typeof AdminSourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/suggestions': {
+      id: '/admin/suggestions'
+      path: '/admin/suggestions'
+      fullPath: '/admin/suggestions'
+      preLoaderRoute: typeof AdminSuggestionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/tagi': {
+      id: '/admin/tagi'
+      path: '/admin/tagi'
+      fullPath: '/admin/tagi'
+      preLoaderRoute: typeof AdminTagiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/autor/$slug': {
+      id: '/autor/$slug'
+      path: '/autor/$slug'
+      fullPath: '/autor/$slug'
+      preLoaderRoute: typeof AutorSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blink/$slug': {
+      id: '/blink/$slug'
+      path: '/blink/$slug'
+      fullPath: '/blink/$slug'
+      preLoaderRoute: typeof BlinkSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dzien/$date': {
+      id: '/dzien/$date'
+      path: '/dzien/$date'
+      fullPath: '/dzien/$date'
+      preLoaderRoute: typeof DzienDateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kategoria/$slug': {
+      id: '/kategoria/$slug'
+      path: '/kategoria/$slug'
+      fullPath: '/kategoria/$slug'
+      preLoaderRoute: typeof KategoriaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/news/$': {
+      id: '/news/$'
+      path: '/news/$'
+      fullPath: '/news/$'
+      preLoaderRoute: typeof NewsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pozytywne/': {
+      id: '/pozytywne/'
+      path: '/pozytywne'
+      fullPath: '/pozytywne/'
+      preLoaderRoute: typeof PozytywneIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pozytywne/archiwum': {
+      id: '/pozytywne/archiwum'
+      path: '/pozytywne/archiwum'
+      fullPath: '/pozytywne/archiwum'
+      preLoaderRoute: typeof PozytywneArchiwumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recki/': {
+      id: '/recki/'
+      path: '/recki'
+      fullPath: '/recki/'
+      preLoaderRoute: typeof ReckiIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redakcja/': {
+      id: '/redakcja/'
+      path: '/redakcja'
+      fullPath: '/redakcja/'
+      preLoaderRoute: typeof RedakcjaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redakcja/$slug': {
+      id: '/redakcja/$slug'
+      path: '/redakcja/$slug'
+      fullPath: '/redakcja/$slug'
+      preLoaderRoute: typeof RedakcjaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tag/$slug': {
+      id: '/tag/$slug'
+      path: '/tag/$slug'
+      fullPath: '/tag/$slug'
+      preLoaderRoute: typeof TagSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tech/': {
+      id: '/tech/'
+      path: '/tech'
+      fullPath: '/tech/'
+      preLoaderRoute: typeof TechIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/authors/': {
+      id: '/admin/authors/'
+      path: '/admin/authors'
+      fullPath: '/admin/authors/'
+      preLoaderRoute: typeof AdminAuthorsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/authors/new': {
+      id: '/admin/authors/new'
+      path: '/admin/authors/new'
+      fullPath: '/admin/authors/new'
+      preLoaderRoute: typeof AdminAuthorsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/banners/': {
+      id: '/admin/banners/'
+      path: '/admin/banners'
+      fullPath: '/admin/banners/'
+      preLoaderRoute: typeof AdminBannersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/banners/new': {
+      id: '/admin/banners/new'
+      path: '/admin/banners/new'
+      fullPath: '/admin/banners/new'
+      preLoaderRoute: typeof AdminBannersNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/categories/': {
+      id: '/admin/categories/'
+      path: '/admin/categories'
+      fullPath: '/admin/categories/'
+      preLoaderRoute: typeof AdminCategoriesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/categories/new': {
+      id: '/admin/categories/new'
+      path: '/admin/categories/new'
+      fullPath: '/admin/categories/new'
+      preLoaderRoute: typeof AdminCategoriesNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/posts/': {
+      id: '/admin/posts/'
+      path: '/admin/posts'
+      fullPath: '/admin/posts/'
+      preLoaderRoute: typeof AdminPostsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/posts/new': {
+      id: '/admin/posts/new'
+      path: '/admin/posts/new'
+      fullPath: '/admin/posts/new'
+      preLoaderRoute: typeof AdminPostsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pozytywne/': {
+      id: '/admin/pozytywne/'
+      path: '/admin/pozytywne'
+      fullPath: '/admin/pozytywne/'
+      preLoaderRoute: typeof AdminPozytywneIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pozytywne/new': {
+      id: '/admin/pozytywne/new'
+      path: '/admin/pozytywne/new'
+      fullPath: '/admin/pozytywne/new'
+      preLoaderRoute: typeof AdminPozytywneNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recki/': {
+      id: '/admin/recki/'
+      path: '/admin/recki'
+      fullPath: '/admin/recki/'
+      preLoaderRoute: typeof AdminReckiIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recki/new': {
+      id: '/admin/recki/new'
+      path: '/admin/recki/new'
+      fullPath: '/admin/recki/new'
+      preLoaderRoute: typeof AdminReckiNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/wallpapers/': {
+      id: '/admin/wallpapers/'
+      path: '/admin/wallpapers'
+      fullPath: '/admin/wallpapers/'
+      preLoaderRoute: typeof AdminWallpapersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/wallpapers/new': {
+      id: '/admin/wallpapers/new'
+      path: '/admin/wallpapers/new'
+      fullPath: '/admin/wallpapers/new'
+      preLoaderRoute: typeof AdminWallpapersNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pozytywne/$category/$slug': {
+      id: '/pozytywne/$category/$slug'
+      path: '/pozytywne/$category/$slug'
+      fullPath: '/pozytywne/$category/$slug'
+      preLoaderRoute: typeof PozytywneCategorySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pozytywne/kategoria/$slug': {
+      id: '/pozytywne/kategoria/$slug'
+      path: '/pozytywne/kategoria/$slug'
+      fullPath: '/pozytywne/kategoria/$slug'
+      preLoaderRoute: typeof PozytywneKategoriaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recki/$category/$slug': {
+      id: '/recki/$category/$slug'
+      path: '/recki/$category/$slug'
+      fullPath: '/recki/$category/$slug'
+      preLoaderRoute: typeof ReckiCategorySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recki/kategoria/$slug': {
+      id: '/recki/kategoria/$slug'
+      path: '/recki/kategoria/$slug'
+      fullPath: '/recki/kategoria/$slug'
+      preLoaderRoute: typeof ReckiKategoriaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tech/$category/$slug': {
+      id: '/tech/$category/$slug'
+      path: '/tech/$category/$slug'
+      fullPath: '/tech/$category/$slug'
+      preLoaderRoute: typeof TechCategorySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tech/kategoria/$slug': {
+      id: '/tech/kategoria/$slug'
+      path: '/tech/kategoria/$slug'
+      fullPath: '/tech/kategoria/$slug'
+      preLoaderRoute: typeof TechKategoriaSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/authors/$id/edit': {
+      id: '/admin/authors/$id/edit'
+      path: '/admin/authors/$id/edit'
+      fullPath: '/admin/authors/$id/edit'
+      preLoaderRoute: typeof AdminAuthorsIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/banners/$id/edit': {
+      id: '/admin/banners/$id/edit'
+      path: '/admin/banners/$id/edit'
+      fullPath: '/admin/banners/$id/edit'
+      preLoaderRoute: typeof AdminBannersIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/categories/$id/edit': {
+      id: '/admin/categories/$id/edit'
+      path: '/admin/categories/$id/edit'
+      fullPath: '/admin/categories/$id/edit'
+      preLoaderRoute: typeof AdminCategoriesIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/posts/$id/edit': {
+      id: '/admin/posts/$id/edit'
+      path: '/admin/posts/$id/edit'
+      fullPath: '/admin/posts/$id/edit'
+      preLoaderRoute: typeof AdminPostsIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pozytywne/$id/edit': {
+      id: '/admin/pozytywne/$id/edit'
+      path: '/admin/pozytywne/$id/edit'
+      fullPath: '/admin/pozytywne/$id/edit'
+      preLoaderRoute: typeof AdminPozytywneIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pozytywne/kategorie/': {
+      id: '/admin/pozytywne/kategorie/'
+      path: '/admin/pozytywne/kategorie'
+      fullPath: '/admin/pozytywne/kategorie/'
+      preLoaderRoute: typeof AdminPozytywneKategorieIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pozytywne/kategorie/new': {
+      id: '/admin/pozytywne/kategorie/new'
+      path: '/admin/pozytywne/kategorie/new'
+      fullPath: '/admin/pozytywne/kategorie/new'
+      preLoaderRoute: typeof AdminPozytywneKategorieNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recki/$id/edit': {
+      id: '/admin/recki/$id/edit'
+      path: '/admin/recki/$id/edit'
+      fullPath: '/admin/recki/$id/edit'
+      preLoaderRoute: typeof AdminReckiIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recki/kategorie/': {
+      id: '/admin/recki/kategorie/'
+      path: '/admin/recki/kategorie'
+      fullPath: '/admin/recki/kategorie/'
+      preLoaderRoute: typeof AdminReckiKategorieIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recki/kategorie/new': {
+      id: '/admin/recki/kategorie/new'
+      path: '/admin/recki/kategorie/new'
+      fullPath: '/admin/recki/kategorie/new'
+      preLoaderRoute: typeof AdminReckiKategorieNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/wallpapers/$id/edit': {
+      id: '/admin/wallpapers/$id/edit'
+      path: '/admin/wallpapers/$id/edit'
+      fullPath: '/admin/wallpapers/$id/edit'
+      preLoaderRoute: typeof AdminWallpapersIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/pozytywne/kategorie/$id/edit': {
+      id: '/admin/pozytywne/kategorie/$id/edit'
+      path: '/admin/pozytywne/kategorie/$id/edit'
+      fullPath: '/admin/pozytywne/kategorie/$id/edit'
+      preLoaderRoute: typeof AdminPozytywneKategorieIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/recki/kategorie/$id/edit': {
+      id: '/admin/recki/kategorie/$id/edit'
+      path: '/admin/recki/kategorie/$id/edit'
+      fullPath: '/admin/recki/kategorie/$id/edit'
+      preLoaderRoute: typeof AdminReckiKategorieIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ArchiwumRoute: ArchiwumRoute,
+  AuthRoute: AuthRoute,
+  AutorzyRoute: AutorzyRoute,
+  MistrzostwaSwiata2026Route: MistrzostwaSwiata2026Route,
+  StartRoute: StartRoute,
+  TagiRoute: TagiRoute,
+  AdminDuplikatyRoute: AdminDuplikatyRoute,
+  AdminFeedbackRoute: AdminFeedbackRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminSourcesRoute: AdminSourcesRoute,
+  AdminSuggestionsRoute: AdminSuggestionsRoute,
+  AdminTagiRoute: AdminTagiRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AutorSlugRoute: AutorSlugRoute,
+  BlinkSlugRoute: BlinkSlugRoute,
+  DzienDateRoute: DzienDateRoute,
+  KategoriaSlugRoute: KategoriaSlugRoute,
+  NewsSplatRoute: NewsSplatRoute,
+  PozytywneArchiwumRoute: PozytywneArchiwumRoute,
+  RedakcjaSlugRoute: RedakcjaSlugRoute,
+  TagSlugRoute: TagSlugRoute,
+  AdminIndexRoute: AdminIndexRoute,
+  PozytywneIndexRoute: PozytywneIndexRoute,
+  ReckiIndexRoute: ReckiIndexRoute,
+  RedakcjaIndexRoute: RedakcjaIndexRoute,
+  TechIndexRoute: TechIndexRoute,
+  AdminAuthorsNewRoute: AdminAuthorsNewRoute,
+  AdminBannersNewRoute: AdminBannersNewRoute,
+  AdminCategoriesNewRoute: AdminCategoriesNewRoute,
+  AdminPostsNewRoute: AdminPostsNewRoute,
+  AdminPozytywneNewRoute: AdminPozytywneNewRoute,
+  AdminReckiNewRoute: AdminReckiNewRoute,
+  AdminWallpapersNewRoute: AdminWallpapersNewRoute,
+  PozytywneCategorySlugRoute: PozytywneCategorySlugRoute,
+  PozytywneKategoriaSlugRoute: PozytywneKategoriaSlugRoute,
+  ReckiCategorySlugRoute: ReckiCategorySlugRoute,
+  ReckiKategoriaSlugRoute: ReckiKategoriaSlugRoute,
+  TechCategorySlugRoute: TechCategorySlugRoute,
+  TechKategoriaSlugRoute: TechKategoriaSlugRoute,
+  AdminAuthorsIndexRoute: AdminAuthorsIndexRoute,
+  AdminBannersIndexRoute: AdminBannersIndexRoute,
+  AdminCategoriesIndexRoute: AdminCategoriesIndexRoute,
+  AdminPostsIndexRoute: AdminPostsIndexRoute,
+  AdminPozytywneIndexRoute: AdminPozytywneIndexRoute,
+  AdminReckiIndexRoute: AdminReckiIndexRoute,
+  AdminWallpapersIndexRoute: AdminWallpapersIndexRoute,
+  AdminAuthorsIdEditRoute: AdminAuthorsIdEditRoute,
+  AdminBannersIdEditRoute: AdminBannersIdEditRoute,
+  AdminCategoriesIdEditRoute: AdminCategoriesIdEditRoute,
+  AdminPostsIdEditRoute: AdminPostsIdEditRoute,
+  AdminPozytywneIdEditRoute: AdminPozytywneIdEditRoute,
+  AdminPozytywneKategorieNewRoute: AdminPozytywneKategorieNewRoute,
+  AdminReckiIdEditRoute: AdminReckiIdEditRoute,
+  AdminReckiKategorieNewRoute: AdminReckiKategorieNewRoute,
+  AdminWallpapersIdEditRoute: AdminWallpapersIdEditRoute,
+  AdminPozytywneKategorieIndexRoute: AdminPozytywneKategorieIndexRoute,
+  AdminReckiKategorieIndexRoute: AdminReckiKategorieIndexRoute,
+  AdminPozytywneKategorieIdEditRoute: AdminPozytywneKategorieIdEditRoute,
+  AdminReckiKategorieIdEditRoute: AdminReckiKategorieIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
