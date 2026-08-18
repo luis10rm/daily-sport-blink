@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import { Link, useNavigate } from "@/lib/router-compat";
+import { Link } from "@/lib/router-compat";
 import { ExternalLink, Sparkles, Snowflake } from "lucide-react";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
@@ -64,7 +64,6 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
     },
     ref,
   ) => {
-    const navigate = useNavigate();
     // Determine if this post has AI-generated content (link to /blink/:slug)
     const hasContent = Boolean(content);
     const blinkUrl = `/blink/${slug}`;
