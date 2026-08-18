@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import BlinkPage from "@/pages/BlinkPage";
 import { postBySlugQueryOptions, type SsrPost } from "@/lib/postQuery";
+import { buildSeoTitle, buildSeoDescription } from "@/lib/seoTitle";
 
 const SITE_URL = "https://szortsy.pl";
 
@@ -20,8 +21,8 @@ export const Route = createFileRoute("/blink/$slug")({
       isPositive && post.positive_category?.slug
         ? `${SITE_URL}/pozytywne/${post.positive_category.slug}/${post.slug}`
         : `${SITE_URL}/blink/${params.slug}`;
-    const title = `${post.title} | Szortsy`;
-    const description = post.excerpt ?? "";
+    const title = buildSeoTitle(post.title);
+    const description = buildSeoDescription(post.excerpt);
     const image = post.image_url || `${SITE_URL}/og-image.png`;
 
     return {

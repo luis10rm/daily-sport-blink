@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import BlinkPage from "@/pages/BlinkPage";
 import { postBySlugQueryOptions, type SsrPost } from "@/lib/postQuery";
+import { buildSeoTitle, buildSeoDescription } from "@/lib/seoTitle";
 
 const SITE_URL = "https://szortsy.pl";
 
@@ -12,8 +13,8 @@ export const Route = createFileRoute("/pozytywne/$category/$slug")({
     if (!post) return { meta: [{ title: "Nie znaleziono artykułu | Szortsy" }] };
 
     const canonical = `${SITE_URL}/pozytywne/${params.category}/${params.slug}`;
-    const title = `${post.title} | Szortsy Pozytywne`;
-    const description = post.excerpt ?? "";
+    const title = buildSeoTitle(post.title, "Szortsy");
+    const description = buildSeoDescription(post.excerpt);
     const image = post.image_url || `${SITE_URL}/og-image.png`;
 
     return {
