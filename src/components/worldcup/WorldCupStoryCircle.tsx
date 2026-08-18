@@ -10,7 +10,6 @@ export const WorldCupStoryCircle = ({ onClick, className }: Props) => (
   <button
     type="button"
     onClick={onClick}
-    onTouchEnd={(e) => { e.preventDefault(); onClick(); }}
     aria-label="Strefa MŚ 2026"
     className={cn("flex flex-col items-center gap-1.5 group story-item flex-shrink-0", className)}
   >

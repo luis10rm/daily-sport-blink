@@ -1,5 +1,4 @@
 import { Archive, ChevronDown, Users, Trophy } from "lucide-react";
-import { useNavigate } from "@/lib/router-compat";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
 import { DynamicSportIcon } from "./DynamicSportIcon";
@@ -8,31 +7,12 @@ import { ChannelSwitcher } from "./ChannelSwitcher";
 import { MatchTicker } from "./MatchTicker";
 import logoIcon from "@/assets/logo-icon.png";
 import {
+import { useNavLink } from "@/hooks/useNavLink";
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-/**
- * Uses <a> + onClick/onTouchEnd + navigate() pattern instead of <Link> to avoid
- * iOS Safari double-tap requirement (first tap = focus, second = click).
- */
-const useNavLink = () => {
-  const navigate = useNavigate();
-  return (to: string) => ({
-    href: to,
-    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-      e.preventDefault();
-      navigate(to);
-    },
-    onTouchEnd: (e: React.TouchEvent<HTMLAnchorElement>) => {
-      e.preventDefault();
-      navigate(to);
-    },
-  });
-};
 
 export const Header = () => {
   const { data: categories = [] } = useSportCategories();
