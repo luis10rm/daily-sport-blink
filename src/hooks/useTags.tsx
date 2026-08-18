@@ -20,7 +20,7 @@ export const useTagBySlug = (slug: string | undefined) => {
       const { data, error } = await supabase
         .from("tags")
         .select("*")
-        .eq("slug", slug)
+        .eq("slug", slug ?? "")
         .maybeSingle();
 
       if (error) throw error;
@@ -58,7 +58,7 @@ export const usePostsByTagSlug = (slug: string | undefined) => {
       const { data: tag } = await supabase
         .from("tags")
         .select("name")
-        .eq("slug", slug)
+        .eq("slug", slug ?? "")
         .single();
 
       if (!tag) return [];

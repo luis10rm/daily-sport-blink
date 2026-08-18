@@ -166,7 +166,7 @@ export const useArticleSEOMeta = (article: {
   image_url?: string | null;
   published_at: string;
   updated_at: string;
-  author?: { display_name: string } | null;
+  author?: { display_name: string | null } | null;
   sport_category?: { name: string } | null;
   tags?: string[] | null;
   canonical?: string;
@@ -180,7 +180,7 @@ export const useArticleSEOMeta = (article: {
     ogImage: article.image_url || undefined,
     articlePublishedTime: article.published_at,
     articleModifiedTime: article.updated_at,
-    articleAuthor: article.author?.display_name,
+    articleAuthor: article.author?.display_name || undefined,
     articleSection: article.sport_category?.name,
     articleTags: article.tags || undefined,
   });

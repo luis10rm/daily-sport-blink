@@ -157,7 +157,7 @@ const PostEditor = () => {
   // Get current date/time formatted for datetime-local input
   const getCurrentDateTime = () => new Date().toISOString().slice(0, 16);
 
-  const form = useForm<PostFormData>({
+  const form = useForm<z.input<typeof postSchema>, any, PostFormData>({
     resolver: zodResolver(postSchema),
     defaultValues: {
       title: "",

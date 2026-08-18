@@ -5,7 +5,7 @@ import { useWallpaperContext } from "@/contexts/WallpaperContext";
 
 interface SponsorBannerProps {
   title?: string;
-  description?: string;
+  description?: string | null;
   ctaText: string;
   ctaUrl: string;
   imageDesktopUrl?: string;
