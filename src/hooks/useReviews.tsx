@@ -197,16 +197,22 @@ export const usePublishedReviews = (categorySlug?: string) => {
   const qc = useQueryClient();
 
   useEffect(() => {
-    const channel = (supabase as any)
-      .channel("reviews-published")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "reviews" },
-        () => qc.invalidateQueries({ queryKey: ["reviews", "published"] })
-      )
-      .subscribe();
+    // Unique channel name per instance — a shared name throws when the hook mounts twice.
+    let channel: any;
+    try {
+      channel = (supabase as any)
+        .channel(`reviews-published-${Math.random().toString(36).slice(2)}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "reviews" },
+          () => qc.invalidateQueries({ queryKey: ["reviews", "published"] })
+        )
+        .subscribe();
+    } catch (error) {
+      console.error("[usePublishedReviews] realtime subscribe failed", error);
+    }
     return () => {
-      (supabase as any).removeChannel(channel);
+      if (channel) (supabase as any).removeChannel(channel);
     };
   }, [qc]);
 
