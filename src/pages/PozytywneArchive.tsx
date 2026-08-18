@@ -52,7 +52,7 @@ const PozytywneArchive = () => {
       <PozytywneHeader />
       <main className="container flex-1 py-6 md:py-10">
         <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow-sm">
             <ArchiveIcon className="h-5 w-5" />
           </div>
           <div>

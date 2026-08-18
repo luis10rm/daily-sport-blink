@@ -77,7 +77,7 @@ export const RichTextEditor = ({
     editorProps: {
       attributes: {
         class:
-          "min-h-[250px] w-full rounded-md border-none bg-transparent px-3 py-2 text-sm focus:outline-none prose prose-sm dark:prose-invert max-w-none",
+          "min-h-[250px] w-full rounded-md border-none bg-transparent px-3 py-2 text-sm focus:outline-hidden prose prose-sm dark:prose-invert max-w-none",
       },
       handlePaste: (view, event) => {
         const cd = event.clipboardData;

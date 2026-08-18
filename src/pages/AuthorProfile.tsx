@@ -65,7 +65,10 @@ const AuthorProfile = () => {
     author.slug
   );
   const articlesSEO = posts?.length 
-    ? getRichItemListSEO(`Artykuły: ${author.display_name}`, posts)
+    ? getRichItemListSEO(
+        `Artykuły: ${author.display_name}`,
+        posts.map((p) => ({ ...p, tags: p.tags ?? [] })),
+      )
     : null;
 
   return (

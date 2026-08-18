@@ -255,7 +255,7 @@ const BlinkPage = () => {
             <div className="flex items-center gap-2">
               {isPositive ? (
                 <>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow-sm">
                     <Sun className="h-5 w-5" />
                   </div>
                   <span className="text-sm font-medium uppercase tracking-wider text-lime-700 dark:text-lime-300">

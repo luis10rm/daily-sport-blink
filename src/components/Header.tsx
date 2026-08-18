@@ -47,7 +47,7 @@ export const Header = () => {
       >
         Przejdź do treści
       </a>
-      {/* Header: solid bg on mobile for better INP, blur on desktop only */}
+      {/* Header: solid bg on mobile for better INP, blur-sm on desktop only */}
       <header className="border-b border-border bg-card/95 md:bg-card/50 md:backdrop-blur-sm sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
         <a {...navLink("/")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -56,7 +56,7 @@ export const Header = () => {
             {isWorldCup && (
               <span
                 aria-hidden
-                className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 ring-2 ring-card shadow-sm"
+                className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 ring-2 ring-card shadow-xs"
               >
                 <Trophy className="h-2.5 w-2.5 text-amber-950" />
               </span>
