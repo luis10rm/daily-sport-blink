@@ -25,8 +25,13 @@ import { isWorldCupCategory } from "@/lib/worldCupTheme";
 import { WorldCupRibbon } from "@/components/WorldCupRibbon";
 import { WorldCupMatchCenter } from "@/components/worldcup/WorldCupMatchCenter";
 
-// Sanitize HTML to prevent XSS attacks
+// Sanitize HTML to prevent XSS attacks.
+// During SSR there is no DOM, so DOMPurify is unavailable — use the pure-JS fallback
+// so the server still renders full article content (needed for Google/Discover).
 const sanitizeHtml = (html: string): string => {
+  if (typeof window === "undefined" || typeof (DOMPurify as any)?.sanitize !== "function") {
+    return sanitizeHtmlServer(html);
+  }
   const clean = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['p', 'h2', 'h3', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'br', 'blockquote', 'u', 's', 'iframe', 'div'],
     ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'title', 'class', 'data-youtube-video'],
@@ -34,6 +39,7 @@ const sanitizeHtml = (html: string): string => {
     ADD_ATTR: ['allowfullscreen'],
   });
   // Whitelist iframe sources to YouTube only
+
   if (typeof window !== 'undefined') {
     const doc = new DOMParser().parseFromString(clean, 'text/html');
     doc.querySelectorAll('iframe').forEach((iframe) => {
