@@ -103,6 +103,12 @@ export const ImageCropModal = ({
           />
         </div>
 
+        {minWidth && croppedAreaPixels && (
+          <p className={`px-2 text-xs ${tooNarrow ? "text-destructive" : "text-muted-foreground"}`}>
+            Szerokość kadru: {Math.round(croppedAreaPixels.width)} px (Discover wymaga min. {minWidth} px)
+          </p>
+        )}
+
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
             Anuluj
