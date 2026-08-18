@@ -6,8 +6,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { ChannelSwitcher } from "./ChannelSwitcher";
 import { MatchTicker } from "./MatchTicker";
 import logoIcon from "@/assets/logo-icon.png";
-import {
 import { useNavLink } from "@/hooks/useNavLink";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
