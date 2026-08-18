@@ -41,7 +41,7 @@ export const StoriesCircle = ({
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1.5 group",
+        "flex flex-col items-center gap-1.5 group story-item",
         className
       )}
     >

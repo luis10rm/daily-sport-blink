@@ -90,7 +90,7 @@ export const DynamicStoriesCircle = ({
       onClick={onClick}
       onTouchEnd={(e) => { e.preventDefault(); onClick(); }}
       className={cn(
-        "flex flex-col items-center gap-1.5 group flex-shrink-0",
+        "flex flex-col items-center gap-1.5 group story-item flex-shrink-0",
         className
       )}
     >
