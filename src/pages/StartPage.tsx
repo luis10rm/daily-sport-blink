@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { useRef, useState, useEffect } from "react";
 import { X, Timer, ShieldOff, Smartphone, FileText, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";

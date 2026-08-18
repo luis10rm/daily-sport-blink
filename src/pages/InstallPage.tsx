@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { ArrowLeft, Share, Plus, MoreVertical, Download, CheckCircle2, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSEOMeta } from "@/hooks/useSEOMeta";

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "@/lib/router-compat";
 import { useNavLink } from "@/hooks/useNavLink";
 import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake, Sun } from "lucide-react";
 import { marked } from "marked";

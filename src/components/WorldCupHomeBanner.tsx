@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Trophy, X, ArrowRight } from "lucide-react";
 import { getWorldCupPhase, getDaysUntilWorldCup } from "@/lib/worldCupTheme";
 import { cn } from "@/lib/utils";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAllPositivePosts } from "@/hooks/usePositivePosts";
 import { useDeletePost } from "@/hooks/usePosts";

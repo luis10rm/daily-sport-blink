@@ -2,7 +2,7 @@ import { X, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import logoIcon from "@/assets/logo-icon.png";
 
 export const PWAInstallBanner = () => {

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuthors, useDeleteAuthor } from "@/hooks/useAuthors";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

@@ -1,0 +1,18 @@
+{"functions": [
+  {"name": "bulk-prepare-suggestions", "classification": "internal-only", "signal": "invoked from src/hooks/useBulkPrepareSuggestions.ts; also calls extract-article and notify-google-index internally", "outcome": "left"},
+  {"name": "extract-article", "classification": "internal-only", "signal": "invoked from src/hooks/useSettings.ts and from bulk-prepare-suggestions", "outcome": "left"},
+  {"name": "generate-article-image", "classification": "internal-only", "signal": "invoked from src/hooks/useSettings.ts", "outcome": "left"},
+  {"name": "generate-category-icon", "classification": "internal-only", "signal": "invoked from src/components/admin/AIIconGenerator.tsx", "outcome": "left"},
+  {"name": "generate-daily-summary", "classification": "cron target", "signal": "pg_cron + pg_net extensions enabled in migrations; daily-summary naming and no UI trigger guarantees; dashboard-created schedule cannot be ruled out", "outcome": "left"},
+  {"name": "generate-logo", "classification": "internal-only", "signal": "invoked from src/components/admin/LogoGenerator.tsx", "outcome": "left"},
+  {"name": "generate-review", "classification": "internal-only", "signal": "invoked from src/pages/admin/ReviewEditor.tsx", "outcome": "left"},
+  {"name": "merge-duplicates", "classification": "internal-only", "signal": "invoked from src/pages/admin/DuplicatesList.tsx", "outcome": "left"},
+  {"name": "notify-google-index", "classification": "internal-only", "signal": "invoked from src/pages/admin/PostEditor.tsx and from two other edge functions", "outcome": "left"},
+  {"name": "publish-to-social", "classification": "unknown", "signal": "invoked from src/hooks/useSocialPosts.ts but project uses Make.com social automation — external caller cannot be ruled out; URL treated as load-bearing", "outcome": "left"},
+  {"name": "robots-meta", "classification": "custom response / external caller", "signal": "public endpoint called by the Cloudflare Worker for server-side noindex injection; fixed URL", "outcome": "left"},
+  {"name": "scan-duplicates", "classification": "internal-only", "signal": "invoked from src/pages/admin/DuplicatesList.tsx", "outcome": "left"},
+  {"name": "scan-news-sources", "classification": "cron target", "signal": "pg_cron + pg_net enabled; scheduled news discovery; also invoked from src/hooks/useNewsDiscovery.ts", "outcome": "left"},
+  {"name": "search-product-images", "classification": "internal-only", "signal": "invoked from src/pages/admin/ReviewEditor.tsx", "outcome": "left"},
+  {"name": "sitemap", "classification": "custom response / external caller", "signal": "fixed URL proxied by api/sitemap.js (Vercel) and sitemap.szortsy.pl; returns XML stream", "outcome": "left"},
+  {"name": "worldcup-data", "classification": "internal-only", "signal": "invoked from src/hooks/useWorldCupData.ts; caches Football-Data.org responses in DB", "outcome": "left"}
+]}
