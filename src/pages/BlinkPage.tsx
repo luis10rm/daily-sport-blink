@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
+import { sanitizeHtmlServer } from "@/lib/sanitizeHtmlServer";
+
 import { Footer } from "@/components/Footer";
 import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
