@@ -1,6 +1,6 @@
 import { Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNavLink } from "@/hooks/useNavLink";
+import { Link } from "@/lib/router-compat";
 
 interface WorldCupBadgeProps {
   className?: string;
@@ -17,7 +17,6 @@ const HUB_PATH = "/mistrzostwa-swiata-2026";
  * Clicking the badge navigates to the dedicated tournament hub.
  */
 export const WorldCupBadge = ({ className, size = "sm", asLink = true }: WorldCupBadgeProps) => {
-  const navLink = useNavLink();
   const isSm = size === "sm";
   const classes = cn(
     "inline-flex items-center gap-1 rounded-full bg-amber-500/95 font-semibold text-amber-950 shadow-lg shadow-amber-500/30 ring-1 ring-amber-300/60",
@@ -37,19 +36,14 @@ export const WorldCupBadge = ({ className, size = "sm", asLink = true }: WorldCu
     return <div className={classes}>{inner}</div>;
   }
 
-  const linkProps = navLink(HUB_PATH);
-
   return (
-    <a
-      {...linkProps}
-      onClick={(e) => {
-        e.stopPropagation();
-        linkProps.onClick(e);
-      }}
+    <Link
+      to={HUB_PATH}
+      onClick={(e) => e.stopPropagation()}
       aria-label="Strefa Mistrzostw Świata 2026"
       className={classes}
     >
       {inner}
-    </a>
+    </Link>
   );
 };
