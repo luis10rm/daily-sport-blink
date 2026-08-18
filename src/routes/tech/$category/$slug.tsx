@@ -12,8 +12,8 @@ export const Route = createFileRoute("/tech/$category/$slug")({
     if (!review) return { meta: [{ title: "Nie znaleziono artykułu | Szortsy" }] };
 
     const canonical = `${SITE_URL}/tech/${params.category}/${params.slug}`;
-    const title = `${review.title} | Szortsy Tech`;
-    const description = review.excerpt ?? "";
+    const title = buildSeoTitle(review.title, "Szortsy Tech");
+    const description = buildSeoDescription(review.excerpt);
     const image = review.image_url || `${SITE_URL}/og-image.png`;
 
     return {
