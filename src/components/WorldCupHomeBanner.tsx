@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "@/lib/router-compat";
+import { Link } from "@/lib/router-compat";
 import { Trophy, X, ArrowRight } from "lucide-react";
 import { getWorldCupPhase, getDaysUntilWorldCup } from "@/lib/worldCupTheme";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,6 @@ interface Props {
 }
 
 export const WorldCupHomeBanner = ({ className }: Props) => {
-  const navigate = useNavigate();
   const phase = getWorldCupPhase();
   const days = getDaysUntilWorldCup();
   const storageKey = `wc-banner-dismissed-${phase}`;
@@ -30,8 +29,6 @@ export const WorldCupHomeBanner = ({ className }: Props) => {
     ? "MŚ 2026 LIVE — zobacz wyniki dnia"
     : `MŚ 2026 — start za ${days} ${days === 1 ? "dzień" : "dni"}. Zobacz strefę turnieju`;
 
-  const go = () => navigate(HUB_PATH);
-
   const handleDismiss = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -40,10 +37,8 @@ export const WorldCupHomeBanner = ({ className }: Props) => {
   };
 
   return (
-    <a
-      href={HUB_PATH}
-      role="link"
-      onClick={(e) => { e.preventDefault(); go(); }}
+    <Link
+      to={HUB_PATH}
       className={cn(
         "group relative flex items-center gap-3 overflow-hidden rounded-xl border border-amber-500/40",
         "bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent",
@@ -74,6 +69,6 @@ export const WorldCupHomeBanner = ({ className }: Props) => {
       >
         <X className="h-3.5 w-3.5" />
       </button>
-    </a>
+    </Link>
   );
 };

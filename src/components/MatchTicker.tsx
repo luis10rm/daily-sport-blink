@@ -1,4 +1,4 @@
-import { useNavigate } from "@/lib/router-compat";
+import { Link } from "@/lib/router-compat";
 import { Radio, ChevronRight } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
@@ -40,7 +40,6 @@ const TeamLabel = ({ team }: { team: FDMatch["homeTeam"] }) => (
 );
 
 export const MatchTicker = () => {
-  const navigate = useNavigate();
   const { isWorldCup } = useTournamentMode();
   const { data } = useWorldCupMatches();
   const match = pickMatch(data?.data?.matches || []);
@@ -58,14 +57,10 @@ export const MatchTicker = () => {
   const hasScore = scoreH !== null && scoreA !== null && scoreH !== undefined && scoreA !== undefined;
   const showCountdown = !live && !finished && !hasScore;
 
-  const go = () => navigate("/mistrzostwa-swiata-2026");
-
 
   return (
-    <a
-      href="/mistrzostwa-swiata-2026"
-      role="link"
-      onClick={(e) => { e.preventDefault(); go(); }}
+    <Link
+      to="/mistrzostwa-swiata-2026"
       className="block border-b border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 hover:from-amber-500/20 hover:to-amber-500/20 transition-colors cursor-pointer"
       aria-label="Strefa Mistrzostw Świata 2026"
     >
@@ -111,6 +106,6 @@ export const MatchTicker = () => {
 
         <ChevronRight className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
       </div>
-    </a>
+    </Link>
   );
 };
