@@ -19,24 +19,20 @@ export const tagSeoQueryOptions = (slug: string) =>
     queryFn: async (): Promise<SsrTagSeo | null> => {
       const { data: tag, error } = await supabase
         .from("tags")
-        .select("name, slug, description, force_index")
+        .select("name, slug, description, force_index, post_count")
         .eq("slug", slug)
         .maybeSingle();
       if (error) throw error;
       if (!tag) return null;
 
-      const { count } = await supabase
-        .from("posts")
-        .select("id", { count: "exact", head: true })
-        .contains("tags", [tag.name])
-        .eq("is_hidden", false);
-
+      // post_count jest utrzymywany przez sync tagów — ta sama liczba,
+      // której używa generator sitemapy, więc reguły index/noindex się nie rozjeżdżają.
       return {
         name: tag.name,
         slug: tag.slug,
         description: (tag as { description?: string | null }).description ?? null,
         forceIndex: (tag as { force_index?: boolean }).force_index ?? false,
-        postCount: count ?? 0,
+        postCount: (tag as { post_count?: number | null }).post_count ?? 0,
       };
     },
     staleTime: 5 * 60_000,
