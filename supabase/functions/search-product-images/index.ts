@@ -56,6 +56,9 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  const denied = await authorize(req);
+  if (denied) return denied;
+
   try {
     const apiKey = Deno.env.get("SERPAPI_KEY");
     if (!apiKey) {
