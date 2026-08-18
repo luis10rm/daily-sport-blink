@@ -1,4 +1,3 @@
-import { useNavigate } from "@/lib/router-compat";
 import { Sun, ChevronDown, Archive } from "lucide-react";
 import {
   DropdownMenu,
@@ -9,22 +8,7 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChannelSwitcher } from "@/components/ChannelSwitcher";
 import { usePositiveCategories } from "@/hooks/usePositiveCategories";
-
-const useNavLink = () => {
-  const navigate = useNavigate();
-  return (to: string) => ({
-    href: to,
-    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-      e.preventDefault();
-      navigate(to);
-    },
-    onTouchEnd: (e: React.TouchEvent<HTMLAnchorElement>) => {
-      e.preventDefault();
-      navigate(to);
-    },
-  });
-};
+import { useNavLink } from "@/hooks/useNavLink";
 
 export const PozytywneHeader = () => {
   const { data: categories = [] } = usePositiveCategories();

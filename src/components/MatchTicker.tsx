@@ -66,7 +66,6 @@ export const MatchTicker = () => {
       href="/mistrzostwa-swiata-2026"
       role="link"
       onClick={(e) => { e.preventDefault(); go(); }}
-      onTouchEnd={(e) => { e.preventDefault(); go(); }}
       className="block border-b border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 hover:from-amber-500/20 hover:to-amber-500/20 transition-colors cursor-pointer"
       aria-label="Strefa Mistrzostw Świata 2026"
     >

@@ -44,7 +44,6 @@ export const WorldCupHomeBanner = ({ className }: Props) => {
       href={HUB_PATH}
       role="link"
       onClick={(e) => { e.preventDefault(); go(); }}
-      onTouchEnd={(e) => { e.preventDefault(); go(); }}
       className={cn(
         "group relative flex items-center gap-3 overflow-hidden rounded-xl border border-amber-500/40",
         "bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent",
@@ -70,7 +69,6 @@ export const WorldCupHomeBanner = ({ className }: Props) => {
       <button
         type="button"
         onClick={handleDismiss}
-        onTouchEnd={handleDismiss}
         aria-label="Ukryj baner"
         className="ml-1 hidden sm:inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/60 hover:text-foreground"
       >

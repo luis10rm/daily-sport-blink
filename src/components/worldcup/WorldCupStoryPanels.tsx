@@ -251,7 +251,6 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
                 <a
                   href={`/blink/${topPost.slug}`}
                   onClick={goTo(`/blink/${topPost.slug}`)}
-                  onTouchEnd={goTo(`/blink/${topPost.slug}`)}
                   className="block bg-white/5 rounded-xl overflow-hidden hover:bg-white/10 transition-colors"
                 >
                   {topPost.image_url && (
@@ -268,7 +267,6 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
               <a
                 href="/mistrzostwa-swiata-2026"
                 onClick={goTo("/mistrzostwa-swiata-2026")}
-                onTouchEnd={goTo("/mistrzostwa-swiata-2026")}
                 className="mt-4 inline-flex items-center gap-2 bg-amber-400 text-amber-950 px-4 py-2 rounded-full text-sm font-bold"
               >
                 Przejdź do hubu MŚ

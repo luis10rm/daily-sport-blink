@@ -1,4 +1,3 @@
-import { useNavigate } from "@/lib/router-compat";
 import { Cpu, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -10,26 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChannelSwitcher } from "@/components/ChannelSwitcher";
 import { useReviewCategories } from "@/hooks/useReviews";
 import { PatronBar } from "@/components/PatronBar";
-
-/**
- * Uses <a> + onClick/onTouchEnd + navigate() pattern instead of <Link> to avoid
- * iOS Safari double-tap requirement (first tap = focus, second = click).
- */
-const useNavLink = () => {
-  const navigate = useNavigate();
-  return (to: string) => ({
-    href: to,
-    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-      e.preventDefault();
-      navigate(to);
-    },
-    onTouchEnd: (e: React.TouchEvent<HTMLAnchorElement>) => {
-      e.preventDefault();
-      navigate(to);
-    },
-  });
-};
+import { useNavLink } from "@/hooks/useNavLink";
 
 export const ReckiHeader = () => {
   const { data: categories = [] } = useReviewCategories();

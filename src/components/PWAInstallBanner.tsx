@@ -29,7 +29,6 @@ export const PWAInstallBanner = () => {
       >
         <button
           onClick={dismiss}
-          onTouchEnd={(e) => { e.preventDefault(); dismiss(); }}
           className="absolute top-3 right-3 p-1 text-muted-foreground transition-colors"
           aria-label="Zamknij"
         >
