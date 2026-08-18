@@ -1,3 +1,4 @@
+import { Link } from "@/lib/router-compat";
 import { Cpu, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -19,7 +20,7 @@ export const ReckiHeader = () => {
     <>
       <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container flex h-16 items-center justify-between">
-          <a {...navLink("/tech")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link to="/tech" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-600 to-pink-600 text-white shadow-md">
               <Cpu className="h-5 w-5" />
             </div>
@@ -29,7 +30,7 @@ export const ReckiHeader = () => {
                 by Szortsy · technologie, recenzje, newsy
               </span>
             </div>
-          </a>
+          </Link>
 
           <nav className="flex items-center gap-3">
             <DropdownMenu>
@@ -40,9 +41,9 @@ export const ReckiHeader = () => {
               <DropdownMenuContent align="end" className="w-48">
                 {categories.map((c) => (
                   <DropdownMenuItem key={c.id} asChild>
-                    <a {...navLink(`/tech/kategoria/${c.slug}`)} className="cursor-pointer">
+                    <Link to=`/tech/kategoria/${c.slug}` className="cursor-pointer">
                       {c.name}
-                    </a>
+                    </Link>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>

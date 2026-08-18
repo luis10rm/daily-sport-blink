@@ -1,3 +1,4 @@
+import { Link } from "@/lib/router-compat";
 import { useNavLink } from "@/hooks/useNavLink";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +23,7 @@ export const AuthorProfileCard = ({ author, postsCount }: AuthorProfileCardProps
     : author.bio;
 
   return (
-    <a {...navLink(`/autor/${author.slug}`)} className="block">
+    <Link to=`/autor/${author.slug}` className="block">
       <Card className="group overflow-hidden card-hover h-full">
         {/* Cover Image */}
         <div 
@@ -73,6 +74,6 @@ export const AuthorProfileCard = ({ author, postsCount }: AuthorProfileCardProps
           )}
         </CardContent>
       </Card>
-    </a>
+    </Link>
   );
 };

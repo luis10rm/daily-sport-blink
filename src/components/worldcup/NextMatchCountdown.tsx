@@ -1,3 +1,4 @@
+import { Link } from "@/lib/router-compat";
 import { useMemo } from "react";
 import { Trophy, Radio, CalendarDays, ArrowRight } from "lucide-react";
 import { useNavLink } from "@/hooks/useNavLink";
@@ -144,12 +145,12 @@ export const NextMatchCountdown = () => {
             <CalendarDays className="h-3.5 w-3.5" />
             <span className="capitalize">{fmtKickoff(match.utcDate)}</span>
           </span>
-          <a
-            {...navLink("/mistrzostwa-swiata-2026#terminarz")}
+          <Link
+            to="/mistrzostwa-swiata-2026#terminarz"
             className="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400"
           >
             Pełny terminarz <ArrowRight className="h-3 w-3" />
-          </a>
+          </Link>
         </div>
       </div>
     </section>

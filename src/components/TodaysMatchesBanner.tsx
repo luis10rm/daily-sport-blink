@@ -1,3 +1,4 @@
+import { Link } from "@/lib/router-compat";
 import { useNavLink } from "@/hooks/useNavLink";
 import { Trophy, Radio } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
@@ -97,12 +98,12 @@ export const TodaysMatchesBanner = ({ className }: Props) => {
         <h2 className="text-sm font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
           Dziś gra…
         </h2>
-        <a
-          {...navLink("/mistrzostwa-swiata-2026")}
+        <Link
+          to="/mistrzostwa-swiata-2026"
           className="ml-auto text-xs text-muted-foreground hover:text-foreground"
         >
           Cały terminarz →
-        </a>
+        </Link>
       </div>
       <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x">
         {todays.map((m) => (

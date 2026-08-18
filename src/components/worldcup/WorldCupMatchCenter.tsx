@@ -1,3 +1,4 @@
+import { Link } from "@/lib/router-compat";
 import { useMemo } from "react";
 import { useNavLink } from "@/hooks/useNavLink";
 import { Radio, Calendar, Trophy } from "lucide-react";
@@ -122,9 +123,9 @@ export const WorldCupMatchCenter = ({ tags = [], className }: Props) => {
 
       <div className="mt-4 pt-3 border-t border-amber-500/20 flex items-center justify-between text-xs text-muted-foreground">
         <span>{match.group || match.stage?.replace(/_/g, " ")}</span>
-        <a {...navLink("/mistrzostwa-swiata-2026")} className="font-semibold text-amber-600 dark:text-amber-400 hover:underline">
+        <Link to="/mistrzostwa-swiata-2026" className="font-semibold text-amber-600 dark:text-amber-400 hover:underline">
           Pełny terminarz →
-        </a>
+        </Link>
       </div>
     </aside>
   );

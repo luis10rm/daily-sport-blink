@@ -1,3 +1,4 @@
+import { Link } from "@/lib/router-compat";
 import { Archive, ChevronDown, Users, Trophy } from "lucide-react";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
@@ -30,7 +31,7 @@ export const Header = () => {
       {/* Header: solid bg on mobile for better INP, blur-sm on desktop only */}
       <header className="border-b border-border bg-card/95 md:bg-card/50 md:backdrop-blur-sm sticky top-0 z-50">
       <div className="container flex h-16 items-center justify-between">
-        <a {...navLink("/")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <img src={logoIcon} alt="Szortsy logo" className="h-7 w-7" />
             {isWorldCup && (
@@ -46,7 +47,7 @@ export const Header = () => {
           <span className="text-sm text-muted-foreground hidden sm:block">
             {isWorldCup ? "Strefa Mundialu 2026" : "O sporcie: krótko, codziennie"}
           </span>
-        </a>
+        </Link>
         
         <nav className="flex items-center gap-4">
           {/* Categories Dropdown */}
@@ -58,8 +59,8 @@ export const Header = () => {
             <DropdownMenuContent align="end" className="w-48">
               {categories.map((category) => (
                 <DropdownMenuItem key={category.id} asChild>
-                  <a
-                    {...navLink(`/kategoria/${category.slug}`)}
+                  <Link
+                    to=`/kategoria/${category.slug}`
                     className="flex items-center gap-2 cursor-pointer"
                   >
                     <DynamicSportIcon
@@ -68,26 +69,26 @@ export const Header = () => {
                       className="h-5 w-5"
                     />
                     <span>{category.name}</span>
-                  </a>
+                  </Link>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <a
-            {...navLink("/archiwum")}
+          <Link
+            to="/archiwum"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <Archive className="h-4 w-4" />
             <span className="hidden sm:inline">Archiwum</span>
-          </a>
-          <a
-            {...navLink("/autorzy")}
+          </Link>
+          <Link
+            to="/autorzy"
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <Users className="h-4 w-4" />
             <span className="hidden sm:inline">Autorzy</span>
-          </a>
+          </Link>
           <ChannelSwitcher />
           <ThemeToggle />
         </nav>
