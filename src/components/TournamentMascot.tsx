@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { X, Sparkles } from "lucide-react";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
 import { cn } from "@/lib/utils";

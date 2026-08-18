@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { Sun, ChevronDown, Archive } from "lucide-react";
 import {
   DropdownMenu,

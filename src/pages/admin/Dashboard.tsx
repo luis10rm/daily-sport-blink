@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { usePosts } from "@/hooks/usePosts";
 import { useGenerateDailySummary } from "@/hooks/useSettings";
@@ -12,7 +12,7 @@ import { GA4DebugPanel } from "@/components/admin/GA4DebugPanel";
 import { format, isToday, isThisWeek, isThisMonth, isSameDay } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "react-router-dom";
+import { Link } from "@/lib/router-compat";
 import { cn } from "@/lib/utils";
 
 const Dashboard = () => {

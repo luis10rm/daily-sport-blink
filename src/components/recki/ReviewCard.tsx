@@ -1,5 +1,5 @@
 import { ArrowRight, Flame } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/lib/router-compat";
 import type { Review } from "@/hooks/useReviews";
 import { ScoreBadge } from "./ScoreBadge";
 import { cn } from "@/lib/utils";

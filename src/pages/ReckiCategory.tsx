@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link } from "@/lib/router-compat";
 import { ReckiHeader } from "@/components/recki/ReckiHeader";
 import { ReckiFooter } from "@/components/recki/ReckiFooter";
 import { ReviewCard } from "@/components/recki/ReviewCard";
