@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import BlinkPage from "@/pages/BlinkPage";
 import { postBySlugQueryOptions, type SsrPost } from "@/lib/postQuery";
+import { buildSeoTitle, buildSeoDescription } from "@/lib/seoTitle";
 
 const SITE_URL = "https://szortsy.pl";
 

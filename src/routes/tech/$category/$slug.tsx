@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import ReckiReview from "@/pages/ReckiReview";
 import { reviewBySlugQueryOptions, type SsrReview } from "@/lib/reviewQuery";
+import { buildSeoTitle, buildSeoDescription } from "@/lib/seoTitle";
 
 const SITE_URL = "https://szortsy.pl";
 
