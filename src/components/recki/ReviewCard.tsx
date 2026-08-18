@@ -1,5 +1,5 @@
 import { ArrowRight, Flame } from "lucide-react";
-import { useNavigate } from "@/lib/router-compat";
+import { Link } from "@/lib/router-compat";
 import type { Review } from "@/hooks/useReviews";
 import { ScoreBadge } from "./ScoreBadge";
 import { cn } from "@/lib/utils";
@@ -77,7 +77,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
               className={cn("group/cta w-full sm:w-auto", ctaBase, ctaFilled, "text-base")}
             >
               Czytaj więcej <ArrowRight className={arrow} />
-            </a>
+            </Link>
           </div>
         </div>
       </article>
@@ -102,7 +102,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
             className={cn("group/cta mt-1 w-full", ctaBase, ctaOutline)}
           >
             Czytaj więcej <ArrowRight className={arrow} />
-          </a>
+          </Link>
         </div>
         <ScoreBadge score={review.score} size="sm" />
       </article>
@@ -144,7 +144,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
             className={cn("group/cta mt-3 w-full", ctaBase, ctaOutline)}
           >
             Czytaj więcej <ArrowRight className={arrow} />
-          </a>
+          </Link>
         </div>
       </article>
     );
@@ -187,7 +187,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           className={cn("group/cta mt-3 w-full sm:w-auto sm:self-start", ctaBase, ctaOutline)}
         >
           Czytaj więcej <ArrowRight className={arrow} />
-        </a>
+        </Link>
       </div>
     </article>
   );
