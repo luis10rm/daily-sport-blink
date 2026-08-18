@@ -27,7 +27,7 @@ const useReadMoreLink = () => {
 };
 
 const ctaBase =
-  "touch-manipulation inline-flex min-h-11 items-center justify-center gap-1.5 text-sm font-semibold transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "touch-manipulation inline-flex min-h-11 items-center justify-center gap-1.5 text-sm font-semibold transition-all active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-fuchsia-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 const ctaFilled = "rounded-full bg-fuchsia-600 px-5 text-white shadow-sm hover:bg-fuchsia-700";
 
