@@ -14,6 +14,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Button } from "@/components/ui/button";
 import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
+import { sanitizeArticleHtml } from "@/lib/sanitizeArticleHtml";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const ReckiReview = () => {
