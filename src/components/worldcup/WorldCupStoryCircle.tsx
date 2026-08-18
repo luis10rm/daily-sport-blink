@@ -12,7 +12,7 @@ export const WorldCupStoryCircle = ({ onClick, className }: Props) => (
     onClick={onClick}
     onTouchEnd={(e) => { e.preventDefault(); onClick(); }}
     aria-label="Strefa MŚ 2026"
-    className={cn("flex flex-col items-center gap-1.5 group flex-shrink-0", className)}
+    className={cn("flex flex-col items-center gap-1.5 group story-item flex-shrink-0", className)}
   >
     <div className="relative p-[3px] rounded-full stories-circle-hover wc-gold-ring">
       <div className="bg-background rounded-full p-[2px]">
