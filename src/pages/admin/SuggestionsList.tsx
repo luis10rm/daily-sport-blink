@@ -160,7 +160,13 @@ export default function SuggestionsList() {
   };
 
   const handlePrepare = (id: string, articleUrl: string) => {
-    navigate("/admin/posts/new", {
+    // Query params (not just router state) so the flow survives a page reload.
+    const qs = new URLSearchParams({
+      sourceUrl: articleUrl,
+      suggestionId: id,
+      autoExtract: "1",
+    });
+    navigate(`/admin/posts/new?${qs.toString()}`, {
       state: { sourceUrl: articleUrl, suggestionId: id, autoExtract: true },
     });
   };
