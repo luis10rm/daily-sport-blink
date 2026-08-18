@@ -124,10 +124,15 @@ const PostEditor = () => {
     suggestionId?: string;
     autoExtract?: boolean;
   } | null;
+  // Query params are the reload-safe source; router state is the fallback.
+  const urlParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search],
+  );
   const prefillData = navState?.prefill;
-  const prefillSourceUrl = navState?.sourceUrl;
-  const suggestionId = navState?.suggestionId;
-  const autoExtract = navState?.autoExtract;
+  const prefillSourceUrl = navState?.sourceUrl ?? urlParams.get("sourceUrl") ?? undefined;
+  const suggestionId = navState?.suggestionId ?? urlParams.get("suggestionId") ?? undefined;
+  const autoExtract = navState?.autoExtract ?? urlParams.get("autoExtract") === "1";
   const [autoExtractTriggered, setAutoExtractTriggered] = useState(false);
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
