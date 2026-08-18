@@ -9,11 +9,9 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChannelSwitcher } from "@/components/ChannelSwitcher";
 import { usePositiveCategories } from "@/hooks/usePositiveCategories";
-import { useNavLink } from "@/hooks/useNavLink";
 
 export const PozytywneHeader = () => {
   const { data: categories = [] } = usePositiveCategories();
-  const navLink = useNavLink();
 
   return (
     <header className="border-b border-border bg-background/85 backdrop-blur-sm sticky top-0 z-50">

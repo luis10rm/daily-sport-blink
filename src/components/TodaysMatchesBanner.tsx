@@ -1,5 +1,4 @@
 import { Link } from "@/lib/router-compat";
-import { useNavLink } from "@/hooks/useNavLink";
 import { Trophy, Radio } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
@@ -70,7 +69,6 @@ interface Props {
 export const TodaysMatchesBanner = ({ className }: Props) => {
   const { isWorldCup } = useTournamentMode();
   const { data, isLoading } = useWorldCupMatches();
-  const navLink = useNavLink();
 
   if (!isWorldCup) return null;
 

@@ -1,7 +1,6 @@
 import { Link } from "@/lib/router-compat";
 import { useMemo } from "react";
 import { Trophy, Radio, CalendarDays, ArrowRight } from "lucide-react";
-import { useNavLink } from "@/hooks/useNavLink";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useCountdown, splitCountdown } from "@/hooks/useCountdown";
@@ -62,7 +61,6 @@ export const NextMatchCountdown = () => {
   const { data, isLoading } = useWorldCupMatches();
   const match = useMemo(() => pickMatch(data?.data?.matches || []), [data]);
   const ms = useCountdown(match?.utcDate);
-  const navLink = useNavLink();
 
   if (isLoading) {
     return <Skeleton className="h-56 rounded-2xl mb-10" />;

@@ -1,6 +1,5 @@
 import { Link } from "@/lib/router-compat";
 import { useMemo } from "react";
-import { useNavLink } from "@/hooks/useNavLink";
 import { Radio, Calendar, Trophy } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { cn } from "@/lib/utils";
@@ -38,7 +37,6 @@ const fmtDateTime = (iso: string) =>
 
 export const WorldCupMatchCenter = ({ tags = [], className }: Props) => {
   const { data } = useWorldCupMatches();
-  const navLink = useNavLink();
 
   const match = useMemo<FDMatch | null>(() => {
     try {

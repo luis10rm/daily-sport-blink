@@ -10,11 +10,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChannelSwitcher } from "@/components/ChannelSwitcher";
 import { useReviewCategories } from "@/hooks/useReviews";
 import { PatronBar } from "@/components/PatronBar";
-import { useNavLink } from "@/hooks/useNavLink";
 
 export const ReckiHeader = () => {
   const { data: categories = [] } = useReviewCategories();
-  const navLink = useNavLink();
 
   return (
     <>

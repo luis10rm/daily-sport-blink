@@ -7,7 +7,6 @@ import { ThemeToggle } from "./ThemeToggle";
 import { ChannelSwitcher } from "./ChannelSwitcher";
 import { MatchTicker } from "./MatchTicker";
 import logoIcon from "@/assets/logo-icon.png";
-import { useNavLink } from "@/hooks/useNavLink";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +17,6 @@ import {
 export const Header = () => {
   const { data: categories = [] } = useSportCategories();
   const { isWorldCup } = useTournamentMode();
-  const navLink = useNavLink();
 
   return (
     <>

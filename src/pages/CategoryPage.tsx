@@ -1,5 +1,4 @@
 import { Link, useParams } from "@/lib/router-compat";
-import { useNavLink } from "@/hooks/useNavLink";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
@@ -24,7 +23,6 @@ const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: category, isLoading: categoryLoading } = useSportCategoryBySlug(slug);
   const { data: posts = [], isLoading: postsLoading } = usePostsByCategory(slug);
-  const navLink = useNavLink();
 
   // SEO meta tags
   useCategorySEOMeta({

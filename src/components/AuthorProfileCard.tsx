@@ -1,5 +1,4 @@
 import { Link } from "@/lib/router-compat";
-import { useNavLink } from "@/hooks/useNavLink";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, User } from "lucide-react";
@@ -11,7 +10,6 @@ interface AuthorProfileCardProps {
 }
 
 export const AuthorProfileCard = ({ author, postsCount }: AuthorProfileCardProps) => {
-  const navLink = useNavLink();
   const initials = author.display_name
     ?.split(" ")
     .map((n) => n[0])

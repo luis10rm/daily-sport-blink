@@ -1,6 +1,5 @@
 import { Link } from "@/lib/router-compat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavLink } from "@/hooks/useNavLink";
 
 interface AuthorCardProps {
   author: {
@@ -14,7 +13,6 @@ interface AuthorCardProps {
 }
 
 export const AuthorCard = ({ author, className }: AuthorCardProps) => {
-  const navLink = useNavLink();
   if (!author.slug || !author.display_name) return null;
 
   return (
