@@ -1,5 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  worldCupMatchesQueryOptions,
+  worldCupScorersQueryOptions,
+  worldCupStandingsQueryOptions,
+} from "@/lib/worldCupQuery";
 
 type Resource = "matches" | "standings" | "scorers" | "teams";
 
@@ -72,26 +76,8 @@ export interface FDStandingGroup {
   table: FDStandingRow[];
 }
 
-export const useWorldCupMatches = () =>
-  useQuery({
-    queryKey: ["worldcup", "matches"],
-    queryFn: () => fetchResource<{ matches: FDMatch[] }>("matches"),
-    staleTime: 30_000,
-    refetchOnWindowFocus: false,
-  });
+export const useWorldCupMatches = () => useQuery(worldCupMatchesQueryOptions());
 
-export const useWorldCupScorers = () =>
-  useQuery({
-    queryKey: ["worldcup", "scorers"],
-    queryFn: () => fetchResource<{ scorers: FDScorer[] }>("scorers"),
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
+export const useWorldCupScorers = () => useQuery(worldCupScorersQueryOptions());
 
-export const useWorldCupStandings = () =>
-  useQuery({
-    queryKey: ["worldcup", "standings"],
-    queryFn: () => fetchResource<{ standings: FDStandingGroup[] }>("standings"),
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-  });
+export const useWorldCupStandings = () => useQuery(worldCupStandingsQueryOptions());
