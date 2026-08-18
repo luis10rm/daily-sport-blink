@@ -16,7 +16,11 @@ interface ImageCropModalProps {
   onClose: () => void;
   imageSrc: string;
   aspect: number;
-  onCropComplete: (croppedBlob: Blob) => void;
+  onCropComplete: (croppedBlob: Blob, dimensions: { width: number; height: number }) => void;
+  /** Reject crops narrower than this many source pixels (Discover needs 1200px). */
+  minWidth?: number;
+  /** Cap the exported width so a huge crop doesn't produce a heavy file. */
+  maxWidth?: number;
 }
 
 export const ImageCropModal = ({
@@ -25,6 +29,8 @@ export const ImageCropModal = ({
   imageSrc,
   aspect,
   onCropComplete,
+  minWidth,
+  maxWidth = 2000,
 }: ImageCropModalProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -35,13 +41,22 @@ export const ImageCropModal = ({
     setCroppedAreaPixels(areaPixels);
   }, []);
 
+  const tooNarrow =
+    !!minWidth && !!croppedAreaPixels && Math.round(croppedAreaPixels.width) < minWidth;
+
   const handleSave = async () => {
     if (!croppedAreaPixels) return;
+    if (tooNarrow) {
+      toast.error(
+        `Wykadrowany obszar ma ${Math.round(croppedAreaPixels.width)} px szerokości. Google Discover wymaga min. ${minWidth} px — zmniejsz zoom lub użyj większego pliku.`,
+      );
+      return;
+    }
     setIsProcessing(true);
 
     try {
-      const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
-      onCropComplete(croppedBlob);
+      const { blob, width, height } = await getCroppedImg(imageSrc, croppedAreaPixels, maxWidth);
+      onCropComplete(blob, { width, height });
     } finally {
       setIsProcessing(false);
     }
