@@ -16,6 +16,12 @@ interface ImageUploaderProps {
   cropAspect?: number;
   storageBucket?: string;
   storagePath?: string;
+  /**
+   * Reject narrower source files and surface real dimensions.
+   * Set to 1200 for article cover images (Google Discover requirement).
+   */
+  minWidth?: number;
+  onDimensionsChange?: (dimensions: { width: number; height: number }) => void;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -34,12 +40,14 @@ export const ImageUploader = ({
   cropAspect = 1,
   storageBucket = "post-images",
   storagePath = "posts",
+  minWidth,
+  onDimensionsChange,
 }: ImageUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = async (file: File, dimensions?: { width: number; height: number }) => {
     setIsUploading(true);
     try {
       const fileExt = file.name.split(".").pop() || "jpg";
@@ -59,6 +67,8 @@ export const ImageUploader = ({
         .getPublicUrl(filePath);
 
       onChange(data.publicUrl);
+      const dims = dimensions ?? (await readImageSize(file).catch(() => undefined));
+      if (dims) onDimensionsChange?.(dims);
       toast.success("Obrazek został przesłany");
     } catch (error: any) {
       console.error("Upload error:", error);
@@ -69,12 +79,22 @@ export const ImageUploader = ({
   };
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
         if (file.size > MAX_FILE_SIZE) {
           toast.error("Plik jest za duży. Maksymalny rozmiar to 5MB.");
           return;
+        }
+
+        if (minWidth) {
+          const size = await readImageSize(file).catch(() => null);
+          if (size && size.width < minWidth) {
+            toast.error(
+              `Ten plik ma ${size.width} px szerokości. Google Discover wymaga min. ${minWidth} px — wybierz większe zdjęcie.`,
+            );
+            return;
+          }
         }
 
         if (enableCrop) {
@@ -89,17 +109,20 @@ export const ImageUploader = ({
         }
       }
     },
-    [enableCrop]
+    [enableCrop, minWidth]
   );
 
-  const handleCropComplete = async (croppedBlob: Blob) => {
+  const handleCropComplete = async (
+    croppedBlob: Blob,
+    dimensions: { width: number; height: number }
+  ) => {
     setCropModalOpen(false);
     setPendingImage(null);
 
     const file = new File([croppedBlob], `cropped-${Date.now()}.jpg`, {
       type: "image/jpeg",
     });
-    await uploadFile(file);
+    await uploadFile(file, dimensions);
   };
 
   const handleCropClose = () => {
@@ -178,6 +201,11 @@ export const ImageUploader = ({
                 <p className="text-xs text-muted-foreground">
                   JPG, PNG, WebP - max 5MB
                 </p>
+                {minWidth && (
+                  <p className="text-xs text-muted-foreground">
+                    Google Discover wymaga obrazu min. {minWidth} px szerokości
+                  </p>
+                )}
               </>
             )}
           </div>
@@ -190,9 +218,27 @@ export const ImageUploader = ({
           onClose={handleCropClose}
           imageSrc={pendingImage}
           aspect={cropAspect}
+          minWidth={minWidth}
           onCropComplete={handleCropComplete}
         />
       )}
     </>
   );
 };
+
+/** Reads the intrinsic pixel size of a local image file. */
+function readImageSize(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
+  });
+}
