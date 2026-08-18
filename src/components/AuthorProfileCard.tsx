@@ -1,4 +1,4 @@
-import { useNavLink } from "@/hooks/useNavLink";
+import { Link } from "@/lib/router-compat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, User } from "lucide-react";
@@ -10,7 +10,6 @@ interface AuthorProfileCardProps {
 }
 
 export const AuthorProfileCard = ({ author, postsCount }: AuthorProfileCardProps) => {
-  const navLink = useNavLink();
   const initials = author.display_name
     ?.split(" ")
     .map((n) => n[0])
@@ -22,7 +21,7 @@ export const AuthorProfileCard = ({ author, postsCount }: AuthorProfileCardProps
     : author.bio;
 
   return (
-    <a {...navLink(`/autor/${author.slug}`)} className="block">
+    <Link to={`/autor/${author.slug}`} className="block">
       <Card className="group overflow-hidden card-hover h-full">
         {/* Cover Image */}
         <div 
@@ -73,6 +72,6 @@ export const AuthorProfileCard = ({ author, postsCount }: AuthorProfileCardProps
           )}
         </CardContent>
       </Card>
-    </a>
+    </Link>
   );
 };

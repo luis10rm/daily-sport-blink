@@ -1,5 +1,5 @@
 import { ExternalLink, Trophy } from "lucide-react";
-import { Link, useNavigate } from "@/lib/router-compat";
+import { Link } from "@/lib/router-compat";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { WorldCupBadge } from "./WorldCupBadge";
@@ -14,7 +14,6 @@ interface NewsOfTheDayProps {
 }
 
 export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
-  const navigate = useNavigate();
   const blinkUrl = `/blink/${post.slug}`;
   const formattedDate = new Date(post.published_at).toLocaleDateString("pl-PL", {
     day: "numeric",
@@ -99,13 +98,12 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
           {post.author && <AuthorCard author={post.author} />}
 
           {post.content ? (
-            <a
-              href={blinkUrl}
-              onClick={(e) => { e.preventDefault(); navigate(blinkUrl); }}
+            <Link
+              to={blinkUrl}
               className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover"
             >
               Przeczytaj więcej
-            </a>
+            </Link>
           ) : (
             <a
               href={post.source_url}

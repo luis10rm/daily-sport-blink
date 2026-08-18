@@ -1,5 +1,5 @@
+import { Link } from "@/lib/router-compat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useNavLink } from "@/hooks/useNavLink";
 
 interface AuthorCardProps {
   author: {
@@ -13,12 +13,11 @@ interface AuthorCardProps {
 }
 
 export const AuthorCard = ({ author, className }: AuthorCardProps) => {
-  const navLink = useNavLink();
   if (!author.slug || !author.display_name) return null;
 
   return (
-    <a
-      {...navLink(`/autor/${author.slug}`)}
+    <Link
+      to={`/autor/${author.slug}`}
       className={`flex items-center gap-2.5 rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50 ${className}`}
     >
       <Avatar className="h-8 w-8 ring-2 ring-primary/10">
@@ -35,6 +34,6 @@ export const AuthorCard = ({ author, className }: AuthorCardProps) => {
           {author.role_title || "Autor"}
         </p>
       </div>
-    </a>
+    </Link>
   );
 };

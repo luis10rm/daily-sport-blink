@@ -1,5 +1,5 @@
 import { ArrowRight, Flame } from "lucide-react";
-import { useNavigate } from "@/lib/router-compat";
+import { Link } from "@/lib/router-compat";
 import type { Review } from "@/hooks/useReviews";
 import { ScoreBadge } from "./ScoreBadge";
 import { cn } from "@/lib/utils";
@@ -14,17 +14,7 @@ interface Props {
  * onTouchEnd here — a plain onClick fires only on a real tap (touchstart + touchend
  * on the same element), so scrolling with a finger over the card never navigates.
  */
-const useReadMoreLink = () => {
-  const navigate = useNavigate();
-  return (to: string) => ({
-    href: to,
-    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
-      e.preventDefault();
-      navigate(to);
-    },
-  });
-};
+const useReadMoreLink = () => (to: string) => ({ to });
 
 const ctaBase =
   "touch-manipulation inline-flex min-h-11 items-center justify-center gap-1.5 text-sm font-semibold transition-all active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-fuchsia-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
@@ -81,13 +71,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
             <p className="mt-2 line-clamp-3 text-sm md:text-base text-muted-foreground">{review.excerpt}</p>
           )}
           <div className="mt-4 flex justify-stretch sm:justify-end">
-            <a
+            <Link
               {...readMore(to)}
               aria-label={ctaLabel}
               className={cn("group/cta w-full sm:w-auto", ctaBase, ctaFilled, "text-base")}
             >
               Czytaj więcej <ArrowRight className={arrow} />
-            </a>
+            </Link>
           </div>
         </div>
       </article>
@@ -106,13 +96,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
             {review.title}
           </h3>
-          <a
+          <Link
             {...readMore(to)}
             aria-label={ctaLabel}
             className={cn("group/cta mt-1 w-full", ctaBase, ctaOutline)}
           >
             Czytaj więcej <ArrowRight className={arrow} />
-          </a>
+          </Link>
         </div>
         <ScoreBadge score={review.score} size="sm" />
       </article>
@@ -148,13 +138,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-foreground">
             {review.title}
           </h3>
-          <a
+          <Link
             {...readMore(to)}
             aria-label={ctaLabel}
             className={cn("group/cta mt-3 w-full", ctaBase, ctaOutline)}
           >
             Czytaj więcej <ArrowRight className={arrow} />
-          </a>
+          </Link>
         </div>
       </article>
     );
@@ -191,13 +181,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
         {review.excerpt && (
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{review.excerpt}</p>
         )}
-        <a
+        <Link
           {...readMore(to)}
           aria-label={ctaLabel}
           className={cn("group/cta mt-3 w-full sm:w-auto sm:self-start", ctaBase, ctaOutline)}
         >
           Czytaj więcej <ArrowRight className={arrow} />
-        </a>
+        </Link>
       </div>
     </article>
   );

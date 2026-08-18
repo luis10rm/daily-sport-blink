@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import { Newspaper, ChevronRight } from "lucide-react";
-import { Link, useNavigate } from "@/lib/router-compat";
+import { Link } from "@/lib/router-compat";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,7 +37,6 @@ const getNewsLabel = (count: number) => {
 };
 
 export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBannerProps) => {
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { isTakeoverActive } = useWallpaperContext();
   const [displayCount, setDisplayCount] = useState(0);
@@ -124,15 +123,14 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
 
         {/* CTA button */}
         <div className="px-4 pb-4 pt-1">
-          <a
-            href={`/dzien/${todayStr}`}
-            onClick={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
+          <Link
+            to={`/dzien/${todayStr}`}
             className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground active:scale-[0.98] transition-transform"
           >
             <Newspaper className="h-4 w-4" />
             Zobacz dzienny briefing
             <ChevronRight className="h-4 w-4 animate-[pulse_2s_ease-in-out_infinite]" />
-          </a>
+          </Link>
         </div>
       </section>
     );
@@ -167,14 +165,13 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
         </span>
 
         {/* Briefing button */}
-        <a
-          href={`/dzien/${todayStr}`}
-          onClick={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
+        <Link
+          to={`/dzien/${todayStr}`}
           className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Zobacz briefing
           <ChevronRight className="h-3.5 w-3.5" />
-        </a>
+        </Link>
       </div>
 
       {/* Date below */}

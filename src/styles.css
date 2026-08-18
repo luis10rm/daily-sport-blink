@@ -295,13 +295,10 @@
     touch-action: manipulation;
   }
 
-  /* iOS Safari: disable focus-first-tap heuristic and gray tap highlight */
-  @media (hover: none) and (pointer: coarse) {
-    a, button, [role="button"] {
-      -webkit-tap-highlight-color: transparent;
-      cursor: default;
-    }
-  }
+  /* NOTE: no custom cursor/tap-highlight overrides for touch devices.
+     A `cursor: default` on links/buttons made iOS Safari treat the first tap
+     as hover/focus, which required a second tap to activate. */
+
 }
 
 @layer components {
