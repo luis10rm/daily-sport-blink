@@ -11,8 +11,6 @@ export const ModeSwitcher = () => {
   const inTech =
     location.pathname.startsWith("/tech") || location.pathname.startsWith("/recki");
 
-  const target = inTech ? "/" : "/tech";
-
   if (inTech) {
     return (
       <Link
