@@ -148,7 +148,7 @@ export const SponsorBanner = ({
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
-          className="cursor-pointer group"
+          className="card-item cursor-pointer group"
           aria-label={title || "Reklama partnera"}
         >
           {/* Desktop slot: 970x250 - borderless */}
@@ -228,7 +228,7 @@ export const SponsorBanner = ({
             onKeyDown={handleKeyDown}
             role="link"
             tabIndex={0}
-            className="block group cursor-pointer"
+            className="card-item block group cursor-pointer"
             aria-label={title || "Reklama partnera"}
           >
             {/* Desktop slot: 970x250 */}

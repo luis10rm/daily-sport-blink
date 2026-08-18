@@ -81,7 +81,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
       <article
         ref={ref}
         className={cn(
-          "group relative flex flex-col overflow-hidden rounded-xl border bg-card card-hover",
+          "card-item group relative flex flex-col overflow-hidden rounded-xl border bg-card card-hover",
           !disableAnimation && "opacity-0 animate-fade-in",
           isSponsored ? "border-primary/30 ring-1 ring-primary/20" : "border-border",
           isOlympic && "olympic-card",

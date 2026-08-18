@@ -26,7 +26,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-2xl border-2 border-news-of-day bg-card",
+        "card-item group relative overflow-hidden rounded-2xl border-2 border-news-of-day bg-card",
         "ring-4 ring-news-of-day/20",
         className
       )}
