@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
-import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { usePublicAuthors } from "@/hooks/useAuthors";
 import { AuthorProfileCard } from "@/components/AuthorProfileCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,8 +37,6 @@ const useAuthorsPostsCounts = (authorIds: string[]) => {
 };
 
 const AuthorsPage = () => {
-  useSEOMeta({ title: "Nasi autorzy", description: "Poznaj zespół twórców Szortsy, którzy dostarczają Ci najświeższe wiadomości sportowe każdego dnia." });
-  
   const { data: authors, isLoading } = usePublicAuthors();
   const authorIds = authors?.map((a) => a.id) || [];
   const { data: postsCounts } = useAuthorsPostsCounts(authorIds);

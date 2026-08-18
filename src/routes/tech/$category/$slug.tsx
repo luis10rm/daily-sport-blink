@@ -7,6 +7,7 @@ import {
   buildArticleSchema,
   buildArticleTimeMeta,
   buildBreadcrumbList,
+  buildReviewSchema,
 } from "@/lib/articleSchema";
 
 export const Route = createFileRoute("/tech/$category/$slug")({
@@ -22,6 +23,21 @@ export const Route = createFileRoute("/tech/$category/$slug")({
     const coverImage = review.cover_image_url || review.image_url || null;
     const image = coverImage || `${SITE_URL}/og-image.png`;
     const categoryName = review.category?.name || "Tech";
+    // Gwiazdki w SERP-ie: tylko dla realnych recenzji z oceną i nazwą produktu.
+    const reviewSchema =
+      review.content_type === "review"
+        ? buildReviewSchema({
+            canonical,
+            headline: review.title,
+            score: review.score,
+            productName: review.product_name,
+            productBrand: review.product_brand,
+            imageUrl: coverImage,
+            description: review.excerpt,
+            publishedAt: review.published_at,
+            updatedAt: review.updated_at,
+          })
+        : undefined;
 
     return {
       meta: [
@@ -58,6 +74,14 @@ export const Route = createFileRoute("/tech/$category/$slug")({
             }),
           ),
         },
+        ...(reviewSchema
+          ? [
+              {
+                type: "application/ld+json",
+                children: JSON.stringify(reviewSchema),
+              },
+            ]
+          : []),
         {
           type: "application/ld+json",
           children: JSON.stringify(

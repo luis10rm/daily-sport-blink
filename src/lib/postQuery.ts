@@ -14,6 +14,7 @@ export interface SsrPost {
   source_url?: string | null;
   tags?: string[] | null;
   channel?: string | null;
+  is_hidden?: boolean | null;
   author?: { display_name?: string | null; slug?: string | null } | null;
   sport_category?: { name?: string | null; slug?: string | null } | null;
   positive_category?: { slug?: string | null } | null;
