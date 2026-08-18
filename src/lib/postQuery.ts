@@ -7,13 +7,15 @@ export interface SsrPost {
   title: string;
   excerpt?: string | null;
   image_url?: string | null;
+  image_width?: number | null;
+  image_height?: number | null;
   published_at?: string | null;
   updated_at?: string | null;
   source_url?: string | null;
   tags?: string[] | null;
   channel?: string | null;
   author?: { display_name?: string | null; slug?: string | null } | null;
-  sport_category?: { name?: string | null } | null;
+  sport_category?: { name?: string | null; slug?: string | null } | null;
   positive_category?: { slug?: string | null } | null;
 }
 

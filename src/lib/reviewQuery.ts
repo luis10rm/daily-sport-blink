@@ -8,6 +8,9 @@ export interface SsrReview {
   title: string;
   excerpt?: string | null;
   image_url?: string | null;
+  cover_image_url?: string | null;
+  image_width?: number | null;
+  image_height?: number | null;
   published_at?: string | null;
   updated_at?: string | null;
   category?: { slug?: string | null; name?: string | null } | null;

@@ -39,6 +39,8 @@ export interface Review {
 
   gallery: string[];
   cover_image_url: string | null;
+  image_width?: number | null;
+  image_height?: number | null;
   product_name: string | null;
   product_brand: string | null;
   category_id: string | null;
