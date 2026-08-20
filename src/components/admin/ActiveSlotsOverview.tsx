@@ -1,4 +1,4 @@
-import { useNavigate } from "@/lib/router-compat";
+import { useNavigate } from "react-router-dom";
 import { useActiveBannerForDevice, useActiveBannersCountForDevice, BannerPosition } from "@/hooks/useBanners";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

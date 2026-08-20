@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "@/lib/router-compat";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import {
   useNewsSuggestions,

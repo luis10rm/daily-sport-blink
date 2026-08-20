@@ -1,5 +1,5 @@
 import { ExternalLink, Trophy } from "lucide-react";
-import { Link, useNavigate } from "@/lib/router-compat";
+import { Link, useNavigate } from "react-router-dom";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { WorldCupBadge } from "./WorldCupBadge";

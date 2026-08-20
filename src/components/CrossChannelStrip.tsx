@@ -1,4 +1,4 @@
-import { Link } from "@/lib/router-compat";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Cpu, Sun } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";

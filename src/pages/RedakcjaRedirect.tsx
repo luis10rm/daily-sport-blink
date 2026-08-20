@@ -1,4 +1,4 @@
-import { Navigate, useParams } from "@/lib/router-compat";
+import { Navigate, useParams } from "react-router-dom";
 
 export default function RedakcjaRedirect() {
   const { slug } = useParams<{ slug: string }>();

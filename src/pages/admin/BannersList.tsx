@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@/lib/router-compat";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ActiveSlotsOverview } from "@/components/admin/ActiveSlotsOverview";
 import { Button } from "@/components/ui/button";

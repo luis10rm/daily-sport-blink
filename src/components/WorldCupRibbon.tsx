@@ -1,5 +1,5 @@
 import { Trophy, Radio, ArrowRight } from "lucide-react";
-import { Link } from "@/lib/router-compat";
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { getWorldCupPhase, getDaysUntilWorldCup } from "@/lib/worldCupTheme";
 

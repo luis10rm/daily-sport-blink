@@ -1,4 +1,4 @@
-import { useNavigate } from "@/lib/router-compat";
+import { useNavigate } from "react-router-dom";
 import { Radio, ChevronRight } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useTournamentMode } from "@/hooks/useTournamentMode";

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "@/lib/router-compat";
+import { useNavigate, useParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";

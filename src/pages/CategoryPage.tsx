@@ -1,4 +1,4 @@
-import { useParams } from "@/lib/router-compat";
+import { useParams } from "react-router-dom";
 import { useNavLink } from "@/hooks/useNavLink";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";

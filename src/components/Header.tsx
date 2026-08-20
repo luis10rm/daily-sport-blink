@@ -1,5 +1,5 @@
 import { Archive, ChevronDown, Users, Trophy } from "lucide-react";
-import { useNavigate } from "@/lib/router-compat";
+import { useNavigate } from "react-router-dom";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
 import { DynamicSportIcon } from "./DynamicSportIcon";

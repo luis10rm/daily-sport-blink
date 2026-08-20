@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from "@/lib/router-compat";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { format, subDays, addDays, isAfter, startOfDay, isValid, parse } from "date-fns";
 import { pl } from "date-fns/locale";

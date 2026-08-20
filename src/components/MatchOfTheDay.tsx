@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "@/lib/router-compat";
+import { Link } from "react-router-dom";
 import { Trophy, Radio, MapPin, ArrowRight } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useTournamentMode } from "@/hooks/useTournamentMode";

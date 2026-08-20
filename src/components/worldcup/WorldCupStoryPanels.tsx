@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useNavigate } from "@/lib/router-compat";
+import { useNavigate } from "react-router-dom";
 import { X, Trophy, Calendar, Users, Goal, Newspaper } from "lucide-react";
 import { useWorldCupMatches, useWorldCupStandings, useWorldCupScorers } from "@/hooks/useWorldCupData";
 import { useWorldCupPosts } from "@/hooks/useWorldCupPosts";

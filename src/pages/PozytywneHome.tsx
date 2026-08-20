@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, Link } from "@/lib/router-compat";
+import { useParams, Link } from "react-router-dom";
 import { PozytywneHeader } from "@/components/pozytywne/PozytywneHeader";
 import { PozytywneFooter } from "@/components/pozytywne/PozytywneFooter";
 import { NewsCard } from "@/components/NewsCard";

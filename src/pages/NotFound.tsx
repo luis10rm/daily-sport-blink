@@ -1,6 +1,6 @@
-import { Link } from "@/lib/router-compat";
+import { Link } from "react-router-dom";
 import { useEffect } from "react";
-import { useLocation } from "@/lib/router-compat";
+import { useLocation } from "react-router-dom";
 import { Search, Home, Archive, Tag } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";

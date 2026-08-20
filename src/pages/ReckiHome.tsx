@@ -7,7 +7,7 @@ import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "@/lib/router-compat";
+import { Link } from "react-router-dom";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const ReckiHome = () => {

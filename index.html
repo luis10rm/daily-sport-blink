@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-F9QDLPXFGG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-F9QDLPXFGG', { send_page_view: false });
+    </script>
+    
+    <title>Szortsy - Wiadomości sportowe krótko i na temat</title>
+    <meta name="description" content="Szortsy – najważniejsze wiadomości sportowe w 60 sekund. Piłka nożna, F1, tenis, MMA i więcej. Krótko, konkretnie, codziennie. Bądź na bieżąco!" />
+    <meta name="author" content="Szortsy" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:title" content="Szortsy - Wiadomości sportowe krótko i na temat" />
+    <meta property="og:description" content="Szortsy – najważniejsze wiadomości sportowe w 60 sekund. Piłka nożna, F1, tenis, MMA i więcej. Krótko, konkretnie, codziennie. Bądź na bieżąco!" />
+    
+    <meta property="og:image" content="https://szortsy.pl/og-image.png" />
+    <meta property="og:locale" content="pl_PL" />
+    <meta property="og:site_name" content="Szortsy" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Szortsy - Wiadomości sportowe" />
+    <meta name="twitter:description" content="Szortsy – wiadomości sportowe w 60 sekund. Piłka nożna, F1, MMA i więcej. Krótko, codziennie." />
+    <meta name="twitter:image" content="https://szortsy.pl/og-image.png" />
+
+    
+    <!-- Favicon & PWA -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <!-- Meta Pixel Code -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '1440716734345408');
+      fbq('track', 'PageView');
+    </script>
+    <!-- End Meta Pixel Code -->
+
+    <!-- Font preload with async loading for better LCP -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" />
+    </noscript>
+
+    <!-- Preconnect do popularnych źródeł obrazków - LCP optimization -->
+    <link rel="preconnect" href="https://meczyki.pl" />
+    <link rel="preconnect" href="https://sportowefakty.wp.pl" />
+    <link rel="preconnect" href="https://ocdn.eu" />
+    <link rel="dns-prefetch" href="https://meczyki.pl" />
+    <link rel="dns-prefetch" href="https://sportowefakty.wp.pl" />
+    <link rel="dns-prefetch" href="https://ocdn.eu" />
+  </head>
+
+  <body ontouchstart="">
+    <noscript><img height="1" width="1" style="display:none"
+      src="https://www.facebook.com/tr?id=1440716734345408&ev=PageView&noscript=1"
+    /></noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,4 +1,4 @@
-import { useNavigate } from "@/lib/router-compat";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Returns props for an <a> element that navigates via react-router without
