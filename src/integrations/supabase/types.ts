@@ -397,7 +397,9 @@ export type Database = {
           created_by: string | null
           excerpt: string
           id: string
+          image_height: number | null
           image_url: string | null
+          image_width: number | null
           is_hidden: boolean
           is_news_of_day: boolean
           is_sponsored: boolean
@@ -419,7 +421,9 @@ export type Database = {
           created_by?: string | null
           excerpt: string
           id?: string
+          image_height?: number | null
           image_url?: string | null
+          image_width?: number | null
           is_hidden?: boolean
           is_news_of_day?: boolean
           is_sponsored?: boolean
@@ -441,7 +445,9 @@ export type Database = {
           created_by?: string | null
           excerpt?: string
           id?: string
+          image_height?: number | null
           image_url?: string | null
+          image_width?: number | null
           is_hidden?: boolean
           is_news_of_day?: boolean
           is_sponsored?: boolean
@@ -590,6 +596,8 @@ export type Database = {
           faq: Json
           gallery: string[]
           id: string
+          image_height: number | null
+          image_width: number | null
           is_ai_generated: boolean
           is_topic_of_day: boolean
           product_brand: string | null
@@ -618,6 +626,8 @@ export type Database = {
           faq?: Json
           gallery?: string[]
           id?: string
+          image_height?: number | null
+          image_width?: number | null
           is_ai_generated?: boolean
           is_topic_of_day?: boolean
           product_brand?: string | null
@@ -646,6 +656,8 @@ export type Database = {
           faq?: Json
           gallery?: string[]
           id?: string
+          image_height?: number | null
+          image_width?: number | null
           is_ai_generated?: boolean
           is_topic_of_day?: boolean
           product_brand?: string | null
