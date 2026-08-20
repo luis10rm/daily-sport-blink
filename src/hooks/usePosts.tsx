@@ -29,8 +29,6 @@ export interface Post {
   category_id?: string | null;
   sport_category?: PostCategory | null;
   image_url?: string | null;
-  image_width?: number | null;
-  image_height?: number | null;
   source_url: string;
   tags: string[];
   is_sponsored: boolean;
@@ -50,8 +48,6 @@ export interface CreatePostInput {
   slug?: string;
   category_id?: string;
   image_url?: string;
-  image_width?: number | null;
-  image_height?: number | null;
   source_url: string;
   tags?: string[];
   is_sponsored?: boolean;

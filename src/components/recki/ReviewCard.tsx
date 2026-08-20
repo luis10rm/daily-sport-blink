@@ -1,5 +1,5 @@
 import { ArrowRight, Flame } from "lucide-react";
-import { Link } from "@/lib/router-compat";
+import { useNavigate } from "@/lib/router-compat";
 import type { Review } from "@/hooks/useReviews";
 import { ScoreBadge } from "./ScoreBadge";
 import { cn } from "@/lib/utils";
@@ -14,12 +14,22 @@ interface Props {
  * onTouchEnd here — a plain onClick fires only on a real tap (touchstart + touchend
  * on the same element), so scrolling with a finger over the card never navigates.
  */
-const useReadMoreLink = () => (to: string) => ({ to });
+const useReadMoreLink = () => {
+  const navigate = useNavigate();
+  return (to: string) => ({
+    href: to,
+    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+      e.preventDefault();
+      navigate(to);
+    },
+  });
+};
 
 const ctaBase =
-  "touch-manipulation inline-flex min-h-11 items-center justify-center gap-1.5 text-sm font-semibold transition-all active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-fuchsia-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  "touch-manipulation inline-flex min-h-11 items-center justify-center gap-1.5 text-sm font-semibold transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
-const ctaFilled = "rounded-full bg-fuchsia-600 px-5 text-white shadow-xs hover:bg-fuchsia-700";
+const ctaFilled = "rounded-full bg-fuchsia-600 px-5 text-white shadow-sm hover:bg-fuchsia-700";
 
 const ctaOutline =
   "rounded-lg border border-fuchsia-600/40 px-4 text-fuchsia-600 hover:bg-fuchsia-600 hover:text-white dark:text-fuchsia-300 dark:hover:text-white";
@@ -71,13 +81,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
             <p className="mt-2 line-clamp-3 text-sm md:text-base text-muted-foreground">{review.excerpt}</p>
           )}
           <div className="mt-4 flex justify-stretch sm:justify-end">
-            <Link
+            <a
               {...readMore(to)}
               aria-label={ctaLabel}
               className={cn("group/cta w-full sm:w-auto", ctaBase, ctaFilled, "text-base")}
             >
               Czytaj więcej <ArrowRight className={arrow} />
-            </Link>
+            </a>
           </div>
         </div>
       </article>
@@ -96,13 +106,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
             {review.title}
           </h3>
-          <Link
+          <a
             {...readMore(to)}
             aria-label={ctaLabel}
             className={cn("group/cta mt-1 w-full", ctaBase, ctaOutline)}
           >
             Czytaj więcej <ArrowRight className={arrow} />
-          </Link>
+          </a>
         </div>
         <ScoreBadge score={review.score} size="sm" />
       </article>
@@ -111,7 +121,7 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
 
   if (variant === "mini") {
     return (
-      <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-xs transition-shadow [@media(hover:hover)]:hover:shadow-md">
+      <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow [@media(hover:hover)]:hover:shadow-md">
         <div className="relative aspect-[16/9] overflow-hidden bg-muted">
           {review.cover_image_url ? (
             <img
@@ -138,20 +148,20 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
           <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-foreground">
             {review.title}
           </h3>
-          <Link
+          <a
             {...readMore(to)}
             aria-label={ctaLabel}
             className={cn("group/cta mt-3 w-full", ctaBase, ctaOutline)}
           >
             Czytaj więcej <ArrowRight className={arrow} />
-          </Link>
+          </a>
         </div>
       </article>
     );
   }
 
   return (
-    <article className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-shadow [@media(hover:hover)]:hover:shadow-lg">
+    <article className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow [@media(hover:hover)]:hover:shadow-lg">
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {review.cover_image_url ? (
           <img
@@ -181,13 +191,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
         {review.excerpt && (
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{review.excerpt}</p>
         )}
-        <Link
+        <a
           {...readMore(to)}
           aria-label={ctaLabel}
           className={cn("group/cta mt-3 w-full sm:w-auto sm:self-start", ctaBase, ctaOutline)}
         >
           Czytaj więcej <ArrowRight className={arrow} />
-        </Link>
+        </a>
       </div>
     </article>
   );

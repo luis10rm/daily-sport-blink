@@ -1,8 +1,11 @@
-import { Link, useParams } from "@/lib/router-compat";
+import { useParams } from "@/lib/router-compat";
+import { useNavLink } from "@/hooks/useNavLink";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
+import { useCategorySEOMeta } from "@/hooks/useSEOMeta";
+import { SEO, getRichItemListSEO } from "@/components/SEO";
 import { useSportCategoryBySlug } from "@/hooks/useSportCategories";
 import { usePostsByCategory } from "@/hooks/usePostsByCategory";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,8 +24,18 @@ const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: category, isLoading: categoryLoading } = useSportCategoryBySlug(slug);
   const { data: posts = [], isLoading: postsLoading } = usePostsByCategory(slug);
+  const navLink = useNavLink();
 
-  // Meta tagi i JSON-LD generuje trasa SSR (src/routes/kategoria/$slug.tsx).
+  // SEO meta tags
+  useCategorySEOMeta({
+    name: category?.name || "Kategoria",
+    slug: slug || "",
+  });
+  // Rich SEO with full NewsArticle schema including isBasedOn for E-E-A-T
+  const seoData = getRichItemListSEO(
+    `Wiadomości - ${category?.name || "Sport"}`,
+    posts
+  );
 
   if (categoryLoading) {
     return (
@@ -53,13 +66,13 @@ const CategoryPage = () => {
           <p className="text-muted-foreground mb-6">
             Nie udało się znaleźć kategorii o podanej nazwie.
           </p>
-          <Link
-            to="/"
+          <a
+            {...navLink("/")}
             className="inline-flex items-center gap-2 text-primary hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />
             Wróć na stronę główną
-          </Link>
+          </a>
         </main>
       </div>
     );
@@ -67,6 +80,7 @@ const CategoryPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoData} />
       <Header />
       <PatronBar />
 
@@ -76,7 +90,7 @@ const CategoryPage = () => {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to="/">Strona główna</Link>
+                <a {...navLink("/")}>Strona główna</a>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -139,13 +153,13 @@ const CategoryPage = () => {
 
             {/* Link to archive */}
             <div className="mt-10 text-center">
-              <Link
-                to={`/archiwum?kategoria=${slug}`}
+              <a
+                {...navLink(`/archiwum?kategoria=${slug}`)}
                 className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
               >
                 <Archive className="h-4 w-4" />
                 Zobacz starsze artykuły z kategorii {category.name}
-              </Link>
+              </a>
             </div>
           </>
         ) : (
@@ -161,13 +175,13 @@ const CategoryPage = () => {
             <p className="text-muted-foreground mb-6">
               W tej kategorii nie ma jeszcze żadnych artykułów z ostatnich 7 dni.
             </p>
-            <Link
-              to={`/archiwum?kategoria=${slug}`}
+            <a
+              {...navLink(`/archiwum?kategoria=${slug}`)}
               className="inline-flex items-center gap-2 text-primary hover:underline"
             >
               <Archive className="h-4 w-4" />
               Sprawdź archiwum
-            </Link>
+            </a>
           </div>
         )}
       </main>

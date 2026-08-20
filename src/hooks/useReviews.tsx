@@ -39,8 +39,6 @@ export interface Review {
 
   gallery: string[];
   cover_image_url: string | null;
-  image_width?: number | null;
-  image_height?: number | null;
   product_name: string | null;
   product_brand: string | null;
   category_id: string | null;
@@ -199,22 +197,16 @@ export const usePublishedReviews = (categorySlug?: string) => {
   const qc = useQueryClient();
 
   useEffect(() => {
-    // Unique channel name per instance — a shared name throws when the hook mounts twice.
-    let channel: any;
-    try {
-      channel = (supabase as any)
-        .channel(`reviews-published-${Math.random().toString(36).slice(2)}`)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "reviews" },
-          () => qc.invalidateQueries({ queryKey: ["reviews", "published"] })
-        )
-        .subscribe();
-    } catch (error) {
-      console.error("[usePublishedReviews] realtime subscribe failed", error);
-    }
+    const channel = (supabase as any)
+      .channel("reviews-published")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "reviews" },
+        () => qc.invalidateQueries({ queryKey: ["reviews", "published"] })
+      )
+      .subscribe();
     return () => {
-      if (channel) (supabase as any).removeChannel(channel);
+      (supabase as any).removeChannel(channel);
     };
   }, [qc]);
 

@@ -5,7 +5,7 @@ import { useWallpaperContext } from "@/contexts/WallpaperContext";
 
 interface SponsorBannerProps {
   title?: string;
-  description?: string | null;
+  description?: string;
   ctaText: string;
   ctaUrl: string;
   imageDesktopUrl?: string;
@@ -60,6 +60,11 @@ export const SponsorBanner = ({
     }
   };
 
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    handleClick();
+  };
+
   // Fire impression tag pixel on first render
   useEffect(() => {
     if (impressionTag && !impressionFiredRef.current && !previewMode) {
@@ -94,7 +99,7 @@ export const SponsorBanner = ({
   if (isPlaceholder || isHiddenByAdBlock) {
     return (
       <div className={cn("flex justify-center", className)}>
-        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-muted/50 border border-border shadow-xs">
+        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-muted/50 border border-border shadow-sm">
           <span className="text-xs font-medium text-muted-foreground">
             Partner Szortsy
           </span>
@@ -106,7 +111,7 @@ export const SponsorBanner = ({
             <>
               <span className="text-xs text-muted-foreground/40">·</span>
               <button
-                onClick={handleClick}
+                onClick={handleClick} onTouchEnd={handleTouchEnd}
                 type="button"
                 className="text-xs font-semibold text-primary hover:underline underline-offset-2 transition-colors"
               >
@@ -139,11 +144,11 @@ export const SponsorBanner = ({
         {/* Borderless banner - no bg, no frame */}
         <div
           ref={bannerRef}
-          onClick={handleClick}
+          onClick={handleClick} onTouchEnd={handleTouchEnd}
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
-          className="card-item cursor-pointer group"
+          className="cursor-pointer group"
           aria-label={title || "Reklama partnera"}
         >
           {/* Desktop slot: 970x250 - borderless */}
@@ -208,7 +213,7 @@ export const SponsorBanner = ({
         )}
 
         {/* Framed banner container - ref for AdBlock detection */}
-        <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+        <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {/* Header - Partner label */}
           <div className="bg-muted/50 px-4 py-2 border-b border-border">
             <span className="text-xs font-medium text-muted-foreground">
@@ -219,11 +224,11 @@ export const SponsorBanner = ({
           {/* Banner image slot - fixed dimensions */}
           {/* Using div with onClick instead of <a href> to bypass AdBlock */}
           <div
-            onClick={handleClick}
+            onClick={handleClick} onTouchEnd={handleTouchEnd}
             onKeyDown={handleKeyDown}
             role="link"
             tabIndex={0}
-            className="card-item block group cursor-pointer"
+            className="block group cursor-pointer"
             aria-label={title || "Reklama partnera"}
           >
             {/* Desktop slot: 970x250 */}
@@ -303,7 +308,7 @@ export const SponsorBanner = ({
           {ctaText && (
             <div className="bg-muted/50 px-4 py-3 border-t border-border">
               <button
-                onClick={handleClick}
+                onClick={handleClick} onTouchEnd={handleTouchEnd}
                 type="button"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
               >
@@ -321,7 +326,7 @@ export const SponsorBanner = ({
   return (
     <div className={cn("flex justify-center", className)}>
       {/* ref for AdBlock detection */}
-      <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-xs">
+      <div ref={bannerRef} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {/* Header - Partner label */}
         <div className="bg-muted/50 px-4 py-2 border-b border-border">
           <span className="text-xs font-medium text-muted-foreground">
@@ -331,7 +336,7 @@ export const SponsorBanner = ({
 
         {/* Desktop slot: 970x250 */}
         <div
-          onClick={handleClick}
+          onClick={handleClick} onTouchEnd={handleTouchEnd}
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
@@ -361,7 +366,7 @@ export const SponsorBanner = ({
 
         {/* Mobile slot: 300x250 */}
         <div
-          onClick={handleClick}
+          onClick={handleClick} onTouchEnd={handleTouchEnd}
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
@@ -393,7 +398,7 @@ export const SponsorBanner = ({
         {ctaText && (
           <div className="bg-muted/50 px-4 py-3 border-t border-border">
             <button
-              onClick={handleClick}
+              onClick={handleClick} onTouchEnd={handleTouchEnd}
               type="button"
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
             >

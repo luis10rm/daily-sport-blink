@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Link, useParams } from "@/lib/router-compat";
+import { useParams } from "@/lib/router-compat";
+import { useNavLink } from "@/hooks/useNavLink";
 import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake, Sun } from "lucide-react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
@@ -18,21 +19,14 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { normalizeMarkdownInHtml } from "@/lib/normalizeMarkdownInHtml";
 import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
-import { sanitizeHtmlServer } from "@/lib/sanitizeHtmlServer";
-
 import { Footer } from "@/components/Footer";
 import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
 import { WorldCupRibbon } from "@/components/WorldCupRibbon";
 import { WorldCupMatchCenter } from "@/components/worldcup/WorldCupMatchCenter";
 
-// Sanitize HTML to prevent XSS attacks.
-// During SSR there is no DOM, so DOMPurify is unavailable — use the pure-JS fallback
-// so the server still renders full article content (needed for Google/Discover).
+// Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string): string => {
-  if (typeof window === "undefined" || typeof (DOMPurify as any)?.sanitize !== "function") {
-    return sanitizeHtmlServer(html);
-  }
   const clean = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['p', 'h2', 'h3', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'br', 'blockquote', 'u', 's', 'iframe', 'div'],
     ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'width', 'height', 'frameborder', 'allow', 'allowfullscreen', 'title', 'class', 'data-youtube-video'],
@@ -40,7 +34,6 @@ const sanitizeHtml = (html: string): string => {
     ADD_ATTR: ['allowfullscreen'],
   });
   // Whitelist iframe sources to YouTube only
-
   if (typeof window !== 'undefined') {
     const doc = new DOMParser().parseFromString(clean, 'text/html');
     doc.querySelectorAll('iframe').forEach((iframe) => {
@@ -78,6 +71,7 @@ const SITE_URL = "https://szortsy.pl";
 const BlinkPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: post, isLoading, error } = usePostBySlug(slug || "");
+  const navLink = useNavLink();
 
   const isPositive = (post as any)?.channel === "positive";
   const ActiveHeader = isPositive ? PozytywneHeader : Header;
@@ -142,10 +136,10 @@ const BlinkPage = () => {
             Przepraszamy, nie udało się znaleźć tego artykułu.
           </p>
           <Button asChild>
-            <Link to={homeHref}>
+            <a {...navLink(homeHref)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Wróć na stronę główną
-            </Link>
+            </a>
           </Button>
         </main>
       </div>
@@ -165,10 +159,10 @@ const BlinkPage = () => {
             Aktualna wersja jest dostępna pod nowym adresem.
           </p>
           <Button asChild>
-            <Link to={homeHref}>
+            <a {...navLink(homeHref)}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Wróć na stronę główną
-            </Link>
+            </a>
           </Button>
         </main>
       </div>
@@ -237,13 +231,13 @@ const BlinkPage = () => {
       <main className="container mx-auto px-4 py-8">
         <article className={cn("max-w-3xl mx-auto", isOlympic && "relative")}>
           {/* Back button */}
-          <Link
-            to={homeHref}
+          <a 
+            {...navLink(homeHref)} 
             className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {isPositive ? "Powrót do Pozytywnych" : "Powrót do strony głównej"}
-          </Link>
+          </a>
 
           {/* Olympic winter banner */}
           {isOlympic && (
@@ -261,7 +255,7 @@ const BlinkPage = () => {
             <div className="flex items-center gap-2">
               {isPositive ? (
                 <>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow-sm">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow">
                     <Sun className="h-5 w-5" />
                   </div>
                   <span className="text-sm font-medium uppercase tracking-wider text-lime-700 dark:text-lime-300">
@@ -352,13 +346,13 @@ const BlinkPage = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <Tag className="h-4 w-4 text-muted-foreground" />
               {post.tags.map((tag) => (
-                <Link
+                <a
                   key={tag}
-                  to={`/tag/${generateSlug(tag)}`}
+                  {...navLink(`/tag/${generateSlug(tag)}`)}
                   className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                 >
                   #{tag}
-                </Link>
+                </a>
               ))}
             </div>
           )}

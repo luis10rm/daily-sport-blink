@@ -1,9 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  worldCupMatchesQueryOptions,
-  worldCupScorersQueryOptions,
-  worldCupStandingsQueryOptions,
-} from "@/lib/worldCupQuery";
+import { supabase } from "@/integrations/supabase/client";
+
+type Resource = "matches" | "standings" | "scorers" | "teams";
+
+interface ApiResponse<T = unknown> {
+  source: "cache" | "upstream" | "stale-cache";
+  fetched_at: string;
+  data: T;
+}
+
+async function fetchResource<T>(resource: Resource): Promise<ApiResponse<T>> {
+  const { data, error } = await supabase.functions.invoke("worldcup-data", {
+    body: { resource },
+  });
+  if (error) throw error;
+  return data as ApiResponse<T>;
+}
 
 // --- Domain types (subset of football-data.org schema) ---
 export interface FDTeam {
@@ -60,8 +72,26 @@ export interface FDStandingGroup {
   table: FDStandingRow[];
 }
 
-export const useWorldCupMatches = () => useQuery(worldCupMatchesQueryOptions());
+export const useWorldCupMatches = () =>
+  useQuery({
+    queryKey: ["worldcup", "matches"],
+    queryFn: () => fetchResource<{ matches: FDMatch[] }>("matches"),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
 
-export const useWorldCupScorers = () => useQuery(worldCupScorersQueryOptions());
+export const useWorldCupScorers = () =>
+  useQuery({
+    queryKey: ["worldcup", "scorers"],
+    queryFn: () => fetchResource<{ scorers: FDScorer[] }>("scorers"),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
 
-export const useWorldCupStandings = () => useQuery(worldCupStandingsQueryOptions());
+export const useWorldCupStandings = () =>
+  useQuery({
+    queryKey: ["worldcup", "standings"],
+    queryFn: () => fetchResource<{ standings: FDStandingGroup[] }>("standings"),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });

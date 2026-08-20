@@ -82,7 +82,7 @@ const ReviewsList = () => {
               onClick={() => setTypeFilter(tab.value)}
               className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
                 typeFilter === tab.value
-                  ? "bg-background text-foreground shadow-xs"
+                  ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >

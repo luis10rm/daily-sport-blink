@@ -1,4 +1,4 @@
-import { Link } from "@/lib/router-compat";
+import { useNavigate } from "@/lib/router-compat";
 import { Cpu, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -11,14 +11,35 @@ import { ChannelSwitcher } from "@/components/ChannelSwitcher";
 import { useReviewCategories } from "@/hooks/useReviews";
 import { PatronBar } from "@/components/PatronBar";
 
+/**
+ * Uses <a> + onClick/onTouchEnd + navigate() pattern instead of <Link> to avoid
+ * iOS Safari double-tap requirement (first tap = focus, second = click).
+ */
+const useNavLink = () => {
+  const navigate = useNavigate();
+  return (to: string) => ({
+    href: to,
+    onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+      e.preventDefault();
+      navigate(to);
+    },
+    onTouchEnd: (e: React.TouchEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      navigate(to);
+    },
+  });
+};
+
 export const ReckiHeader = () => {
   const { data: categories = [] } = useReviewCategories();
+  const navLink = useNavLink();
 
   return (
     <>
       <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container flex h-16 items-center justify-between">
-          <Link to="/tech" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <a {...navLink("/tech")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-600 to-pink-600 text-white shadow-md">
               <Cpu className="h-5 w-5" />
             </div>
@@ -28,7 +49,7 @@ export const ReckiHeader = () => {
                 by Szortsy · technologie, recenzje, newsy
               </span>
             </div>
-          </Link>
+          </a>
 
           <nav className="flex items-center gap-3">
             <DropdownMenu>
@@ -39,9 +60,9 @@ export const ReckiHeader = () => {
               <DropdownMenuContent align="end" className="w-48">
                 {categories.map((c) => (
                   <DropdownMenuItem key={c.id} asChild>
-                    <Link to={`/tech/kategoria/${c.slug}`} className="cursor-pointer">
+                    <a {...navLink(`/tech/kategoria/${c.slug}`)} className="cursor-pointer">
                       {c.name}
-                    </Link>
+                    </a>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>

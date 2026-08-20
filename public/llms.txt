@@ -15,17 +15,16 @@
 - [/archiwum](/archiwum): Archiwum newsów starszych niż 7 dni z filtrowaniem po kategoriach.
 - [/blink/{slug}](/blink/przykladowy-artykul): Pełny artykuł sportowy.
 - [/kategoria/{slug}](/kategoria/pilka-nozna): Kategoria sportowa.
-- [/autor/{slug}](/autor/autor): Profil autora/redaktora.
-- [/autorzy](/autorzy): Lista autorów redakcji Szortsy.
+- [/redakcja/{slug}](/redakcja/autor): Profil autora/redaktora.
 - [/dzien/{data}](/dzien/2026-05-19): Podsumowanie dnia — timeline newsów z wybranej daty.
 - [/tag/{slug}](/tag/pilka-nozna): Lista artykułów oznaczonych danym tagiem.
-- [/tagi](/tagi): Przegląd wszystkich dostępnych tagów.
+- [/tags](/tags): Przegląd wszystkich dostępnych tagów.
 - [/mistrzostwa-swiata-2026](/mistrzostwa-swiata-2026): Hub Mistrzostw Świata 2026 (drabinka pucharowa, mecze, statystyki).
 
 ### Tech
 - [/tech](/tech): Strona główna kanału Tech — recenzje i newsy.
 - [/tech/kategoria/{slug}](/tech/kategoria/smartfony): Kategoria Tech (np. smartfony, audio, gaming).
-- [/tech/{category}/{slug}](/tech/smartfony/recenzja-przykladowa): Pełna recenzja, ranking lub porównanie — z werdyktem, plusami/minusami, oceną i FAQ.
+- [/tech/{category}/{slug}](/tech/smartfony/recenzja-przykladowa): Pełna recenzja z werdyktem, plusami/minusami, galerią.
 
 ### Pozytywne
 - [/pozytywne](/pozytywne): Strona główna kanału Pozytywne — dobre wiadomości.
@@ -56,7 +55,7 @@ Strona główna i archiwum prezentują newsy pogrupowane w kategorie sportowe, m
 
 ## Informacje techniczne
 
-- URL kanoniczny: https://szortsy.pl
+- URL kanoniczny: https://www.szortsy.pl
 - Język: pl-PL
-- Schemat danych: NewsArticle (schema.org) dla artykułów sportowych i pozytywnych, Article + Review z oceną dla recenzji Tech, FAQPage dla sekcji pytań, BreadcrumbList na wszystkich podstronach.
+- Schemat danych: NewsArticle (schema.org) dla artykułów sportowych i pozytywnych; Review (schema.org) planowany dla recenzji Tech.
 - Sitemap: https://sitemap.szortsy.pl/

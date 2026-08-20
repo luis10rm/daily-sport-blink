@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 interface ScrollProgressProps {
   todaysCount: number;
-  lastTodayRef: RefObject<HTMLElement | null>;
+  lastTodayRef: RefObject<HTMLElement>;
   className?: string;
 }
 

@@ -164,7 +164,7 @@ export const useUpdateSuggestionStatus = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status, postId }: { id: string; status: string; postId?: string }) => {
-      const patch: { status: string; accepted_post_id?: string } = { status };
+      const patch: Record<string, unknown> = { status };
       if (postId) patch.accepted_post_id = postId;
       const { error } = await supabase.from("news_suggestions").update(patch).eq("id", id);
       if (error) throw error;

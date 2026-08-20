@@ -36,26 +36,19 @@ export const useTournamentMode = () => {
   });
 
   // Live updates: react instantly when admin flips the switch in another tab/device.
-  // The channel name must be unique per hook instance: several components call this
-  // hook, and reusing one name makes supabase throw "cannot add callbacks after subscribe".
   useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | undefined;
-    try {
-      channel = supabase
-        .channel(`settings-tournament-mode-${Math.random().toString(36).slice(2)}`)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "settings", filter: "key=eq.tournament_mode" },
-          () => {
-            queryClient.invalidateQueries({ queryKey: ["settings", "tournament_mode"] });
-          }
-        )
-        .subscribe();
-    } catch (error) {
-      console.error("[useTournamentMode] realtime subscribe failed", error);
-    }
+    const channel = supabase
+      .channel("settings-tournament-mode")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "settings", filter: "key=eq.tournament_mode" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["settings", "tournament_mode"] });
+        }
+      )
+      .subscribe();
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [queryClient]);
 

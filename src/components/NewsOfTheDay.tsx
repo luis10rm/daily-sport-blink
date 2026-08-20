@@ -1,5 +1,5 @@
 import { ExternalLink, Trophy } from "lucide-react";
-import { Link } from "@/lib/router-compat";
+import { Link, useNavigate } from "@/lib/router-compat";
 import { DynamicSportIcon } from "./DynamicSportIcon";
 import { AuthorCard } from "./AuthorCard";
 import { WorldCupBadge } from "./WorldCupBadge";
@@ -14,6 +14,7 @@ interface NewsOfTheDayProps {
 }
 
 export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
+  const navigate = useNavigate();
   const blinkUrl = `/blink/${post.slug}`;
   const formattedDate = new Date(post.published_at).toLocaleDateString("pl-PL", {
     day: "numeric",
@@ -25,7 +26,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
   return (
     <article
       className={cn(
-        "card-item group relative overflow-hidden rounded-2xl border-2 border-news-of-day bg-card",
+        "group relative overflow-hidden rounded-2xl border-2 border-news-of-day bg-card",
         "ring-4 ring-news-of-day/20",
         className
       )}
@@ -98,12 +99,14 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
           {post.author && <AuthorCard author={post.author} />}
 
           {post.content ? (
-            <Link
-              to={blinkUrl}
+            <a
+              href={blinkUrl}
+              onClick={(e) => { e.preventDefault(); navigate(blinkUrl); }}
+              onTouchEnd={(e) => { e.preventDefault(); navigate(blinkUrl); }}
               className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover"
             >
               Przeczytaj więcej
-            </Link>
+            </a>
           ) : (
             <a
               href={post.source_url}

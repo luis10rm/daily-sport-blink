@@ -10,18 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
 
 interface ImageCropModalProps {
   open: boolean;
   onClose: () => void;
   imageSrc: string;
   aspect: number;
-  onCropComplete: (croppedBlob: Blob, dimensions: { width: number; height: number }) => void;
-  /** Reject crops narrower than this many source pixels (Discover needs 1200px). */
-  minWidth?: number;
-  /** Cap the exported width so a huge crop doesn't produce a heavy file. */
-  maxWidth?: number;
+  onCropComplete: (croppedBlob: Blob) => void;
 }
 
 export const ImageCropModal = ({
@@ -30,8 +25,6 @@ export const ImageCropModal = ({
   imageSrc,
   aspect,
   onCropComplete,
-  minWidth,
-  maxWidth = 2000,
 }: ImageCropModalProps) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -42,22 +35,13 @@ export const ImageCropModal = ({
     setCroppedAreaPixels(areaPixels);
   }, []);
 
-  const tooNarrow =
-    !!minWidth && !!croppedAreaPixels && Math.round(croppedAreaPixels.width) < minWidth;
-
   const handleSave = async () => {
     if (!croppedAreaPixels) return;
-    if (tooNarrow) {
-      toast.error(
-        `Wykadrowany obszar ma ${Math.round(croppedAreaPixels.width)} px szerokości. Google Discover wymaga min. ${minWidth} px — zmniejsz zoom lub użyj większego pliku.`,
-      );
-      return;
-    }
     setIsProcessing(true);
 
     try {
-      const { blob, width, height } = await getCroppedImg(imageSrc, croppedAreaPixels, maxWidth);
-      onCropComplete(blob, { width, height });
+      const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+      onCropComplete(croppedBlob);
     } finally {
       setIsProcessing(false);
     }
@@ -103,12 +87,6 @@ export const ImageCropModal = ({
           />
         </div>
 
-        {minWidth && croppedAreaPixels && (
-          <p className={`px-2 text-xs ${tooNarrow ? "text-destructive" : "text-muted-foreground"}`}>
-            Szerokość kadru: {Math.round(croppedAreaPixels.width)} px (Discover wymaga min. {minWidth} px)
-          </p>
-        )}
-
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
             Anuluj
@@ -123,21 +101,13 @@ export const ImageCropModal = ({
   );
 };
 
-async function getCroppedImg(
-  imageSrc: string,
-  pixelCrop: Area,
-  maxWidth: number,
-): Promise<{ blob: Blob; width: number; height: number }> {
+async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d")!;
 
-  const scale = pixelCrop.width > maxWidth ? maxWidth / pixelCrop.width : 1;
-  const outWidth = Math.round(pixelCrop.width * scale);
-  const outHeight = Math.round(pixelCrop.height * scale);
-
-  canvas.width = outWidth;
-  canvas.height = outHeight;
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
 
   ctx.drawImage(
     image,
@@ -147,15 +117,15 @@ async function getCroppedImg(
     pixelCrop.height,
     0,
     0,
-    outWidth,
-    outHeight
+    pixelCrop.width,
+    pixelCrop.height
   );
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (blob) {
-          resolve({ blob, width: outWidth, height: outHeight });
+          resolve(blob);
         } else {
           reject(new Error("Failed to create blob"));
         }

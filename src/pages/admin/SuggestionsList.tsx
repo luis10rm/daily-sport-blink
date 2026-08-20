@@ -160,13 +160,7 @@ export default function SuggestionsList() {
   };
 
   const handlePrepare = (id: string, articleUrl: string) => {
-    // Query params (not just router state) so the flow survives a page reload.
-    const qs = new URLSearchParams({
-      sourceUrl: articleUrl,
-      suggestionId: id,
-      autoExtract: "1",
-    });
-    navigate(`/admin/posts/new?${qs.toString()}`, {
+    navigate("/admin/posts/new", {
       state: { sourceUrl: articleUrl, suggestionId: id, autoExtract: true },
     });
   };
@@ -263,7 +257,7 @@ export default function SuggestionsList() {
 
         {/* Sticky bulk actions bar */}
         {status === "pending" && selectableIds.length > 0 && (
-          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-lg border bg-background/95 p-3 shadow-xs backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 rounded-lg border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
             <div className="text-sm font-medium">
               Zaznaczono: <span className="text-primary">{selectedIds.size}</span> / {MAX_BULK}
             </div>

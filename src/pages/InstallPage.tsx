@@ -52,6 +52,7 @@ const InstallPage = () => {
         <div className="container flex items-center gap-3 h-14 px-4">
           <button
             onClick={() => navigate(-1)}
+            onTouchEnd={(e) => { e.preventDefault(); navigate(-1); }}
             className="p-2 -ml-2 text-muted-foreground transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />

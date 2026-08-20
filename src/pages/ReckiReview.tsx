@@ -14,7 +14,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { Button } from "@/components/ui/button";
 import { sanitizePastedHtml } from "@/lib/unescapeHtmlIfEncoded";
-import { sanitizeArticleHtml } from "@/lib/sanitizeArticleHtml";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 
 const ReckiReview = () => {
@@ -144,7 +143,7 @@ const ReckiReview = () => {
 
           {/* Score + Verdict box */}
           {(review.score !== null || review.verdict) && (
-            <aside className="mb-8 flex flex-col sm:flex-row gap-4 rounded-2xl border border-border bg-card p-5 shadow-xs">
+            <aside className="mb-8 flex flex-col sm:flex-row gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
               {review.score !== null && (
                 <div className="flex flex-col items-center gap-1 shrink-0">
                   <ScoreBadge score={review.score} size="xl" />
@@ -214,7 +213,7 @@ const ReckiReview = () => {
           {review.content && (
             <div
               className="prose prose-lg dark:prose-invert max-w-none mb-8"
-              dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(sanitizePastedHtml(review.content)) }}
+              dangerouslySetInnerHTML={{ __html: sanitizePastedHtml(review.content) }}
             />
           )}
 

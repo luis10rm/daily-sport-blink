@@ -148,9 +148,25 @@ serve(async (req) => {
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>${SITE_URL}/archiwum</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>${SITE_URL}/tagi</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>${SITE_URL}/pozytywne/archiwum</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
 `;
-    // /archiwum, /tagi i /pozytywne/archiwum są noindex (strony nawigacyjne),
-    // dlatego nie trafiają do sitemapy.
 
     // Add categories
     if (categories?.length) {

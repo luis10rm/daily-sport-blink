@@ -119,7 +119,7 @@ export default function CategoryEditor() {
   const [iconSource, setIconSource] = useState<"lucide" | "upload" | "ai">("lucide");
   const [previewColor, setPreviewColor] = useState("220 14% 46%");
 
-  const form = useForm<z.input<typeof categorySchema>, any, CategoryFormData>({
+  const form = useForm<CategoryFormData>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       slug: "",

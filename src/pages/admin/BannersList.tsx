@@ -177,7 +177,7 @@ const BannersList = () => {
                         <div className="relative group">
                           <Monitor className="h-4 w-4 text-muted-foreground" />
                           <img
-                            src={banner.image_desktop_url ?? undefined}
+                            src={banner.image_desktop_url}
                             alt="Desktop"
                             className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-48 rounded border shadow-lg bg-background"
                           />
@@ -185,7 +185,7 @@ const BannersList = () => {
                         <div className="relative group">
                           <Smartphone className="h-4 w-4 text-muted-foreground" />
                           <img
-                            src={banner.image_mobile_url ?? undefined}
+                            src={banner.image_mobile_url}
                             alt="Mobile"
                             className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-32 rounded border shadow-lg bg-background"
                           />

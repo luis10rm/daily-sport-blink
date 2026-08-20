@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
+import { useTagSEOMeta } from "@/hooks/useSEOMeta";
 import { SEO, getRichItemListSEO } from "@/components/SEO";
 import { useTagBySlug, usePostsByTagSlug } from "@/hooks/useTags";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,7 +23,14 @@ const TagPage = () => {
   // Use optimized hook that fetches posts by slug directly to avoid API cascade
   const { data: posts = [], isLoading: postsLoading } = usePostsByTagSlug(slug);
 
-  // Meta (w tym index/noindex) ustawiane server-side w src/routes/tag/$slug.tsx
+  // SEO meta tags — noindex,follow when tag has < 4 posts (unless force_index)
+  useTagSEOMeta({
+    name: tag?.name || "Tag",
+    slug: slug || "",
+    description: tag?.description || undefined,
+    postCount: posts.length,
+    forceIndex: (tag as { force_index?: boolean } | undefined)?.force_index ?? false,
+  });
   // Rich SEO with full NewsArticle schema including isBasedOn for E-E-A-T
   const seoData = getRichItemListSEO(
     `Artykuły: ${tag?.name || "Tag"}`,

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "@/lib/router-compat";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -86,8 +86,6 @@ const postSchema = z.object({
   image_url: z.string().refine((val) => !val || isValidUrl(val), {
     message: "Nieprawidłowy URL obrazka",
   }).optional(),
-  image_width: z.number().nullable().optional(),
-  image_height: z.number().nullable().optional(),
   source_url: z.string().refine((val) => !val || isValidUrl(val), {
     message: "Nieprawidłowy URL źródła",
   }).optional().default(""),
@@ -126,15 +124,10 @@ const PostEditor = () => {
     suggestionId?: string;
     autoExtract?: boolean;
   } | null;
-  // Query params are the reload-safe source; router state is the fallback.
-  const urlParams = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search],
-  );
   const prefillData = navState?.prefill;
-  const prefillSourceUrl = navState?.sourceUrl ?? urlParams.get("sourceUrl") ?? undefined;
-  const suggestionId = navState?.suggestionId ?? urlParams.get("suggestionId") ?? undefined;
-  const autoExtract = navState?.autoExtract ?? urlParams.get("autoExtract") === "1";
+  const prefillSourceUrl = navState?.sourceUrl;
+  const suggestionId = navState?.suggestionId;
+  const autoExtract = navState?.autoExtract;
   const [autoExtractTriggered, setAutoExtractTriggered] = useState(false);
 
   const { data: post, isLoading: isLoadingPost } = usePost(id || "");
@@ -164,7 +157,7 @@ const PostEditor = () => {
   // Get current date/time formatted for datetime-local input
   const getCurrentDateTime = () => new Date().toISOString().slice(0, 16);
 
-  const form = useForm<z.input<typeof postSchema>, any, PostFormData>({
+  const form = useForm<PostFormData>({
     resolver: zodResolver(postSchema),
     defaultValues: {
       title: "",
@@ -173,8 +166,6 @@ const PostEditor = () => {
       category_id: "",
       author_id: "",
       image_url: "",
-      image_width: null,
-      image_height: null,
       source_url: "",
       tags: "",
       is_sponsored: false,
@@ -266,8 +257,6 @@ const PostEditor = () => {
         category_id: categoryValue,
         author_id: post.author_id || "",
         image_url: post.image_url || "",
-        image_width: (post as any).image_width ?? null,
-        image_height: (post as any).image_height ?? null,
         source_url: post.source_url,
         tags: post.tags?.join(", ") || "",
         is_sponsored: post.is_sponsored,
@@ -354,8 +343,6 @@ const PostEditor = () => {
       content: data.content ? sanitizePastedHtml(data.content) : undefined,
       author_id: data.author_id || undefined,
       image_url: data.image_url || undefined,
-      image_width: data.image_width ?? null,
-      image_height: data.image_height ?? null,
       source_url: data.source_url,
       tags: data.tags ? data.tags.split(",").map((t) => t.trim()) : [],
       is_sponsored: data.is_sponsored,

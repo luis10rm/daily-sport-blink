@@ -295,10 +295,13 @@
     touch-action: manipulation;
   }
 
-  /* NOTE: no custom cursor/tap-highlight overrides for touch devices.
-     A `cursor: default` on links/buttons made iOS Safari treat the first tap
-     as hover/focus, which required a second tap to activate. */
-
+  /* iOS Safari: disable focus-first-tap heuristic and gray tap highlight */
+  @media (hover: none) and (pointer: coarse) {
+    a, button, [role="button"] {
+      -webkit-tap-highlight-color: transparent;
+      cursor: default;
+    }
+  }
 }
 
 @layer components {
@@ -425,11 +428,11 @@
       box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     }
 
-    .card-item:hover .card-img-hover {
+    .group:hover .card-img-hover {
       transform: scale(1.05);
     }
 
-    .story-item:hover .stories-circle-hover {
+    .group:hover .stories-circle-hover {
       transform: scale(1.05);
     }
 

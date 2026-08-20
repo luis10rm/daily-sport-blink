@@ -4,9 +4,11 @@ import { Footer } from "@/components/Footer";
 import { AuthorHero } from "@/components/AuthorHero";
 import { AuthorStats } from "@/components/AuthorStats";
 import { NewsCard } from "@/components/NewsCard";
+import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { useAuthor, useAuthorPosts, useAuthorStats } from "@/hooks/useAuthors";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FileX } from "lucide-react";
+import { MultiSEO, getPersonSEO, getRichItemListSEO } from "@/components/SEO";
 
 const AuthorProfile = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -14,7 +16,11 @@ const AuthorProfile = () => {
   const { data: posts, isLoading: postsLoading } = useAuthorPosts(author?.id || "");
   const { data: stats, isLoading: statsLoading } = useAuthorStats(author?.id || "");
   
-  // Meta tagi i JSON-LD (ProfilePage) generuje trasa SSR (src/routes/autor/$slug.tsx).
+  useSEOMeta({
+    title: author?.display_name || "Profil autora",
+    description: author?.bio || undefined,
+    canonical: slug ? `https://szortsy.pl/autor/${slug}` : undefined,
+  });
 
   if (authorLoading) {
     return (
@@ -51,8 +57,20 @@ const AuthorProfile = () => {
     );
   }
 
+  // SEO schemas - Person + their articles
+  const personSEO = getPersonSEO(
+    author.display_name,
+    author.bio || undefined,
+    author.avatar_url || undefined,
+    author.slug
+  );
+  const articlesSEO = posts?.length 
+    ? getRichItemListSEO(`Artykuły: ${author.display_name}`, posts)
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
+      <MultiSEO schemas={articlesSEO ? [personSEO, articlesSEO] : [personSEO]} />
       <Header />
 
       {/* Hero section */}

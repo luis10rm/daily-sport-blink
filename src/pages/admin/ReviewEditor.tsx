@@ -111,8 +111,6 @@ const ReviewEditor = () => {
 
     gallery: [],
     cover_image_url: "",
-    image_width: null as number | null,
-    image_height: null as number | null,
     product_name: "",
     product_brand: "",
     category_id: null,
@@ -582,18 +580,9 @@ const ReviewEditor = () => {
             <ImageUploader
               value={form.cover_image_url ?? ""}
               onChange={(url) => set("cover_image_url", url)}
-              onRemove={() => {
-                set("cover_image_url", "");
-                set("image_width", null);
-                set("image_height", null);
-              }}
+              onRemove={() => set("cover_image_url", "")}
               storageBucket="post-images"
               storagePath="reviews/cover"
-              minWidth={1200}
-              onDimensionsChange={({ width, height }) => {
-                set("image_width", width);
-                set("image_height", height);
-              }}
             />
             {(form.gallery ?? []).length > 0 && (
               <p className="text-xs text-muted-foreground">
