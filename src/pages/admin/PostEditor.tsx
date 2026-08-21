@@ -337,6 +337,10 @@ const PostEditor = () => {
   };
 
   const performSave = async (data: PostFormData) => {
+    // Copy hot-linked source images into our storage (1200px, re-encoded) so the
+    // page uses our WebP/srcset pipeline and thumbnails never disappear.
+    const mirroredImage = await mirrorExternalImage(data.image_url);
+
     const basePostData: any = {
       title: data.title,
       excerpt: data.excerpt,
