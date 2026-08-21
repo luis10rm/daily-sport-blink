@@ -1,3 +1,4 @@
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { forwardRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ExternalLink, Sparkles, Snowflake } from "lucide-react";
@@ -115,7 +116,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
         <div
           className={cn("relative aspect-[16/9] w-full overflow-hidden bg-muted", isOlympic && "olympic-frost-overlay")}
         >
-          <img
+          <OptimizedImage
             src={getPostImage({
               image_url: imageUrl,
               source_url: sourceUrl,
@@ -124,8 +125,10 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
             })}
             alt={title}
             loading={loading}
-            // @ts-ignore - fetchpriority is valid HTML but not in React types
-            fetchpriority={fetchPriority}
+            priority={fetchPriority === "high" ? "high" : "auto"}
+            sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+            widths={[400, 640, 800, 1200]}
+            fallbackWidth={640}
             className="h-full w-full object-cover transition-transform duration-500 card-img-hover"
           />
         </div>

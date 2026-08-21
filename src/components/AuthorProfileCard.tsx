@@ -1,3 +1,4 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
 import { useNavLink } from "@/hooks/useNavLink";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,7 +40,7 @@ export const AuthorProfileCard = ({ author, postsCount }: AuthorProfileCardProps
         <CardContent className="pt-0 -mt-10 relative">
           {/* Avatar */}
           <Avatar className="h-20 w-20 border-4 border-background shadow-md mx-auto">
-            <AvatarImage src={author.avatar_url || undefined} alt={author.display_name || "Autor"} />
+            <AvatarImage src={author.avatar_url ? optimizeImageUrl(author.avatar_url, { width: 192, quality: 78 }) : undefined} alt={author.display_name || "Autor"} />
             <AvatarFallback className="bg-primary text-primary-foreground text-lg">
               {initials}
             </AvatarFallback>
