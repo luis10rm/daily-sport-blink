@@ -1,3 +1,4 @@
+import { mirrorExternalImage } from "@/lib/mirrorImage";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -337,12 +338,16 @@ const PostEditor = () => {
   };
 
   const performSave = async (data: PostFormData) => {
+    // Copy hot-linked source images into our storage (1200px, re-encoded) so the
+    // page uses our WebP/srcset pipeline and thumbnails never disappear.
+    const mirroredImage = await mirrorExternalImage(data.image_url);
+
     const basePostData: any = {
       title: data.title,
       excerpt: data.excerpt,
       content: data.content ? sanitizePastedHtml(data.content) : undefined,
       author_id: data.author_id || undefined,
-      image_url: data.image_url || undefined,
+      image_url: mirroredImage || data.image_url || undefined,
       source_url: data.source_url,
       tags: data.tags ? data.tags.split(",").map((t) => t.trim()) : [],
       is_sponsored: data.is_sponsored,
