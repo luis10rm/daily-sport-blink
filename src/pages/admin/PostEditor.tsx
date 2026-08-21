@@ -347,7 +347,7 @@ const PostEditor = () => {
       excerpt: data.excerpt,
       content: data.content ? sanitizePastedHtml(data.content) : undefined,
       author_id: data.author_id || undefined,
-      image_url: data.image_url || undefined,
+      image_url: mirroredImage || data.image_url || undefined,
       source_url: data.source_url,
       tags: data.tags ? data.tags.split(",").map((t) => t.trim()) : [],
       is_sponsored: data.is_sponsored,
