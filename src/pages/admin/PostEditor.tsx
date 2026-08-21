@@ -1,3 +1,4 @@
+import { mirrorExternalImage } from "@/lib/mirrorImage";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
