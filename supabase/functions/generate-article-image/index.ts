@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { optimizeImageBytes } from "../_shared/optimizeImage.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -143,10 +144,16 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const fileName = `ai-${Date.now()}-${Math.random().toString(36).substring(7)}.png`;
+    // Downscale + re-encode so we don't store multi-MB PNGs
+    const optimized = await optimizeImageBytes(bytes, { maxWidth: 1600, quality: 82 });
+    console.log(
+      `[generate-article-image] optimized ${bytes.length} -> ${optimized.bytes.length} bytes (${optimized.contentType})`
+    );
+
+    const fileName = `ai-${Date.now()}-${Math.random().toString(36).substring(7)}.${optimized.extension}`;
     const { error: uploadError } = await serviceClient.storage
       .from("post-images")
-      .upload(fileName, bytes, { contentType: "image/png" });
+      .upload(fileName, optimized.bytes, { contentType: optimized.contentType });
 
     if (uploadError) {
       console.error("[generate-article-image] Upload error:", uploadError);

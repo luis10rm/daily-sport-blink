@@ -1,3 +1,4 @@
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { ExternalLink, Trophy } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { DynamicSportIcon } from "./DynamicSportIcon";
@@ -45,7 +46,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
       <div className="flex flex-col md:flex-row">
         {/* Image area - LCP optimized */}
         <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted md:aspect-auto md:w-1/2">
-          <img
+          <OptimizedImage
             src={getPostImage({
               image_url: post.image_url,
               source_url: post.source_url,
@@ -53,9 +54,10 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
               sport_category: post.sport_category,
             })}
             alt={post.title}
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
+            priority="high"
+            sizes="(min-width: 768px) 50vw, 100vw"
+            widths={[400, 640, 800, 1200]}
+            fallbackWidth={800}
             className="h-full w-full object-cover transition-transform duration-500 card-img-hover"
           />
         </div>

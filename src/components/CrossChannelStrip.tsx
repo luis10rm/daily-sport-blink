@@ -1,3 +1,4 @@
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Cpu, Sun } from "lucide-react";
@@ -158,10 +159,12 @@ const ChannelColumn = ({ channel, items, loading }: ColumnProps) => {
               >
                 <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
                   {item.image_url ? (
-                    <img
+                    <OptimizedImage
                       src={item.image_url}
                       alt=""
-                      loading="lazy"
+                      sizes="(min-width: 1024px) 320px, 45vw"
+                      widths={[320, 400, 640]}
+                      fallbackWidth={400}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (

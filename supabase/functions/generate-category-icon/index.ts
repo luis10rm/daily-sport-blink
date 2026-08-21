@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { optimizeImageBytes } from "../_shared/optimizeImage.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -229,15 +230,21 @@ OUTPUT: PNG image with transparent background and white stroke-based icon.`;
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
     const timestamp = Date.now();
-    const fileName = `ai-generated/${slug}-${timestamp}.png`;
+    // Icons render at 32-40px; 256px PNG with alpha is plenty
+    const optimized = await optimizeImageBytes(bytes, { maxWidth: 256, keepAlpha: true });
+    console.log(
+      `[generate-category-icon] optimized ${bytes.length} -> ${optimized.bytes.length} bytes`
+    );
+
+    const fileName = `ai-generated/${slug}-${timestamp}.${optimized.extension}`;
 
     console.log(`Uploading to: ${fileName}`);
 
     // Upload to storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from("category-icons")
-      .upload(fileName, bytes, {
-        contentType: "image/png",
+      .upload(fileName, optimized.bytes, {
+        contentType: optimized.contentType,
         upsert: false,
       });
 

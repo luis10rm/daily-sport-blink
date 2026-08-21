@@ -1,3 +1,4 @@
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useNavLink } from "@/hooks/useNavLink";
@@ -290,11 +291,14 @@ const BlinkPage = () => {
             "relative aspect-video w-full overflow-hidden rounded-xl mb-6",
             isOlympic && "olympic-frost-overlay"
           )}>
-            <img
+            <OptimizedImage
               src={getCategoryImage(post.sport_category?.slug, post.image_url, post.sport_category?.slug)}
               alt={post.title}
               className="h-full w-full object-cover"
-              loading="eager"
+              priority="high"
+              sizes="(min-width: 1024px) 800px, 100vw"
+              widths={[400, 640, 800, 1200]}
+              fallbackWidth={800}
             />
           </div>
 

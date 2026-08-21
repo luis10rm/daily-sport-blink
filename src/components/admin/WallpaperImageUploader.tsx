@@ -1,3 +1,5 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
+import { compressImageFile } from "@/lib/compressImage";
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, Loader2 } from "lucide-react";
@@ -41,7 +43,8 @@ export const WallpaperImageUploader = ({
         }
         setIsUploading(true);
         try {
-          await onUploadFile(file);
+          const optimized = await compressImageFile(file, { maxWidth: 2560, quality: 0.82 });
+          await onUploadFile(optimized);
         } finally {
           setIsUploading(false);
         }
@@ -61,7 +64,8 @@ export const WallpaperImageUploader = ({
     return (
       <div className="relative rounded-lg border overflow-hidden">
         <img
-          src={value}
+          src={optimizeImageUrl(value, { width: 800, quality: 70 })}
+          loading="lazy"
           alt="Podgląd"
           className="w-full aspect-video object-cover"
         />

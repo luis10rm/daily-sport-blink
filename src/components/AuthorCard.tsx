@@ -1,3 +1,4 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavLink } from "@/hooks/useNavLink";
 
@@ -22,7 +23,7 @@ export const AuthorCard = ({ author, className }: AuthorCardProps) => {
       className={`flex items-center gap-2.5 rounded-lg p-2 -mx-2 transition-colors hover:bg-muted/50 ${className}`}
     >
       <Avatar className="h-8 w-8 ring-2 ring-primary/10">
-        <AvatarImage src={author.avatar_url || undefined} alt={author.display_name} />
+        <AvatarImage src={author.avatar_url ? optimizeImageUrl(author.avatar_url, { width: 96, quality: 78 }) : undefined} alt={author.display_name} />
         <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
           {author.display_name.charAt(0).toUpperCase()}
         </AvatarFallback>

@@ -1,3 +1,4 @@
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { ArrowRight, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Review } from "@/hooks/useReviews";
@@ -46,11 +47,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
       <article className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-md transition-shadow hover:shadow-xl">
         <div className="relative aspect-[16/9] overflow-hidden bg-muted">
           {review.cover_image_url ? (
-            <img
+            <OptimizedImage
               src={review.cover_image_url}
               alt={review.title}
               className="h-full w-full object-cover"
-              loading="lazy"
+              sizes="(min-width: 1024px) 720px, 100vw"
+              widths={[400, 640, 800, 1200]}
+              fallbackWidth={800}
             />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-fuchsia-600/30 to-pink-600/30" />
@@ -99,7 +102,14 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
       <article className="flex items-center gap-3 rounded-lg border border-border bg-card p-2">
         <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-muted">
           {review.cover_image_url && (
-            <img src={review.cover_image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+            <OptimizedImage
+              src={review.cover_image_url}
+              alt=""
+              className="h-full w-full object-cover"
+              sizes="64px"
+              widths={[128, 256]}
+              fallbackWidth={128}
+            />
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -124,11 +134,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
       <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow [@media(hover:hover)]:hover:shadow-md">
         <div className="relative aspect-[16/9] overflow-hidden bg-muted">
           {review.cover_image_url ? (
-            <img
+            <OptimizedImage
               src={review.cover_image_url}
               alt={review.title}
               className="h-full w-full object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-[1.03]"
-              loading="lazy"
+              sizes="(min-width: 1024px) 320px, 50vw"
+              widths={[320, 400, 640]}
+              fallbackWidth={400}
             />
           ) : (
             <div className="h-full w-full bg-gradient-to-br from-fuchsia-600/20 to-pink-600/20" />
@@ -164,11 +176,13 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
     <article className="relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow [@media(hover:hover)]:hover:shadow-lg">
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {review.cover_image_url ? (
-          <img
+          <OptimizedImage
             src={review.cover_image_url}
             alt={review.title}
             className="h-full w-full object-cover"
-            loading="lazy"
+            sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+            widths={[400, 640, 800]}
+            fallbackWidth={640}
           />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-fuchsia-600/20 to-pink-600/20" />

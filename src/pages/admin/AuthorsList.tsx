@@ -1,3 +1,4 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
 import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useAuthors, useDeleteAuthor } from "@/hooks/useAuthors";
@@ -98,7 +99,7 @@ const AuthorsList = () => {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10">
                           <AvatarImage
-                            src={author.avatar_url || undefined}
+                            src={author.avatar_url ? optimizeImageUrl(author.avatar_url, { width: 96, quality: 70 }) : undefined}
                             alt={author.display_name}
                           />
                           <AvatarFallback className="bg-primary/10 text-primary">

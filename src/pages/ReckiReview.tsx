@@ -1,3 +1,5 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ReckiHeader } from "@/components/recki/ReckiHeader";
@@ -164,11 +166,14 @@ const ReckiReview = () => {
           {/* Cover image */}
           {review.cover_image_url && (
             <div className="mb-8 overflow-hidden rounded-2xl">
-              <img
+              <OptimizedImage
                 src={review.cover_image_url}
                 alt={review.title}
                 className="w-full object-cover"
-                loading="eager"
+                priority="high"
+                sizes="(min-width: 1024px) 800px, 100vw"
+                widths={[400, 640, 800, 1200]}
+                fallbackWidth={800}
               />
             </div>
           )}
@@ -229,11 +234,13 @@ const ReckiReview = () => {
                     onClick={() => setLightboxIdx(idx)}
                     className="group relative aspect-square overflow-hidden rounded-lg bg-muted"
                   >
-                    <img
+                    <OptimizedImage
                       src={src}
                       alt={`Zdjęcie ${idx + 1}`}
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                      loading="lazy"
+                      sizes="(min-width: 768px) 200px, 45vw"
+                      widths={[200, 320, 400, 640]}
+                      fallbackWidth={400}
                     />
                   </button>
                 ))}
@@ -317,7 +324,7 @@ const ReckiReview = () => {
           onClick={() => setLightboxIdx(null)}
         >
           <img
-            src={gallery[lightboxIdx]}
+            src={optimizeImageUrl(gallery[lightboxIdx], { width: 1600, quality: 78 })}
             alt=""
             className="max-h-[90vh] max-w-[90vw] object-contain"
             onClick={(e) => e.stopPropagation()}

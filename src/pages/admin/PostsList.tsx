@@ -1,3 +1,4 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -118,8 +119,9 @@ const PostsList = () => {
                       <div className="flex items-center gap-3">
                         {post.image_url && (
                           <img
-                            src={post.image_url}
+                            src={optimizeImageUrl(post.image_url, { width: 160, quality: 65 })}
                             alt=""
+                            loading="lazy"
                             className="h-10 w-16 rounded object-cover"
                           />
                         )}

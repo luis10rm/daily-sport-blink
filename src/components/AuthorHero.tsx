@@ -1,3 +1,5 @@
+import { buildSrcSet } from "@/lib/imageUrl";
+import { optimizeImageUrl } from "@/lib/imageUrl";
 import { Twitter, Instagram, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -17,8 +19,12 @@ export const AuthorHero = ({ author }: AuthorHeroProps) => {
       <div className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 md:h-72">
         {author.cover_image_url ? (
           <img
-            src={author.cover_image_url}
+            src={optimizeImageUrl(author.cover_image_url, { width: 1200, quality: 70 })}
+            srcSet={buildSrcSet(author.cover_image_url, [640, 1200, 1600])}
+            sizes="100vw"
             alt={`${displayName} - cover`}
+            loading="eager"
+            decoding="async"
             className="h-full w-full object-cover"
           />
         ) : (
@@ -41,7 +47,7 @@ export const AuthorHero = ({ author }: AuthorHeroProps) => {
         {/* Avatar - overlapping cover */}
         <div className="absolute -top-16 left-1/2 -translate-x-1/2 md:-top-20">
           <Avatar className="h-32 w-32 border-4 border-background shadow-xl md:h-40 md:w-40">
-            <AvatarImage src={author.avatar_url || undefined} alt={displayName} />
+            <AvatarImage src={author.avatar_url ? optimizeImageUrl(author.avatar_url, { width: 256, quality: 78 }) : undefined} alt={displayName} />
             <AvatarFallback className="bg-primary text-4xl font-bold text-primary-foreground md:text-5xl">
               {displayName.charAt(0).toUpperCase()}
             </AvatarFallback>

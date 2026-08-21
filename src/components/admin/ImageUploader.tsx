@@ -1,3 +1,5 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
+import { compressImageFile } from "@/lib/compressImage";
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,9 +41,11 @@ export const ImageUploader = ({
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = async (rawFile: File) => {
     setIsUploading(true);
     try {
+      // Downscale + WebP before upload to keep storage (and page weight) small
+      const file = await compressImageFile(rawFile, { maxWidth: 1600, quality: 0.82 });
       const fileExt = file.name.split(".").pop() || "jpg";
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${storagePath}/${fileName}`;
@@ -119,8 +123,9 @@ export const ImageUploader = ({
       {value ? (
         <div className="relative rounded-lg border overflow-hidden">
           <img
-            src={value}
+            src={optimizeImageUrl(value, { width: 800, quality: 70 })}
             alt="Podgląd"
+            loading="lazy"
             className="w-full aspect-video object-cover"
           />
           <div className="absolute top-2 right-2 flex gap-1">

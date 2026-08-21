@@ -1,3 +1,4 @@
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { format, subDays, addDays, isAfter, startOfDay, isValid, parse } from "date-fns";
@@ -260,10 +261,12 @@ export default function DailyPage() {
                         {/* Thumbnail on desktop */}
                         {post.image_url && !isMobile && (
                           <div className="hidden lg:block flex-shrink-0 w-24 h-16 rounded-lg overflow-hidden bg-muted">
-                            <img
+                            <OptimizedImage
                               src={post.image_url}
                               alt=""
-                              loading="lazy"
+                              sizes="(min-width: 768px) 200px, 40vw"
+                              widths={[200, 320, 400, 640]}
+                              fallbackWidth={400}
                               className="h-full w-full object-cover"
                             />
                           </div>

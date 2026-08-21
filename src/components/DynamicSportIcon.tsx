@@ -1,3 +1,4 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
 import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
@@ -48,7 +49,13 @@ export const DynamicSportIcon = ({ sportCategory, fallbackSlug, className }: Dyn
         )}
         style={{ backgroundColor: bgColor }}
       >
-        <img src={iconUrl} alt="" className="h-5 w-5 object-contain" />
+        <img
+          src={optimizeImageUrl(iconUrl, { width: 96, quality: 80, resize: "contain" })}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-5 w-5 object-contain"
+        />
       </div>
     );
   }

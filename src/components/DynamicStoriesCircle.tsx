@@ -1,3 +1,4 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import { LucideIcon } from "lucide-react";
@@ -66,8 +67,10 @@ export const DynamicStoriesCircle = ({
     if (category.icon_url) {
       return (
         <img
-          src={category.icon_url}
+          src={optimizeImageUrl(category.icon_url, { width: 112, quality: 80, resize: "contain" })}
           alt={category.name}
+          loading="lazy"
+          decoding="async"
           className="w-6 h-6 md:w-7 md:h-7 object-contain"
         />
       );
