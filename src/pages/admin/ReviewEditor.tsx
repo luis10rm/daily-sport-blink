@@ -230,8 +230,13 @@ const ReviewEditor = () => {
       toast.error("Tytuł i slug są wymagane");
       return;
     }
+    // External cover images are copied into our storage so they get WebP/srcset
+    // treatment and never break when the source removes the file.
+    const mirroredCover = await mirrorExternalImage(form.cover_image_url);
+
     const payload: any = {
       ...form,
+      cover_image_url: mirroredCover ?? form.cover_image_url,
       id: id ?? undefined,
       content: form.content ? sanitizePastedHtml(form.content) : form.content,
       pros: (form.pros ?? []).filter((p) => p && p.trim()),
