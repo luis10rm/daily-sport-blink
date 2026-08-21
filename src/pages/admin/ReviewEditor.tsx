@@ -1,3 +1,4 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -628,7 +629,7 @@ const ReviewEditor = () => {
                       isCover ? "ring-2 ring-amber-400 border-amber-400" : ""
                     }`}
                   >
-                    <img src={url} alt="" className="h-full w-full object-cover" />
+                    <img src={optimizeImageUrl(url, { width: 320, quality: 65 })} alt="" loading="lazy" className="h-full w-full object-cover" />
                     <Button
                       type="button"
                       size="icon"

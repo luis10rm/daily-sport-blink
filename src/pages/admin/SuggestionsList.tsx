@@ -1,3 +1,4 @@
+import { optimizeImageUrl } from "@/lib/imageUrl";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -322,7 +323,7 @@ export default function SuggestionsList() {
                   )}
                   {s.image_url && (
                     <img
-                      src={s.image_url}
+                      src={optimizeImageUrl(s.image_url, { width: 400, quality: 65 })}
                       alt={s.title || ""}
                       className="h-32 w-full rounded-md object-cover md:w-48"
                       loading="lazy"
