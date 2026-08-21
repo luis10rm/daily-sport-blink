@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { LogoGenerator } from "@/components/admin/LogoGenerator";
 import { TournamentModeCard } from "@/components/admin/TournamentModeCard";
+import { ImageMirrorCard } from "@/components/admin/ImageMirrorCard";
 
 const DEFAULT_EXTRACTION_PROMPT = `Jesteś asystentem redakcji sportowej Daily Sport Blink. Na podstawie podanego artykułu wygeneruj dane do publikacji.
 
@@ -1256,6 +1257,8 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
+
+          <ImageMirrorCard />
 
           <Card>
             <CardHeader>
