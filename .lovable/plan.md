@@ -34,11 +34,23 @@ prosi o **stare hashe** plików CSS/JS, dostaje w odpowiedzi HTML ze statusem 20
    - Sprawdzenie nagłówków HTML i `/assets/*` po publikacji.
    - Test w Chromium/WebKit (mobile 390 px) na czystym i „zatrutym” cache.
 
-## Uwaga o warstwie Cloudflare
+## Warstwa Cloudflare — potwierdzone „Proxy Detected”
 
-Odpowiedź niesie `x-debug-worker: szortsy-edge-proxy` — jeśli ten worker cache'uje HTML,
-same nagłówki z Vercela mogą nie wystarczyć. Po wdrożeniu punktów 1–3 zmierzę `age`/`cf-cache-status`
-dla HTML i jeśli nadal będzie podawany z cache, przygotuję poprawkę w workerze (bypass cache dla dokumentów HTML).
+Panel Vercela pokazuje ostrzeżenie **Proxy Detected** dla `szortsy.pl` i `www.szortsy.pl` (tylko `szortsypl.vercel.app`
+ma „Valid Configuration”). To zgadza się z nagłówkami odpowiedzi: `server: cloudflare` + `x-debug-worker: szortsy-edge-proxy`.
+Czyli ruch idzie: użytkownik → Cloudflare (worker) → Vercel.
+
+Konsekwencje dla naszego problemu:
+- HTML może być podawany z cache Cloudflare (`age: 7312` przy `max-age=0, must-revalidate`), więc stary dokument
+  z nieaktualnymi hashami plików żyje dłużej niż powinien — same nagłówki z Vercela mogą nie wystarczyć.
+- Dodatkowo Vercel ostrzega, że proxy wyłącza jego ochronę DDoS/bot-mitigation i może pogarszać wydajność.
+
+Dlatego po wdrożeniu punktów 1–3 zmierzę `cf-cache-status` / `age` dla dokumentu HTML i — jeśli nadal będzie
+podawany z cache — przygotuję poprawkę workera: bypass cache dla nawigacji HTML (`Cache-Control: no-store`
+na dokumentach), przy zachowaniu długiego cache dla `/assets/*`.
+Do decyzji osobno (poza tym fixem): czy ten worker jest jeszcze potrzebny — jeśli obsługuje tylko `sitemap.szortsy.pl`
+i stare `410` dla `/news/*`, można rozważyć zdjęcie proxy z apex i www, żeby wrócić do czystej ścieżki Vercel.
+
 
 ## Szczegóły techniczne
 
