@@ -1,8 +1,43 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+
+// Keep the production UI independent from a separate CSS request. Some mobile
+// networks have been observed returning the stylesheet successfully without
+// Safari applying it, leaving the app rendered as raw HTML. Inlining the
+// generated stylesheet costs little after Brotli compression and removes that
+// network/cache failure point entirely.
+const inlineProductionCss = (): Plugin => ({
+  name: "inline-production-css",
+  apply: "build",
+  enforce: "post",
+  generateBundle(_options, bundle) {
+    const htmlEntry = bundle["index.html"];
+    if (!htmlEntry || htmlEntry.type !== "asset" || typeof htmlEntry.source !== "string") return;
+
+    const cssFiles = Object.entries(bundle).filter(
+      ([fileName, output]) => fileName.endsWith(".css") && output.type === "asset",
+    );
+
+    let html = htmlEntry.source;
+    for (const [fileName, output] of cssFiles) {
+      if (output.type !== "asset") continue;
+      const css = typeof output.source === "string" ? output.source : new TextDecoder().decode(output.source);
+      const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const stylesheetPattern = new RegExp(
+        `<link\\s+rel=["']stylesheet["'][^>]*href=["']/<?${escapedFileName}["'][^>]*>`,
+        "g",
+      );
+
+      if (!stylesheetPattern.test(html)) continue;
+      html = html.replace(stylesheetPattern, `<style data-inline-app-css>${css}</style>`);
+    }
+
+    htmlEntry.source = html;
+  },
+});
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -13,7 +48,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-      VitePWA({
+    VitePWA({
       selfDestroying: true,
       registerType: "autoUpdate",
       injectRegister: null,
@@ -88,6 +123,7 @@ export default defineConfig(({ mode }) => ({
         ],
       },
     }),
+    inlineProductionCss(),
   ].filter(Boolean),
   resolve: {
     alias: {
