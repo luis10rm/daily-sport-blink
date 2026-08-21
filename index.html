@@ -75,5 +75,43 @@
     /></noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Samonaprawa: jeśli po kilku sekundach aplikacja się nie zamontowała
+      // (np. przeglądarka trzyma stary HTML z nieaktualnymi hashami plików),
+      // czyścimy cache/service workera i przeładowujemy stronę raz.
+      (function () {
+        var KEY = 'szortsy_recovery_ts';
+        window.addEventListener('load', function () {
+          setTimeout(function () {
+            var root = document.getElementById('root');
+            if (root && root.childElementCount > 0) {
+              try { sessionStorage.removeItem(KEY); } catch (e) {}
+              return;
+            }
+            var last = 0;
+            try { last = parseInt(sessionStorage.getItem(KEY) || '0', 10); } catch (e) {}
+            if (Date.now() - last < 60000) return; // nie pętlimy
+            try { sessionStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+
+            var done = function () {
+              location.replace(location.pathname + location.search + (location.search ? '&' : '?') + '_r=' + Date.now());
+            };
+            var tasks = [];
+            if (window.caches && caches.keys) {
+              tasks.push(caches.keys().then(function (ks) {
+                return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+              }));
+            }
+            if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+              tasks.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+                return Promise.all(rs.map(function (r) { return r.unregister(); }));
+              }));
+            }
+            Promise.all(tasks).then(done, done);
+          }, 6000);
+        });
+      })();
+    </script>
+
   </body>
 </html>
