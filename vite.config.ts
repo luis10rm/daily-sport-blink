@@ -33,7 +33,6 @@ const inlineProductionCss = (): Plugin => ({
 
       if (!stylesheetPattern.test(html)) continue;
       html = html.replace(stylesheetPattern, `<style data-inline-app-css>${css}</style>`);
-      delete bundle[fileName];
     }
 
     htmlEntry.source = html;
