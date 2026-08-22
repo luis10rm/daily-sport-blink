@@ -134,7 +134,10 @@
               if (href.indexOf(location.origin + '/assets/') === 0 && href.indexOf('.css') !== -1) return true;
               if (href.indexOf(location.origin + '/src/index.css') === 0) return true;
               var owner = sheet.ownerNode;
-              return !!(owner && owner.tagName === 'STYLE' && owner.getAttribute('data-vite-dev-id'));
+              if (!owner || owner.tagName !== 'STYLE') return false;
+              // Production build inlines the app stylesheet (see vite.config.ts).
+              if (owner.hasAttribute('data-inline-app-css')) return true;
+              return !!owner.getAttribute('data-vite-dev-id');
             });
             if (appMounted && appStylesApplied) {
               try { sessionStorage.removeItem(KEY); } catch (e) {}

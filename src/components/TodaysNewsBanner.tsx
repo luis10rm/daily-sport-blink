@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface TodaysNewsBannerProps {
   count: number;
@@ -127,7 +128,7 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
           <a
             href={`/dzien/${todayStr}`}
             onClick={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
-            onTouchEnd={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
+            onTouchEnd={(e) => { if (!isTapGesture()) return; e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
             className="flex items-center justify-center gap-2 w-full rounded-lg bg-primary py-3 text-sm font-bold text-primary-foreground active:scale-[0.98] transition-transform"
           >
             <Newspaper className="h-4 w-4" />
@@ -171,7 +172,7 @@ export const TodaysNewsBanner = ({ count, isLoading, className }: TodaysNewsBann
         <a
           href={`/dzien/${todayStr}`}
           onClick={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
-          onTouchEnd={(e) => { e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
+          onTouchEnd={(e) => { if (!isTapGesture()) return; e.preventDefault(); navigate(`/dzien/${todayStr}`); }}
           className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Zobacz briefing

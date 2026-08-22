@@ -2,6 +2,7 @@ import { optimizeImageUrl } from "@/lib/imageUrl";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import { LucideIcon } from "lucide-react";
+import { isTapGesture } from "@/lib/tapGuard";
 
 export interface StoryCategoryData {
   id: string;
@@ -91,7 +92,7 @@ export const DynamicStoriesCircle = ({
     <button
       type="button"
       onClick={onClick}
-      onTouchEnd={(e) => { e.preventDefault(); onClick(); }}
+      onTouchEnd={(e) => { if (!isTapGesture()) return; e.preventDefault(); onClick(); }}
       className={cn(
         "flex flex-col items-center gap-1.5 group flex-shrink-0",
         className

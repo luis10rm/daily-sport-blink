@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { usePatronSettings } from "@/hooks/usePatronSettings";
 import { X, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isTapGesture } from "@/lib/tapGuard";
 
 const SESSION_STORAGE_KEY = "patron_bar_dismissed";
 
@@ -122,6 +123,7 @@ export const PatronBar = () => {
               handleDismiss();
             }}
             onTouchEnd={(e) => {
+              if (!isTapGesture()) return;
               e.preventDefault();
               e.stopPropagation();
               handleDismiss();

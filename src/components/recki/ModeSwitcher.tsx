@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Cpu, Trophy } from "lucide-react";
+import { isTapGesture } from "@/lib/tapGuard";
 
 /**
  * Toggles between Sport (default) and Tech sub-brands.
@@ -21,6 +22,7 @@ export const ModeSwitcher = () => {
   };
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLAnchorElement>) => {
+    if (!isTapGesture()) return;
     e.preventDefault();
     navigate(target);
   };

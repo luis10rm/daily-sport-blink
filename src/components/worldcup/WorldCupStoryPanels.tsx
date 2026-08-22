@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { X, Trophy, Calendar, Users, Goal, Newspaper } from "lucide-react";
 import { useWorldCupMatches, useWorldCupStandings, useWorldCupScorers } from "@/hooks/useWorldCupData";
 import { useWorldCupPosts } from "@/hooks/useWorldCupPosts";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface Props {
   onClose: () => void;
@@ -23,6 +24,7 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
   const navigate = useNavigate();
   const goTo = useCallback(
     (to: string) => (e: React.MouseEvent | React.TouchEvent) => {
+      if ("touches" in e && !isTapGesture()) return;
       e.stopPropagation();
       if ("preventDefault" in e) e.preventDefault();
       navigate(to);

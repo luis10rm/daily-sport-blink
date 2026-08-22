@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { isTapGesture } from "@/lib/tapGuard";
 
 /**
  * Returns props for an <a> element that navigates via react-router without
@@ -19,6 +20,7 @@ export const useNavLink = () => {
       navigate(to);
     },
     onTouchEnd: (e: React.TouchEvent<HTMLAnchorElement>) => {
+      if (!isTapGesture()) return;
       e.preventDefault();
       navigate(to);
     },

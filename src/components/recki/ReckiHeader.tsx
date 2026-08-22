@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChannelSwitcher } from "@/components/ChannelSwitcher";
 import { useReviewCategories } from "@/hooks/useReviews";
 import { PatronBar } from "@/components/PatronBar";
+import { isTapGesture } from "@/lib/tapGuard";
 
 /**
  * Uses <a> + onClick/onTouchEnd + navigate() pattern instead of <Link> to avoid
@@ -25,6 +26,7 @@ const useNavLink = () => {
       navigate(to);
     },
     onTouchEnd: (e: React.TouchEvent<HTMLAnchorElement>) => {
+      if (!isTapGesture()) return;
       e.preventDefault();
       navigate(to);
     },

@@ -8,6 +8,7 @@ import { getPostImage } from "@/config/categoryImages";
 import { Post } from "@/hooks/usePosts";
 import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface NewsOfTheDayProps {
   post: Post;
@@ -104,7 +105,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
             <a
               href={blinkUrl}
               onClick={(e) => { e.preventDefault(); navigate(blinkUrl); }}
-              onTouchEnd={(e) => { e.preventDefault(); navigate(blinkUrl); }}
+              onTouchEnd={(e) => { if (!isTapGesture()) return; e.preventDefault(); navigate(blinkUrl); }}
               className="mt-auto inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-news-of-day px-6 py-3 text-base font-semibold text-news-of-day-foreground shadow-md cursor-pointer cta-notd-hover"
             >
               Przeczytaj więcej

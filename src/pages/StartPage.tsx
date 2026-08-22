@@ -3,6 +3,7 @@ import { useRef, useState, useEffect } from "react";
 import { X, Timer, ShieldOff, Smartphone, FileText, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
+import { isTapGesture } from "@/lib/tapGuard";
 
 const features = [
   {
@@ -61,7 +62,7 @@ const StartPage = () => {
       {/* Close button */}
       <button
         onClick={goHome}
-        onTouchEnd={(e) => { e.preventDefault(); goHome(); }}
+        onTouchEnd={(e) => { if (!isTapGesture()) return; e.preventDefault(); goHome(); }}
         className="fixed top-4 right-4 z-10 rounded-full p-2 text-white/60 transition-colors"
         style={{ top: 'calc(1rem + env(safe-area-inset-top))' }}
         aria-label="Zamknij"

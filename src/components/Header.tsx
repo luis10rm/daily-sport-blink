@@ -7,6 +7,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { ChannelSwitcher } from "./ChannelSwitcher";
 import { MatchTicker } from "./MatchTicker";
 import logoIcon from "@/assets/logo-icon.png";
+import { isTapGesture } from "@/lib/tapGuard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,7 @@ const useNavLink = () => {
       navigate(to);
     },
     onTouchEnd: (e: React.TouchEvent<HTMLAnchorElement>) => {
+      if (!isTapGesture()) return;
       e.preventDefault();
       navigate(to);
     },

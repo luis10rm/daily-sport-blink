@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface SponsorBannerProps {
   title?: string;
@@ -61,6 +62,7 @@ export const SponsorBanner = ({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isTapGesture()) return;
     e.preventDefault();
     handleClick();
   };

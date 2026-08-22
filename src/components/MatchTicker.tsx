@@ -3,6 +3,7 @@ import { Radio, ChevronRight } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
 import { useCountdown, formatCountdown } from "@/hooks/useCountdown";
+import { isTapGesture } from "@/lib/tapGuard";
 
 const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
@@ -66,7 +67,7 @@ export const MatchTicker = () => {
       href="/mistrzostwa-swiata-2026"
       role="link"
       onClick={(e) => { e.preventDefault(); go(); }}
-      onTouchEnd={(e) => { e.preventDefault(); go(); }}
+      onTouchEnd={(e) => { if (!isTapGesture()) return; e.preventDefault(); go(); }}
       className="block border-b border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-amber-500/10 hover:from-amber-500/20 hover:to-amber-500/20 transition-colors cursor-pointer"
       aria-label="Strefa Mistrzostw Świata 2026"
     >
