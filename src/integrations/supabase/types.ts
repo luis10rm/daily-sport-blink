@@ -582,6 +582,39 @@ export type Database = {
         }
         Relationships: []
       }
+      review_requests: {
+        Row: {
+          created_at: string
+          id: string
+          is_pinned: boolean
+          is_visible: boolean
+          normalized_title: string
+          title: string
+          updated_at: string
+          votes: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          is_visible?: boolean
+          normalized_title: string
+          title: string
+          updated_at?: string
+          votes?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          is_visible?: boolean
+          normalized_title?: string
+          title?: string
+          updated_at?: string
+          votes?: number
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           author_id: string | null
@@ -1006,7 +1039,21 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_editor: { Args: { _user_id: string }; Returns: boolean }
+      normalize_review_request_title: {
+        Args: { _title: string }
+        Returns: string
+      }
+      submit_review_request: {
+        Args: { _title: string }
+        Returns: {
+          id: string
+          is_new: boolean
+          title: string
+          votes: number
+        }[]
+      }
       sync_tags: { Args: never; Returns: undefined }
+      vote_review_request: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "editor" | "viewer"
