@@ -1,58 +1,33 @@
-# Dlaczego strona ładuje się bez stylów (jak na zrzutach)
+# Widget "Jakiej recenzji szukasz?" na Tech
 
-## Co ustaliłem (na żywo, na szortsy.pl)
+Nowy widget na `/tech`, w którym użytkownicy zgłaszają i głosują na tematy recenzji, plus panel administracyjny do zarządzania listą i licznikami głosów.
 
-- Aktualne pliki ładują się poprawnie: `/assets/index-D-quGcAf.css` → 200 `text/css`, JS → 200 `application/javascript`.
-- Ale **nieistniejący plik zasobu zwraca 200 z HTML-em**: `/assets/index-DEADBEEF.css` → `200 text/html`.
-  Powód: w `vercel.json` reguła `rewrite` dla `/(.*)` przechwytuje wszystko, także `/assets/*`.
-- HTML strony jest cache'owany na krawędzi (`x-vercel-cache: HIT`, `age: 7312`, przez worker `szortsy-edge-proxy`).
+## Jak to działa dla użytkownika
 
-To daje dokładnie objaw ze zrzutów: przeglądarka (szczególnie iOS Safari / wejście z Messages) trzyma **stary index.html**,
-prosi o **stare hashe** plików CSS/JS, dostaje w odpowiedzi HTML ze statusem 200 — więc CSS jest cicho odrzucany
-(brak Tailwinda → domyślny serif, niebieskie linki, ogromne logo), a błąd nigdy nie eskaluje do 404, który wymusiłby przeładowanie.
+1. Pole tekstowe: "Jakiej recenzji szukasz?" + przycisk "Zgłoś".
+2. Podczas pisania (od 3 znaków) sprawdzamy podobieństwo do istniejących pozycji:
+   - podobieństwo > 70% → podpowiedź "Czy chodzi Ci o…" z listą 1-3 trafień i przyciskiem "Tak, zagłosuj" (dodaje głos istniejącej pozycji),
+   - brak trafień → "Dodaj jako nowe" tworzy nową pozycję z 1 głosem.
+3. Pod polem lista 4 pozycji z największą liczbą głosów: nazwa, licznik głosów i przycisk "Głosuj" (bez limitu na urządzenie — każde kliknięcie zwiększa licznik).
+4. Nowe zgłoszenia są widoczne od razu; admin może je ukryć lub usunąć.
+5. Toast potwierdzający ("Dzięki, zapisaliśmy Twój głos") + delikatna animacja licznika.
 
-## Co naprawiamy
+## Panel administracyjny
 
-1. **Zasoby nie mogą wpadać w SPA fallback**
-   Przebudowa `vercel.json`: rewrite tylko dla ścieżek nawigacyjnych, z wyłączeniem `/assets/*` oraz plików z rozszerzeniem
-   (`.css`, `.js`, `.png`, `.svg`, `.webp`, `.woff2`, `.xml`, `.txt`, `.json`).
-   Efekt: brakujący plik = prawdziwy 404, a nie fałszywy HTML.
-
-2. **Poprawne nagłówki cache**
-   - `/assets/*` → `Cache-Control: public, max-age=31536000, immutable` (bezpieczne, bo hashowane).
-   - HTML (`/`, `/index.html`) → `Cache-Control: no-store` (lub `max-age=0, must-revalidate` + `s-maxage=0`),
-     żeby krawędź i przeglądarka nie podawały starego dokumentu z odwołaniami do usuniętych hashy.
-
-3. **Sieć bezpieczeństwa w kliencie (samonaprawa)**
-   Mały skrypt w `index.html`: jeśli po załadowaniu dokumentu główny arkusz stylów nie został zastosowany
-   (brak `document.styleSheets` z naszego `/assets/*.css`) lub `onerror` na `<script type=module>`,
-   wykonaj **jednorazowe** twarde przeładowanie z parametrem cache-bust (flaga w `sessionStorage`, żeby nie było pętli).
-   To ratuje użytkowników, którzy już mają zapisany stary HTML.
-
-4. **Weryfikacja**
-   - `curl` na nieistniejący `/assets/x.css` → oczekiwane 404, nie 200 text/html.
-   - Sprawdzenie nagłówków HTML i `/assets/*` po publikacji.
-   - Test w Chromium/WebKit (mobile 390 px) na czystym i „zatrutym” cache.
-
-## Warstwa Cloudflare — potwierdzone „Proxy Detected”
-
-Panel Vercela pokazuje ostrzeżenie **Proxy Detected** dla `szortsy.pl` i `www.szortsy.pl` (tylko `szortsypl.vercel.app`
-ma „Valid Configuration”). To zgadza się z nagłówkami odpowiedzi: `server: cloudflare` + `x-debug-worker: szortsy-edge-proxy`.
-Czyli ruch idzie: użytkownik → Cloudflare (worker) → Vercel.
-
-Konsekwencje dla naszego problemu:
-- HTML może być podawany z cache Cloudflare (`age: 7312` przy `max-age=0, must-revalidate`), więc stary dokument
-  z nieaktualnymi hashami plików żyje dłużej niż powinien — same nagłówki z Vercela mogą nie wystarczyć.
-- Dodatkowo Vercel ostrzega, że proxy wyłącza jego ochronę DDoS/bot-mitigation i może pogarszać wydajność.
-
-Dlatego po wdrożeniu punktów 1–3 zmierzę `cf-cache-status` / `age` dla dokumentu HTML i — jeśli nadal będzie
-podawany z cache — przygotuję poprawkę workera: bypass cache dla nawigacji HTML (`Cache-Control: no-store`
-na dokumentach), przy zachowaniu długiego cache dla `/assets/*`.
-Do decyzji osobno (poza tym fixem): czy ten worker jest jeszcze potrzebny — jeśli obsługuje tylko `sitemap.szortsy.pl`
-i stare `410` dla `/news/*`, można rozważyć zdjęcie proxy z apex i www, żeby wrócić do czystej ścieżki Vercel.
-
+Nowa zakładka **Życzenia Tech** (`/admin/recki/zyczenia`) w menu admina:
+- tabela wszystkich zgłoszeń: nazwa, głosy, status (widoczne/ukryte), data, liczba zgłoszeń użytkowników,
+- edycja nazwy i ręczna zmiana liczby głosów (pole numeryczne oraz +/-),
+- przełącznik widoczności, przypięcie pozycji (zawsze w Top 4), usuwanie,
+- dodawanie własnych pozycji przez redakcję,
+- sortowanie po głosach lub dacie.
 
 ## Szczegóły techniczne
 
-- Pliki: `vercel.json` (rewrites + headers), `index.html` (inline guard, ~20 linii).
-- Bez zmian w logice aplikacji, routingu, sitemapie ani w service workerze (`sw.js` jest już „self-destroying” i działa poprawnie).
+- Nowa tabela `review_requests`: `id`, `title`, `normalized_title` (unikalny), `votes` (int), `is_visible` (bool, default true), `is_pinned` (bool), `created_at`, `updated_at`. GRANT: `SELECT, INSERT` dla `anon` i `authenticated` (publiczne zgłaszanie), `UPDATE/DELETE` tylko dla admin/editor przez `is_admin_or_editor(auth.uid())`, `ALL` dla `service_role`. RLS: publiczny SELECT tylko `is_visible = true`; admin/editor widzą wszystko.
+- Głosowanie publiczne bez uprawnienia UPDATE: funkcja `security definer` `vote_review_request(_id uuid)` inkrementująca `votes` (`GRANT EXECUTE` dla `anon`, `authenticated`) — dzięki temu anon nie może modyfikować innych pól.
+- Zgłaszanie: funkcja `security definer` `submit_review_request(_title text)` — normalizuje tytuł, przy istniejącym `normalized_title` dodaje głos, w przeciwnym razie wstawia nowy wiersz z `votes = 1`; zwraca id i informację czy to nowy wpis.
+- Podobieństwo liczone po stronie klienta przez istniejące `titleSimilarity`/`normalizeTitle` z `src/lib/titleSimilarity.ts` (progi: >0.85 auto-scal w funkcji SQL po normalizacji, >0.7 podpowiedź w UI).
+- Nowy hook `src/hooks/useReviewRequests.ts`: `useReviewRequests` (lista publiczna), `useSubmitReviewRequest`, `useVoteReviewRequest`, `useAdminReviewRequests`, `useUpdateReviewRequest`, `useDeleteReviewRequest` (React Query, wzorzec z `useFeedback`).
+- Nowy komponent `src/components/recki/ReviewRequestsWidget.tsx`, wstawiony w `ReckiHome.tsx` pod sekcją hero/listą artykułów; styl zgodny z tokenami Tech (`recki-*`, brak hardkodowanych kolorów).
+- Nowa strona `src/pages/admin/ReviewRequestsList.tsx` + trasa w `App.tsx` i wpis w `AdminLayout.tsx` (ikona `Lightbulb`).
+- Kliknięcia zgodne z zasadami mobilnymi: `touch-manipulation`, hover tylko dla `@media (hover: hover)`, brak nawigacji na `touchend` z przewijania.
