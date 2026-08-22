@@ -140,6 +140,8 @@ export const PatronBar = () => {
   );
 
   if (ctaUrl) {
+    const openCta = () => window.open(ctaUrl, "_blank", "noopener,noreferrer");
+
     return (
       <a
         href={ctaUrl}
@@ -147,7 +149,17 @@ export const PatronBar = () => {
         rel="sponsored noopener noreferrer"
         aria-label={`${patron.patron_name} — ${ctaText ?? "Sprawdź"}`}
         data-patron-variant={activeVariant}
-        className={commonClassName}
+        onClick={(e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+          e.preventDefault();
+          openCta();
+        }}
+        onTouchEnd={(e) => {
+          if (!isTapGesture()) return;
+          e.preventDefault();
+          openCta();
+        }}
+        className={cn(commonClassName, "touch-manipulation")}
         style={backgroundStyle}
       >
         {innerContent}
