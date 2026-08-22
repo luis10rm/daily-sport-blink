@@ -122,6 +122,7 @@ export const PatronBar = () => {
               handleDismiss();
             }}
             onTouchEnd={(e) => {
+              if (!isTapGesture()) return;
               e.preventDefault();
               e.stopPropagation();
               handleDismiss();

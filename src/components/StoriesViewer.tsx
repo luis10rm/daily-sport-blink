@@ -209,6 +209,7 @@ export const StoriesViewer = ({
                 navigate(`/blink/${currentPost.slug}`);
               }}
               onTouchEnd={(e) => {
+                if (!isTapGesture()) return;
                 e.stopPropagation();
                 e.preventDefault();
                 navigate(`/blink/${currentPost.slug}`);

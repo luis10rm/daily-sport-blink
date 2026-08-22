@@ -21,6 +21,7 @@ export const ModeSwitcher = () => {
   };
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLAnchorElement>) => {
+    if (!isTapGesture()) return;
     e.preventDefault();
     navigate(target);
   };

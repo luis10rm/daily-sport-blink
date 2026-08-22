@@ -47,6 +47,7 @@ export const WorldCupBadge = ({ className, size = "sm", asLink = true }: WorldCu
         linkProps.onClick(e);
       }}
       onTouchEnd={(e) => {
+        if (!isTapGesture()) return;
         e.stopPropagation();
         linkProps.onTouchEnd(e);
       }}

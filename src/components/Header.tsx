@@ -28,6 +28,7 @@ const useNavLink = () => {
       navigate(to);
     },
     onTouchEnd: (e: React.TouchEvent<HTMLAnchorElement>) => {
+      if (!isTapGesture()) return;
       e.preventDefault();
       navigate(to);
     },

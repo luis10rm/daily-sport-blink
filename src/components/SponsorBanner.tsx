@@ -61,6 +61,7 @@ export const SponsorBanner = ({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isTapGesture()) return;
     e.preventDefault();
     handleClick();
   };
