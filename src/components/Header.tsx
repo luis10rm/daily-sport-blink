@@ -8,6 +8,7 @@ import { ChannelSwitcher } from "./ChannelSwitcher";
 import { MatchTicker } from "./MatchTicker";
 import logoIcon from "@/assets/logo-icon.png";
 import {
+import { isTapGesture } from "@/lib/tapGuard";
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,

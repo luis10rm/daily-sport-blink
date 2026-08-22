@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import logoIcon from "@/assets/logo-icon.png";
+import { isTapGesture } from "@/lib/tapGuard";
 
 const benefits = [
   "Błyskawiczny dostęp z ekranu głównego",

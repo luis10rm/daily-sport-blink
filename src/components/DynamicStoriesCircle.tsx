@@ -2,6 +2,7 @@ import { optimizeImageUrl } from "@/lib/imageUrl";
 import { cn } from "@/lib/utils";
 import * as LucideIcons from "lucide-react";
 import { LucideIcon } from "lucide-react";
+import { isTapGesture } from "@/lib/tapGuard";
 
 export interface StoryCategoryData {
   id: string;

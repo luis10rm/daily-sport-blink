@@ -8,6 +8,7 @@ import { getPostImage } from "@/config/categoryImages";
 import { Post } from "@/hooks/usePosts";
 import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface NewsOfTheDayProps {
   post: Post;

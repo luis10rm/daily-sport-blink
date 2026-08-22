@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Trophy, X, ArrowRight } from "lucide-react";
 import { getWorldCupPhase, getDaysUntilWorldCup } from "@/lib/worldCupTheme";
 import { cn } from "@/lib/utils";
+import { isTapGesture } from "@/lib/tapGuard";
 
 const HUB_PATH = "/mistrzostwa-swiata-2026";
 

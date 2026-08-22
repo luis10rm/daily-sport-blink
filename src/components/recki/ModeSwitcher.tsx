@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Cpu, Trophy } from "lucide-react";
+import { isTapGesture } from "@/lib/tapGuard";
 
 /**
  * Toggles between Sport (default) and Tech sub-brands.

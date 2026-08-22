@@ -9,6 +9,7 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChannelSwitcher } from "@/components/ChannelSwitcher";
 import { usePositiveCategories } from "@/hooks/usePositiveCategories";
+import { isTapGesture } from "@/lib/tapGuard";
 
 const useNavLink = () => {
   const navigate = useNavigate();

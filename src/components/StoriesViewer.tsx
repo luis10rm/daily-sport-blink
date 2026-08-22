@@ -7,6 +7,7 @@ import { StoryCategoryData } from "@/components/DynamicStoriesCircle";
 import { getCategoryImage } from "@/config/categoryImages";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface StoriesViewerProps {
   posts: StoryPost[];

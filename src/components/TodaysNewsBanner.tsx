@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface TodaysNewsBannerProps {
   count: number;

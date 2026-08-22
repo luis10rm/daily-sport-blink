@@ -10,6 +10,7 @@ import { cn, getSourceName, generateSlug } from "@/lib/utils";
 import { PostCategory } from "@/hooks/usePosts";
 import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface NewsCardProps {
   id: string;

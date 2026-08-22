@@ -3,6 +3,7 @@ import { Radio, ChevronRight } from "lucide-react";
 import { useWorldCupMatches, type FDMatch } from "@/hooks/useWorldCupData";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
 import { useCountdown, formatCountdown } from "@/hooks/useCountdown";
+import { isTapGesture } from "@/lib/tapGuard";
 
 const fmtTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });

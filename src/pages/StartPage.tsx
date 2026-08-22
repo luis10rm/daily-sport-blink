@@ -3,6 +3,7 @@ import { useRef, useState, useEffect } from "react";
 import { X, Timer, ShieldOff, Smartphone, FileText, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
+import { isTapGesture } from "@/lib/tapGuard";
 
 const features = [
   {

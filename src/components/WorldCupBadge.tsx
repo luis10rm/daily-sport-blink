@@ -1,6 +1,7 @@
 import { Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavLink } from "@/hooks/useNavLink";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface WorldCupBadgeProps {
   className?: string;

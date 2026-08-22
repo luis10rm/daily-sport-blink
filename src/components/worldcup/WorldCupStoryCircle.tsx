@@ -1,5 +1,6 @@
 import { Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface Props {
   onClick: () => void;
