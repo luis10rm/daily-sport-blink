@@ -32,6 +32,7 @@ import {
   Sun,
   Copy,
   Tag,
+  Lightbulb,
 } from "lucide-react";
 
 interface AdminLayoutProps {
@@ -47,6 +48,7 @@ const navItems = [
   { href: "/admin/tagi", label: "Tagi (SEO)", icon: Tag },
   { href: "/admin/recki", label: "Tech", icon: Star },
   { href: "/admin/recki/kategorie", label: "Kategorie Tech", icon: FolderKanban },
+  { href: "/admin/recki/zyczenia", label: "Życzenia Tech", icon: Lightbulb },
   { href: "/admin/pozytywne", label: "Pozytywne", icon: Sun },
   { href: "/admin/pozytywne/kategorie", label: "Kategorie Pozytywnych", icon: FolderKanban, adminOnly: true },
   { href: "/admin/banners", label: "Banery", icon: Megaphone },

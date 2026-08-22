@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { ReckiHeader } from "@/components/recki/ReckiHeader";
 import { ReckiFooter } from "@/components/recki/ReckiFooter";
+import { ReviewRequestsWidget } from "@/components/recki/ReviewRequestsWidget";
 import { ReviewCard } from "@/components/recki/ReviewCard";
 import { usePublishedReviews, useReviewCategories } from "@/hooks/useReviews";
 import { useActiveBannerForDevice } from "@/hooks/useBanners";
@@ -126,6 +127,8 @@ const ReckiHome = () => {
           )}
 
           {isMobile && topBannerBlock}
+
+          <ReviewRequestsWidget className="mb-8" />
 
 
 

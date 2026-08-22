@@ -48,6 +48,7 @@ const SourcesList = lazy(() => import("./pages/admin/SourcesList"));
 const ReviewsList = lazy(() => import("./pages/admin/ReviewsList"));
 const ReviewEditor = lazy(() => import("./pages/admin/ReviewEditor"));
 const ReviewCategoriesList = lazy(() => import("./pages/admin/ReviewCategoriesList"));
+const ReviewRequestsList = lazy(() => import("./pages/admin/ReviewRequestsList"));
 const ReviewCategoryEditor = lazy(() => import("./pages/admin/ReviewCategoryEditor"));
 const PositivePostsList = lazy(() => import("./pages/admin/PositivePostsList"));
 const PositiveCategoriesList = lazy(() => import("./pages/admin/PositiveCategoriesList"));
@@ -162,6 +163,7 @@ function App() {
             <Route path="/admin/recki/new" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
             <Route path="/admin/recki/:id/edit" element={<ProtectedRoute><ReviewEditor /></ProtectedRoute>} />
             <Route path="/admin/recki/kategorie" element={<ProtectedRoute><ReviewCategoriesList /></ProtectedRoute>} />
+            <Route path="/admin/recki/zyczenia" element={<ProtectedRoute><ReviewRequestsList /></ProtectedRoute>} />
             <Route path="/admin/recki/kategorie/new" element={<ProtectedRoute><ReviewCategoryEditor /></ProtectedRoute>} />
             <Route path="/admin/recki/kategorie/:id/edit" element={<ProtectedRoute><ReviewCategoryEditor /></ProtectedRoute>} />
             {/* Pozytywne admin */}
