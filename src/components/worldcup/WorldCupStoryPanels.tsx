@@ -23,6 +23,7 @@ export const WorldCupStoryPanels = ({ onClose }: Props) => {
   const navigate = useNavigate();
   const goTo = useCallback(
     (to: string) => (e: React.MouseEvent | React.TouchEvent) => {
+      if ("touches" in e && !isTapGesture()) return;
       e.stopPropagation();
       if ("preventDefault" in e) e.preventDefault();
       navigate(to);
