@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { X, Trophy, Calendar, Users, Goal, Newspaper } from "lucide-react";
 import { useWorldCupMatches, useWorldCupStandings, useWorldCupScorers } from "@/hooks/useWorldCupData";
 import { useWorldCupPosts } from "@/hooks/useWorldCupPosts";
+import { isTapGesture } from "@/lib/tapGuard";
 
 interface Props {
   onClose: () => void;
