@@ -44,7 +44,7 @@ export const WorldCupHomeBanner = ({ className }: Props) => {
       href={HUB_PATH}
       role="link"
       onClick={(e) => { e.preventDefault(); go(); }}
-      onTouchEnd={(e) => { e.preventDefault(); go(); }}
+      onTouchEnd={(e) => { if (!isTapGesture()) return; e.preventDefault(); go(); }}
       className={cn(
         "group relative flex items-center gap-3 overflow-hidden rounded-xl border border-amber-500/40",
         "bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent",
