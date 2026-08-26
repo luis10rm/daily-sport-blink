@@ -1,6 +1,46 @@
 {
   "rewrites": [
     {
+      "source": "/blink/:slug",
+      "destination": "/api/render?path=/blink/:slug"
+    },
+    {
+      "source": "/pozytywne/archiwum",
+      "destination": "/api/render?path=/pozytywne/archiwum"
+    },
+    {
+      "source": "/pozytywne/:category/:slug",
+      "destination": "/api/render?path=/pozytywne/:category/:slug"
+    },
+    {
+      "source": "/tech/:category/:slug",
+      "destination": "/api/render?path=/tech/:category/:slug"
+    },
+    {
+      "source": "/archiwum",
+      "destination": "/api/render?path=/archiwum"
+    },
+    {
+      "source": "/tagi",
+      "destination": "/api/render?path=/tagi"
+    },
+    {
+      "source": "/tag/:slug",
+      "destination": "/api/render?path=/tag/:slug"
+    },
+    {
+      "source": "/kategoria/:slug",
+      "destination": "/api/render?path=/kategoria/:slug"
+    },
+    {
+      "source": "/dzien/:date",
+      "destination": "/api/render?path=/dzien/:date"
+    },
+    {
+      "source": "/podsumowanie/:path*",
+      "destination": "/api/render?path=/podsumowanie/:path*"
+    },
+    {
       "source": "/((?!assets/|api/|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
@@ -50,6 +90,21 @@
     {
       "source": "/redakcja",
       "destination": "/autorzy",
+      "permanent": true
+    },
+    {
+      "source": "/recki/kategoria/:slug",
+      "destination": "/tech/kategoria/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/recki/:category/:slug",
+      "destination": "/tech/:category/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/recki",
+      "destination": "/tech",
       "permanent": true
     },
     {
