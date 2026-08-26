@@ -160,8 +160,7 @@ serve(async (req) => {
       for (const cat of categories) {
         xml += `  <url>
     <loc>${SITE_URL}/kategoria/${cat.slug}</loc>
-${lastmodXml(cat.updated_at)}
-    <changefreq>daily</changefreq>
+${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>\n`;
       }
@@ -173,8 +172,7 @@ ${lastmodXml(cat.updated_at)}
       for (const author of authors) {
         xml += `  <url>
     <loc>${SITE_URL}/autor/${author.slug}</loc>
-${lastmodXml(author.updated_at)}
-    <changefreq>weekly</changefreq>
+${lastmodXml(author.updated_at)}    <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>\n`;
       }
@@ -186,8 +184,7 @@ ${lastmodXml(author.updated_at)}
       for (const tag of tags) {
         xml += `  <url>
     <loc>${SITE_URL}/tag/${tag.slug}</loc>
-${lastmodXml(tag.updated_at)}
-    <changefreq>daily</changefreq>
+${lastmodXml(tag.updated_at)}    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
@@ -216,8 +213,7 @@ ${lastmodXml(tag.updated_at)}
 
         xml += `  <url>
     <loc>${SITE_URL}/blink/${post.slug}</loc>
-${lastmodXml(post.updated_at || post.published_at)}
-    <changefreq>${isRecent ? 'hourly' : 'weekly'}</changefreq>
+${lastmodXml(post.updated_at || post.published_at)}    <changefreq>${isRecent ? 'hourly' : 'weekly'}</changefreq>
     <priority>${isRecent ? '0.9' : '0.6'}</priority>${newsBlock}
   </url>\n`;
       }
@@ -231,8 +227,7 @@ ${lastmodXml(post.updated_at || post.published_at)}
         if (!catSlug) continue;
         xml += `  <url>
     <loc>${SITE_URL}/pozytywne/${catSlug}/${post.slug}</loc>
-${lastmodXml(post.updated_at || post.published_at)}
-    <changefreq>weekly</changefreq>
+${lastmodXml(post.updated_at || post.published_at)}    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
@@ -244,8 +239,7 @@ ${lastmodXml(post.updated_at || post.published_at)}
       for (const cat of positiveCategories as Array<{ slug: string; updated_at?: string }>) {
         xml += `  <url>
     <loc>${SITE_URL}/pozytywne/kategoria/${cat.slug}</loc>
-${lastmodXml(cat.updated_at)}
-    <changefreq>daily</changefreq>
+${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
@@ -257,8 +251,7 @@ ${lastmodXml(cat.updated_at)}
       for (const cat of reviewCategories as Array<{ slug: string; updated_at?: string }>) {
         xml += `  <url>
     <loc>${SITE_URL}/tech/kategoria/${cat.slug}</loc>
-${lastmodXml(cat.updated_at)}
-    <changefreq>daily</changefreq>
+${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
@@ -272,8 +265,7 @@ ${lastmodXml(cat.updated_at)}
         if (!catSlug) continue;
         xml += `  <url>
     <loc>${SITE_URL}/tech/${catSlug}/${rev.slug}</loc>
-${lastmodXml(rev.updated_at || rev.published_at)}
-    <changefreq>weekly</changefreq>
+${lastmodXml(rev.updated_at || rev.published_at)}    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }

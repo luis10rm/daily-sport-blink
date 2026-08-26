@@ -11,7 +11,7 @@ const BACKEND_URL =
 const BACKEND_ANON_KEY =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   process.env.VITE_SUPABASE_ANON_KEY ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Iml6eWtuYXpqemRrZmR4bmVrdm9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODk0NTYsImV4cCI6MjA4NDU2NTQ1Nn0.JooTJ-SLkn50yyZBkmvJETHKQQvYZh_9tVmjUTk7SOM";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIc3VwYWJhc2UiLCJyZWYiOiJpenlrbmF6anpka2ZkeG5la3ZvcyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzY4OTg5NDU2LCJleHAiOjIwODQ1NjU0NTZ9.JooTJ-SLkn50yyZBkmvJETHKQQvYZh_9tVmjUTk7SOM";
 
 const NOINDEX = "noindex, follow";
 
@@ -33,25 +33,31 @@ const fullTitle = (title) =>
     : `${title} | Szortsy`;
 
 const fetchRows = async (table, params) => {
-  if (!BACKEND_ANON_KEY) return [];
+  if (!BACKEND_ANON_KEY) return null;
   const url = new URL(`/rest/v1/${table}`, BACKEND_URL);
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
 
-  const response = await fetch(url, {
-    headers: {
-      apikey: BACKEND_ANON_KEY,
-      Authorization: `Bearer ${BACKEND_ANON_KEY}`,
-      Accept: "application/json",
-    },
-  });
+  try {
+    const response = await fetch(url, {
+      headers: {
+        apikey: BACKEND_ANON_KEY,
+        Authorization: `Bearer ${BACKEND_ANON_KEY}`,
+        Accept: "application/json",
+      },
+    });
 
-  if (!response.ok) return [];
-  return response.json();
+    if (!response.ok) return null;
+    const data = await response.json();
+    return Array.isArray(data) ? data : null;
+  } catch {
+    return null;
+  }
 };
 
 const fetchOne = async (table, params) => {
   const rows = await fetchRows(table, { ...params, limit: "1" });
-  return Array.isArray(rows) ? rows[0] ?? null : null;
+  if (rows === null) return undefined;
+  return rows[0] ?? null;
 };
 
 const baseMeta = (path) => ({
@@ -198,6 +204,38 @@ const resolveMeta = async (path) => {
     };
   }
 
+  if (path === "/tech") {
+    return {
+      ...meta,
+      title: "Tech — recenzje sprzętu i newsy technologiczne",
+      description: "Krótkie, konkretne recenzje smartfonów, audio, gamingu, smart home i AI. Bez lania wody.",
+    };
+  }
+
+  if (path === "/pozytywne") {
+    return {
+      ...meta,
+      title: "Pozytywne wiadomości",
+      description: "Dobre wiadomości z kraju i ze świata — krótko, jasno i bez doomscrollingu.",
+    };
+  }
+
+  if (path === "/mistrzostwa-swiata-2026") {
+    return {
+      ...meta,
+      title: "Mistrzostwa Świata 2026",
+      description: "Hub Mistrzostw Świata 2026: mecze, drabinka pucharowa, statystyki i najważniejsze newsy.",
+    };
+  }
+
+  if (path === "/autorzy") {
+    return {
+      ...meta,
+      title: "Autorzy",
+      description: "Poznaj autorów i redakcję serwisu Szortsy.",
+    };
+  }
+
   if (path === "/tagi") {
     return { ...meta, title: "Tagi", description: "Lista tagów w serwisie Szortsy.", robots: NOINDEX };
   }
@@ -230,6 +268,7 @@ const resolveMeta = async (path) => {
       slug: `eq.${slug}`,
       is_hidden: "eq.false",
     });
+    if (post === undefined) return meta;
     return post ? postMeta(post, path) : { ...meta, title: "Artykuł nie znaleziony", robots: NOINDEX };
   }
 
@@ -243,7 +282,34 @@ const resolveMeta = async (path) => {
       channel: "eq.positive",
       is_hidden: "eq.false",
     });
+    if (post === undefined) return meta;
     return post ? postMeta(post, path) : { ...meta, title: "Artykuł nie znaleziony", robots: NOINDEX };
+  }
+
+  const positiveCategory = path.match(/^\/pozytywne\/kategoria\/([^/]+)$/);
+  if (positiveCategory) {
+    const slug = decodeURIComponent(positiveCategory[1]);
+    const row = await fetchOne("positive_categories", { select: "slug,name,description", slug: `eq.${slug}` });
+    if (row === undefined) return meta;
+    if (!row) return { ...meta, title: "Kategoria nie znaleziona", robots: NOINDEX };
+    return {
+      ...meta,
+      title: `${row.name} - Pozytywne`,
+      description: row.description || `Pozytywne wiadomości z kategorii ${row.name} na Szortsy.`,
+    };
+  }
+
+  const techCategory = path.match(/^\/tech\/kategoria\/([^/]+)$/);
+  if (techCategory) {
+    const slug = decodeURIComponent(techCategory[1]);
+    const row = await fetchOne("review_categories", { select: "slug,name,description", slug: `eq.${slug}` });
+    if (row === undefined) return meta;
+    if (!row) return { ...meta, title: "Kategoria Tech nie znaleziona", robots: NOINDEX };
+    return {
+      ...meta,
+      title: `${row.name} - Tech`,
+      description: row.description || `Recenzje i newsy Tech z kategorii ${row.name} na Szortsy.`,
+    };
   }
 
   const techArticle = path.match(/^\/tech\/([^/]+)\/([^/]+)$/);
@@ -254,6 +320,7 @@ const resolveMeta = async (path) => {
       slug: `eq.${slug}`,
       status: "eq.published",
     });
+    if (review === undefined) return meta;
     if (!review) return { ...meta, title: "Wpis Tech nie znaleziony", robots: NOINDEX };
     const canonical = `${SITE_URL}/tech/${review.category?.slug || techArticle[1]}/${review.slug}`;
     return {
@@ -289,6 +356,7 @@ const resolveMeta = async (path) => {
       select: "slug,name,description,post_count,force_index",
       slug: `eq.${slug}`,
     });
+    if (row === undefined) return meta;
     if (!row) return { ...meta, title: "Tag nie znaleziony", robots: NOINDEX };
     const shouldNoindex = !row.force_index && Number(row.post_count || 0) < 4;
     return {
@@ -304,6 +372,7 @@ const resolveMeta = async (path) => {
     const slug = decodeURIComponent(sportCategory[1]);
     if (slug === "wspo-praca-reklamowa") return { ...meta, title: "Współpraca reklamowa", robots: NOINDEX };
     const row = await fetchOne("sport_categories", { select: "slug,name,description", slug: `eq.${slug}` });
+    if (row === undefined) return meta;
     if (row) {
       return {
         ...meta,
@@ -311,6 +380,33 @@ const resolveMeta = async (path) => {
         description: row.description || `Najnowsze wiadomości sportowe z kategorii ${row.name}.`,
       };
     }
+    return { ...meta, title: "Kategoria nie znaleziona", robots: NOINDEX };
+  }
+
+  const author = path.match(/^\/autor\/([^/]+)$/);
+  if (author) {
+    const slug = decodeURIComponent(author[1]);
+    const row = await fetchOne("authors_public", {
+      select: "slug,display_name,bio,role_title,avatar_url",
+      slug: `eq.${slug}`,
+    });
+    if (row === undefined) return meta;
+    if (!row) return { ...meta, title: "Autor nie znaleziony", robots: NOINDEX };
+    return {
+      ...meta,
+      title: row.display_name,
+      description: row.bio || `${row.display_name} — autor w serwisie Szortsy.`,
+      image: row.avatar_url || DEFAULT_IMAGE,
+      schema: {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        name: row.display_name,
+        description: row.bio || row.role_title,
+        image: row.avatar_url,
+        url: `${SITE_URL}/autor/${row.slug}`,
+        worksFor: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+      },
+    };
   }
 
   return meta;
