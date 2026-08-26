@@ -11,7 +11,7 @@ const BACKEND_URL =
 const BACKEND_ANON_KEY =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   process.env.VITE_SUPABASE_ANON_KEY ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdWIiOiJpenlrbmF6anpka2ZkeG5la3ZvcyIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzY4OTg5NDU2LCJleHAiOjIwODQ1NjU0NTZ9.invalid";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Iml6eWtuYXpqemRrZmR4bmVrdm9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODk0NTYsImV4cCI6MjA4NDU2NTQ1Nn0.JooTJ-SLkn50yyZBkmvJETHKQQvYZh_9tVmjUTk7SOM";
 
 const NOINDEX = "noindex, follow";
 
@@ -33,7 +33,7 @@ const fullTitle = (title) =>
     : `${title} | Szortsy`;
 
 const fetchRows = async (table, params) => {
-  if (!BACKEND_ANON_KEY || BACKEND_ANON_KEY.endsWith(".invalid")) return [];
+  if (!BACKEND_ANON_KEY) return [];
   const url = new URL(`/rest/v1/${table}`, BACKEND_URL);
   Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
 
@@ -226,7 +226,7 @@ const resolveMeta = async (path) => {
 
     const post = await fetchOne("posts", {
       select:
-        "slug,title,excerpt,image_url,source_url,tags,channel,published_at,updated_at,sport_category:sport_categories(slug,name),positive_category:positive_categories(slug,name),author:authors(display_name,slug)",
+        "slug,title,excerpt,image_url,source_url,tags,channel,published_at,updated_at,sport_category:sport_categories!fk_posts_category(slug,name),positive_category:positive_categories!posts_positive_category_id_fkey(slug,name),author:authors(display_name,slug)",
       slug: `eq.${slug}`,
       is_hidden: "eq.false",
     });
@@ -238,7 +238,7 @@ const resolveMeta = async (path) => {
     const slug = decodeURIComponent(positive[2]);
     const post = await fetchOne("posts", {
       select:
-        "slug,title,excerpt,image_url,source_url,tags,channel,published_at,updated_at,sport_category:sport_categories(slug,name),positive_category:positive_categories(slug,name),author:authors(display_name,slug)",
+        "slug,title,excerpt,image_url,source_url,tags,channel,published_at,updated_at,sport_category:sport_categories!fk_posts_category(slug,name),positive_category:positive_categories!posts_positive_category_id_fkey(slug,name),author:authors(display_name,slug)",
       slug: `eq.${slug}`,
       channel: "eq.positive",
       is_hidden: "eq.false",
