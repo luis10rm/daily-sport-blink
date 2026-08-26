@@ -104,9 +104,6 @@ serve(async (req) => {
       console.error("Error fetching authors:", authorsError);
     }
 
-    // Build XML sitemap
-    const today = new Date().toISOString().split("T")[0];
-
     const escapeXml = (s: string) =>
       s.replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -114,57 +111,46 @@ serve(async (req) => {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&apos;");
 
+    const formatDate = (value?: string | null) => {
+      if (!value) return null;
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return null;
+      return date.toISOString().split("T")[0];
+    };
+
+    const lastmodXml = (value?: string | null) => {
+      const date = formatDate(value);
+      return date ? `    <lastmod>${date}</lastmod>\n` : "";
+    };
+
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
   <!-- Static pages -->
   <url>
     <loc>${SITE_URL}/</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>${SITE_URL}/autorzy</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>${SITE_URL}/tech</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>${SITE_URL}/pozytywne</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>${SITE_URL}/mistrzostwa-swiata-2026</loc>
-    <lastmod>${today}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>${SITE_URL}/archiwum</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>${SITE_URL}/tagi</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>${SITE_URL}/pozytywne/archiwum</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
   </url>
 `;
 
@@ -172,11 +158,9 @@ serve(async (req) => {
     if (categories?.length) {
       xml += `\n  <!-- Categories -->\n`;
       for (const cat of categories) {
-        const lastmod = cat.updated_at?.split("T")[0] || today;
         xml += `  <url>
     <loc>${SITE_URL}/kategoria/${cat.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>daily</changefreq>
+${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>\n`;
       }
@@ -186,11 +170,9 @@ serve(async (req) => {
     if (authors?.length) {
       xml += `\n  <!-- Authors -->\n`;
       for (const author of authors) {
-        const lastmod = author.updated_at?.split("T")[0] || today;
         xml += `  <url>
     <loc>${SITE_URL}/autor/${author.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
+${lastmodXml(author.updated_at)}    <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>\n`;
       }
@@ -200,11 +182,9 @@ serve(async (req) => {
     if (tags?.length) {
       xml += `\n  <!-- Tags -->\n`;
       for (const tag of tags) {
-        const lastmod = tag.updated_at?.split("T")[0] || today;
         xml += `  <url>
     <loc>${SITE_URL}/tag/${tag.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>daily</changefreq>
+${lastmodXml(tag.updated_at)}    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
@@ -216,7 +196,6 @@ serve(async (req) => {
       const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
 
       for (const post of posts as Array<{ slug: string; title?: string; updated_at?: string; published_at: string }>) {
-        const lastmod = (post.updated_at || post.published_at)?.split("T")[0] || today;
         const publishedDate = new Date(post.published_at);
         const isRecent = publishedDate > twoDaysAgo;
 
@@ -234,8 +213,7 @@ serve(async (req) => {
 
         xml += `  <url>
     <loc>${SITE_URL}/blink/${post.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>${isRecent ? 'hourly' : 'weekly'}</changefreq>
+${lastmodXml(post.updated_at || post.published_at)}    <changefreq>${isRecent ? 'hourly' : 'weekly'}</changefreq>
     <priority>${isRecent ? '0.9' : '0.6'}</priority>${newsBlock}
   </url>\n`;
       }
@@ -247,11 +225,9 @@ serve(async (req) => {
       for (const post of positivePosts as Array<{ slug: string; updated_at?: string; published_at: string; positive_category?: { slug?: string } | null }>) {
         const catSlug = post.positive_category?.slug;
         if (!catSlug) continue;
-        const lastmod = (post.updated_at || post.published_at)?.split("T")[0] || today;
         xml += `  <url>
     <loc>${SITE_URL}/pozytywne/${catSlug}/${post.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
+${lastmodXml(post.updated_at || post.published_at)}    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
@@ -261,11 +237,9 @@ serve(async (req) => {
     if (positiveCategories?.length) {
       xml += `\n  <!-- Positive categories -->\n`;
       for (const cat of positiveCategories as Array<{ slug: string; updated_at?: string }>) {
-        const lastmod = cat.updated_at?.split("T")[0] || today;
         xml += `  <url>
     <loc>${SITE_URL}/pozytywne/kategoria/${cat.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>daily</changefreq>
+${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
@@ -275,11 +249,9 @@ serve(async (req) => {
     if (reviewCategories?.length) {
       xml += `\n  <!-- Tech categories -->\n`;
       for (const cat of reviewCategories as Array<{ slug: string; updated_at?: string }>) {
-        const lastmod = cat.updated_at?.split("T")[0] || today;
         xml += `  <url>
     <loc>${SITE_URL}/tech/kategoria/${cat.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>daily</changefreq>
+${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
@@ -291,11 +263,9 @@ serve(async (req) => {
       for (const rev of reviews as Array<{ slug: string; updated_at?: string; published_at: string; category?: { slug?: string } | null }>) {
         const catSlug = rev.category?.slug;
         if (!catSlug) continue;
-        const lastmod = (rev.updated_at || rev.published_at)?.split("T")[0] || today;
         xml += `  <url>
     <loc>${SITE_URL}/tech/${catSlug}/${rev.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
+${lastmodXml(rev.updated_at || rev.published_at)}    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }

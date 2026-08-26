@@ -15,10 +15,10 @@
 - [/archiwum](/archiwum): Archiwum newsów starszych niż 7 dni z filtrowaniem po kategoriach.
 - [/blink/{slug}](/blink/przykladowy-artykul): Pełny artykuł sportowy.
 - [/kategoria/{slug}](/kategoria/pilka-nozna): Kategoria sportowa.
-- [/redakcja/{slug}](/redakcja/autor): Profil autora/redaktora.
+- [/autor/{slug}](/autor/autor): Profil autora/redaktora.
 - [/dzien/{data}](/dzien/2026-05-19): Podsumowanie dnia — timeline newsów z wybranej daty.
 - [/tag/{slug}](/tag/pilka-nozna): Lista artykułów oznaczonych danym tagiem.
-- [/tags](/tags): Przegląd wszystkich dostępnych tagów.
+- [/tagi](/tagi): Przegląd wszystkich dostępnych tagów.
 - [/mistrzostwa-swiata-2026](/mistrzostwa-swiata-2026): Hub Mistrzostw Świata 2026 (drabinka pucharowa, mecze, statystyki).
 
 ### Tech
@@ -55,7 +55,7 @@ Strona główna i archiwum prezentują newsy pogrupowane w kategorie sportowe, m
 
 ## Informacje techniczne
 
-- URL kanoniczny: https://www.szortsy.pl
+- URL kanoniczny: https://szortsy.pl
 - Język: pl-PL
 - Schemat danych: NewsArticle (schema.org) dla artykułów sportowych i pozytywnych; Review (schema.org) planowany dla recenzji Tech.
 - Sitemap: https://sitemap.szortsy.pl/

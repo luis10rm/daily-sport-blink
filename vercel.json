@@ -1,6 +1,78 @@
 {
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/api/render?path=/"
+    },
+    {
+      "source": "/blink/:slug",
+      "destination": "/api/render?path=/blink/:slug"
+    },
+    {
+      "source": "/tech",
+      "destination": "/api/render?path=/tech"
+    },
+    {
+      "source": "/tech/kategoria/:slug",
+      "destination": "/api/render?path=/tech/kategoria/:slug"
+    },
+    {
+      "source": "/pozytywne",
+      "destination": "/api/render?path=/pozytywne"
+    },
+    {
+      "source": "/pozytywne/archiwum",
+      "destination": "/api/render?path=/pozytywne/archiwum"
+    },
+    {
+      "source": "/pozytywne/kategoria/:slug",
+      "destination": "/api/render?path=/pozytywne/kategoria/:slug"
+    },
+    {
+      "source": "/pozytywne/:category/:slug",
+      "destination": "/api/render?path=/pozytywne/:category/:slug"
+    },
+    {
+      "source": "/tech/:category/:slug",
+      "destination": "/api/render?path=/tech/:category/:slug"
+    },
+    {
+      "source": "/archiwum",
+      "destination": "/api/render?path=/archiwum"
+    },
+    {
+      "source": "/tagi",
+      "destination": "/api/render?path=/tagi"
+    },
+    {
+      "source": "/tag/:slug",
+      "destination": "/api/render?path=/tag/:slug"
+    },
+    {
+      "source": "/kategoria/:slug",
+      "destination": "/api/render?path=/kategoria/:slug"
+    },
+    {
+      "source": "/autorzy",
+      "destination": "/api/render?path=/autorzy"
+    },
+    {
+      "source": "/autor/:slug",
+      "destination": "/api/render?path=/autor/:slug"
+    },
+    {
+      "source": "/mistrzostwa-swiata-2026",
+      "destination": "/api/render?path=/mistrzostwa-swiata-2026"
+    },
+    {
+      "source": "/dzien/:date",
+      "destination": "/api/render?path=/dzien/:date"
+    },
+    {
+      "source": "/podsumowanie/:path*",
+      "destination": "/api/render?path=/podsumowanie/:path*"
+    },
+    {
       "source": "/((?!assets/|api/|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
@@ -50,6 +122,21 @@
     {
       "source": "/redakcja",
       "destination": "/autorzy",
+      "permanent": true
+    },
+    {
+      "source": "/recki/kategoria/:slug",
+      "destination": "/tech/kategoria/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/recki/:category/:slug",
+      "destination": "/tech/:category/:slug",
+      "permanent": true
+    },
+    {
+      "source": "/recki",
+      "destination": "/tech",
       "permanent": true
     },
     {
