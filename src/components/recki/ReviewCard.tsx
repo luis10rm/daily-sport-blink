@@ -77,7 +77,11 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
                 {review.category.name}
               </span>
             )}
-            <CommunityRequestBadge active={review.is_community_requested} votes={review.request?.votes} size="sm" />
+            <CommunityRequestBadge
+              active={review.is_community_requested}
+              votes={review.request?.votes}
+              size="sm"
+            />
             
           </div>
           <h2 className="mt-2 text-2xl md:text-3xl font-bold leading-tight text-foreground">
@@ -153,6 +157,11 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
               <ScoreBadge score={review.score} size="sm" />
             </div>
           )}
+          {review.is_community_requested && (
+            <div className="absolute left-2 top-2">
+              <CommunityRequestBadge active votes={review.request?.votes} size="sm" />
+            </div>
+          )}
         </div>
         <div className="flex flex-1 flex-col p-3">
           {review.category && (
@@ -193,6 +202,11 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
         {review.score !== null && (
           <div className="absolute right-3 top-3">
             <ScoreBadge score={review.score} size="md" />
+          </div>
+        )}
+        {review.is_community_requested && (
+          <div className="absolute left-3 top-3">
+            <CommunityRequestBadge active votes={review.request?.votes} size="sm" />
           </div>
         )}
       </div>
