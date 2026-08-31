@@ -8,6 +8,8 @@ import { ReviewCard } from "@/components/recki/ReviewCard";
 import { ReviewFaq, normalizeFaq } from "@/components/recki/ReviewFaq";
 import { ReviewBasisBadge } from "@/components/recki/ReviewBasisBadge";
 import { CommunityRequestBadge } from "@/components/recki/CommunityRequestBadge";
+import { PracticalInfo } from "@/components/recki/PracticalInfo";
+import { normalizePracticalInfo, normalizeCaptions } from "@/lib/practicalInfo";
 import { ScoreBadge } from "@/components/recki/ScoreBadge";
 import { useReviewBySlug, usePublishedReviews } from "@/hooks/useReviews";
 import { Skeleton } from "@/components/ui/skeleton";
