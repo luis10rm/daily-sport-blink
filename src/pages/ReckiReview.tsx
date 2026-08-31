@@ -359,12 +359,19 @@ const ReckiReview = () => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={() => setLightboxIdx(null)}
         >
-          <img
-            src={optimizeImageUrl(gallery[lightboxIdx], { width: 1600, quality: 78 })}
-            alt=""
-            className="max-h-[90vh] max-w-[90vw] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <figure className="flex max-h-[92vh] flex-col items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={optimizeImageUrl(gallery[lightboxIdx], { width: 1600, quality: 78 })}
+              alt={captions[lightboxIdx]?.trim() || `${placeName} — zdjęcie ${lightboxIdx + 1}`}
+              className="max-h-[82vh] max-w-[92vw] object-contain"
+            />
+            <figcaption className="max-w-[92vw] text-center text-sm text-white/80">
+              {captions[lightboxIdx]?.trim() && <span className="block">{captions[lightboxIdx]}</span>}
+              <span className="text-xs text-white/60">
+                {lightboxIdx + 1} / {gallery.length}
+              </span>
+            </figcaption>
+          </figure>
           <Button
             variant="ghost"
             size="icon"
