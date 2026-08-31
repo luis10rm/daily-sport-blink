@@ -38,11 +38,11 @@ export const normalizePracticalInfo = (raw: unknown): PracticalInfo => {
       .filter(Boolean);
     if (list.length) out.amenities = list;
   }
-  return out;
+  return out as PracticalInfo;
 };
 
 export const hasPracticalInfo = (info: PracticalInfo) =>
-  STRING_KEYS.some((k) => !!info[k]) || !!info.amenities?.length;
+  STRING_KEYS.some((k) => !!(info as Record<string, unknown>)[k]) || !!info.amenities?.length;
 
 /** Drop empty values before saving so `{}` stays the "not filled in" state. */
 export const cleanPracticalInfo = (info: PracticalInfo): PracticalInfo =>
