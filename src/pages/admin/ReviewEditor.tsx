@@ -251,6 +251,7 @@ const ReviewEditor = () => {
     };
 
     delete payload.category;
+    delete (payload as any).request;
     const saved = await upsert.mutateAsync(payload);
     navigate(`/admin/recki/${saved.id}/edit`);
   };
