@@ -79,10 +79,11 @@ export const DEFAULT_WIDTHS = [400, 640, 800, 1200, 1600];
 export const buildSrcSet = (
   url?: string | null,
   widths: number[] = DEFAULT_WIDTHS,
-  quality = 70
+  quality = 70,
+  aspect?: number
 ): string | undefined => {
   if (!isTransformableUrl(url)) return undefined;
   return widths
-    .map((w) => `${optimizeImageUrl(url, { width: w, quality })} ${w}w`)
+    .map((w) => `${optimizeImageUrl(url, { width: w, quality, aspect, resize: aspect ? "cover" : "contain" })} ${w}w`)
     .join(", ");
 };
