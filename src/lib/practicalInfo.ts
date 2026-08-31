@@ -25,7 +25,7 @@ const STRING_KEYS: (keyof PracticalInfo)[] = [
 export const normalizePracticalInfo = (raw: unknown): PracticalInfo => {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
   const src = raw as Record<string, unknown>;
-  const out: PracticalInfo = {};
+  const out: Record<string, unknown> = {};
   for (const key of STRING_KEYS) {
     const v = src[key];
     if (typeof v === "string" && v.trim()) out[key] = v.trim();
