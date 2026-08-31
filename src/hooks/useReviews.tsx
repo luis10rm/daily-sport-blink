@@ -36,6 +36,8 @@ export interface Review {
   pros: string[];
   cons: string[];
   faq: { q: string; a: string }[];
+  practical_info: Record<string, any>;
+  gallery_captions: string[];
 
   gallery: string[];
   cover_image_url: string | null;
