@@ -199,8 +199,10 @@ export const ImageUploader = ({
           onClose={handleCropClose}
           imageSrc={pendingImage}
           aspect={cropAspect}
+          allowAspectChange={allowAspectChange}
           onCropComplete={handleCropComplete}
         />
+
       )}
     </>
   );
