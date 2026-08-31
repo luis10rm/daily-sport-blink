@@ -2,6 +2,7 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { ArrowRight, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Review } from "@/hooks/useReviews";
+import { CommunityRequestBadge } from "./CommunityRequestBadge";
 import { ScoreBadge } from "./ScoreBadge";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +77,8 @@ export const ReviewCard = ({ review, variant = "default" }: Props) => {
                 {review.category.name}
               </span>
             )}
+            <CommunityRequestBadge active={review.is_community_requested} votes={review.request?.votes} size="sm" />
+            
           </div>
           <h2 className="mt-2 text-2xl md:text-3xl font-bold leading-tight text-foreground">
             {review.title}
