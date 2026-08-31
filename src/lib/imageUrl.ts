@@ -19,17 +19,27 @@ export const isTransformableUrl = (url?: string | null): boolean =>
 
 export interface OptimizeOptions {
   width?: number;
+  /** Optional explicit height — required for a meaningful `cover` crop. */
+  height?: number;
   quality?: number;
   resize?: "cover" | "contain" | "fill";
+  /** Aspect ratio (width / height) used to derive a height for `cover` crops. */
+  aspect?: number;
 }
 
 /**
  * Returns a resized/re-encoded variant of a storage image URL.
  * Non-storage URLs are returned as-is.
+ *
+ * IMPORTANT: the storage transformer only preserves the original aspect ratio
+ * when `resize=contain` is used (or when both width and height are supplied).
+ * Passing `width` alone with `resize=cover` produces images with a nonsensical
+ * height, which renders as a thin vertical strip. `contain` is therefore the
+ * default and `cover` is only emitted when a height can be determined.
  */
 export const optimizeImageUrl = (
   url?: string | null,
-  { width = 800, quality = 70, resize = "cover" }: OptimizeOptions = {}
+  { width = 800, height, quality = 70, resize = "contain", aspect }: OptimizeOptions = {}
 ): string => {
   if (!url) return "";
   if (!isTransformableUrl(url)) return url;
@@ -38,10 +48,22 @@ export const optimizeImageUrl = (
     ? url.split("?")[0]
     : url.split("?")[0].replace(OBJECT_MARKER, RENDER_MARKER);
 
+  const w = Math.round(width);
+  const resolvedHeight =
+    height != null
+      ? Math.round(height)
+      : aspect && aspect > 0
+        ? Math.round(w / aspect)
+        : undefined;
+
+  // Without a height, `cover`/`fill` break the aspect ratio — fall back to `contain`.
+  const mode = resolvedHeight ? resize : "contain";
+
   const params = new URLSearchParams({
-    width: String(Math.round(width)),
+    width: String(w),
+    ...(resolvedHeight ? { height: String(resolvedHeight) } : {}),
     quality: String(quality),
-    resize,
+    resize: mode,
   });
 
   return `${base}?${params.toString()}`;
