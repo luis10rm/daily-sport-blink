@@ -7,6 +7,7 @@ import { ReckiFooter } from "@/components/recki/ReckiFooter";
 import { ReviewCard } from "@/components/recki/ReviewCard";
 import { ReviewFaq, normalizeFaq } from "@/components/recki/ReviewFaq";
 import { ReviewBasisBadge } from "@/components/recki/ReviewBasisBadge";
+import { CommunityRequestBadge } from "@/components/recki/CommunityRequestBadge";
 import { ScoreBadge } from "@/components/recki/ScoreBadge";
 import { useReviewBySlug, usePublishedReviews } from "@/hooks/useReviews";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -129,6 +130,10 @@ const ReckiReview = () => {
                   {review.category.name}
                 </span>
               )}
+              <CommunityRequestBadge
+                active={review.is_community_requested}
+                votes={review.request?.votes}
+              />
               <ReviewBasisBadge basis={(review as any).review_basis} />
             </div>
             <h1 className="mt-3 text-3xl sm:text-4xl font-bold leading-tight">{review.title}</h1>
