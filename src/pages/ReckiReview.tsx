@@ -8,6 +8,8 @@ import { ReviewCard } from "@/components/recki/ReviewCard";
 import { ReviewFaq, normalizeFaq } from "@/components/recki/ReviewFaq";
 import { ReviewBasisBadge } from "@/components/recki/ReviewBasisBadge";
 import { CommunityRequestBadge } from "@/components/recki/CommunityRequestBadge";
+import { PracticalInfo } from "@/components/recki/PracticalInfo";
+import { normalizePracticalInfo, normalizeCaptions } from "@/lib/practicalInfo";
 import { ScoreBadge } from "@/components/recki/ScoreBadge";
 import { useReviewBySlug, usePublishedReviews } from "@/hooks/useReviews";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +42,56 @@ const ReckiReview = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [slug]);
+
+  const galleryLength = review?.gallery?.length ?? 0;
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxIdx(null);
+      if (e.key === "ArrowRight") setLightboxIdx((i) => (i === null ? 0 : (i + 1) % galleryLength));
+      if (e.key === "ArrowLeft")
+        setLightboxIdx((i) => (i === null ? 0 : (i - 1 + galleryLength) % galleryLength));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxIdx, galleryLength]);
+
+  // JSON-LD: Review of a place (Hotel/LocalBusiness) when practical info is filled in
+  const practicalRaw = normalizePracticalInfo((review as any)?.practical_info);
+  const isPlaceReview = !!practicalRaw.address || !!practicalRaw.website;
+  useEffect(() => {
+    if (!review || !isPlaceReview) return;
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.dataset.placeSchema = "true";
+    script.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Review",
+      itemReviewed: {
+        "@type": "Hotel",
+        name: review.product_name || review.title,
+        ...(practicalRaw.address
+          ? { address: { "@type": "PostalAddress", streetAddress: practicalRaw.address } }
+          : {}),
+        ...(practicalRaw.website ? { url: practicalRaw.website } : {}),
+        ...(review.cover_image_url ? { image: review.cover_image_url } : {}),
+      },
+      ...(review.score !== null && review.score !== undefined
+        ? {
+            reviewRating: {
+              "@type": "Rating",
+              ratingValue: review.score,
+              bestRating: 10,
+              worstRating: 1,
+            },
+          }
+        : {}),
+      ...(review.verdict ? { reviewBody: review.verdict } : {}),
+      ...(review.published_at ? { datePublished: review.published_at } : {}),
+    });
+    document.head.appendChild(script);
+    return () => script.remove();
+  }, [review, isPlaceReview, practicalRaw.address, practicalRaw.website]);
 
   const canonicalPath = review?.category?.slug && review?.slug
     ? `https://szortsy.pl/tech/${review.category.slug}/${review.slug}`
@@ -86,6 +138,9 @@ const ReckiReview = () => {
   }
 
   const gallery = review.gallery ?? [];
+  const practicalInfo = practicalRaw;
+  const captions = normalizeCaptions((review as any).gallery_captions);
+  const placeName = review.product_name || review.title;
 
   const renderBanner = (b: any, className = "my-8") =>
     b ? (
@@ -183,13 +238,16 @@ const ReckiReview = () => {
 
 
 
+          {/* Practical info (places / travel reviews) */}
+          <PracticalInfo info={practicalInfo} />
+
           {/* Cover image */}
           {review.cover_image_url && (
-            <div className="mb-8 overflow-hidden rounded-2xl">
+            <div className="mb-8 aspect-[16/9] overflow-hidden rounded-2xl bg-muted">
               <OptimizedImage
                 src={review.cover_image_url}
                 alt={review.title}
-                className="w-full object-cover"
+                className="h-full w-full object-cover object-center"
                 priority="high"
                 sizes="(min-width: 1024px) 800px, 100vw"
                 widths={[400, 640, 800, 1200]}
@@ -242,27 +300,35 @@ const ReckiReview = () => {
             />
           )}
 
-          {/* Gallery */}
+          {/* Gallery — masonry, keeps each photo's natural proportions */}
           {gallery.length > 0 && (
             <section className="mb-8">
               <h2 className="text-xl font-bold mb-3">Galeria</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="columns-2 gap-2 sm:columns-3 [column-fill:_balance]">
                 {gallery.map((src, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setLightboxIdx(idx)}
-                    className="group relative aspect-square overflow-hidden rounded-lg bg-muted"
-                  >
-                    <OptimizedImage
-                      src={src}
-                      alt={`Zdjęcie ${idx + 1}`}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                      sizes="(min-width: 768px) 200px, 45vw"
-                      widths={[200, 320, 400, 640]}
-                      fallbackWidth={400}
-                    />
-                  </button>
+                  <figure key={idx} className="mb-2 break-inside-avoid">
+                    <button
+                      type="button"
+                      onClick={() => setLightboxIdx(idx)}
+                      className="group block w-full overflow-hidden rounded-lg bg-muted touch-manipulation"
+                      aria-label={`Powiększ zdjęcie ${idx + 1} z ${gallery.length}`}
+                    >
+                      <OptimizedImage
+                        src={src}
+                        alt={captions[idx]?.trim() || `${placeName} — zdjęcie ${idx + 1}`}
+                        loading="lazy"
+                        className="h-auto max-h-[70vh] w-full object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-[1.03]"
+                        sizes="(min-width: 768px) 260px, 45vw"
+                        widths={[260, 400, 640, 900]}
+                        fallbackWidth={640}
+                      />
+                    </button>
+                    {captions[idx]?.trim() && (
+                      <figcaption className="mt-1 px-0.5 text-xs leading-snug text-muted-foreground">
+                        {captions[idx]}
+                      </figcaption>
+                    )}
+                  </figure>
                 ))}
               </div>
             </section>
@@ -343,12 +409,19 @@ const ReckiReview = () => {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={() => setLightboxIdx(null)}
         >
-          <img
-            src={optimizeImageUrl(gallery[lightboxIdx], { width: 1600, quality: 78 })}
-            alt=""
-            className="max-h-[90vh] max-w-[90vw] object-contain"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <figure className="flex max-h-[92vh] flex-col items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={optimizeImageUrl(gallery[lightboxIdx], { width: 1600, quality: 78 })}
+              alt={captions[lightboxIdx]?.trim() || `${placeName} — zdjęcie ${lightboxIdx + 1}`}
+              className="max-h-[82vh] max-w-[92vw] object-contain"
+            />
+            <figcaption className="max-w-[92vw] text-center text-sm text-white/80">
+              {captions[lightboxIdx]?.trim() && <span className="block">{captions[lightboxIdx]}</span>}
+              <span className="text-xs text-white/60">
+                {lightboxIdx + 1} / {gallery.length}
+              </span>
+            </figcaption>
+          </figure>
           <Button
             variant="ghost"
             size="icon"
