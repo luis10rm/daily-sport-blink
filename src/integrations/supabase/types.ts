@@ -628,12 +628,14 @@ export type Database = {
           excerpt: string | null
           faq: Json
           gallery: string[]
+          gallery_captions: Json
           id: string
           image_height: number | null
           image_width: number | null
           is_ai_generated: boolean
           is_community_requested: boolean
           is_topic_of_day: boolean
+          practical_info: Json
           product_brand: string | null
           product_name: string | null
           pros: string[]
@@ -660,12 +662,14 @@ export type Database = {
           excerpt?: string | null
           faq?: Json
           gallery?: string[]
+          gallery_captions?: Json
           id?: string
           image_height?: number | null
           image_width?: number | null
           is_ai_generated?: boolean
           is_community_requested?: boolean
           is_topic_of_day?: boolean
+          practical_info?: Json
           product_brand?: string | null
           product_name?: string | null
           pros?: string[]
@@ -692,12 +696,14 @@ export type Database = {
           excerpt?: string | null
           faq?: Json
           gallery?: string[]
+          gallery_captions?: Json
           id?: string
           image_height?: number | null
           image_width?: number | null
           is_ai_generated?: boolean
           is_community_requested?: boolean
           is_topic_of_day?: boolean
+          practical_info?: Json
           product_brand?: string | null
           product_name?: string | null
           pros?: string[]
