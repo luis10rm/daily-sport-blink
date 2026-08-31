@@ -1,3 +1,4 @@
+import { normalizePracticalInfo, cleanPracticalInfo } from "@/lib/practicalInfo";
 import { optimizeImageUrl } from "@/lib/imageUrl";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -112,6 +113,8 @@ const ReviewEditor = () => {
     pros: [],
     cons: [],
     faq: [],
+    practical_info: {},
+    gallery_captions: [],
 
     gallery: [],
     cover_image_url: "",
@@ -228,6 +231,26 @@ const ReviewEditor = () => {
     set("faq", next);
   };
 
+  const pInfo = normalizePracticalInfo(form.practical_info);
+  const setPInfo = (key: string, value: string) =>
+    setForm((f) => ({
+      ...f,
+      practical_info: { ...normalizePracticalInfo(f.practical_info), [key]: value } as any,
+    }));
+  const amenities = pInfo.amenities ?? [];
+  const setAmenities = (list: string[]) =>
+    setForm((f) => ({
+      ...f,
+      practical_info: { ...normalizePracticalInfo(f.practical_info), amenities: list } as any,
+    }));
+  const captions = form.gallery_captions ?? [];
+  const setCaption = (idx: number, value: string) => {
+    const next = [...captions];
+    while (next.length < (form.gallery ?? []).length) next.push("");
+    next[idx] = value;
+    set("gallery_captions", next as any);
+  };
+
   const handleSubmit = async (publish?: boolean) => {
     if (!form.title || !form.slug) {
       toast.error("Tytuł i slug są wymagane");
@@ -247,6 +270,8 @@ const ReviewEditor = () => {
       faq: faqItems
         .map((item) => ({ q: (item.q ?? "").trim(), a: (item.a ?? "").trim() }))
         .filter((item) => item.q && item.a),
+      practical_info: cleanPracticalInfo(normalizePracticalInfo(form.practical_info)),
+      gallery_captions: (form.gallery ?? []).map((_, i) => (form.gallery_captions ?? [])[i] ?? ""),
       status: publish ? "published" : form.status ?? "draft",
     };
 
