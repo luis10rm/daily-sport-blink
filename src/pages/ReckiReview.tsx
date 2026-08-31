@@ -267,7 +267,7 @@ const ReckiReview = () => {
                         src={src}
                         alt={captions[idx]?.trim() || `${placeName} — zdjęcie ${idx + 1}`}
                         loading="lazy"
-                        className="h-auto max-h-[70vh] w-full object-cover transition-transform duration-300 @media(hover:hover){group-hover:scale-[1.03]}"
+                        className="h-auto max-h-[70vh] w-full object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-[1.03]"
                         sizes="(min-width: 768px) 260px, 45vw"
                         widths={[260, 400, 640, 900]}
                         fallbackWidth={640}
