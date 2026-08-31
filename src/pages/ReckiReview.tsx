@@ -250,27 +250,35 @@ const ReckiReview = () => {
             />
           )}
 
-          {/* Gallery */}
+          {/* Gallery — masonry, keeps each photo's natural proportions */}
           {gallery.length > 0 && (
             <section className="mb-8">
               <h2 className="text-xl font-bold mb-3">Galeria</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="columns-2 gap-2 sm:columns-3 [column-fill:_balance]">
                 {gallery.map((src, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setLightboxIdx(idx)}
-                    className="group relative aspect-square overflow-hidden rounded-lg bg-muted"
-                  >
-                    <OptimizedImage
-                      src={src}
-                      alt={`Zdjęcie ${idx + 1}`}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                      sizes="(min-width: 768px) 200px, 45vw"
-                      widths={[200, 320, 400, 640]}
-                      fallbackWidth={400}
-                    />
-                  </button>
+                  <figure key={idx} className="mb-2 break-inside-avoid">
+                    <button
+                      type="button"
+                      onClick={() => setLightboxIdx(idx)}
+                      className="group block w-full overflow-hidden rounded-lg bg-muted touch-manipulation"
+                      aria-label={`Powiększ zdjęcie ${idx + 1} z ${gallery.length}`}
+                    >
+                      <OptimizedImage
+                        src={src}
+                        alt={captions[idx]?.trim() || `${placeName} — zdjęcie ${idx + 1}`}
+                        loading="lazy"
+                        className="h-auto max-h-[70vh] w-full object-cover transition-transform duration-300 @media(hover:hover){group-hover:scale-[1.03]}"
+                        sizes="(min-width: 768px) 260px, 45vw"
+                        widths={[260, 400, 640, 900]}
+                        fallbackWidth={640}
+                      />
+                    </button>
+                    {captions[idx]?.trim() && (
+                      <figcaption className="mt-1 px-0.5 text-xs leading-snug text-muted-foreground">
+                        {captions[idx]}
+                      </figcaption>
+                    )}
+                  </figure>
                 ))}
               </div>
             </section>
