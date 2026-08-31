@@ -35,6 +35,7 @@ import {
   type Review,
 } from "@/hooks/useReviews";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminReviewRequests } from "@/hooks/useReviewRequests";
 
 const slugify = (s: string) =>
   s
@@ -98,6 +99,7 @@ const ReviewEditor = () => {
   const isNew = !id;
   const { data: existing } = useReviewById(id);
   const { data: categories = [] } = useReviewCategories();
+  const { data: reviewRequests = [] } = useAdminReviewRequests("votes");
   const upsert = useUpsertReview();
 
   const [form, setForm] = useState<Partial<Review>>({
