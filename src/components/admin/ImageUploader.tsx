@@ -16,9 +16,11 @@ interface ImageUploaderProps {
   disabled?: boolean;
   enableCrop?: boolean;
   cropAspect?: number;
+  allowAspectChange?: boolean;
   storageBucket?: string;
   storagePath?: string;
 }
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_TYPES = {
@@ -34,9 +36,11 @@ export const ImageUploader = ({
   disabled,
   enableCrop = false,
   cropAspect = 1,
+  allowAspectChange = false,
   storageBucket = "post-images",
   storagePath = "posts",
 }: ImageUploaderProps) => {
+
   const [isUploading, setIsUploading] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
@@ -195,8 +199,10 @@ export const ImageUploader = ({
           onClose={handleCropClose}
           imageSrc={pendingImage}
           aspect={cropAspect}
+          allowAspectChange={allowAspectChange}
           onCropComplete={handleCropComplete}
         />
+
       )}
     </>
   );
