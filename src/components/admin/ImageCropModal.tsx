@@ -101,6 +101,7 @@ export const ImageCropModal = ({
             onZoomChange={setZoom}
             onRotationChange={setRotation}
             onCropComplete={onCropAreaChange}
+            cropShape={!allowAspectChange && aspect === 1 ? "round" : "rect"}
             showGrid
           />
         </div>

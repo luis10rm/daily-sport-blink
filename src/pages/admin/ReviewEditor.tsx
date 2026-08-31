@@ -623,6 +623,9 @@ const ReviewEditor = () => {
               value={form.cover_image_url ?? ""}
               onChange={(url) => set("cover_image_url", url)}
               onRemove={() => set("cover_image_url", "")}
+              enableCrop
+              cropAspect={16 / 9}
+              allowAspectChange
               storageBucket="post-images"
               storagePath="reviews/cover"
             />
