@@ -43,6 +43,56 @@ const ReckiReview = () => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, [slug]);
 
+  const galleryLength = review?.gallery?.length ?? 0;
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxIdx(null);
+      if (e.key === "ArrowRight") setLightboxIdx((i) => (i === null ? 0 : (i + 1) % galleryLength));
+      if (e.key === "ArrowLeft")
+        setLightboxIdx((i) => (i === null ? 0 : (i - 1 + galleryLength) % galleryLength));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxIdx, galleryLength]);
+
+  // JSON-LD: Review of a place (Hotel/LocalBusiness) when practical info is filled in
+  const practicalRaw = normalizePracticalInfo((review as any)?.practical_info);
+  const isPlaceReview = !!practicalRaw.address || !!practicalRaw.website;
+  useEffect(() => {
+    if (!review || !isPlaceReview) return;
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.dataset.placeSchema = "true";
+    script.text = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Review",
+      itemReviewed: {
+        "@type": "Hotel",
+        name: review.product_name || review.title,
+        ...(practicalRaw.address
+          ? { address: { "@type": "PostalAddress", streetAddress: practicalRaw.address } }
+          : {}),
+        ...(practicalRaw.website ? { url: practicalRaw.website } : {}),
+        ...(review.cover_image_url ? { image: review.cover_image_url } : {}),
+      },
+      ...(review.score !== null && review.score !== undefined
+        ? {
+            reviewRating: {
+              "@type": "Rating",
+              ratingValue: review.score,
+              bestRating: 10,
+              worstRating: 1,
+            },
+          }
+        : {}),
+      ...(review.verdict ? { reviewBody: review.verdict } : {}),
+      ...(review.published_at ? { datePublished: review.published_at } : {}),
+    });
+    document.head.appendChild(script);
+    return () => script.remove();
+  }, [review, isPlaceReview, practicalRaw.address, practicalRaw.website]);
+
   const canonicalPath = review?.category?.slug && review?.slug
     ? `https://szortsy.pl/tech/${review.category.slug}/${review.slug}`
     : `https://szortsy.pl/tech`;
