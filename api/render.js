@@ -487,11 +487,11 @@ const resolveMeta = async (path) => {
   if (sportCategory) {
     const slug = decodeURIComponent(sportCategory[1]);
     if (slug === "wspo-praca-reklamowa") return { ...meta, title: "Współpraca reklamowa", robots: NOINDEX };
-    const row = await fetchOne("sport_categories", { select: "id,slug,name,description", slug: `eq.${slug}` });
+    const row = await fetchOne("sport_categories", { select: "id,slug,name", slug: `eq.${slug}` });
     if (row === undefined) return meta;
     if (row) {
       const items = row.id ? await fetchSportList({ category_id: `eq.${row.id}` }) : [];
-      const description = row.description || `Najnowsze wiadomości sportowe z kategorii ${row.name}.`;
+      const description = `Najnowsze wiadomości sportowe z kategorii ${row.name} — krótko i na temat.`;
       return {
         ...meta,
         title: `${row.name} - Wiadomości`,
