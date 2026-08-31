@@ -35,6 +35,7 @@ import {
   type Review,
 } from "@/hooks/useReviews";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminReviewRequests } from "@/hooks/useReviewRequests";
 
 const slugify = (s: string) =>
   s
@@ -98,6 +99,7 @@ const ReviewEditor = () => {
   const isNew = !id;
   const { data: existing } = useReviewById(id);
   const { data: categories = [] } = useReviewCategories();
+  const { data: reviewRequests = [] } = useAdminReviewRequests("votes");
   const upsert = useUpsertReview();
 
   const [form, setForm] = useState<Partial<Review>>({
@@ -249,6 +251,7 @@ const ReviewEditor = () => {
     };
 
     delete payload.category;
+    delete (payload as any).request;
     const saved = await upsert.mutateAsync(payload);
     navigate(`/admin/recki/${saved.id}/edit`);
   };
@@ -957,6 +960,55 @@ const ReviewEditor = () => {
               checked={!!form.is_topic_of_day}
               onCheckedChange={(v) => set("is_topic_of_day", v)}
             />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Recenzja na życzenie użytkowników</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-xs text-muted-foreground">
+                Włącz, jeśli temat pochodzi z ankiety „Jakiej recenzji szukasz?”. Na artykule i
+                kafelkach pojawi się plakietka „Na Wasze życzenie”.
+              </p>
+              <Switch
+                checked={!!(form as any).is_community_requested}
+                onCheckedChange={(v) => {
+                  set("is_community_requested" as any, v as any);
+                  if (!v) set("review_request_id" as any, null as any);
+                }}
+              />
+            </div>
+
+            {!!(form as any).is_community_requested && (
+              <div>
+                <Label>Powiązane zgłoszenie (opcjonalnie)</Label>
+                <Select
+                  value={(form as any).review_request_id ?? "none"}
+                  onValueChange={(v) =>
+                    set("review_request_id" as any, (v === "none" ? null : v) as any)
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Wybierz zgłoszenie z ankiety" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Bez powiązania (bez liczby głosów)</SelectItem>
+                    {reviewRequests.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.title} — {r.votes} gł.
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Powiązanie pokaże liczbę głosów w plakietce i oznaczy zgłoszenie jako
+                  zrealizowane.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

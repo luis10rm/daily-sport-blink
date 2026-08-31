@@ -50,11 +50,14 @@ export interface Review {
   is_ai_generated: boolean;
   content_type: "review" | "news" | "comparison";
   is_topic_of_day: boolean;
+  is_community_requested: boolean;
+  review_request_id: string | null;
+  request?: { id: string; title: string; votes: number } | null;
   created_at: string;
   updated_at: string;
 }
 
-const SELECT = `*, category:review_categories(id, name, slug, description, color, sort_order)`;
+const SELECT = `*, category:review_categories(id, name, slug, description, color, sort_order), request:review_requests(id, title, votes)`;
 
 export const useReviewCategories = () => {
   return useQuery({

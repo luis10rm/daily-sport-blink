@@ -7,10 +7,11 @@ import { ReckiFooter } from "@/components/recki/ReckiFooter";
 import { ReviewCard } from "@/components/recki/ReviewCard";
 import { ReviewFaq, normalizeFaq } from "@/components/recki/ReviewFaq";
 import { ReviewBasisBadge } from "@/components/recki/ReviewBasisBadge";
+import { CommunityRequestBadge } from "@/components/recki/CommunityRequestBadge";
 import { ScoreBadge } from "@/components/recki/ScoreBadge";
 import { useReviewBySlug, usePublishedReviews } from "@/hooks/useReviews";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, X, ExternalLink, ChevronLeft, ChevronRight, ImageOff } from "lucide-react";
+import { Check, X, ExternalLink, ChevronLeft, ChevronRight, ImageOff, Megaphone } from "lucide-react";
 import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SponsorBanner } from "@/components/SponsorBanner";
@@ -129,6 +130,10 @@ const ReckiReview = () => {
                   {review.category.name}
                 </span>
               )}
+              <CommunityRequestBadge
+                active={review.is_community_requested}
+                votes={review.request?.votes}
+              />
               <ReviewBasisBadge basis={(review as any).review_basis} />
             </div>
             <h1 className="mt-3 text-3xl sm:text-4xl font-bold leading-tight">{review.title}</h1>
@@ -162,6 +167,21 @@ const ReckiReview = () => {
               </div>
             </aside>
           )}
+
+          {review.is_community_requested && (
+            <aside className="mb-8 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm">
+              <Megaphone className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <span className="font-semibold text-foreground">
+                Ten temat wybraliście w naszej ankiecie
+                {review.request?.votes ? ` (${review.request.votes} głosów)` : ""}.
+              </span>
+              <Link to="/tech#ankieta" className="text-emerald-700 underline dark:text-emerald-300">
+                Zaproponuj kolejną recenzję
+              </Link>
+            </aside>
+          )}
+
+
 
           {/* Cover image */}
           {review.cover_image_url && (
