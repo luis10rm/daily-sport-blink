@@ -632,12 +632,14 @@ export type Database = {
           image_height: number | null
           image_width: number | null
           is_ai_generated: boolean
+          is_community_requested: boolean
           is_topic_of_day: boolean
           product_brand: string | null
           product_name: string | null
           pros: string[]
           published_at: string | null
           review_basis: string | null
+          review_request_id: string | null
           score: number | null
           slug: string
           source_url: string | null
@@ -662,12 +664,14 @@ export type Database = {
           image_height?: number | null
           image_width?: number | null
           is_ai_generated?: boolean
+          is_community_requested?: boolean
           is_topic_of_day?: boolean
           product_brand?: string | null
           product_name?: string | null
           pros?: string[]
           published_at?: string | null
           review_basis?: string | null
+          review_request_id?: string | null
           score?: number | null
           slug: string
           source_url?: string | null
@@ -692,12 +696,14 @@ export type Database = {
           image_height?: number | null
           image_width?: number | null
           is_ai_generated?: boolean
+          is_community_requested?: boolean
           is_topic_of_day?: boolean
           product_brand?: string | null
           product_name?: string | null
           pros?: string[]
           published_at?: string | null
           review_basis?: string | null
+          review_request_id?: string | null
           score?: number | null
           slug?: string
           source_url?: string | null
@@ -726,6 +732,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "review_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_review_request_id_fkey"
+            columns: ["review_request_id"]
+            isOneToOne: false
+            referencedRelation: "review_requests"
             referencedColumns: ["id"]
           },
         ]
