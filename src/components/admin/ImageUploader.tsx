@@ -36,9 +36,11 @@ export const ImageUploader = ({
   disabled,
   enableCrop = false,
   cropAspect = 1,
+  allowAspectChange = false,
   storageBucket = "post-images",
   storagePath = "posts",
 }: ImageUploaderProps) => {
+
   const [isUploading, setIsUploading] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
