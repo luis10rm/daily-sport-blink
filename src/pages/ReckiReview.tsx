@@ -183,13 +183,16 @@ const ReckiReview = () => {
 
 
 
+          {/* Practical info (places / travel reviews) */}
+          <PracticalInfo info={practicalInfo} />
+
           {/* Cover image */}
           {review.cover_image_url && (
-            <div className="mb-8 overflow-hidden rounded-2xl">
+            <div className="mb-8 aspect-[16/9] overflow-hidden rounded-2xl bg-muted">
               <OptimizedImage
                 src={review.cover_image_url}
                 alt={review.title}
-                className="w-full object-cover"
+                className="h-full w-full object-cover object-center"
                 priority="high"
                 sizes="(min-width: 1024px) 800px, 100vw"
                 widths={[400, 640, 800, 1200]}
