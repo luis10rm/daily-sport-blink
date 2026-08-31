@@ -68,9 +68,98 @@ const baseMeta = (path) => ({
   ogType: "website",
   image: DEFAULT_IMAGE,
   schema: null,
+  content: null,
 });
 
 const addTag = (tags, tag) => tag && tags.push(tag);
+
+// --- Server-rendered body content (so crawlers get text without executing JS) ---
+
+const stripUnsafe = (html = "") =>
+  String(html)
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/javascript:/gi, "");
+
+const plainParagraphs = (text = "") =>
+  String(text)
+    .split(/\n{2,}/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk) => `<p>${escapeHtml(chunk)}</p>`)
+    .join("\n");
+
+const contentHtml = (content = "") => {
+  const raw = String(content || "").trim();
+  if (!raw) return "";
+  return /<\/?(p|h[1-6]|ul|ol|li|blockquote|div|br)\b/i.test(raw)
+    ? stripUnsafe(raw)
+    : plainParagraphs(raw);
+};
+
+const formatPlDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
+
+const articleBody = ({ title, excerpt, content, publishedAt, author, section, sourceUrl, image }) =>
+  [
+    `<article>`,
+    `<h1>${escapeHtml(title || "")}</h1>`,
+    section ? `<p><strong>${escapeHtml(section)}</strong></p>` : "",
+    publishedAt
+      ? `<p><time datetime="${escapeHtml(publishedAt)}">${escapeHtml(formatPlDate(publishedAt))}</time>${author ? ` — ${escapeHtml(author)}` : ""}</p>`
+      : "",
+    image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(title || "")}" width="1200" height="675" />` : "",
+    excerpt ? `<p>${escapeHtml(excerpt)}</p>` : "",
+    contentHtml(content),
+    sourceUrl ? `<p><a href="${escapeHtml(sourceUrl)}" rel="nofollow noopener">Źródło</a></p>` : "",
+    `</article>`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+const listBody = (heading, intro, items) =>
+  [
+    `<h1>${escapeHtml(heading)}</h1>`,
+    intro ? `<p>${escapeHtml(intro)}</p>` : "",
+    items.length
+      ? `<ul>\n${items
+          .map(
+            (item) =>
+              `<li><a href="${escapeHtml(item.href)}"><h2>${escapeHtml(item.title)}</h2></a>${
+                item.date ? `<time datetime="${escapeHtml(item.date)}">${escapeHtml(formatPlDate(item.date))}</time>` : ""
+              }${item.excerpt ? `<p>${escapeHtml(item.excerpt)}</p>` : ""}</li>`,
+          )
+          .join("\n")}\n</ul>`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+const POST_LIST_SELECT = "slug,title,excerpt,published_at,channel";
+
+const fetchSportList = async (extra = {}) => {
+  const rows = await fetchRows("posts", {
+    select: POST_LIST_SELECT,
+    is_hidden: "eq.false",
+    channel: "eq.sport",
+    order: "published_at.desc",
+    limit: "30",
+    ...extra,
+  });
+  return (rows || []).map((post) => ({
+    href: `${SITE_URL}/blink/${post.slug}`,
+    title: post.title,
+    excerpt: post.excerpt,
+    date: post.published_at,
+  }));
+};
+
 
 const replaceHead = (html, meta) => {
   let next = html
@@ -189,11 +278,30 @@ const postMeta = (post, path) => {
       keywords: post.tags?.length ? post.tags : undefined,
       inLanguage: "pl-PL",
     },
+    content: articleBody({
+      title: post.title,
+      excerpt: post.excerpt,
+      content: post.content,
+      publishedAt: post.published_at,
+      author: authorName,
+      section,
+      sourceUrl: post.source_url,
+      image: post.image_url,
+    }),
   };
 };
 
+
 const resolveMeta = async (path) => {
   const meta = baseMeta(path);
+
+  if (path === "/") {
+    const items = await fetchSportList();
+    return {
+      ...meta,
+      content: listBody("Szortsy — wiadomości sportowe krótko i na temat", DEFAULT_DESCRIPTION, items),
+    };
+  }
 
   if (path === "/archiwum") {
     return {
@@ -264,7 +372,7 @@ const resolveMeta = async (path) => {
 
     const post = await fetchOne("posts", {
       select:
-        "slug,title,excerpt,image_url,source_url,tags,channel,published_at,updated_at,sport_category:sport_categories!fk_posts_category(slug,name),positive_category:positive_categories!posts_positive_category_id_fkey(slug,name),author:authors(display_name,slug)",
+        "slug,title,excerpt,content,image_url,source_url,tags,channel,published_at,updated_at,sport_category:sport_categories!fk_posts_category(slug,name),positive_category:positive_categories!posts_positive_category_id_fkey(slug,name),author:authors(display_name,slug)",
       slug: `eq.${slug}`,
       is_hidden: "eq.false",
     });
@@ -277,7 +385,7 @@ const resolveMeta = async (path) => {
     const slug = decodeURIComponent(positive[2]);
     const post = await fetchOne("posts", {
       select:
-        "slug,title,excerpt,image_url,source_url,tags,channel,published_at,updated_at,sport_category:sport_categories!fk_posts_category(slug,name),positive_category:positive_categories!posts_positive_category_id_fkey(slug,name),author:authors(display_name,slug)",
+        "slug,title,excerpt,content,image_url,source_url,tags,channel,published_at,updated_at,sport_category:sport_categories!fk_posts_category(slug,name),positive_category:positive_categories!posts_positive_category_id_fkey(slug,name),author:authors(display_name,slug)",
       slug: `eq.${slug}`,
       channel: "eq.positive",
       is_hidden: "eq.false",
@@ -316,7 +424,7 @@ const resolveMeta = async (path) => {
   if (techArticle) {
     const slug = decodeURIComponent(techArticle[2]);
     const review = await fetchOne("reviews", {
-      select: "slug,title,excerpt,verdict,cover_image_url,published_at,updated_at,category:review_categories(slug,name)",
+      select: "slug,title,excerpt,content,verdict,cover_image_url,published_at,updated_at,category:review_categories(slug,name)",
       slug: `eq.${slug}`,
       status: "eq.published",
     });
@@ -346,6 +454,14 @@ const resolveMeta = async (path) => {
         articleSection: review.category?.name,
         inLanguage: "pl-PL",
       },
+      content: articleBody({
+        title: review.title,
+        excerpt: review.excerpt || review.verdict,
+        content: review.content,
+        publishedAt: review.published_at,
+        section: review.category?.name,
+        image: review.cover_image_url,
+      }),
     };
   }
 
@@ -371,13 +487,16 @@ const resolveMeta = async (path) => {
   if (sportCategory) {
     const slug = decodeURIComponent(sportCategory[1]);
     if (slug === "wspo-praca-reklamowa") return { ...meta, title: "Współpraca reklamowa", robots: NOINDEX };
-    const row = await fetchOne("sport_categories", { select: "slug,name,description", slug: `eq.${slug}` });
+    const row = await fetchOne("sport_categories", { select: "id,slug,name", slug: `eq.${slug}` });
     if (row === undefined) return meta;
     if (row) {
+      const items = row.id ? await fetchSportList({ category_id: `eq.${row.id}` }) : [];
+      const description = `Najnowsze wiadomości sportowe z kategorii ${row.name} — krótko i na temat.`;
       return {
         ...meta,
         title: `${row.name} - Wiadomości`,
-        description: row.description || `Najnowsze wiadomości sportowe z kategorii ${row.name}.`,
+        description,
+        content: listBody(`${row.name} — wiadomości`, description, items),
       };
     }
     return { ...meta, title: "Kategoria nie znaleziona", robots: NOINDEX };
@@ -426,7 +545,14 @@ export default async function handler(request) {
     headers: { Accept: "text/html" },
   });
   const html = await indexResponse.text();
-  const body = replaceHead(html, meta);
+  let body = replaceHead(html, meta);
+
+  if (meta.content) {
+    body = body.replace(
+      '<div id="root"></div>',
+      `<div id="root"><div id="ssr-content">\n${meta.content}\n</div></div>`,
+    );
+  }
 
   return new Response(body, {
     status: 200,
