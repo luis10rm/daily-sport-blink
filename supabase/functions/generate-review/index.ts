@@ -263,11 +263,17 @@ serve(async (req) => {
       ? `\n\nKOMPLETNOŚĆ RANKINGU:\n- Uwzględnij WSZYSTKIE pozycje obecne w źródle (minimum 5, jeśli źródło je zawiera). Nie skracaj rankingu do 2-3 modeli.\n- Każda pozycja to osobny <h3> z numerem, pełną nazwą i wyróżnikiem.`
       : "";
 
+    // Reviews of places (hotels, trips) also get structured practical info.
+    const placeRules = (!isNews && !isComparison)
+      ? `\n\nINFORMACJE PRAKTYCZNE (tylko recenzje miejsc: hotele, resorty, wyjazdy):\n- Jeśli recenzja dotyczy MIEJSCA, dodaj do JSON pole "practical_info": { "address", "map_url", "price_from", "parking", "season", "best_for", "travel", "website", "amenities":[3-8 krótkich haseł] }.\n- Wypełniaj wyłącznie wartościami potwierdzonymi w źródle; pola bez danych pomiń (nie zmyślaj adresów, cen ani linków).\n- Wartości krótkie, rzeczowe, po polsku (np. "od 450 zł/noc w sezonie").\n- Jeśli recenzja dotyczy sprzętu, NIE dodawaj tego pola.`
+      : "";
+
     const buildUserPrompt = (textLimit: number) => [
       intro,
       category ? `Kategoria: ${category}.` : "",
       dateRules,
       comparisonCompletenessRules,
+      placeRules,
       scraped?.text ? `\n\n--- Artykuł źródłowy ---\n${scraped.text.slice(0, textLimit)}\n--- koniec ---` : "",
     ].filter(Boolean).join(" ");
 
@@ -281,7 +287,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: systemPrompt + dateRules },
+            { role: "system", content: systemPrompt + dateRules + placeRules },
             { role: "user", content: buildUserPrompt(textLimit) },
           ],
           response_format: { type: "json_object" },
@@ -383,6 +389,22 @@ serve(async (req) => {
       if (typeof parsed.score === "string") parsed.score = parseFloat(parsed.score);
       if (typeof parsed.score === "number") parsed.score = Math.max(0, Math.min(10, parsed.score));
       parsed.faq = Array.isArray(parsed.faq) ? parsed.faq : [];
+      const pi = parsed.practical_info;
+      if (pi && typeof pi === "object" && !Array.isArray(pi)) {
+        const keys = ["address", "map_url", "price_from", "parking", "season", "best_for", "travel", "website"];
+        const clean: Record<string, unknown> = {};
+        for (const k of keys) {
+          const v = pi[k];
+          if (typeof v === "string" && v.trim()) clean[k] = v.trim();
+        }
+        const amenities = Array.isArray(pi.amenities)
+          ? pi.amenities.map((a: any) => String(a).trim()).filter(Boolean).slice(0, 10)
+          : [];
+        if (amenities.length) clean.amenities = amenities;
+        parsed.practical_info = Object.keys(clean).length ? clean : null;
+      } else {
+        parsed.practical_info = null;
+      }
     }
 
     const warnings: string[] = [];
