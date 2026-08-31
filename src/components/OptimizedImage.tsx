@@ -14,6 +14,12 @@ export interface OptimizedImageProps
   quality?: number;
   /** Width used for the fallback `src` (older browsers ignoring srcset). */
   fallbackWidth?: number;
+  /**
+   * Target aspect ratio (width / height) when the image is displayed cropped
+   * (`object-cover`). Enables a server-side crop; omit it to preserve the
+   * original aspect ratio.
+   */
+  aspect?: number;
   priority?: Priority;
 }
 
@@ -28,13 +34,19 @@ export const OptimizedImage = ({
   widths = DEFAULT_WIDTHS,
   quality = 70,
   fallbackWidth = 800,
+  aspect,
   priority = "auto",
   loading,
   decoding = "async",
   ...rest
 }: OptimizedImageProps) => {
-  const srcSet = buildSrcSet(src, widths, quality);
-  const resolvedSrc = optimizeImageUrl(src, { width: fallbackWidth, quality });
+  const srcSet = buildSrcSet(src, widths, quality, aspect);
+  const resolvedSrc = optimizeImageUrl(src, {
+    width: fallbackWidth,
+    quality,
+    aspect,
+    resize: aspect ? "cover" : "contain",
+  });
 
   return (
     <img
