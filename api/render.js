@@ -277,8 +277,19 @@ const postMeta = (post, path) => {
       keywords: post.tags?.length ? post.tags : undefined,
       inLanguage: "pl-PL",
     },
+    content: articleBody({
+      title: post.title,
+      excerpt: post.excerpt,
+      content: post.content,
+      publishedAt: post.published_at,
+      author: authorName,
+      section,
+      sourceUrl: post.source_url,
+      image: post.image_url,
+    }),
   };
 };
+
 
 const resolveMeta = async (path) => {
   const meta = baseMeta(path);
