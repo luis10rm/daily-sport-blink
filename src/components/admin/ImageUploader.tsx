@@ -16,9 +16,11 @@ interface ImageUploaderProps {
   disabled?: boolean;
   enableCrop?: boolean;
   cropAspect?: number;
+  allowAspectChange?: boolean;
   storageBucket?: string;
   storagePath?: string;
 }
+
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_TYPES = {
