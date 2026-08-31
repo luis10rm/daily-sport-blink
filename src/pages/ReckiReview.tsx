@@ -138,7 +138,7 @@ const ReckiReview = () => {
   }
 
   const gallery = review.gallery ?? [];
-  const practicalInfo = normalizePracticalInfo((review as any).practical_info);
+  const practicalInfo = practicalRaw;
   const captions = normalizeCaptions((review as any).gallery_captions);
   const placeName = review.product_name || review.title;
 
