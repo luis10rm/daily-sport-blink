@@ -73,8 +73,9 @@ export const ReviewRequestsWidget = ({ className }: ReviewRequestsWidgetProps) =
 
   return (
     <section
+      id="ankieta"
       className={cn(
-        "rounded-2xl border border-border bg-card p-5 sm:p-6",
+        "scroll-mt-24 rounded-2xl border border-border bg-card p-5 sm:p-6",
         className,
       )}
       aria-labelledby="review-requests-heading"
