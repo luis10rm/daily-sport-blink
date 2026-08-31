@@ -657,8 +657,8 @@ const ReviewEditor = () => {
               {(form.gallery ?? []).map((url, idx) => {
                 const isCover = url === form.cover_image_url && !!url;
                 return (
+                  <div key={idx} className="space-y-1">
                   <div
-                    key={idx}
                     className={`relative aspect-square overflow-hidden rounded-md border ${
                       isCover ? "ring-2 ring-amber-400 border-amber-400" : ""
                     }`}
@@ -698,6 +698,13 @@ const ReviewEditor = () => {
                     >
                       <X className="h-3.5 w-3.5" />
                     </Button>
+                  </div>
+                  <Input
+                    value={captions[idx] ?? ""}
+                    placeholder="Podpis (opcjonalny)"
+                    className="h-8 text-xs"
+                    onChange={(e) => setCaption(idx, e.target.value)}
+                  />
                   </div>
                 );
               })}
@@ -864,6 +871,123 @@ const ReviewEditor = () => {
           </CardContent>
         </Card>
         )}
+
+        {/* Practical info (places / travel) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Informacje praktyczne</CardTitle>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Widoczne jako wyróżniona karta nad zdjęciem głównym. Wypełnij tylko przy recenzjach
+              miejsc (hotele, wyjazdy) — puste pola nie pokazują się w artykule.
+            </p>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <Label>Lokalizacja / adres</Label>
+              <Input
+                value={pInfo.address ?? ""}
+                placeholder="Grzybowo, ul. Nadmorska 1"
+                onChange={(e) => setPInfo("address", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Link do mapy</Label>
+              <Input
+                value={pInfo.map_url ?? ""}
+                placeholder="https://maps.google.com/..."
+                onChange={(e) => setPInfo("map_url", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Ceny</Label>
+              <Input
+                value={pInfo.price_from ?? ""}
+                placeholder="od 450 zł / noc w sezonie"
+                onChange={(e) => setPInfo("price_from", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Parking</Label>
+              <Input
+                value={pInfo.parking ?? ""}
+                placeholder="70 zł / dobę, hotelowy podziemny"
+                onChange={(e) => setPInfo("parking", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Kiedy jechać / sezon</Label>
+              <Input
+                value={pInfo.season ?? ""}
+                placeholder="maj–czerwiec i wrzesień"
+                onChange={(e) => setPInfo("season", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Dla kogo</Label>
+              <Input
+                value={pInfo.best_for ?? ""}
+                placeholder="rodziny z dziećmi 0–12 lat"
+                onChange={(e) => setPInfo("best_for", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Dojazd</Label>
+              <Input
+                value={pInfo.travel ?? ""}
+                placeholder="6 km od Kołobrzegu, ~5 h z Warszawy"
+                onChange={(e) => setPInfo("travel", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>Strona obiektu</Label>
+              <Input
+                value={pInfo.website ?? ""}
+                placeholder="https://..."
+                onChange={(e) => setPInfo("website", e.target.value)}
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <div className="mb-2 flex items-center justify-between">
+                <Label>Udogodnienia</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setAmenities([...amenities, ""])}
+                >
+                  <Plus className="mr-1 h-3 w-3" /> Dodaj
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {amenities.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Np. basen, sala zabaw, śniadania, plaża 500 m.
+                  </p>
+                )}
+                {amenities.map((a, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      value={a}
+                      placeholder="Basen kryty 8,5 x 2,5 m"
+                      onChange={(e) =>
+                        setAmenities(amenities.map((x, j) => (j === i ? e.target.value : x)))
+                      }
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setAmenities(amenities.filter((_, j) => j !== i))}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* FAQ */}
         <Card>
