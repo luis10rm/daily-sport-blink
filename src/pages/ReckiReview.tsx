@@ -304,20 +304,20 @@ const ReckiReview = () => {
           {gallery.length > 0 && (
             <section className="mb-8">
               <h2 className="text-xl font-bold mb-3">Galeria</h2>
-              <div className="columns-2 gap-2 sm:columns-3 [column-fill:_balance]">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {gallery.map((src, idx) => (
-                  <figure key={idx} className="mb-2 break-inside-avoid">
+                  <figure key={idx} className="flex flex-col">
                     <button
                       type="button"
                       onClick={() => setLightboxIdx(idx)}
-                      className="group block w-full overflow-hidden rounded-lg bg-muted touch-manipulation"
+                      className="group relative block aspect-[4/3] w-full overflow-hidden rounded-lg border border-border bg-muted/40 touch-manipulation"
                       aria-label={`Powiększ zdjęcie ${idx + 1} z ${gallery.length}`}
                     >
                       <OptimizedImage
                         src={src}
                         alt={captions[idx]?.trim() || `${placeName} — zdjęcie ${idx + 1}`}
                         loading="lazy"
-                        className="h-auto max-h-[70vh] w-full object-cover transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-[1.03]"
+                        className="absolute inset-0 h-full w-full object-contain p-1 transition-transform duration-300 [@media(hover:hover)]:group-hover:scale-[1.03]"
                         sizes="(min-width: 768px) 260px, 45vw"
                         widths={[260, 400, 640, 900]}
                         fallbackWidth={640}
@@ -331,6 +331,7 @@ const ReckiReview = () => {
                   </figure>
                 ))}
               </div>
+
             </section>
           )}
 
