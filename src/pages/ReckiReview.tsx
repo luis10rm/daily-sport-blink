@@ -88,6 +88,9 @@ const ReckiReview = () => {
   }
 
   const gallery = review.gallery ?? [];
+  const practicalInfo = normalizePracticalInfo((review as any).practical_info);
+  const captions = normalizeCaptions((review as any).gallery_captions);
+  const placeName = review.product_name || review.title;
 
   const renderBanner = (b: any, className = "my-8") =>
     b ? (
