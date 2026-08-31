@@ -72,6 +72,94 @@ const baseMeta = (path) => ({
 
 const addTag = (tags, tag) => tag && tags.push(tag);
 
+// --- Server-rendered body content (so crawlers get text without executing JS) ---
+
+const stripUnsafe = (html = "") =>
+  String(html)
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+    .replace(/javascript:/gi, "");
+
+const plainParagraphs = (text = "") =>
+  String(text)
+    .split(/\n{2,}/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean)
+    .map((chunk) => `<p>${escapeHtml(chunk)}</p>`)
+    .join("\n");
+
+const contentHtml = (content = "") => {
+  const raw = String(content || "").trim();
+  if (!raw) return "";
+  return /<\/?(p|h[1-6]|ul|ol|li|blockquote|div|br)\b/i.test(raw)
+    ? stripUnsafe(raw)
+    : plainParagraphs(raw);
+};
+
+const formatPlDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
+
+const articleBody = ({ title, excerpt, content, publishedAt, author, section, sourceUrl, image }) =>
+  [
+    `<article>`,
+    `<h1>${escapeHtml(title || "")}</h1>`,
+    section ? `<p><strong>${escapeHtml(section)}</strong></p>` : "",
+    publishedAt
+      ? `<p><time datetime="${escapeHtml(publishedAt)}">${escapeHtml(formatPlDate(publishedAt))}</time>${author ? ` — ${escapeHtml(author)}` : ""}</p>`
+      : "",
+    image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(title || "")}" width="1200" height="675" />` : "",
+    excerpt ? `<p>${escapeHtml(excerpt)}</p>` : "",
+    contentHtml(content),
+    sourceUrl ? `<p><a href="${escapeHtml(sourceUrl)}" rel="nofollow noopener">Źródło</a></p>` : "",
+    `</article>`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+const listBody = (heading, intro, items) =>
+  [
+    `<h1>${escapeHtml(heading)}</h1>`,
+    intro ? `<p>${escapeHtml(intro)}</p>` : "",
+    items.length
+      ? `<ul>\n${items
+          .map(
+            (item) =>
+              `<li><a href="${escapeHtml(item.href)}"><h2>${escapeHtml(item.title)}</h2></a>${
+                item.date ? `<time datetime="${escapeHtml(item.date)}">${escapeHtml(formatPlDate(item.date))}</time>` : ""
+              }${item.excerpt ? `<p>${escapeHtml(item.excerpt)}</p>` : ""}</li>`,
+          )
+          .join("\n")}\n</ul>`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+const POST_LIST_SELECT = "slug,title,excerpt,published_at,channel";
+
+const fetchSportList = async (extra = {}) => {
+  const rows = await fetchRows("posts", {
+    select: POST_LIST_SELECT,
+    is_hidden: "eq.false",
+    channel: "eq.sport",
+    order: "published_at.desc",
+    limit: "30",
+    ...extra,
+  });
+  return (rows || []).map((post) => ({
+    href: `${SITE_URL}/blink/${post.slug}`,
+    title: post.title,
+    excerpt: post.excerpt,
+    date: post.published_at,
+  }));
+};
+
+
 const replaceHead = (html, meta) => {
   let next = html
     .replace(/<title>[\s\S]*?<\/title>/i, "")
