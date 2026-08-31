@@ -340,6 +340,13 @@ const ReviewEditor = () => {
         pros: isReview ? (data.pros ?? f.pros) : f.pros,
         cons: isReview ? (data.cons ?? f.cons) : f.cons,
         faq: aiFaq.length && !(f.faq ?? []).length ? aiFaq : f.faq,
+        practical_info:
+          isReview && data.practical_info
+            ? ({
+                ...normalizePracticalInfo(f.practical_info),
+                ...normalizePracticalInfo(data.practical_info),
+              } as any)
+            : f.practical_info,
         product_name: isReview ? (data.product_name ?? f.product_name) : f.product_name,
         product_brand: isReview ? (data.product_brand ?? f.product_brand) : f.product_brand,
         cover_image_url: nextCover,
