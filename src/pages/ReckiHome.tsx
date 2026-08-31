@@ -114,21 +114,28 @@ const ReckiHome = () => {
           )}
 
           {hero && (
-            <section className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
-              <div className="lg:col-span-2">
+            <section className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="order-1 lg:col-span-2 lg:col-start-1 lg:row-start-1">
                 <ReviewCard review={hero} variant="hero" />
               </div>
-              <aside className="lg:col-span-1 grid grid-cols-1 gap-3">
+
+              {isMobile && topBannerBlock && (
+                <div className="order-2">{topBannerBlock}</div>
+              )}
+
+              <aside className="order-3 grid grid-cols-1 gap-3 lg:col-start-3 lg:row-span-2 lg:row-start-1">
                 {secondary.map((r) => (
                   <ReviewCard key={r.id} review={r} variant="mini" />
                 ))}
               </aside>
+
+              <ReviewRequestsWidget className="order-4 lg:col-span-2 lg:col-start-1 lg:row-start-2" />
             </section>
           )}
 
-          {isMobile && topBannerBlock}
+          {!hero && isMobile && topBannerBlock}
 
-          <ReviewRequestsWidget className="mb-8" />
+          {!hero && <ReviewRequestsWidget className="mb-8" />}
 
 
 
