@@ -1,57 +1,64 @@
-# Diagnoza GSC + plan naprawy Core Web Vitals
+# Diagnoza spadku w Google — wnioski z eksportów Coverage
 
-## Co pokazują dane z Search Console (1–28.08 vs 4–31.07)
+## Co dokładnie pokazują Twoje pliki
 
-| Metryka | Lipiec | Sierpień | Zmiana |
+Indeksacja (wszystkie znane strony):
+
+| Data | Zaindeksowane | Niezaindeksowane | Wyświetlenia/dzień |
 |---|---|---|---|
-| Kliknięcia | 1 176 | 639 | -46% |
-| Wyświetlenia | 616 319 | 60 262 | -90% |
-| CTR | 0,19% | 1,06% | +5,5x |
-| Średnia pozycja | 10,0 | 10,9 | -0,9 |
+| 18.08 | 7 183 | 4 455 | 1 673 |
+| 19.08 | 7 183 | 4 455 | 1 514 |
+| 20.08 | 7 183 | 4 455 | 888 |
+| **21.08** | **7 183** | **4 455** | **57** |
+| 28.08 | 7 131 | 4 577 | 44 |
 
-Interpretacja: spadek wyświetleń jest 10x większy niż spadek kliknięć, a CTR wzrósł ponad pięciokrotnie. To profil utraty jednej wielkiej powierzchni z masowymi wyświetleniami i prawie zerowym CTR (typowo: szerokie zapytania wokół wielkiego wydarzenia), a nie profil kary czy blokady indeksowania. Ruch "zwykły" spadł znacznie łagodniej.
+To jest kluczowa obserwacja: **liczba zaindeksowanych stron nie spadła**. 21.08 wyświetlenia runęły o ~97% z dnia na dzień, przy praktycznie niezmienionym indeksie. To wyklucza hipotezę "Google nas nie indeksuje" i wyklucza "koniec mundialu" (wygaszanie eventu jest stopniowe, nie z dnia na dzień o 97%).
 
-Stan techniczny strony głównej według Google: "Submitted and indexed", robots ALLOWED, page fetch SUCCESSFUL, ostatni crawl 31.08.2026, kanoniczny URL wybrany prawidłowo. Nie ma dowodu na problem indeksowania strony głównej.
+Strony są w indeksie, ale przestały być pokazywane w wynikach. Taki profil ma zwykle jedną z trzech przyczyn:
+1. działanie ręczne lub automatyczne filtrowanie za zasady dot. treści (przy 30 publikacjach dziennie generowanych przez AI to realna hipoteza — polityka „scaled content abuse"),
+2. aktualizacja algorytmu (core / spam update) wdrożona ok. 20–21.08,
+3. sygnał techniczny wysłany do Google dokładnie w tych dniach.
 
-Czego te dane nie mówią: nie wiem, ile z 30 publikowanych dziennie artykułów faktycznie wchodzi do indeksu, ile jest w stanie "Crawled – currently not indexed" i jak wygląda pokrycie sitemapy. To wymaga danych, o które proszę niżej.
+Danych z Search Console, które mam, **nie wystarczy, by wskazać którą** — i nie zamierzam zgadywać.
 
-## Dane, o które proszę (żeby nie zgadywać)
+Drugi wątek, niezależny od spadku, ale poważny — jakość indeksu:
 
-Z panelu Search Console:
-1. Raport Strony (Indeksowanie) — liczby dla: "Zaindeksowane", "Przeskanowana – obecnie niezaindeksowana", "Wykryta – obecnie niezaindeksowana", "Duplikat, Google wybrał inny URL".
-2. Sitemapy — dla `https://sitemap.szortsy.pl/`: liczba wykrytych URL i data ostatniego odczytu.
-3. Wyniki > Skuteczność z filtrem typu wyszukiwania **Wiadomości** oraz zakładka **Discover** (jeśli jest) — porównanie lipiec vs sierpień.
-4. Statystyki indeksowania (Ustawienia > Statystyki indeksowania) — średni czas odpowiedzi i liczba żądań na dzień.
+| Powód nieindeksowania | Liczba stron |
+|---|---|
+| Crawled – currently not indexed | 2 369 |
+| Excluded by ‘noindex’ tag | 1 283 |
+| Duplicate, Google chose different canonical | 641 |
+| Duplicate without user-selected canonical | 115 |
+| Alternate page with proper canonical | 74 |
+| Page with redirect | 35 |
 
-Bez punktu 3 nie da się rozstrzygnąć, czy 550 tys. utraconych wyświetleń to Discover/Wiadomości wokół mundialu, czy zwykłe wyniki wyszukiwania — a to zmienia całą strategię naprawy.
+Z sitemapy (1 714 URL) zaindeksowanych jest 1 301, a 152 to „Crawled – not indexed". Ale w skali całej witryny Google zna 11 708 URL-i — czyli **ok. 10 tys. adresów poza sitemapą**. To rozjazd, który sam w sobie rozmywa crawl budget i mnoży duplikaty.
 
-## Core Web Vitals: 34 mobile / 37 desktop
+## Czego potrzebuję, żeby domknąć diagnozę
 
-Znalezione w kodzie przyczyny, które to tłumaczą:
+Trzy rzeczy z panelu Search Console (screeny wystarczą):
+1. **Bezpieczeństwo i działania ręczne** — czy jest jakikolwiek wpis. To rozstrzyga hipotezę nr 1 w jednej sekundzie.
+2. **Skuteczność → typ wyszukiwania: Wiadomości** oraz zakładka **Discover** — porównanie 1–20.08 vs 21–31.08. Jeśli cały ubytek siedzi w Wiadomościach/Discover, to inny scenariusz niż spadek w zwykłym wyszukiwaniu.
+3. **Ustawienia → Statystyki indeksowania** — czy liczba żądań Googlebota też spadła po 20.08.
 
-1. Wszystkie strony publiczne (`Index`, `BlinkPage`, `ReckiHome`, `ReckiReview`, `WorldCup2026`, `PozytywneHome` itd.) są importowane statycznie w `src/App.tsx` — jeden ogromny bundle główny na każde wejście. Tylko panel admina jest lazy.
-2. Brak `manualChunks` w `vite.config.ts` — Tiptap, Embla, react-easy-crop, recharts, date-fns lądują w jednej paczce.
-3. W `<head>` `index.html` blokująco startują GA4 i Meta Pixel przed treścią — bezpośrednio uderza w LCP/TBT na mobile.
-4. CSS jest w całości inline'owany do HTML (plugin `inline-production-css`) — chroni przed awarią stylów, ale powiększa dokument i opóźnia pierwszy render.
-5. Fonty Google wciąż w ścieżce krytycznej.
+Dodatkowo powiedz mi, czy 20–21.08 działo się coś poza kodem: zmiana hostingu/DNS, przepięcie domeny, zmiana w Cloudflare, publikacja dużej partii treści.
 
 ## Plan działania
 
-**Etap 1 — rozstrzygnięcie przyczyny spadku (bez zmian w kodzie)**
-Analiza danych z punktów 1–4 powyżej i jednoznaczna odpowiedź: utrata popytu eventowego vs problem indeksowania nowych artykułów. Dopiero potem decyzja o dalszych krokach SEO.
+**Etap 1 — rozstrzygnięcie przyczyny załamania z 21.08 (bez zmian w kodzie)**
+Po otrzymaniu trzech powyższych danych wskażę przyczynę i dopiero wtedy zaproponuję naprawę. Jeśli to działanie ręczne — plan naprawczy treści i wniosek o ponowne rozpatrzenie. Jeśli algorytm — plan podnoszenia jakości. Jeśli technika — konkretna poprawka.
 
-**Etap 2 — wydajność (niezależnie od SEO, warto zrobić)**
-- Lazy-load stron publicznych w `App.tsx` z sensownym fallbackiem (bez migania), zostawiając `Index` w bundlu wejściowym.
-- `manualChunks` w `vite.config.ts`: `react-vendor`, `editor` (Tiptap), `ui`, `charts`.
-- GA4 i Meta Pixel przenieść na ładowanie po interakcji lub po `load` (opóźnienie ~2–3 s), zamiast blokującego `<head>`.
-- CSS: zamiast pełnego inline'a — inline tylko krytycznego arkusza, resztę jako `<link>` z zachowanym zabezpieczeniem przeciw brakującym stylom.
-- `font-display: swap` + preload wyłącznie użytego wariantu Outfit.
+**Etap 2 — porządek w indeksie (do zrobienia niezależnie)**
+- Ustalić, skąd bierze się ~10 tys. URL-i spoza sitemapy, i albo dodać je do sitemapy, albo odciąć (canonical / noindex / usunięcie linków).
+- 641 stron z „Google wybrał inny kanoniczny" — przejrzeć próbkę i naprawić wskazania kanoniczne; narzędzie „Duplikaty" już mamy, trzeba je na tym puścić.
+- 1 283 stron z `noindex` — potwierdzić, że to wyłącznie strony celowo wyłączone (tagi < 4 artykuły, `/dzien/*`, `/archiwum`, `/tagi`), a nie przypadkowe artykuły.
+- 2 369 „Crawled – not indexed" — sprawdzić próbkę pod kątem cienkiej/powtarzalnej treści.
 
-Cel: mobile LCP < 2,5 s i wynik PSI mobile w przedziale 60–75. Wynik "100" przy pełnym SPA + reklamach + pikselach nie jest realny i nie jest potrzebny.
+**Etap 3 — wydajność (Core Web Vitals 34/37)**
+Znalezione w kodzie przyczyny: wszystkie strony publiczne ładowane w jednej wielkiej paczce (`src/App.tsx` — lazy tylko panel admina), brak podziału paczek w `vite.config.ts`, GA4 i Meta Pixel startujące blokująco w `<head>`, pełny CSS wklejony do HTML, fonty w ścieżce krytycznej. Naprawa: lazy-load stron publicznych, podział paczek, odroczenie skryptów śledzących, inline tylko krytycznego CSS.
 
-**Etap 3 — SEO zależne od wyniku etapu 1**
-Jeśli dane pokażą dużo "Crawled – currently not indexed": wzmocnienie linkowania wewnętrznego do świeżych artykułów, ograniczenie cienkich stron w sitemapie i weryfikacja, czy SSR z `api/render.js` faktycznie wykonuje się dla wszystkich ścieżek artykułów.
+Uwaga: to warto zrobić dla użytkowników, ale **Core Web Vitals nie tłumaczy spadku o 97% w jeden dzień**. Nie traktujmy tego jako lekarstwa na obecny problem.
 
-## Uwaga
+## Kolejność
 
-Core Web Vitals to czynnik rankingowy o małej wadze — nie wyjaśnia spadku wyświetleń o 90%. Naprawa wydajności poprawi konwersję i doświadczenie użytkownika, ale nie należy jej traktować jako lekarstwa na ten spadek.
+Nie zaczynam Etapu 2 ani 3, dopóki nie wiemy, co się stało 21.08 — inaczej możemy tygodniami optymalizować coś, co nie jest przyczyną.
