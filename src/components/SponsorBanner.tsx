@@ -383,19 +383,18 @@ export const SponsorBanner = ({
               </p>
             )}
           </div>
-        </div>
+        </a>
 
         {/* CTA section - below the banner */}
         {ctaText && (
           <div className="bg-muted/50 px-4 py-3 border-t border-border">
-            <button
-              onClick={handleClick}
-              type="button"
+            <a
+              {...linkProps}
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
             >
               {ctaText}
               <ExternalLink className="h-4 w-4" />
-            </button>
+            </a>
           </div>
         )}
       </div>
