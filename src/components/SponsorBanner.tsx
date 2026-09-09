@@ -47,11 +47,22 @@ export const SponsorBanner = ({
   // This prevents React from misinterpreting DoubleClick macros like ${GDPR}
   const safeCtaUrl = ctaUrl ? String(ctaUrl) : "#";
 
-  // AdBlock bypass: Use onClick handler instead of href attribute
-  // AdBlockers scan DOM for doubleclick.net in href, but don't parse JavaScript
+  // AdBlock bypass: open via script instead of an href attribute
+  // (AdBlockers scan the DOM for ad domains in href, but don't parse JS).
+  // Referrer is deliberately kept so the partner sees szortsy.pl as source.
   const handleClick = () => {
+    // Only skip when the interaction was clearly the tail of a scroll.
+    if (wasScrollGesture()) return;
     if (safeCtaUrl && safeCtaUrl !== "#" && !previewMode) {
-      window.open(safeCtaUrl, '_blank', 'noopener,noreferrer');
+      logAdClick({
+        adType: "banner",
+        adId: bannerId ?? title ?? null,
+        targetUrl: safeCtaUrl,
+      });
+      const win = window.open(safeCtaUrl, "_blank", "noopener");
+      // Popup blocked (common on mobile Safari) → navigate in place instead
+      // of silently losing the click.
+      if (!win) window.location.href = safeCtaUrl;
     }
   };
 
@@ -62,11 +73,10 @@ export const SponsorBanner = ({
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!isTapGesture()) return;
-    e.preventDefault();
-    handleClick();
-  };
+  // Navigation runs on the native `click` event, which browsers do not fire
+  // after a scroll. Keeping a touch handler would double-open the target.
+  const handleTouchEnd = undefined;
+
 
   // Fire impression tag pixel on first render
   useEffect(() => {
