@@ -47,31 +47,27 @@ export const SponsorBanner = ({
   // This prevents React from misinterpreting DoubleClick macros like ${GDPR}
   const safeCtaUrl = ctaUrl ? String(ctaUrl) : "#";
 
-  // AdBlock bypass: open via script instead of an href attribute
-  // (AdBlockers scan the DOM for ad domains in href, but don't parse JS).
+  // Real <a href>: the partner checks the destination URL in page source.
   // Referrer is deliberately kept so the partner sees szortsy.pl as source.
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     // Only skip when the interaction was clearly the tail of a scroll.
-    if (wasScrollGesture()) return;
-    if (safeCtaUrl && safeCtaUrl !== "#" && !previewMode) {
-      logAdClick({
-        adType: "banner",
-        adId: bannerId ?? title ?? null,
-        targetUrl: safeCtaUrl,
-      });
-      const win = window.open(safeCtaUrl, "_blank", "noopener");
-      // Popup blocked (common on mobile Safari) → navigate in place instead
-      // of silently losing the click.
-      if (!win) window.location.href = safeCtaUrl;
+    if (wasScrollGesture() || previewMode || !safeCtaUrl || safeCtaUrl === "#") {
+      e.preventDefault();
+      return;
     }
+    logAdClick({
+      adType: "banner",
+      adId: bannerId ?? title ?? null,
+      targetUrl: safeCtaUrl,
+    });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleClick();
-    }
-  };
+  const linkProps = {
+    href: safeCtaUrl,
+    target: "_blank",
+    rel: "sponsored noopener",
+    onClick: handleClick,
+  } as const;
 
 
 
