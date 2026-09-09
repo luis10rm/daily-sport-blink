@@ -15,16 +15,17 @@ export function WallpaperBackground() {
     return null;
   }
 
-  const handleWingClick = () => {
-    if (wallpaper.click_url) {
-      logAdClick({
-        adType: "wallpaper",
-        adId: wallpaper.name,
-        targetUrl: wallpaper.click_url,
-      });
-      const win = window.open(wallpaper.click_url, "_blank", "noopener");
-      if (!win) window.location.href = wallpaper.click_url;
+  // Real <a href> so the partner can see the destination in page source.
+  const handleWingClick = (e: React.MouseEvent) => {
+    if (wasScrollGesture()) {
+      e.preventDefault();
+      return;
     }
+    logAdClick({
+      adType: "wallpaper",
+      adId: wallpaper.name,
+      targetUrl: wallpaper.click_url,
+    });
   };
 
 
