@@ -332,11 +332,8 @@ export const SponsorBanner = ({
         </div>
 
         {/* Desktop slot: 970x250 */}
-        <div
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}
-          role="link"
-          tabIndex={0}
+        <a
+          {...linkProps}
           className={cn(
             "relative overflow-hidden bg-gradient-to-br from-primary/5 via-card to-primary/10 items-center justify-center group cursor-pointer",
             previewMode === "mobile" ? "hidden" : "hidden md:flex",
