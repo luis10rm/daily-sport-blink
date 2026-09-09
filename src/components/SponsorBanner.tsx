@@ -188,7 +188,7 @@ export const SponsorBanner = ({
               />
             )}
           </div>
-        </div>
+        </a>
 
         {/* Subtle label below - adapts to wallpaper */}
         <span className="text-xs text-foreground/60 mt-2">
