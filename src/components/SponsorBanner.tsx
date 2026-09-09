@@ -116,13 +116,12 @@ export const SponsorBanner = ({
           {ctaText && (
             <>
               <span className="text-xs text-muted-foreground/40">·</span>
-              <button
-                onClick={handleClick}
-                type="button"
+              <a
+                {...linkProps}
                 className="text-xs font-semibold text-primary hover:underline underline-offset-2 transition-colors"
               >
                 {ctaText}
-              </button>
+              </a>
             </>
           )}
         </div>
