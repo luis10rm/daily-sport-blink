@@ -1,4 +1,5 @@
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
+import { logAdClick } from "@/lib/adClicks";
 
 /**
  * WallpaperBackground renders the premium takeover background
@@ -15,9 +16,16 @@ export function WallpaperBackground() {
 
   const handleWingClick = () => {
     if (wallpaper.click_url) {
-      window.open(wallpaper.click_url, "_blank", "noopener,noreferrer");
+      logAdClick({
+        adType: "wallpaper",
+        adId: wallpaper.name,
+        targetUrl: wallpaper.click_url,
+      });
+      const win = window.open(wallpaper.click_url, "_blank", "noopener");
+      if (!win) window.location.href = wallpaper.click_url;
     }
   };
+
 
   const hasBackgroundImage = !!wallpaper.background_image_url;
   const hasLeftWing = !!wallpaper.left_wing_url;
