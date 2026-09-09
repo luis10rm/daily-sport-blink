@@ -223,13 +223,9 @@ export const SponsorBanner = ({
             </span>
           </div>
 
-          {/* Banner image slot - fixed dimensions */}
-          {/* Using div with onClick instead of <a href> to bypass AdBlock */}
-          <div
-            onClick={handleClick}
-            onKeyDown={handleKeyDown}
-            role="link"
-            tabIndex={0}
+          {/* Banner image slot - fixed dimensions, real link for partners */}
+          <a
+            {...linkProps}
             className="block group cursor-pointer"
             aria-label={title || "Reklama partnera"}
           >
