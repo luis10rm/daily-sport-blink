@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
-import { isTapGesture } from "@/lib/tapGuard";
+import { wasScrollGesture } from "@/lib/tapGuard";
+import { logAdClick } from "@/lib/adClicks";
 
 interface SponsorBannerProps {
   title?: string;
@@ -46,11 +47,22 @@ export const SponsorBanner = ({
   // This prevents React from misinterpreting DoubleClick macros like ${GDPR}
   const safeCtaUrl = ctaUrl ? String(ctaUrl) : "#";
 
-  // AdBlock bypass: Use onClick handler instead of href attribute
-  // AdBlockers scan DOM for doubleclick.net in href, but don't parse JavaScript
+  // AdBlock bypass: open via script instead of an href attribute
+  // (AdBlockers scan the DOM for ad domains in href, but don't parse JS).
+  // Referrer is deliberately kept so the partner sees szortsy.pl as source.
   const handleClick = () => {
+    // Only skip when the interaction was clearly the tail of a scroll.
+    if (wasScrollGesture()) return;
     if (safeCtaUrl && safeCtaUrl !== "#" && !previewMode) {
-      window.open(safeCtaUrl, '_blank', 'noopener,noreferrer');
+      logAdClick({
+        adType: "banner",
+        adId: bannerId ?? title ?? null,
+        targetUrl: safeCtaUrl,
+      });
+      const win = window.open(safeCtaUrl, "_blank", "noopener");
+      // Popup blocked (common on mobile Safari) → navigate in place instead
+      // of silently losing the click.
+      if (!win) window.location.href = safeCtaUrl;
     }
   };
 
@@ -61,11 +73,7 @@ export const SponsorBanner = ({
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (!isTapGesture()) return;
-    e.preventDefault();
-    handleClick();
-  };
+
 
   // Fire impression tag pixel on first render
   useEffect(() => {
@@ -113,7 +121,7 @@ export const SponsorBanner = ({
             <>
               <span className="text-xs text-muted-foreground/40">·</span>
               <button
-                onClick={handleClick} onTouchEnd={handleTouchEnd}
+                onClick={handleClick}
                 type="button"
                 className="text-xs font-semibold text-primary hover:underline underline-offset-2 transition-colors"
               >
@@ -146,7 +154,7 @@ export const SponsorBanner = ({
         {/* Borderless banner - no bg, no frame */}
         <div
           ref={bannerRef}
-          onClick={handleClick} onTouchEnd={handleTouchEnd}
+          onClick={handleClick}
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
@@ -226,7 +234,7 @@ export const SponsorBanner = ({
           {/* Banner image slot - fixed dimensions */}
           {/* Using div with onClick instead of <a href> to bypass AdBlock */}
           <div
-            onClick={handleClick} onTouchEnd={handleTouchEnd}
+            onClick={handleClick}
             onKeyDown={handleKeyDown}
             role="link"
             tabIndex={0}
@@ -310,7 +318,7 @@ export const SponsorBanner = ({
           {ctaText && (
             <div className="bg-muted/50 px-4 py-3 border-t border-border">
               <button
-                onClick={handleClick} onTouchEnd={handleTouchEnd}
+                onClick={handleClick}
                 type="button"
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
               >
@@ -338,7 +346,7 @@ export const SponsorBanner = ({
 
         {/* Desktop slot: 970x250 */}
         <div
-          onClick={handleClick} onTouchEnd={handleTouchEnd}
+          onClick={handleClick}
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
@@ -368,7 +376,7 @@ export const SponsorBanner = ({
 
         {/* Mobile slot: 300x250 */}
         <div
-          onClick={handleClick} onTouchEnd={handleTouchEnd}
+          onClick={handleClick}
           onKeyDown={handleKeyDown}
           role="link"
           tabIndex={0}
@@ -400,7 +408,7 @@ export const SponsorBanner = ({
         {ctaText && (
           <div className="bg-muted/50 px-4 py-3 border-t border-border">
             <button
-              onClick={handleClick} onTouchEnd={handleTouchEnd}
+              onClick={handleClick}
               type="button"
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
             >

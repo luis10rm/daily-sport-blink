@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdClicksStats } from "@/components/admin/AdClicksStats";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -577,6 +578,14 @@ const Settings = () => {
                 <Skeleton className="h-48 w-full" />
               ) : (
                 <>
+                  {/* Nasze własne liczenie kliknięć */}
+                  <div className="space-y-2">
+                    <Label>Kliknięcia reklam (ostatnie 14 dni)</Label>
+                    <div className="border rounded-lg p-4">
+                      <AdClicksStats />
+                    </div>
+                  </div>
+
                   {/* Live Preview */}
                   <div className="space-y-2">
                     <Label>Podgląd na żywo</Label>
@@ -584,6 +593,7 @@ const Settings = () => {
                       <PatronBarPreview settings={patronSettings} />
                     </div>
                   </div>
+
 
                   {/* Enable Toggle */}
                   <div className="flex items-center justify-between">
