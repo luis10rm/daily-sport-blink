@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_clicks: {
+        Row: {
+          ad_id: string | null
+          ad_type: string
+          created_at: string
+          device: string | null
+          id: string
+          path: string | null
+          target_url: string | null
+          variant: string | null
+        }
+        Insert: {
+          ad_id?: string | null
+          ad_type: string
+          created_at?: string
+          device?: string | null
+          id?: string
+          path?: string | null
+          target_url?: string | null
+          variant?: string | null
+        }
+        Update: {
+          ad_id?: string | null
+          ad_type?: string
+          created_at?: string
+          device?: string | null
+          id?: string
+          path?: string | null
+          target_url?: string | null
+          variant?: string | null
+        }
+        Relationships: []
+      }
       author_emails: {
         Row: {
           author_id: string
