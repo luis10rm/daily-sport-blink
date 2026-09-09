@@ -147,13 +147,10 @@ export const SponsorBanner = ({
         )}
 
         {/* Borderless banner - no bg, no frame */}
-        <div
-          ref={bannerRef}
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}
-          role="link"
-          tabIndex={0}
-          className="cursor-pointer group"
+        <a
+          ref={bannerRef as unknown as React.RefObject<HTMLAnchorElement>}
+          {...linkProps}
+          className="cursor-pointer group block"
           aria-label={title || "Reklama partnera"}
         >
           {/* Desktop slot: 970x250 - borderless */}
