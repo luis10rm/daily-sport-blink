@@ -4,7 +4,7 @@ import { X, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isTapGesture, wasScrollGesture } from "@/lib/tapGuard";
 import { logAdClick } from "@/lib/adClicks";
-import { isAdTrackerUrl } from "@/lib/adUrl";
+
 
 const SESSION_STORAGE_KEY = "patron_bar_dismissed";
 
