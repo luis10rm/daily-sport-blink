@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
-import { isTapGesture } from "@/lib/tapGuard";
+import { wasScrollGesture } from "@/lib/tapGuard";
+import { logAdClick } from "@/lib/adClicks";
 
 interface SponsorBannerProps {
   title?: string;
