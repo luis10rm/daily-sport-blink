@@ -1,5 +1,6 @@
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
 import { logAdClick } from "@/lib/adClicks";
+import { wasScrollGesture } from "@/lib/tapGuard";
 
 /**
  * WallpaperBackground renders the premium takeover background
