@@ -47,31 +47,27 @@ export const SponsorBanner = ({
   // This prevents React from misinterpreting DoubleClick macros like ${GDPR}
   const safeCtaUrl = ctaUrl ? String(ctaUrl) : "#";
 
-  // AdBlock bypass: open via script instead of an href attribute
-  // (AdBlockers scan the DOM for ad domains in href, but don't parse JS).
+  // Real <a href>: the partner checks the destination URL in page source.
   // Referrer is deliberately kept so the partner sees szortsy.pl as source.
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     // Only skip when the interaction was clearly the tail of a scroll.
-    if (wasScrollGesture()) return;
-    if (safeCtaUrl && safeCtaUrl !== "#" && !previewMode) {
-      logAdClick({
-        adType: "banner",
-        adId: bannerId ?? title ?? null,
-        targetUrl: safeCtaUrl,
-      });
-      const win = window.open(safeCtaUrl, "_blank", "noopener");
-      // Popup blocked (common on mobile Safari) → navigate in place instead
-      // of silently losing the click.
-      if (!win) window.location.href = safeCtaUrl;
+    if (wasScrollGesture() || previewMode || !safeCtaUrl || safeCtaUrl === "#") {
+      e.preventDefault();
+      return;
     }
+    logAdClick({
+      adType: "banner",
+      adId: bannerId ?? title ?? null,
+      targetUrl: safeCtaUrl,
+    });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleClick();
-    }
-  };
+  const linkProps = {
+    href: safeCtaUrl,
+    target: "_blank",
+    rel: "sponsored noopener",
+    onClick: handleClick,
+  } as const;
 
 
 
@@ -120,13 +116,12 @@ export const SponsorBanner = ({
           {ctaText && (
             <>
               <span className="text-xs text-muted-foreground/40">·</span>
-              <button
-                onClick={handleClick}
-                type="button"
+              <a
+                {...linkProps}
                 className="text-xs font-semibold text-primary hover:underline underline-offset-2 transition-colors"
               >
                 {ctaText}
-              </button>
+              </a>
             </>
           )}
         </div>
@@ -152,13 +147,10 @@ export const SponsorBanner = ({
         )}
 
         {/* Borderless banner - no bg, no frame */}
-        <div
-          ref={bannerRef}
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}
-          role="link"
-          tabIndex={0}
-          className="cursor-pointer group"
+        <a
+          ref={bannerRef as unknown as React.RefObject<HTMLAnchorElement>}
+          {...linkProps}
+          className="cursor-pointer group block"
           aria-label={title || "Reklama partnera"}
         >
           {/* Desktop slot: 970x250 - borderless */}
@@ -196,7 +188,7 @@ export const SponsorBanner = ({
               />
             )}
           </div>
-        </div>
+        </a>
 
         {/* Subtle label below - adapts to wallpaper */}
         <span className="text-xs text-foreground/60 mt-2">
@@ -231,13 +223,9 @@ export const SponsorBanner = ({
             </span>
           </div>
 
-          {/* Banner image slot - fixed dimensions */}
-          {/* Using div with onClick instead of <a href> to bypass AdBlock */}
-          <div
-            onClick={handleClick}
-            onKeyDown={handleKeyDown}
-            role="link"
-            tabIndex={0}
+          {/* Banner image slot - fixed dimensions, real link for partners */}
+          <a
+            {...linkProps}
             className="block group cursor-pointer"
             aria-label={title || "Reklama partnera"}
           >
@@ -312,19 +300,18 @@ export const SponsorBanner = ({
                 Nie udało się wczytać grafiki
               </div>
             </div>
-          </div>
+          </a>
 
           {/* CTA section - below the banner */}
           {ctaText && (
             <div className="bg-muted/50 px-4 py-3 border-t border-border">
-              <button
-                onClick={handleClick}
-                type="button"
+              <a
+                {...linkProps}
                 className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
               >
                 {ctaText}
                 <ExternalLink className="h-4 w-4" />
-              </button>
+              </a>
             </div>
           )}
         </div>
@@ -345,11 +332,8 @@ export const SponsorBanner = ({
         </div>
 
         {/* Desktop slot: 970x250 */}
-        <div
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}
-          role="link"
-          tabIndex={0}
+        <a
+          {...linkProps}
           className={cn(
             "relative overflow-hidden bg-gradient-to-br from-primary/5 via-card to-primary/10 items-center justify-center group cursor-pointer",
             previewMode === "mobile" ? "hidden" : "hidden md:flex",
@@ -372,14 +356,11 @@ export const SponsorBanner = ({
               </p>
             )}
           </div>
-        </div>
+        </a>
 
         {/* Mobile slot: 300x250 */}
-        <div
-          onClick={handleClick}
-          onKeyDown={handleKeyDown}
-          role="link"
-          tabIndex={0}
+        <a
+          {...linkProps}
           className={cn(
             "relative overflow-hidden bg-gradient-to-br from-primary/5 via-card to-primary/10 items-center justify-center mx-auto group cursor-pointer",
             previewMode === "desktop" ? "hidden" : "flex md:hidden",
@@ -402,19 +383,18 @@ export const SponsorBanner = ({
               </p>
             )}
           </div>
-        </div>
+        </a>
 
         {/* CTA section - below the banner */}
         {ctaText && (
           <div className="bg-muted/50 px-4 py-3 border-t border-border">
-            <button
-              onClick={handleClick}
-              type="button"
+            <a
+              {...linkProps}
               className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-colors cta-sponsored-hover"
             >
               {ctaText}
               <ExternalLink className="h-4 w-4" />
-            </button>
+            </a>
           </div>
         )}
       </div>

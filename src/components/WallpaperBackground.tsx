@@ -1,5 +1,6 @@
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
 import { logAdClick } from "@/lib/adClicks";
+import { wasScrollGesture } from "@/lib/tapGuard";
 
 /**
  * WallpaperBackground renders the premium takeover background
@@ -14,16 +15,17 @@ export function WallpaperBackground() {
     return null;
   }
 
-  const handleWingClick = () => {
-    if (wallpaper.click_url) {
-      logAdClick({
-        adType: "wallpaper",
-        adId: wallpaper.name,
-        targetUrl: wallpaper.click_url,
-      });
-      const win = window.open(wallpaper.click_url, "_blank", "noopener");
-      if (!win) window.location.href = wallpaper.click_url;
+  // Real <a href> so the partner can see the destination in page source.
+  const handleWingClick = (e: React.MouseEvent) => {
+    if (wasScrollGesture()) {
+      e.preventDefault();
+      return;
     }
+    logAdClick({
+      adType: "wallpaper",
+      adId: wallpaper.name,
+      targetUrl: wallpaper.click_url,
+    });
   };
 
 
@@ -48,16 +50,11 @@ export function WallpaperBackground() {
       />
 
       {/* Left wing - clickable */}
-      <div
+      <a
+        href={wallpaper.click_url}
+        target="_blank"
+        rel="sponsored noopener"
         onClick={handleWingClick}
-        role="link"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleWingClick();
-          }
-        }}
         className="fixed top-0 left-0 bottom-0 cursor-pointer z-[1]"
         style={{
           width: "calc((100vw - 1024px) / 2)",
@@ -73,16 +70,11 @@ export function WallpaperBackground() {
       />
 
       {/* Right wing - clickable */}
-      <div
+      <a
+        href={wallpaper.click_url}
+        target="_blank"
+        rel="sponsored noopener"
         onClick={handleWingClick}
-        role="link"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleWingClick();
-          }
-        }}
         className="fixed top-0 right-0 bottom-0 cursor-pointer z-[1]"
         style={{
           width: "calc((100vw - 1024px) / 2)",

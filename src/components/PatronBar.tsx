@@ -4,7 +4,7 @@ import { X, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isTapGesture, wasScrollGesture } from "@/lib/tapGuard";
 import { logAdClick } from "@/lib/adClicks";
-import { isAdTrackerUrl } from "@/lib/adUrl";
+
 
 const SESSION_STORAGE_KEY = "patron_bar_dismissed";
 
@@ -142,48 +142,9 @@ export const PatronBar = () => {
   );
 
   if (ctaUrl) {
-    const trackerUrl = isAdTrackerUrl(ctaUrl);
-
-    const openCta = () => {
-      logAdClick({
-        adType: "patron",
-        adId: patron.patron_name,
-        variant: activeVariant,
-        targetUrl: ctaUrl,
-      });
-      const win = window.open(ctaUrl, "_blank", "noopener");
-      // Popup blocked (common on mobile Safari) → navigate in place instead of
-      // silently losing the click.
-      if (!win) window.location.href = ctaUrl;
-    };
-
-    // Ad-tracking URLs stay out of the DOM so AdBlock can't strip the link;
-    // everything else uses a plain anchor, which no popup blocker can touch.
-    if (trackerUrl) {
-      return (
-        <div
-          role="link"
-          tabIndex={0}
-          aria-label={`${patron.patron_name} — ${ctaText ?? "Sprawdź"}`}
-          data-patron-variant={activeVariant}
-          onClick={() => {
-            if (wasScrollGesture()) return;
-            openCta();
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              openCta();
-            }
-          }}
-          className={cn(commonClassName, "touch-manipulation cursor-pointer")}
-          style={backgroundStyle}
-        >
-          {innerContent}
-        </div>
-      );
-    }
-
+    // Always a real <a href>: the partner must be able to see the destination
+    // URL in page source (inspect element), and native navigation is the most
+    // reliable behaviour on mobile.
     return (
       <a
         href={ctaUrl}
@@ -203,7 +164,6 @@ export const PatronBar = () => {
             variant: activeVariant,
             targetUrl: ctaUrl,
           });
-          // Native navigation handles the rest (no popup blockers involved).
         }}
         className={cn(commonClassName, "touch-manipulation")}
         style={backgroundStyle}
