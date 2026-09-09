@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { usePatronSettings } from "@/hooks/usePatronSettings";
 import { X, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isTapGesture } from "@/lib/tapGuard";
+import { isTapGesture, wasScrollGesture } from "@/lib/tapGuard";
+import { logAdClick } from "@/lib/adClicks";
 
 const SESSION_STORAGE_KEY = "patron_bar_dismissed";
 
@@ -140,24 +141,26 @@ export const PatronBar = () => {
   );
 
   if (ctaUrl) {
-    const openCta = () => window.open(ctaUrl, "_blank", "noopener,noreferrer");
-
     return (
       <a
         href={ctaUrl}
         target="_blank"
-        rel="sponsored noopener noreferrer"
+        rel="sponsored noopener"
         aria-label={`${patron.patron_name} — ${ctaText ?? "Sprawdź"}`}
         data-patron-variant={activeVariant}
         onClick={(e) => {
-          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
-          e.preventDefault();
-          openCta();
-        }}
-        onTouchEnd={(e) => {
-          if (!isTapGesture()) return;
-          e.preventDefault();
-          openCta();
+          // Only cancel when the interaction was clearly the tail of a scroll.
+          if (wasScrollGesture()) {
+            e.preventDefault();
+            return;
+          }
+          logAdClick({
+            adType: "patron",
+            adId: patron.patron_name,
+            variant: activeVariant,
+            targetUrl: ctaUrl,
+          });
+          // Native navigation handles the rest (no popup blockers involved).
         }}
         className={cn(commonClassName, "touch-manipulation")}
         style={backgroundStyle}
@@ -166,6 +169,7 @@ export const PatronBar = () => {
       </a>
     );
   }
+
 
   return (
     <div
