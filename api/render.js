@@ -11,7 +11,7 @@ const BACKEND_URL =
 const BACKEND_ANON_KEY =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   process.env.VITE_SUPABASE_ANON_KEY ??
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Iml6eWtuYXpqemRrZmR4bmVrdm9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODk0NTYsImV4cCI6MjA4NDU2NTQ1Nn0.JooTJ-SLkn50yyZBkmvJETHKQQvYZh_9tVmjUTk7SOM";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6eWtuYXpqemRrZmR4bmVrdm9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODk0NTYsImV4cCI6MjA4NDU2NTQ1Nn0.JooTJ-SLkn50yyZBkmvJETHKQQvYZh_9tVmjUTk7SOM";
 
 const NOINDEX = "noindex, follow";
 
@@ -159,6 +159,43 @@ const fetchSportList = async (extra = {}) => {
     date: post.published_at,
   }));
 };
+
+const fetchPositiveList = async (extra = {}) => {
+  const rows = await fetchRows("posts", {
+    select: "slug,title,excerpt,published_at,positive_category:positive_categories!posts_positive_category_id_fkey(slug)",
+    is_hidden: "eq.false",
+    channel: "eq.positive",
+    order: "published_at.desc",
+    limit: "30",
+    ...extra,
+  });
+  return (rows || []).map((post) => ({
+    href: post.positive_category?.slug
+      ? `${SITE_URL}/pozytywne/${post.positive_category.slug}/${post.slug}`
+      : `${SITE_URL}/blink/${post.slug}`,
+    title: post.title,
+    excerpt: post.excerpt,
+    date: post.published_at,
+  }));
+};
+
+const fetchTechList = async (extra = {}) => {
+  const rows = await fetchRows("reviews", {
+    select: "slug,title,excerpt,published_at,category:review_categories(slug)",
+    status: "eq.published",
+    order: "published_at.desc",
+    limit: "30",
+    ...extra,
+  });
+  return (rows || []).map((review) => ({
+    href: `${SITE_URL}/tech/${review.category?.slug || "wszystkie"}/${review.slug}`,
+    title: review.title,
+    excerpt: review.excerpt,
+    date: review.published_at,
+  }));
+};
+
+
 
 
 const replaceHead = (html, meta) => {
@@ -313,18 +350,24 @@ const resolveMeta = async (path) => {
   }
 
   if (path === "/tech") {
+    const description = "Krótkie, konkretne recenzje smartfonów, audio, gamingu, smart home i AI. Bez lania wody.";
+    const items = await fetchTechList();
     return {
       ...meta,
       title: "Tech — recenzje sprzętu i newsy technologiczne",
-      description: "Krótkie, konkretne recenzje smartfonów, audio, gamingu, smart home i AI. Bez lania wody.",
+      description,
+      content: listBody("Szortsy Tech — recenzje i newsy technologiczne", description, items),
     };
   }
 
   if (path === "/pozytywne") {
+    const description = "Dobre wiadomości z kraju i ze świata — krótko, jasno i bez doomscrollingu.";
+    const items = await fetchPositiveList();
     return {
       ...meta,
       title: "Pozytywne wiadomości",
-      description: "Dobre wiadomości z kraju i ze świata — krótko, jasno i bez doomscrollingu.",
+      description,
+      content: listBody("Szortsy Pozytywne — dobre wiadomości", description, items),
     };
   }
 
@@ -397,26 +440,32 @@ const resolveMeta = async (path) => {
   const positiveCategory = path.match(/^\/pozytywne\/kategoria\/([^/]+)$/);
   if (positiveCategory) {
     const slug = decodeURIComponent(positiveCategory[1]);
-    const row = await fetchOne("positive_categories", { select: "slug,name,description", slug: `eq.${slug}` });
+    const row = await fetchOne("positive_categories", { select: "id,slug,name,description", slug: `eq.${slug}` });
     if (row === undefined) return meta;
     if (!row) return { ...meta, title: "Kategoria nie znaleziona", robots: NOINDEX };
+    const description = row.description || `Pozytywne wiadomości z kategorii ${row.name} na Szortsy.`;
+    const items = row.id ? await fetchPositiveList({ positive_category_id: `eq.${row.id}` }) : [];
     return {
       ...meta,
       title: `${row.name} - Pozytywne`,
-      description: row.description || `Pozytywne wiadomości z kategorii ${row.name} na Szortsy.`,
+      description,
+      content: listBody(`${row.name} — pozytywne wiadomości`, description, items),
     };
   }
 
   const techCategory = path.match(/^\/tech\/kategoria\/([^/]+)$/);
   if (techCategory) {
     const slug = decodeURIComponent(techCategory[1]);
-    const row = await fetchOne("review_categories", { select: "slug,name,description", slug: `eq.${slug}` });
+    const row = await fetchOne("review_categories", { select: "id,slug,name,description", slug: `eq.${slug}` });
     if (row === undefined) return meta;
     if (!row) return { ...meta, title: "Kategoria Tech nie znaleziona", robots: NOINDEX };
+    const description = row.description || `Recenzje i newsy Tech z kategorii ${row.name} na Szortsy.`;
+    const items = row.id ? await fetchTechList({ category_id: `eq.${row.id}` }) : [];
     return {
       ...meta,
       title: `${row.name} - Tech`,
-      description: row.description || `Recenzje i newsy Tech z kategorii ${row.name} na Szortsy.`,
+      description,
+      content: listBody(`${row.name} — Szortsy Tech`, description, items),
     };
   }
 
@@ -533,7 +582,10 @@ const resolveMeta = async (path) => {
 
 export default async function handler(request) {
   const url = new URL(request.url);
-  const path = url.searchParams.get("path") || url.pathname || "/";
+  const rawPath = url.searchParams.get("path") || url.pathname || "/";
+  // If this function is reached without a usable path (e.g. hit directly), treat
+  // it as the homepage instead of rendering a contentless default document.
+  const path = !rawPath || rawPath.startsWith("/api/render") ? "/" : rawPath;
   const cleanPath = path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
   const meta = await resolveMeta(cleanPath);
 
