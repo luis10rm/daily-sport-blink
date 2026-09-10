@@ -437,26 +437,32 @@ const resolveMeta = async (path) => {
   const positiveCategory = path.match(/^\/pozytywne\/kategoria\/([^/]+)$/);
   if (positiveCategory) {
     const slug = decodeURIComponent(positiveCategory[1]);
-    const row = await fetchOne("positive_categories", { select: "slug,name,description", slug: `eq.${slug}` });
+    const row = await fetchOne("positive_categories", { select: "id,slug,name,description", slug: `eq.${slug}` });
     if (row === undefined) return meta;
     if (!row) return { ...meta, title: "Kategoria nie znaleziona", robots: NOINDEX };
+    const description = row.description || `Pozytywne wiadomości z kategorii ${row.name} na Szortsy.`;
+    const items = row.id ? await fetchPositiveList({ positive_category_id: `eq.${row.id}` }) : [];
     return {
       ...meta,
       title: `${row.name} - Pozytywne`,
-      description: row.description || `Pozytywne wiadomości z kategorii ${row.name} na Szortsy.`,
+      description,
+      content: listBody(`${row.name} — pozytywne wiadomości`, description, items),
     };
   }
 
   const techCategory = path.match(/^\/tech\/kategoria\/([^/]+)$/);
   if (techCategory) {
     const slug = decodeURIComponent(techCategory[1]);
-    const row = await fetchOne("review_categories", { select: "slug,name,description", slug: `eq.${slug}` });
+    const row = await fetchOne("review_categories", { select: "id,slug,name,description", slug: `eq.${slug}` });
     if (row === undefined) return meta;
     if (!row) return { ...meta, title: "Kategoria Tech nie znaleziona", robots: NOINDEX };
+    const description = row.description || `Recenzje i newsy Tech z kategorii ${row.name} na Szortsy.`;
+    const items = row.id ? await fetchTechList({ category_id: `eq.${row.id}` }) : [];
     return {
       ...meta,
       title: `${row.name} - Tech`,
-      description: row.description || `Recenzje i newsy Tech z kategorii ${row.name} na Szortsy.`,
+      description,
+      content: listBody(`${row.name} — Szortsy Tech`, description, items),
     };
   }
 
