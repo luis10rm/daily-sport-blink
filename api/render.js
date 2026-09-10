@@ -160,6 +160,40 @@ const fetchSportList = async (extra = {}) => {
   }));
 };
 
+const fetchPositiveList = async (extra = {}) => {
+  const rows = await fetchRows("posts", {
+    select: "slug,title,excerpt,published_at,positive_category:positive_categories!posts_positive_category_id_fkey(slug)",
+    is_hidden: "eq.false",
+    channel: "eq.positive",
+    order: "published_at.desc",
+    limit: "30",
+    ...extra,
+  });
+  return (rows || []).map((post) => ({
+    href: post.positive_category?.slug
+      ? `${SITE_URL}/pozytywne/${post.positive_category.slug}/${post.slug}`
+      : `${SITE_URL}/blink/${post.slug}`,
+    title: post.title,
+    excerpt: post.excerpt,
+    date: post.published_at,
+  }));
+};
+
+const fetchTechList = async (extra = {}) => {
+  const rows = await fetchRows("reviews", {
+    select: "slug,title,excerpt,published_at,category:review_categories(slug)",
+    status: "eq.published",
+    order: "published_at.desc",
+    limit: "30",
+    ...extra,
+  });
+  return (rows || []).map((review) => ({
+    href: `${SITE_URL}/tech/${review.category?.slug || "wszystkie"}/${review.slug}`,
+    title: review.title,
+    excerpt: review.excerpt,
+    date: review.published_at,
+  }));
+
 
 const replaceHead = (html, meta) => {
   let next = html
