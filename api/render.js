@@ -347,18 +347,24 @@ const resolveMeta = async (path) => {
   }
 
   if (path === "/tech") {
+    const description = "Krótkie, konkretne recenzje smartfonów, audio, gamingu, smart home i AI. Bez lania wody.";
+    const items = await fetchTechList();
     return {
       ...meta,
       title: "Tech — recenzje sprzętu i newsy technologiczne",
-      description: "Krótkie, konkretne recenzje smartfonów, audio, gamingu, smart home i AI. Bez lania wody.",
+      description,
+      content: listBody("Szortsy Tech — recenzje i newsy technologiczne", description, items),
     };
   }
 
   if (path === "/pozytywne") {
+    const description = "Dobre wiadomości z kraju i ze świata — krótko, jasno i bez doomscrollingu.";
+    const items = await fetchPositiveList();
     return {
       ...meta,
       title: "Pozytywne wiadomości",
-      description: "Dobre wiadomości z kraju i ze świata — krótko, jasno i bez doomscrollingu.",
+      description,
+      content: listBody("Szortsy Pozytywne — dobre wiadomości", description, items),
     };
   }
 
