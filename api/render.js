@@ -579,7 +579,10 @@ const resolveMeta = async (path) => {
 
 export default async function handler(request) {
   const url = new URL(request.url);
-  const path = url.searchParams.get("path") || url.pathname || "/";
+  const rawPath = url.searchParams.get("path") || url.pathname || "/";
+  // If this function is reached without a usable path (e.g. hit directly), treat
+  // it as the homepage instead of rendering a contentless default document.
+  const path = !rawPath || rawPath.startsWith("/api/render") ? "/" : rawPath;
   const cleanPath = path.length > 1 && path.endsWith("/") ? path.slice(0, -1) : path;
   const meta = await resolveMeta(cleanPath);
 
