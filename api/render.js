@@ -193,6 +193,9 @@ const fetchTechList = async (extra = {}) => {
     excerpt: review.excerpt,
     date: review.published_at,
   }));
+};
+
+
 
 
 const replaceHead = (html, meta) => {
