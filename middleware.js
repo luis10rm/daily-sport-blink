@@ -13,9 +13,7 @@ export default function middleware(request) {
   url.pathname = "/api/render";
   url.searchParams.set("path", "/");
 
-  return Response.redirect(url, 307) &&
-    new Response(null, {
-      status: 200,
-      headers: { "x-middleware-rewrite": url.toString() },
-    });
+  return new Response(null, {
+    headers: { "x-middleware-rewrite": url.toString() },
+  });
 }
