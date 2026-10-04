@@ -16,7 +16,7 @@ serve(async (req) => {
     // Sport channel posts → /blink/{slug}
     const { data: posts, error: postsError } = await supabase
       .from("posts")
-      .select("slug, title, updated_at, published_at")
+      .select("slug, title, updated_at, published_at, category_id")
       .lte("published_at", nowIso)
       .eq("is_hidden", false)
       .eq("channel", "sport")
@@ -30,7 +30,7 @@ serve(async (req) => {
     // Positive channel posts → /pozytywne/{category_slug}/{slug}
     const { data: positivePosts, error: positivePostsError } = await supabase
       .from("posts")
-      .select("slug, updated_at, published_at, positive_category:positive_categories!posts_positive_category_id_fkey(slug)")
+      .select("slug, updated_at, published_at, positive_category_id, positive_category:positive_categories!posts_positive_category_id_fkey(slug)")
       .lte("published_at", nowIso)
       .eq("is_hidden", false)
       .eq("channel", "positive")
@@ -44,7 +44,7 @@ serve(async (req) => {
     // Tech reviews → /tech/{category_slug}/{slug}
     const { data: reviews, error: reviewsError } = await supabase
       .from("reviews")
-      .select("slug, updated_at, published_at, category:review_categories!reviews_category_id_fkey(slug)")
+      .select("slug, updated_at, published_at, category_id, category:review_categories!reviews_category_id_fkey(slug)")
       .eq("status", "published")
       .lte("published_at", nowIso)
       .order("published_at", { ascending: false })
@@ -57,7 +57,7 @@ serve(async (req) => {
     // Sport categories (exclude sponsored — noindex)
     const { data: categories, error: catError } = await supabase
       .from("sport_categories")
-      .select("slug, updated_at")
+      .select("id, slug, updated_at")
       .neq("slug", "wspo-praca-reklamowa");
 
     if (catError) {
@@ -67,7 +67,7 @@ serve(async (req) => {
     // Positive categories
     const { data: positiveCategories, error: posCatError } = await supabase
       .from("positive_categories")
-      .select("slug, updated_at")
+      .select("id, slug, updated_at")
       .eq("is_active", true);
 
     if (posCatError) {
@@ -77,7 +77,7 @@ serve(async (req) => {
     // Tech review categories
     const { data: reviewCategories, error: revCatError } = await supabase
       .from("review_categories")
-      .select("slug, updated_at");
+      .select("id, slug, updated_at");
 
     if (revCatError) {
       console.error("Error fetching review categories:", revCatError);
@@ -123,13 +123,39 @@ serve(async (req) => {
       return date ? `    <lastmod>${date}</lastmod>\n` : "";
     };
 
+    // Freshness: latest published post per category / channel
+    const maxDate = (...vals: Array<string | null | undefined>) => {
+      let best: string | null = null;
+      for (const v of vals) {
+        if (!v) continue;
+        if (!best || new Date(v).getTime() > new Date(best).getTime()) best = v;
+      }
+      return best;
+    };
+    const latestBy = (rows: any[] | null | undefined, key: string) => {
+      const m = new Map<string, string>();
+      for (const r of rows || []) {
+        const id = r?.[key];
+        if (!id || !r.published_at) continue;
+        const cur = m.get(id);
+        if (!cur || new Date(r.published_at) > new Date(cur)) m.set(id, r.published_at);
+      }
+      return m;
+    };
+    const sportLatest = latestBy(posts, "category_id");
+    const positiveLatest = latestBy(positivePosts, "positive_category_id");
+    const techLatest = latestBy(reviews, "category_id");
+    const homeLast = (posts as any[])?.[0]?.published_at;
+    const techLast = (reviews as any[])?.[0]?.published_at;
+    const positiveLast = (positivePosts as any[])?.[0]?.published_at;
+
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
   <!-- Static pages -->
   <url>
     <loc>${SITE_URL}/</loc>
-    <changefreq>hourly</changefreq>
+${lastmodXml(homeLast)}    <changefreq>hourly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
@@ -139,12 +165,12 @@ serve(async (req) => {
   </url>
   <url>
     <loc>${SITE_URL}/tech</loc>
-    <changefreq>daily</changefreq>
+${lastmodXml(techLast)}    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>${SITE_URL}/pozytywne</loc>
-    <changefreq>daily</changefreq>
+${lastmodXml(positiveLast)}    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
@@ -160,7 +186,7 @@ serve(async (req) => {
       for (const cat of categories) {
         xml += `  <url>
     <loc>${SITE_URL}/kategoria/${cat.slug}</loc>
-${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
+${lastmodXml(maxDate(sportLatest.get((cat as any).id), cat.updated_at))}    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>\n`;
       }
@@ -236,10 +262,10 @@ ${lastmodXml(post.updated_at || post.published_at)}    <changefreq>weekly</chang
     // Positive categories
     if (positiveCategories?.length) {
       xml += `\n  <!-- Positive categories -->\n`;
-      for (const cat of positiveCategories as Array<{ slug: string; updated_at?: string }>) {
+      for (const cat of positiveCategories as Array<{ id: string; slug: string; updated_at?: string }>) {
         xml += `  <url>
     <loc>${SITE_URL}/pozytywne/kategoria/${cat.slug}</loc>
-${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
+${lastmodXml(maxDate(positiveLatest.get(cat.id), cat.updated_at))}    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
@@ -248,10 +274,10 @@ ${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
     // Tech review categories
     if (reviewCategories?.length) {
       xml += `\n  <!-- Tech categories -->\n`;
-      for (const cat of reviewCategories as Array<{ slug: string; updated_at?: string }>) {
+      for (const cat of reviewCategories as Array<{ id: string; slug: string; updated_at?: string }>) {
         xml += `  <url>
     <loc>${SITE_URL}/tech/kategoria/${cat.slug}</loc>
-${lastmodXml(cat.updated_at)}    <changefreq>daily</changefreq>
+${lastmodXml(maxDate(techLatest.get(cat.id), cat.updated_at))}    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>\n`;
       }
