@@ -14,6 +14,7 @@ const BACKEND_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6eWtuYXpqemRrZmR4bmVrdm9zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5ODk0NTYsImV4cCI6MjA4NDU2NTQ1Nn0.JooTJ-SLkn50yyZBkmvJETHKQQvYZh_9tVmjUTk7SOM";
 
 const NOINDEX = "noindex, follow";
+const INDEX_ROBOTS = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
 
 const escapeHtml = (value = "") =>
   String(value)
@@ -64,7 +65,7 @@ const baseMeta = (path) => ({
   title: DEFAULT_TITLE,
   description: DEFAULT_DESCRIPTION,
   canonical: `${SITE_URL}${path === "/" ? "/" : path}`,
-  robots: "index, follow",
+  robots: INDEX_ROBOTS,
   ogType: "website",
   image: DEFAULT_IMAGE,
   schema: null,
@@ -528,7 +529,7 @@ const resolveMeta = async (path) => {
       ...meta,
       title: row.name,
       description: row.description || `Wiadomości sportowe związane z ${row.name} na Szortsy.`,
-      robots: shouldNoindex ? NOINDEX : "index, follow",
+      robots: shouldNoindex ? NOINDEX : INDEX_ROBOTS,
     };
   }
 
