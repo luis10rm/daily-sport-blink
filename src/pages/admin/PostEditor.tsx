@@ -1,5 +1,5 @@
 import { mirrorExternalImage } from "@/lib/mirrorImage";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -238,8 +238,10 @@ const PostEditor = () => {
     }
   }, [isEditing, post, form]);
 
+  const hydratedPostIdRef = React.useRef<string | null>(null);
   useEffect(() => {
-    if (post) {
+    if (post && hydratedPostIdRef.current !== post.id) {
+      hydratedPostIdRef.current = post.id;
       // Normalize content to convert any **text** to <strong>text</strong>
       const normalizedContent = normalizeMarkdownInHtml(post.content || "");
       const postAny = post as any;

@@ -1,6 +1,6 @@
 import { normalizePracticalInfo, cleanPracticalInfo } from "@/lib/practicalInfo";
 import { optimizeImageUrl } from "@/lib/imageUrl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImageUploader } from "@/components/admin/ImageUploader";
@@ -180,8 +180,12 @@ const ReviewEditor = () => {
     toast.success("Dodano do galerii");
   };
 
+  // Hydrate from DB only once per record — background refetches (e.g. on
+  // window refocus) must not overwrite unsaved edits.
+  const hydratedIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (existing) {
+    if (existing && hydratedIdRef.current !== existing.id) {
+      hydratedIdRef.current = existing.id;
       setForm(existing);
       setSlugTouched(true);
     }
