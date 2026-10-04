@@ -40,10 +40,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let cancelled = false;
+    let loadedForUser: string | null = null;
 
     const loadRoles = async (userId: string) => {
       const r = await fetchUserRoles(userId);
       if (!cancelled) {
+        loadedForUser = userId;
         setRoles(r);
         setLoading(false);
       }
@@ -56,14 +58,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          // Keep loading=true until roles arrive, so ProtectedRoute
-          // doesn't flash "Brak dostępu" before roles resolve.
+          // Background token refresh / tab refocus for the same user must
+          // NOT flip loading — that unmounts the admin editor and wipes forms.
+          if (loadedForUser === session.user.id) return;
           setLoading(true);
-          // Defer to avoid deadlock inside the auth callback
+          const uid = session.user.id;
           setTimeout(() => {
-            loadRoles(session.user.id);
+            loadRoles(uid);
           }, 0);
         } else {
+          loadedForUser = null;
           setRoles([]);
           setLoading(false);
         }
