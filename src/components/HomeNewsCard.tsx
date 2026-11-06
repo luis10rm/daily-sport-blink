@@ -20,7 +20,7 @@ export const HomeNewsCard = forwardRef<HTMLElement, { post: Post }>(({ post }, r
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[11px] text-text-secondary">
         <span className="flex items-center gap-1.5">
           <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", briefing ? "bg-primary" : sportDotClasses[post.sport_category?.slug || ""] || "bg-sport-other")} />
-          {briefing ? "Briefing dnia" : post.sport_category?.name || "Inne"}
+          {briefing ? "Podsumowanie dnia" : post.sport_category?.name || "Inne"}
         </span>
         <time dateTime={post.published_at} title={fullDate} className="text-text-muted sm:hidden">{relativeNewsTime(post.published_at)}</time>
       </div>

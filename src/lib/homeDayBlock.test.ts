@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 import { describe, expect, test } from "bun:test";
 import type { Post } from "@/hooks/usePosts";
-import { briefingTopics, homeContentType, homeDayBlockIds, newsCountLabel, selectHomeDayContent } from "./homeDayBlock";
+import { briefingTimeline, briefingTopics, homeContentType, homeDayBlockIds, newsCountLabel, selectHomeDayContent } from "./homeDayBlock";
 
 const post = (id: string, tags: string[] = []): Post => ({
   id, slug: id, title: id, excerpt: "", content: "Treść", source_url: "https://example.com", tags,
@@ -20,7 +20,12 @@ describe("homepage day block", () => {
     expect(content.briefing?.id).toBe("brief");
     expect(content.lead?.id).toBe("a");
     expect(content.secondary.map(item => item.id)).toEqual(["b", "c"]);
-    expect(homeDayBlockIds(content)).toEqual(new Set(["brief", "a", "b", "c"]));
+    expect(homeDayBlockIds(content)).toEqual(new Set(["a", "b", "c"]));
+  });
+  test("briefing timeline shows the 4 newest news without the day summary", () => {
+    const at = (id: string, h: number, tags: string[] = []) => ({ ...post(id, tags), published_at: `2026-11-06T${String(h).padStart(2, "0")}:00:00Z` });
+    const list = [at("s", 23, ["podsumowanie dnia"]), at("a", 10), at("b", 20), at("c", 15), at("d", 18), at("e", 9)];
+    expect(briefingTimeline(list).map(p => p.id)).toEqual(["b", "d", "c", "a"]);
   });
   test("briefing topics come from the briefing's own section headings", () => {
     const html = "<p>Wstęp dnia pełen emocji sportowych.</p><h2>Tenis</h2><p>x</p><h2>Piłka nożna</h2><h2>Siatkówka</h2><h2>Inne</h2>";

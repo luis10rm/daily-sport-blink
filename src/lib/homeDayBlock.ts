@@ -32,9 +32,17 @@ export function selectHomeDayContent(posts: Post[], todaysPosts: Post[], feature
   return { briefing, lead, secondary, topics };
 }
 
+/** Latest news of the day for the briefing tile's mini timeline (the day summary article is left out). */
+export function briefingTimeline(todaysPosts: Post[], limit = 4): Post[] {
+  return [...todaysPosts]
+    .filter(post => homeContentType(post) === "news")
+    .sort((a, b) => Date.parse(b.published_at) - Date.parse(a.published_at))
+    .slice(0, limit);
+}
+
 /** Posts already shown in the day block; the "Dziś" list must not repeat them. */
 export function homeDayBlockIds(content: ReturnType<typeof selectHomeDayContent>): Set<string> {
-  return new Set([content.briefing?.id, content.lead?.id, ...content.secondary.map(post => post.id)].filter((id): id is string => Boolean(id)));
+  return new Set([content.lead?.id, ...content.secondary.map(post => post.id)].filter((id): id is string => Boolean(id)));
 }
 
 export function newsCountLabel(count: number) {

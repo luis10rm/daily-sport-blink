@@ -100,6 +100,8 @@ export const usePostsByDate = (date: string) => {
       const { data, error } = await supabase
         .from("posts")
         .select(POST_SELECT)
+        // Same definition of "today's news" as useTodaysPosts: sport channel, visible, that calendar day.
+        .eq("channel" as never, "sport" as never)
         .eq("is_hidden" as never, false as never)
         .gte("published_at", startOfDay)
         .lte("published_at", endOfDay)
