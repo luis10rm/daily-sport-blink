@@ -18,6 +18,8 @@ import { useActiveBannerForDevice } from "@/hooks/useBanners";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWallpaperContext } from "@/contexts/WallpaperContext";
 import { cn } from "@/lib/utils";
+import { useMemo } from "react";
+import { homeDayBlockIds, selectHomeDayContent } from "@/lib/homeDayBlock";
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -30,6 +32,10 @@ const Index = () => {
   const { data: posts = [], isLoading: postsLoading } = usePostsFeed();
   const { data: newsOfTheDay, isLoading: newsLoading } = useNewsOfTheDay();
   const { data: todaysPosts = [], isLoading: todaysLoading } = useTodaysPosts();
+  const dayBlockIds = useMemo(
+    () => homeDayBlockIds(selectHomeDayContent(posts, todaysPosts, newsOfTheDay)),
+    [posts, todaysPosts, newsOfTheDay],
+  );
   const { data: topBanner } = useActiveBannerForDevice("home_top", device);
   const { data: middleBanner } = useActiveBannerForDevice("home_middle", device);
   const { data: bottomBanner } = useActiveBannerForDevice("home_bottom", device);
@@ -107,6 +113,7 @@ const Index = () => {
 
         <HomeNewsFeed
           todaysPosts={todaysPosts}
+          excludeIds={dayBlockIds}
           afterSixth={<CrossChannelStrip className="my-8" />}
         />
 

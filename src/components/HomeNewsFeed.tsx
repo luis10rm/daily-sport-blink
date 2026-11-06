@@ -5,9 +5,7 @@ import { useSportCategories } from "@/hooks/useSportCategories";
 import { HomeNewsCard } from "@/components/HomeNewsCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { filterHomeNews, splitHomeNews } from "@/lib/homeNewsFeed";
-
-const primarySports = ["football", "tennis", "siatkowka", "basketball", "motorsport", "sporty-zimowe"];
+import { activeTodayCategories, filterHomeNews, splitHomeNews } from "@/lib/homeNewsFeed";
 const gridClass = "grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3";
 const continuationGridClass = `${gridClass} mt-3 sm:mt-4`;
 
@@ -20,20 +18,20 @@ const newsWord = (n: number) => {
 interface HomeNewsFeedProps {
   todaysPosts: Post[];
   afterSixth: ReactNode;
+  /** Posts already shown in the day block (briefing, news of the day, two small cards). */
+  excludeIds?: Set<string>;
 }
 
-export function HomeNewsFeed({ todaysPosts, afterSixth }: HomeNewsFeedProps) {
+export function HomeNewsFeed({ todaysPosts, afterSixth, excludeIds = new Set() }: HomeNewsFeedProps) {
   const [categoryId, setCategoryId] = useState("all");
   const { data: categories = [] } = useSportCategories();
   const { data: posts = [], isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = usePostsFeed(categoryId);
-  const orderedCategories = [...categories].sort((a, b) => {
-    const aIndex = primarySports.indexOf(a.slug);
-    const bIndex = primarySports.indexOf(b.slug);
-    return (aIndex < 0 ? primarySports.length + a.sort_order : aIndex) - (bIndex < 0 ? primarySports.length + b.sort_order : bIndex);
-  });
-  const { today, earlier } = splitHomeNews(posts);
+  const orderedCategories = activeTodayCategories(categories, todaysPosts);
+  const split = splitHomeNews(posts);
+  const today = split.today.filter(post => !excludeIds.has(post.id));
+  const earlier = split.earlier.filter(post => !excludeIds.has(post.id));
   const todayCount = filterHomeNews(todaysPosts, categoryId).filter(post => !post.is_sponsored).length;
-  const remainingToday = Math.max(0, todayCount - today.filter(post => !post.is_sponsored).length);
+  const remainingToday = Math.max(0, todayCount - split.today.filter(post => !post.is_sponsored).length);
   const hasMoreThanSix = today.length + earlier.length > 6;
 
   const cards = (items: Post[], continuation = false) => items.length > 0
@@ -45,11 +43,14 @@ export function HomeNewsFeed({ todaysPosts, afterSixth }: HomeNewsFeedProps) {
       <h2 id="home-news-heading" className="text-2xl font-bold">Dziś</h2>
       <span aria-live="polite" className="text-sm text-text-muted">{isLoading ? "…" : todayCount} newsów</span>
     </div>
-    <div role="group" aria-label="Filtruj newsy według dyscypliny" className="mb-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {[{ id: "all", name: "Wszystko" }, ...orderedCategories].map(category =>
-        <Button key={category.id} variant={categoryId === category.id ? "default" : "outline"}
-          aria-pressed={categoryId === category.id} onClick={() => setCategoryId(category.id)}
-          className="h-11 shrink-0 rounded-chip px-4 text-xs touch-manipulation">{category.name}</Button>)}
+    <div className="relative mb-5">
+      <div role="group" aria-label="Filtruj newsy według dyscypliny" className="flex gap-2 overflow-x-auto pb-1 pr-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {[{ id: "all", name: "Wszystko" }, ...orderedCategories].map(category =>
+          <Button key={category.id} variant={categoryId === category.id ? "default" : "outline"}
+            aria-pressed={categoryId === category.id} onClick={() => setCategoryId(category.id)}
+            className="h-11 shrink-0 rounded-chip px-4 text-xs touch-manipulation">{category.name}</Button>)}
+      </div>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-background to-transparent" />
     </div>
     {isLoading ? <div className={gridClass}>{Array.from({ length: 12 }, (_, index) => <Skeleton key={index} className="h-28 rounded-card sm:h-[300px]" />)}</div>
       : <>
