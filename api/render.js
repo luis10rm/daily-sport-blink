@@ -1,3 +1,5 @@
+import { marked } from "marked";
+
 export const config = { runtime: "edge" };
 
 const SITE_URL = "https://szortsy.pl";
@@ -6,8 +8,7 @@ const DEFAULT_TITLE = "Szortsy - Wiadomości sportowe krótko i na temat";
 const DEFAULT_DESCRIPTION =
   "Szortsy – najważniejsze wiadomości sportowe w 60 sekund. Piłka nożna, F1, tenis, MMA i więcej. Krótko, konkretnie, codziennie. Bądź na bieżąco!";
 const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
-const BACKEND_URL =
-  process.env.VITE_SUPABASE_URL ?? "https://izyknazjzdkfdxnekvos.supabase.co";
+const BACKEND_URL = process.env.VITE_SUPABASE_URL ?? "https://izyknazjzdkfdxnekvos.supabase.co";
 const BACKEND_ANON_KEY =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
   process.env.VITE_SUPABASE_ANON_KEY ??
@@ -17,21 +18,14 @@ const NOINDEX = "noindex, follow";
 const INDEX_ROBOTS = "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1";
 
 const escapeHtml = (value = "") =>
-  String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const jsonForHtml = (value) =>
-  JSON.stringify(value).replace(/</g, "\\u003c").replace(/-->/g, "--\\u003e");
+const jsonForHtml = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/-->/g, "--\\u003e");
 
 const fullTitle = (title) =>
-  !title || title === DEFAULT_TITLE || title.includes("| Szortsy")
-    ? title || DEFAULT_TITLE
-    : `${title} | Szortsy`;
+  !title || title === DEFAULT_TITLE || title.includes("| Szortsy") ? title || DEFAULT_TITLE : `${title} | Szortsy`;
 
 const fetchRows = async (table, params) => {
   if (!BACKEND_ANON_KEY) return null;
@@ -74,6 +68,22 @@ const baseMeta = (path) => ({
 
 const addTag = (tags, tag) => tag && tags.push(tag);
 
+const safeDecode = (value) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
+// Backend did not answer: tell crawlers to come back later instead of serving
+// a generic page (default title/description, no content) with status 200.
+const unavailable = (meta) => ({ ...meta, robots: NOINDEX, status: 503 });
+
+// Routes that exist only in the client app (see src/App.tsx) and have no
+// server-side content. Everything else that reaches the catch-all is a 404.
+const CLIENT_ONLY_ROUTES = [/^\/start$/, /^\/auth$/, /^\/admin(\/.*)?$/];
+
 // --- Server-rendered body content (so crawlers get text without executing JS) ---
 
 const stripUnsafe = (html = "") =>
@@ -92,12 +102,56 @@ const plainParagraphs = (text = "") =>
     .map((chunk) => `<p>${escapeHtml(chunk)}</p>`)
     .join("\n");
 
+// The frontend (BlinkPage.parseContent) runs stored content through
+// sanitizePastedHtml -> normalizeMarkdownInHtml -> marked. The server must do
+// the same, otherwise crawlers (and users, for a moment before React mounts)
+// get raw Markdown (**, ##, [text](url)) and escaped tags (&lt;p&gt;) as text.
+// Ported from src/lib/unescapeHtmlIfEncoded.ts and src/lib/normalizeMarkdownInHtml.ts.
+
+const ENCODED_TAG_RE = /&lt;\/?[a-z][^&]{0,200}&gt;/i;
+const AI_DIRECTIVE_RE = /:[a-zA-Z][\w]*\[[^\]]*\]\{[^}]*\}/g;
+
+const decodeEntitiesOnce = (s) =>
+  s
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&");
+
+const unescapeHtmlIfEncoded = (content) => {
+  let out = content;
+  for (let i = 0; i < 3 && ENCODED_TAG_RE.test(out); i++) out = decodeEntitiesOnce(out);
+  return out;
+};
+
+const convertInlineMarkdown = (text) =>
+  text
+    .replace(/\*\*\*([^*]+)\*\*\*/g, "<strong><em>$1</em></strong>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(?<![a-zA-Z0-9])\*([^*]+)\*(?![a-zA-Z0-9])/g, "<em>$1</em>");
+
+const normalizeMarkdownInHtml = (content) => {
+  if (!/\*\*([^*]+)\*\*|\*([^*]+)\*/.test(content)) return content;
+  if (!/<[a-z][^>]*>/i.test(content)) return convertInlineMarkdown(content);
+  return content
+    .split(/(<[^>]+>)/g)
+    .map((part) => (part.startsWith("<") ? part : convertInlineMarkdown(part)))
+    .join("");
+};
+
 const contentHtml = (content = "") => {
   const raw = String(content || "").trim();
   if (!raw) return "";
-  return /<\/?(p|h[1-6]|ul|ol|li|blockquote|div|br)\b/i.test(raw)
-    ? stripUnsafe(raw)
-    : plainParagraphs(raw);
+  try {
+    let normalized = unescapeHtmlIfEncoded(raw).replace(AI_DIRECTIVE_RE, "");
+    normalized = normalizeMarkdownInHtml(normalized);
+    const html = marked.parse(normalized, { async: false });
+    return stripUnsafe(html);
+  } catch {
+    return plainParagraphs(raw);
+  }
 };
 
 const formatPlDate = (value) => {
@@ -133,7 +187,9 @@ const listBody = (heading, intro, items) =>
           .map(
             (item) =>
               `<li><a href="${escapeHtml(item.href)}"><h2>${escapeHtml(item.title)}</h2></a>${
-                item.date ? `<time datetime="${escapeHtml(item.date)}">${escapeHtml(formatPlDate(item.date))}</time>` : ""
+                item.date
+                  ? `<time datetime="${escapeHtml(item.date)}">${escapeHtml(formatPlDate(item.date))}</time>`
+                  : ""
               }${item.excerpt ? `<p>${escapeHtml(item.excerpt)}</p>` : ""}</li>`,
           )
           .join("\n")}\n</ul>`
@@ -163,7 +219,8 @@ const fetchSportList = async (extra = {}) => {
 
 const fetchPositiveList = async (extra = {}) => {
   const rows = await fetchRows("posts", {
-    select: "slug,title,excerpt,published_at,positive_category:positive_categories!posts_positive_category_id_fkey(slug)",
+    select:
+      "slug,title,excerpt,published_at,positive_category:positive_categories!posts_positive_category_id_fkey(slug)",
     is_hidden: "eq.false",
     channel: "eq.positive",
     order: "published_at.desc",
@@ -196,26 +253,11 @@ const fetchTechList = async (extra = {}) => {
   }));
 };
 
-
-
-
 const replaceHead = (html, meta) => {
-  let next = html
-    .replace(/<title>[\s\S]*?<\/title>/i, "")
-    .replace(/<link\s+[^>]*rel=["']canonical["'][^>]*>/gi, "");
+  let next = html.replace(/<title>[\s\S]*?<\/title>/i, "").replace(/<link\s+[^>]*rel=["']canonical["'][^>]*>/gi, "");
 
-  [
-    "description",
-    "robots",
-    "twitter:card",
-    "twitter:title",
-    "twitter:description",
-    "twitter:image",
-  ].forEach((name) => {
-    next = next.replace(
-      new RegExp(`<meta\\s+[^>]*name=["']${escapeRegex(name)}["'][^>]*>`, "gi"),
-      "",
-    );
+  ["description", "robots", "twitter:card", "twitter:title", "twitter:description", "twitter:image"].forEach((name) => {
+    next = next.replace(new RegExp(`<meta\\s+[^>]*name=["']${escapeRegex(name)}["'][^>]*>`, "gi"), "");
   });
 
   [
@@ -231,10 +273,7 @@ const replaceHead = (html, meta) => {
     "article:author",
     "article:section",
   ].forEach((property) => {
-    next = next.replace(
-      new RegExp(`<meta\\s+[^>]*property=["']${escapeRegex(property)}["'][^>]*>`, "gi"),
-      "",
-    );
+    next = next.replace(new RegExp(`<meta\\s+[^>]*property=["']${escapeRegex(property)}["'][^>]*>`, "gi"), "");
   });
 
   next = next.replace(/<script\s+[^>]*data-server-seo[^>]*>[\s\S]*?<\/script>/gi, "");
@@ -310,7 +349,11 @@ const postMeta = (post, path) => {
       author: author?.slug
         ? { "@type": "Person", name: authorName, url: `${SITE_URL}/autor/${author.slug}` }
         : { "@type": "Organization", name: SITE_NAME },
-      publisher: { "@type": "Organization", name: SITE_NAME, logo: { "@type": "ImageObject", url: `${SITE_URL}/logo-seo.png` } },
+      publisher: {
+        "@type": "Organization",
+        name: SITE_NAME,
+        logo: { "@type": "ImageObject", url: `${SITE_URL}/logo-seo.png` },
+      },
       isBasedOn: post.source_url,
       articleSection: section,
       keywords: post.tags?.length ? post.tags : undefined,
@@ -328,7 +371,6 @@ const postMeta = (post, path) => {
     }),
   };
 };
-
 
 const resolveMeta = async (path) => {
   const meta = baseMeta(path);
@@ -407,7 +449,7 @@ const resolveMeta = async (path) => {
 
   const blink = path.match(/^\/blink\/([^/]+)$/);
   if (blink) {
-    const slug = decodeURIComponent(blink[1]);
+    const slug = safeDecode(blink[1]);
     const redirect = await fetchOne("post_redirects", {
       select: "to_slug",
       from_slug: `eq.${slug}`,
@@ -420,13 +462,13 @@ const resolveMeta = async (path) => {
       slug: `eq.${slug}`,
       is_hidden: "eq.false",
     });
-    if (post === undefined) return meta;
-    return post ? postMeta(post, path) : { ...meta, title: "Artykuł nie znaleziony", robots: NOINDEX };
+    if (post === undefined) return unavailable(meta);
+    return post ? postMeta(post, path) : { ...meta, title: "Artykuł nie znaleziony", robots: NOINDEX, status: 404 };
   }
 
   const positive = path.match(/^\/pozytywne\/([^/]+)\/([^/]+)$/);
   if (positive) {
-    const slug = decodeURIComponent(positive[2]);
+    const slug = safeDecode(positive[2]);
     const post = await fetchOne("posts", {
       select:
         "slug,title,excerpt,content,image_url,source_url,tags,channel,published_at,updated_at,sport_category:sport_categories!fk_posts_category(slug,name),positive_category:positive_categories!posts_positive_category_id_fkey(slug,name),author:authors(display_name,slug)",
@@ -434,16 +476,16 @@ const resolveMeta = async (path) => {
       channel: "eq.positive",
       is_hidden: "eq.false",
     });
-    if (post === undefined) return meta;
-    return post ? postMeta(post, path) : { ...meta, title: "Artykuł nie znaleziony", robots: NOINDEX };
+    if (post === undefined) return unavailable(meta);
+    return post ? postMeta(post, path) : { ...meta, title: "Artykuł nie znaleziony", robots: NOINDEX, status: 404 };
   }
 
   const positiveCategory = path.match(/^\/pozytywne\/kategoria\/([^/]+)$/);
   if (positiveCategory) {
-    const slug = decodeURIComponent(positiveCategory[1]);
+    const slug = safeDecode(positiveCategory[1]);
     const row = await fetchOne("positive_categories", { select: "id,slug,name,description", slug: `eq.${slug}` });
-    if (row === undefined) return meta;
-    if (!row) return { ...meta, title: "Kategoria nie znaleziona", robots: NOINDEX };
+    if (row === undefined) return unavailable(meta);
+    if (!row) return { ...meta, title: "Kategoria nie znaleziona", robots: NOINDEX, status: 404 };
     const description = row.description || `Pozytywne wiadomości z kategorii ${row.name} na Szortsy.`;
     const items = row.id ? await fetchPositiveList({ positive_category_id: `eq.${row.id}` }) : [];
     return {
@@ -456,10 +498,10 @@ const resolveMeta = async (path) => {
 
   const techCategory = path.match(/^\/tech\/kategoria\/([^/]+)$/);
   if (techCategory) {
-    const slug = decodeURIComponent(techCategory[1]);
+    const slug = safeDecode(techCategory[1]);
     const row = await fetchOne("review_categories", { select: "id,slug,name,description", slug: `eq.${slug}` });
-    if (row === undefined) return meta;
-    if (!row) return { ...meta, title: "Kategoria Tech nie znaleziona", robots: NOINDEX };
+    if (row === undefined) return unavailable(meta);
+    if (!row) return { ...meta, title: "Kategoria Tech nie znaleziona", robots: NOINDEX, status: 404 };
     const description = row.description || `Recenzje i newsy Tech z kategorii ${row.name} na Szortsy.`;
     const items = row.id ? await fetchTechList({ category_id: `eq.${row.id}` }) : [];
     return {
@@ -472,14 +514,15 @@ const resolveMeta = async (path) => {
 
   const techArticle = path.match(/^\/tech\/([^/]+)\/([^/]+)$/);
   if (techArticle) {
-    const slug = decodeURIComponent(techArticle[2]);
+    const slug = safeDecode(techArticle[2]);
     const review = await fetchOne("reviews", {
-      select: "slug,title,excerpt,content,verdict,cover_image_url,published_at,updated_at,category:review_categories(slug,name)",
+      select:
+        "slug,title,excerpt,content,verdict,cover_image_url,published_at,updated_at,category:review_categories(slug,name)",
       slug: `eq.${slug}`,
       status: "eq.published",
     });
-    if (review === undefined) return meta;
-    if (!review) return { ...meta, title: "Wpis Tech nie znaleziony", robots: NOINDEX };
+    if (review === undefined) return unavailable(meta);
+    if (!review) return { ...meta, title: "Wpis Tech nie znaleziony", robots: NOINDEX, status: 404 };
     const canonical = `${SITE_URL}/tech/${review.category?.slug || techArticle[1]}/${review.slug}`;
     return {
       ...meta,
@@ -500,7 +543,11 @@ const resolveMeta = async (path) => {
         image: review.cover_image_url,
         datePublished: review.published_at,
         dateModified: review.updated_at,
-        publisher: { "@type": "Organization", name: SITE_NAME, logo: { "@type": "ImageObject", url: `${SITE_URL}/logo-seo.png` } },
+        publisher: {
+          "@type": "Organization",
+          name: SITE_NAME,
+          logo: { "@type": "ImageObject", url: `${SITE_URL}/logo-seo.png` },
+        },
         articleSection: review.category?.name,
         inLanguage: "pl-PL",
       },
@@ -517,13 +564,13 @@ const resolveMeta = async (path) => {
 
   const tag = path.match(/^\/tag\/([^/]+)$/);
   if (tag) {
-    const slug = decodeURIComponent(tag[1]);
+    const slug = safeDecode(tag[1]);
     const row = await fetchOne("tags", {
       select: "slug,name,description,post_count,force_index",
       slug: `eq.${slug}`,
     });
-    if (row === undefined) return meta;
-    if (!row) return { ...meta, title: "Tag nie znaleziony", robots: NOINDEX };
+    if (row === undefined) return unavailable(meta);
+    if (!row) return { ...meta, title: "Tag nie znaleziony", robots: NOINDEX, status: 404 };
     const shouldNoindex = !row.force_index && Number(row.post_count || 0) < 4;
     return {
       ...meta,
@@ -535,10 +582,10 @@ const resolveMeta = async (path) => {
 
   const sportCategory = path.match(/^\/kategoria\/([^/]+)$/);
   if (sportCategory) {
-    const slug = decodeURIComponent(sportCategory[1]);
+    const slug = safeDecode(sportCategory[1]);
     if (slug === "wspo-praca-reklamowa") return { ...meta, title: "Współpraca reklamowa", robots: NOINDEX };
     const row = await fetchOne("sport_categories", { select: "id,slug,name", slug: `eq.${slug}` });
-    if (row === undefined) return meta;
+    if (row === undefined) return unavailable(meta);
     if (row) {
       const items = row.id ? await fetchSportList({ category_id: `eq.${row.id}` }) : [];
       const description = `Najnowsze wiadomości sportowe z kategorii ${row.name} — krótko i na temat.`;
@@ -549,18 +596,18 @@ const resolveMeta = async (path) => {
         content: listBody(`${row.name} — wiadomości`, description, items),
       };
     }
-    return { ...meta, title: "Kategoria nie znaleziona", robots: NOINDEX };
+    return { ...meta, title: "Kategoria nie znaleziona", robots: NOINDEX, status: 404 };
   }
 
   const author = path.match(/^\/autor\/([^/]+)$/);
   if (author) {
-    const slug = decodeURIComponent(author[1]);
+    const slug = safeDecode(author[1]);
     const row = await fetchOne("authors_public", {
       select: "slug,display_name,bio,role_title,avatar_url",
       slug: `eq.${slug}`,
     });
-    if (row === undefined) return meta;
-    if (!row) return { ...meta, title: "Autor nie znaleziony", robots: NOINDEX };
+    if (row === undefined) return unavailable(meta);
+    if (!row) return { ...meta, title: "Autor nie znaleziony", robots: NOINDEX, status: 404 };
     return {
       ...meta,
       title: row.display_name,
@@ -578,7 +625,40 @@ const resolveMeta = async (path) => {
     };
   }
 
-  return meta;
+  // Old /news/... URLs (pre-2026 structure). Previously they rendered a
+  // "moved" page with status 200, which throws away their backlinks.
+  // Now: 301 to the article if the slug still exists, otherwise 410 Gone.
+  const legacyNews = path.match(/^\/news\/(.+)$/);
+  if (legacyNews) {
+    const slug = safeDecode(legacyNews[1].split("/").filter(Boolean).pop() || "");
+    if (slug) {
+      const redirect = await fetchOne("post_redirects", { select: "to_slug", from_slug: `eq.${slug}` });
+      if (redirect?.to_slug) return { redirectTo: `/blink/${redirect.to_slug}` };
+
+      const post = await fetchOne("posts", {
+        select: "slug,channel,positive_category:positive_categories!posts_positive_category_id_fkey(slug)",
+        slug: `eq.${slug}`,
+        is_hidden: "eq.false",
+      });
+      if (post === undefined) return unavailable(meta);
+      if (post) {
+        return {
+          redirectTo:
+            post.channel === "positive" && post.positive_category?.slug
+              ? `/pozytywne/${post.positive_category.slug}/${post.slug}`
+              : `/blink/${post.slug}`,
+        };
+      }
+    }
+    return { ...meta, title: "Artykuł przeniesiony", robots: NOINDEX, status: 410 };
+  }
+
+  if (CLIENT_ONLY_ROUTES.some((re) => re.test(path))) {
+    return { ...meta, title: "Szortsy", robots: "noindex, nofollow" };
+  }
+
+  // Unknown URL: real 404 instead of a 200 page with canonical = homepage.
+  return { ...meta, title: "Strona nie znaleziona", robots: NOINDEX, status: 404 };
 };
 
 export default async function handler(request) {
@@ -597,6 +677,12 @@ export default async function handler(request) {
   const indexResponse = await fetch(new URL("/index.html", request.url), {
     headers: { Accept: "text/html" },
   });
+  if (!indexResponse.ok) {
+    return new Response("Service temporarily unavailable", {
+      status: 503,
+      headers: { "Retry-After": "120", "Cache-Control": "no-store" },
+    });
+  }
   const html = await indexResponse.text();
   let body = replaceHead(html, meta);
 
@@ -607,11 +693,18 @@ export default async function handler(request) {
     );
   }
 
-  return new Response(body, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=600",
-    },
-  });
+  // The client app still renders normally for people (React takes over the
+  // page); the status code only tells crawlers what this URL really is.
+  const status = meta.status || 200;
+  const headers = { "Content-Type": "text/html; charset=utf-8" };
+  if (status === 503) {
+    headers["Retry-After"] = "120";
+    headers["Cache-Control"] = "no-store";
+  } else if (status >= 400) {
+    headers["Cache-Control"] = "public, max-age=0, s-maxage=60";
+  } else {
+    headers["Cache-Control"] = "public, max-age=0, s-maxage=300, stale-while-revalidate=600";
+  }
+
+  return new Response(body, { status, headers });
 }
