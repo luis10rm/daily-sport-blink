@@ -56,13 +56,13 @@ export const FeedbackBox = ({ className }: FeedbackBoxProps) => {
           placeholder="Napisz w kilku słowach..."
           maxLength={500}
           disabled={isPending}
-          className="h-10 w-full min-w-0 rounded-control border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-11 w-full min-w-0 rounded-control border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <Button
           type="submit"
           size="sm"
           disabled={message.trim().length < 5 || isPending}
-          className="h-10 shrink-0 rounded-control px-4"
+          className="h-11 shrink-0 rounded-control px-4"
         >
           <Send className="h-4 w-4" aria-hidden />
           <span className="ml-1.5">Wyślij</span>

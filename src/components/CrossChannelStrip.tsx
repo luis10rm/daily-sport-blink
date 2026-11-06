@@ -122,7 +122,7 @@ const ChannelColumn = ({ channel, items, loading }: ColumnProps) => {
         <Link
           to={s.href}
           className={cn(
-            "inline-flex items-center gap-1 text-xs font-semibold transition-colors",
+            "inline-flex min-h-11 items-center gap-1 text-xs font-semibold transition-colors",
             s.ctaColor,
           )}
         >

@@ -71,7 +71,7 @@ export const ChannelSwitcher = ({ className }: { className?: string }) => {
             aria-current={isActive ? "page" : undefined}
             aria-label={c.label}
             className={cn(
-              "inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:flex-none",
+              "inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-sm font-semibold transition-colors touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:flex-none",
               isActive ? c.activeClasses : c.idleClasses,
             )}
           >
