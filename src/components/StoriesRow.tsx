@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { getPostImage, getCategoryImage } from "@/config/categoryImages";
 import { cn } from "@/lib/utils";
+import { homeContentType } from "@/lib/homeDayBlock";
 import { latestNewsStories, newsStoryKeyword, loadReadNewsStories, saveReadNewsStory } from "@/lib/newsStories";
 
 // Story post format for the viewer
@@ -53,7 +54,7 @@ export const StoriesRow = () => {
     >
       <CarouselContent className="-ml-4 py-1">
         {stories.map((post) => {
-          const keyword = newsStoryKeyword(post);
+          const keyword = homeContentType(post) === "briefing" ? "Raport" : newsStoryKeyword(post);
           const isRead = readIds.has(post.id);
           return (
             <CarouselItem key={post.id} className="basis-auto pl-4">

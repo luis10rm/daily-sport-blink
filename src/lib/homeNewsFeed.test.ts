@@ -30,4 +30,5 @@ test("today's list stays separate from earlier seven-day content", () => {
 test("relative time shows two hours as 2 godz. temu", () => {
   expect(relativeNewsTime("2026-11-06T12:00:00Z", new Date("2026-11-06T14:00:00Z"))).toBe("2 godz. temu");
   expect(relativeNewsTime("2026-11-06T13:55:00Z", new Date("2026-11-06T14:00:00Z"))).toBe("5 min temu");
+  expect(relativeNewsTime("2026-11-05T12:00:00Z", new Date("2026-11-06T14:00:00Z"))).toBe("wczoraj");
 });

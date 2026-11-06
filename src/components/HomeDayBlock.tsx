@@ -8,6 +8,7 @@ import { getPostImage } from "@/config/categoryImages";
 import type { Post } from "@/hooks/usePosts";
 import { newsCountLabel, selectHomeDayContent } from "@/lib/homeDayBlock";
 import { cn } from "@/lib/utils";
+import { fullNewsDate, relativeNewsTime } from "@/lib/homeNewsFeed";
 
 const categoryDots: Record<string, string> = {
   "pilka-nozna": "bg-sport-football", tenis: "bg-sport-tennis", siatkowka: "bg-sport-volleyball",
@@ -15,7 +16,7 @@ const categoryDots: Record<string, string> = {
 };
 
 function SmallDayNews({ post }: { post: Post }) {
-  const time = new Date(post.published_at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+  const time = <time dateTime={post.published_at} title={fullNewsDate(post.published_at)}>{relativeNewsTime(post.published_at)}</time>;
   const content = <>
     <div className="h-24 w-24 shrink-0 overflow-hidden rounded-control bg-muted">
       <OptimizedImage src={getPostImage(post)} alt={post.title} widths={[160, 240, 320]} fallbackWidth={240} sizes="96px" className="h-full w-full object-cover" />
@@ -70,19 +71,19 @@ export function HomeDayBlock({ posts, todaysPosts, featured, isLoading, classNam
         </div>
         <ArrowRight className="h-5 w-5 shrink-0 text-link" />
       </Link>
-      <div className="hidden h-full flex-col p-6 lg:flex">
+      <div className="hidden h-full flex-col justify-center p-6 lg:flex">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <span className="rounded-chip border border-briefing-border px-2.5 py-1 text-xs font-semibold text-link">Briefing dnia</span>
           <span className="text-xs capitalize text-text-secondary">{longDate}</span>
         </div>
-        <span className={cn("my-4 font-extrabold leading-none text-briefing-date", day >= 10 ? "text-[100px] xl:text-[112px]" : "text-[112px] xl:text-[130px]")}>{date}</span>
+        <span className={cn("my-3 font-extrabold leading-none text-briefing-date", day >= 10 ? "text-[84px] xl:text-[96px]" : "text-[96px] xl:text-[110px]")}>{date}</span>
         <h2 className="break-words text-xl font-bold leading-tight">{title}</h2>
-        {topics.length > 0 ? <ul className="mb-6 mt-4 space-y-3">
-          {topics.map(post => <li key={post.id} className="flex items-start gap-2 text-sm leading-snug text-text-secondary">
-            <Check className="mt-0.5 h-4 w-4 shrink-0 text-link" /><span>{post.title}</span>
+        {topics.length > 0 ? <ul className="mt-4 space-y-2.5">
+          {topics.map(topic => <li key={topic} className="flex items-start gap-2 text-sm leading-snug text-text-secondary">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-link" /><span>{topic}</span>
           </li>)}
-        </ul> : <p className="my-4 text-sm text-text-secondary">Dzisiaj jeszcze nie dodaliśmy newsów.</p>}
-        <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-briefing-border pt-4">
+        </ul> : <p className="mt-4 text-sm text-text-secondary">Briefing pojawi się na koniec dnia.</p>}
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-briefing-border pt-4">
           <span className="text-xs text-text-secondary"><strong className="text-base text-foreground">{count}</strong> {newsCountLabel(count)}</span>
           <Button asChild className="h-11 rounded-control touch-manipulation"><Link to={briefingUrl}>Czytaj briefing <ArrowRight /></Link></Button>
         </div>
