@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { subDays } from "date-fns";
+import { HOME_FEED_PAGE_SIZE, nextHomeFeedOffset, orderHomeFeedPosts } from "@/lib/homeNewsFeed";
 
 export interface PostCategory {
   id: string;

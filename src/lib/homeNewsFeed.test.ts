@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 import { expect, test } from "bun:test";
 import type { Post } from "@/hooks/usePosts";
-import { filterHomeNews, relativeNewsTime, splitHomeNews } from "./homeNewsFeed";
+import { filterHomeNews, nextHomeFeedOffset, orderHomeFeedPosts, relativeNewsTime, splitHomeNews } from "./homeNewsFeed";
 const posts = [
   { id: "football", category_id: "football", published_at: "2026-11-06T12:00:00", is_sponsored: false },
   { id: "tennis", category_id: "tennis", published_at: "2026-11-05T12:00:00", is_sponsored: false },

@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Archive } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -7,7 +6,6 @@ import { PatronBar } from "@/components/PatronBar";
 import { HomeNewsFeed } from "@/components/HomeNewsFeed";
 import { HomeDayBlock } from "@/components/HomeDayBlock";
 import { SponsorBanner } from "@/components/SponsorBanner";
-import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
 import { WorldCupHomeBanner } from "@/components/WorldCupHomeBanner";
 import { CrossChannelStrip } from "@/components/CrossChannelStrip";

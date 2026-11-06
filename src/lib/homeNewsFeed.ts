@@ -1,5 +1,19 @@
 import type { Post } from "@/hooks/usePosts";
 
+export const HOME_FEED_PAGE_SIZE = 12;
+
+export function nextHomeFeedOffset(lastPageLength: number, currentOffset: number) {
+  return lastPageLength === HOME_FEED_PAGE_SIZE ? currentOffset + HOME_FEED_PAGE_SIZE : undefined;
+}
+
+export function orderHomeFeedPosts(posts: Post[]) {
+  const sponsored = posts.find(post => post.is_sponsored);
+  const nonSponsored = posts.filter(post => !post.is_sponsored);
+  if (!sponsored || nonSponsored.length === 0) return posts;
+  const [first, ...rest] = nonSponsored;
+  return [first, sponsored, ...rest];
+}
+
 export function filterHomeNews(posts: Post[], categoryId: string) {
   return categoryId === "all" ? posts : posts.filter(post => post.category_id === categoryId || post.is_sponsored);
 }
