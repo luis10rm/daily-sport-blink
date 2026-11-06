@@ -592,6 +592,14 @@ FORMATOWANIE (OBOWIĄZKOWE):
       console.log("Appended HTML formatting rules to content prompt");
     }
 
+    // Applies to custom admin prompts too: metadata belongs in metadata, never in the body.
+    contentPrompt += `
+
+PIERWSZY AKAPIT (OBOWIĄZKOWE):
+- Rozpocznij od merytorycznego leadu artykułu.
+- NIE dodawaj tytułu SEO, nazwy kategorii w nawiasach kwadratowych ani podpisu serwisu.
+- NIE używaj formatu "[Kategoria] Tytuł | Szortsy.pl" ani żadnego jego wariantu.`;
+
     console.log("Using prompts from settings");
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
