@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { describe, expect, test } from "bun:test";
 import { latestNewsStories, newsStoryKeyword, parseReadNewsStories, saveReadNewsStory, loadReadNewsStories, NEWS_STORIES_READ_KEY } from "./newsStories";
 
