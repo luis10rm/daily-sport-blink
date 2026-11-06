@@ -1,11 +1,11 @@
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { ArrowUpRight, ExternalLink, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
-import { AuthorCard } from "./AuthorCard";
 import { WorldCupBadge } from "./WorldCupBadge";
 import { getPostImage } from "@/config/categoryImages";
 import { Post } from "@/hooks/usePosts";
-import { cn, getSourceName, generateSlug } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { fullNewsDate, relativeNewsTime, sportDotClasses } from "@/lib/homeNewsFeed";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
 import { Button } from "@/components/ui/button";
 import { homeContentType } from "@/lib/homeDayBlock";
@@ -17,11 +17,6 @@ interface NewsOfTheDayProps {
 
 export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
   const blinkUrl = `/blink/${post.slug}`;
-  const formattedDate = new Date(post.published_at).toLocaleDateString("pl-PL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
   const isWorldCup = isWorldCupCategory(post.sport_category?.slug);
 
   return (
@@ -65,26 +60,16 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
         <div className="flex flex-1 flex-col gap-4 p-6 md:p-6">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
+                <span aria-hidden="true" className={cn("h-1.5 w-1.5 shrink-0 rounded-full", sportDotClasses[post.sport_category?.slug || ""] || "bg-primary")} />
                 <span className="text-xs font-medium text-text-secondary">
                   {homeContentType(post) === "briefing" ? "Briefing dnia" : post.sport_category?.name || "Sport"}
                 </span>
               </div>
-              <span className="text-sm text-muted-foreground">{formattedDate}</span>
+              <time dateTime={post.published_at} title={fullNewsDate(post.published_at)} className="text-sm text-muted-foreground">
+                {relativeNewsTime(post.published_at)}
+              </time>
             </div>
-            {post.tags && post.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {post.tags.map((tag) => (
-                  <Link
-                    key={tag}
-                    to={`/tag/${generateSlug(tag)}`}
-                    className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors tag-hover"
-                  >
-                    {tag}
-                  </Link>
-                ))}
-              </div>
-            )}
           </div>
 
           <div className="flex flex-1 flex-col gap-3">
@@ -96,7 +81,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
             </p>
           </div>
 
-          {post.author && <AuthorCard author={post.author} />}
+          {post.author?.display_name && <span className="text-sm font-medium text-text-secondary">{post.author.display_name}</span>}
 
           <Button asChild className="mt-auto w-fit rounded-control touch-manipulation">
             {post.content ? (
@@ -107,9 +92,6 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
               </a>
             )}
           </Button>
-          <span className="text-sm text-muted-foreground mt-2">
-            Źródło: {getSourceName(post.source_url)}
-          </span>
         </div>
       </div>
     </article>
