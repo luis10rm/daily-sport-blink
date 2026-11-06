@@ -32,7 +32,18 @@ export function relativeNewsTime(publishedAt: string, now = new Date()) {
   if (minutes < 60) return `${minutes} min temu`;
   if (minutes < 1440) return `${Math.floor(minutes / 60)} godz. temu`;
   const days = Math.floor(minutes / 1440);
-  return `${days} ${days === 1 ? "dzień" : "dni"} temu`;
+  return days === 1 ? "wczoraj" : `${days} dni temu`;
+}
+
+export function fullNewsDate(publishedAt: string) {
+  return new Date(publishedAt).toLocaleString("pl-PL", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+/** "Wszystko" plus only disciplines with news today, busiest first. */
+export function activeTodayCategories<C extends { id: string }>(categories: C[], todaysPosts: Post[]): C[] {
+  const counts = new Map<string, number>();
+  for (const post of todaysPosts) if (!post.is_sponsored && post.category_id) counts.set(post.category_id, (counts.get(post.category_id) || 0) + 1);
+  return categories.filter(c => counts.has(c.id)).sort((a, b) => (counts.get(b.id) || 0) - (counts.get(a.id) || 0));
 }
 
 export const sportDotClasses: Record<string, string> = {

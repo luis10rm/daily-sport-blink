@@ -1,7 +1,7 @@
 /// <reference types="bun" />
 import { describe, expect, test } from "bun:test";
 import type { Post } from "@/hooks/usePosts";
-import { homeContentType, newsCountLabel, selectHomeDayContent } from "./homeDayBlock";
+import { briefingTopics, homeContentType, homeDayBlockIds, newsCountLabel, selectHomeDayContent } from "./homeDayBlock";
 
 const post = (id: string, tags: string[] = []): Post => ({
   id, slug: id, title: id, excerpt: "", content: "Treść", source_url: "https://example.com", tags,
@@ -20,7 +20,11 @@ describe("homepage day block", () => {
     expect(content.briefing?.id).toBe("brief");
     expect(content.lead?.id).toBe("a");
     expect(content.secondary.map(item => item.id)).toEqual(["b", "c"]);
-    expect(content.topics.map(item => item.id)).toEqual(["a", "b", "c"]);
+    expect(homeDayBlockIds(content)).toEqual(new Set(["brief", "a", "b", "c"]));
+  });
+  test("briefing topics come from the briefing's own section headings", () => {
+    const html = "<p>Wstęp dnia pełen emocji sportowych.</p><h2>Tenis</h2><p>x</p><h2>Piłka nożna</h2><h2>Siatkówka</h2><h2>Inne</h2>";
+    expect(briefingTopics(html)).toEqual(["Tenis", "Piłka nożna", "Siatkówka"]);
   });
   test("does not reuse yesterday's briefing as today's briefing", () => {
     expect(selectHomeDayContent([post("old", ["podsumowanie dnia"])], [post("today")]).briefing).toBeUndefined();
