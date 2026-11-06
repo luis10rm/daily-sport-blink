@@ -5,6 +5,7 @@ import { useSportCategories } from "@/hooks/useSportCategories";
 import { HomeNewsCard } from "@/components/HomeNewsCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { homeContentType } from "@/lib/homeDayBlock";
 import { activeTodayCategories, filterHomeNews, splitHomeNews } from "@/lib/homeNewsFeed";
 const gridClass = "grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3";
 const continuationGridClass = `${gridClass} mt-3 sm:mt-4`;
@@ -26,7 +27,7 @@ export function HomeNewsFeed({ todaysPosts, afterSixth, excludeIds = new Set() }
   const [categoryId, setCategoryId] = useState("all");
   const { data: categories = [] } = useSportCategories();
   const { data: posts = [], isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = usePostsFeed(categoryId);
-  const orderedCategories = activeTodayCategories(categories, todaysPosts);
+  const orderedCategories = activeTodayCategories(categories, todaysPosts.filter(post => homeContentType(post) === "news"));
   const split = splitHomeNews(posts);
   const today = split.today.filter(post => !excludeIds.has(post.id));
   const earlier = split.earlier.filter(post => !excludeIds.has(post.id));
