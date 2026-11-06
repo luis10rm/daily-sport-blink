@@ -3,24 +3,25 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // ============= SECURITY: Authentication & Authorization =============
 
 async function authenticateRequest(
   req: Request,
-  requiredRoles: string[] = ["admin", "editor"]
+  requiredRoles: string[] = ["admin", "editor"],
 ): Promise<{ user: any; error?: Response }> {
   const authHeader = req.headers.get("authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     console.error("Missing or invalid authorization header");
     return {
       user: null,
-      error: new Response(
-        JSON.stringify({ error: "Brak autoryzacji" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      ),
+      error: new Response(JSON.stringify({ error: "Brak autoryzacji" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
     };
   }
 
@@ -32,34 +33,31 @@ async function authenticateRequest(
 
   const token = authHeader.replace("Bearer ", "");
   const { data, error: authError } = await supabase.auth.getClaims(token);
-  
+
   if (authError || !data?.claims) {
     console.error("Invalid JWT token:", authError?.message);
     return {
       user: null,
-      error: new Response(
-        JSON.stringify({ error: "Nieprawidłowy token" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      ),
+      error: new Response(JSON.stringify({ error: "Nieprawidłowy token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
     };
   }
 
   const userId = data.claims.sub;
 
   // Check user roles
-  const { data: roles, error: rolesError } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data: roles, error: rolesError } = await supabase.from("user_roles").select("role").eq("user_id", userId);
 
   if (rolesError) {
     console.error("Error fetching user roles:", rolesError.message);
     return {
       user: null,
-      error: new Response(
-        JSON.stringify({ error: "Błąd weryfikacji uprawnień" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      ),
+      error: new Response(JSON.stringify({ error: "Błąd weryfikacji uprawnień" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
     };
   }
 
@@ -70,10 +68,10 @@ async function authenticateRequest(
     console.error(`User ${userId} lacks required roles: ${requiredRoles.join(", ")}`);
     return {
       user: null,
-      error: new Response(
-        JSON.stringify({ error: "Brak wymaganych uprawnień (wymagana rola: admin lub editor)" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      ),
+      error: new Response(JSON.stringify({ error: "Brak wymaganych uprawnień (wymagana rola: admin lub editor)" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }),
     };
   }
 
@@ -101,13 +99,13 @@ function validateUrl(urlString: string): { valid: boolean; reason?: string } {
 
     // Block private IP ranges
     const privateIpPatterns = [
-      /^10\./,                          // 10.0.0.0/8
+      /^10\./, // 10.0.0.0/8
       /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.0.0/12
-      /^192\.168\./,                    // 192.168.0.0/16
-      /^169\.254\./,                    // Link-local
-      /^fe80:/i,                        // IPv6 link-local
-      /^fd[0-9a-f]{2}:/i,               // IPv6 unique local
-      /^fc[0-9a-f]{2}:/i,               // IPv6 unique local
+      /^192\.168\./, // 192.168.0.0/16
+      /^169\.254\./, // Link-local
+      /^fe80:/i, // IPv6 link-local
+      /^fd[0-9a-f]{2}:/i, // IPv6 unique local
+      /^fc[0-9a-f]{2}:/i, // IPv6 unique local
     ];
 
     for (const pattern of privateIpPatterns) {
@@ -117,12 +115,7 @@ function validateUrl(urlString: string): { valid: boolean; reason?: string } {
     }
 
     // Block cloud metadata endpoints
-    const blockedHostnames = [
-      "metadata.google.internal",
-      "metadata.google.com",
-      "169.254.169.254",
-      "instance-data",
-    ];
+    const blockedHostnames = ["metadata.google.internal", "metadata.google.com", "169.254.169.254", "instance-data"];
 
     for (const blocked of blockedHostnames) {
       if (hostname === blocked || hostname.endsWith("." + blocked)) {
@@ -143,34 +136,104 @@ function validateUrl(urlString: string): { valid: boolean; reason?: string } {
 
 // ============= Article Processing Functions =============
 
-function extractTextFromHtml(html: string): string {
-  let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
-  text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "");
-  text = text.replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, "");
-  text = text.replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, "");
-  text = text.replace(/<header[^>]*>[\s\S]*?<\/header>/gi, "");
-  text = text.replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, "");
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_m, code) => String.fromCharCode(Number(code)))
+    .replace(/&amp;/g, "&");
+}
 
-  const articleMatch = text.match(/<article[^>]*>([\s\S]*?)<\/article>/i);
-  if (articleMatch) {
-    text = articleMatch[1];
-  } else {
-    const mainMatch = text.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
-    if (mainMatch) {
-      text = mainMatch[1];
+function toPlainText(html: string): string {
+  return decodeEntities(html.replace(/<[^>]+>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Many news sites publish the full article text as JSON-LD (NewsArticle.articleBody).
+// It is the cleanest source available: no menus, galleries, "czytaj też" boxes or ads.
+function extractJsonLdArticleBody(html: string): string | null {
+  const blocks = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi) || [];
+  let best = "";
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    const obj = node as Record<string, unknown>;
+    if (typeof obj.articleBody === "string" && obj.articleBody.length > best.length) {
+      best = obj.articleBody;
+    }
+    if (obj["@graph"]) visit(obj["@graph"]);
+  };
+  for (const block of blocks) {
+    const json = block
+      .replace(/^<script[^>]*>/i, "")
+      .replace(/<\/script>$/i, "")
+      .trim();
+    try {
+      visit(JSON.parse(json));
+    } catch {
+      // malformed JSON-LD on the source page - ignore
     }
   }
+  const text = toPlainText(best);
+  return text.length >= 300 ? text.slice(0, 8000) : null;
+}
 
-  text = text.replace(/<[^>]+>/g, " ");
-  text = text.replace(/&nbsp;/g, " ");
-  text = text.replace(/&amp;/g, "&");
-  text = text.replace(/&lt;/g, "<");
-  text = text.replace(/&gt;/g, ">");
-  text = text.replace(/&quot;/g, '"');
-  text = text.replace(/&#39;/g, "'");
-  text = text.replace(/\s+/g, " ").trim();
+const NOISE_TAGS = [
+  "script",
+  "style",
+  "noscript",
+  "nav",
+  "footer",
+  "header",
+  "aside",
+  "form",
+  "figure",
+  "figcaption",
+  "iframe",
+  "svg",
+  "button",
+  "select",
+];
 
-  return text.slice(0, 6000);
+const NOISE_PARAGRAPH_RE =
+  /^(czytaj (też|także|również|więcej)|zobacz (też|także|również)|przeczytaj (też|także|również)|polecamy|reklama|zdjęcie:|fot\.|źródło:)/i;
+
+function extractTextFromHtml(html: string): string {
+  // 1) Structured data, if the source provides it.
+  const fromJsonLd = extractJsonLdArticleBody(html);
+  if (fromJsonLd) return fromJsonLd;
+
+  // 2) Remove page chrome and media blocks.
+  let text = html;
+  for (const tag of NOISE_TAGS) {
+    text = text.replace(new RegExp(`<${tag}\\b[^>]*>[\\s\\S]*?<\\/${tag}>`, "gi"), " ");
+  }
+
+  // 3) Pick the main container: the longest <article>, otherwise <main>, otherwise the page.
+  const articles = [...text.matchAll(/<article\b[^>]*>([\s\S]*?)<\/article>/gi)].map((m) => m[1]);
+  articles.sort((a, b) => b.length - a.length);
+  const container = articles[0] ?? text.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1] ?? text;
+
+  // 4) Keep real paragraphs and subheadings only. This skips teaser lists,
+  //    "read also" boxes, captions and other headlines mixed into the page.
+  const blocks = [...container.matchAll(/<(p|h2|h3)\b[^>]*>([\s\S]*?)<\/\1>/gi)]
+    .map((m) => ({ tag: m[1].toLowerCase(), text: toPlainText(m[2]) }))
+    .filter(({ tag, text }) => (tag === "p" ? text.length >= 40 : text.length >= 10))
+    .filter(({ text }) => !NOISE_PARAGRAPH_RE.test(text))
+    .map(({ text }) => text);
+
+  const fromParagraphs = blocks.join("\n\n");
+  if (fromParagraphs.length >= 300) return fromParagraphs.slice(0, 8000);
+
+  // 5) Fallback: previous behaviour (all text from the container).
+  return toPlainText(container).slice(0, 6000);
 }
 
 function extractOgImage(html: string): string | null {
@@ -233,10 +296,7 @@ ABSOLUTNIE KRYTYCZNE - bez wyjątków:
  * doesn't share at least one meaningful word (>=4 chars) with the target post title.
  * Also removes leftover empty <ul></ul> and orphan "Przeczytaj również" headers.
  */
-function validateInternalLinks(
-  content: string,
-  relatedPosts: Array<{ title: string; slug: string }>,
-): string {
+function validateInternalLinks(content: string, relatedPosts: Array<{ title: string; slug: string }>): string {
   const allowed = new Map(relatedPosts.map((p) => [p.slug, p.title]));
   let stripped = 0;
 
@@ -268,17 +328,66 @@ function validateInternalLinks(
 
   if (stripped > 0) {
     result = result.replace(/<ul>\s*(<li>\s*<\/li>\s*)*<\/ul>/g, "");
-    result = result.replace(
-      /<p>\s*<strong>\s*Przeczytaj również:?\s*<\/strong>\s*<\/p>\s*(?!<ul)/gi,
-      "",
-    );
+    result = result.replace(/<p>\s*<strong>\s*Przeczytaj również:?\s*<\/strong>\s*<\/p>\s*(?!<ul)/gi, "");
     console.log(`[link-validator] Stripped ${stripped} bad internal link(s).`);
   }
 
   return result;
 }
 
+// ============= Output cleanup =============
 
+const normalizeForCompare = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+
+// Removes artefacts the model sometimes adds to the article body: a repeated
+// title, an <h1>, a social-media style line ("[Piłka nożna] ... | Szortsy.pl"),
+// hashtag lines or a ```html code fence around the whole answer.
+function cleanGeneratedContent(content: string, title: string): string {
+  let out = content.trim();
+  out = out.replace(/^```(?:html)?\s*/i, "").replace(/\s*```$/, "");
+  out = out.replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi, "");
+
+  const normalizedTitle = normalizeForCompare(title || "");
+  let removed = 0;
+  out = out.replace(/<p\b[^>]*>([\s\S]*?)<\/p>/gi, (full: string, inner: string) => {
+    const text = toPlainText(inner);
+    const drop =
+      !text ||
+      /^\[[^\]]{2,40}\]/.test(text) ||
+      /\|\s*Szortsy(\.pl)?\b/i.test(text) ||
+      (text.match(/(^|\s)#\p{L}[\p{L}\p{N}_]+/gu) || []).length >= 2 ||
+      (normalizedTitle !== "" && normalizeForCompare(text) === normalizedTitle);
+    if (drop && text) removed++;
+    return drop ? "" : full;
+  });
+  if (removed > 0) console.log(`[cleanup] Removed ${removed} artefact paragraph(s) from generated content.`);
+
+  return out.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function cleanMetaText(value: unknown): string {
+  return String(value ?? "")
+    .replace(/^\s*\[[^\]]{2,40}\]\s*/, "")
+    .replace(/\s*[|–-]\s*Szortsy(\.pl)?\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+const ALLOWED_CATEGORIES = ["football", "basketball", "tennis", "f1", "mma", "other"];
+
+// Appended to the prompt from settings so that an edited prompt can never
+// break the JSON parsing below.
+const METADATA_OUTPUT_RULES = `
+
+FORMAT ODPOWIEDZI (OBOWIĄZKOWY):
+Zwróć TYLKO JSON, bez żadnego dodatkowego tekstu, bez bloku kodu i bez markdown:
+{"title": "...", "excerpt": "...", "category": "...", "tags": ["...", "..."]}
+- category: dokładnie jedna z wartości: ${ALLOWED_CATEGORIES.join(", ")}
+- tags: tablica 3-5 elementów`;
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -294,28 +403,29 @@ serve(async (req) => {
     const { url } = await req.json();
 
     if (!url) {
-      return new Response(
-        JSON.stringify({ error: "URL is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "URL is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // ============= SECURITY: Validate URL (SSRF protection) =============
     const urlCheck = validateUrl(url);
     if (!urlCheck.valid) {
       console.error(`SSRF protection blocked URL: ${url} - Reason: ${urlCheck.reason}`);
-      return new Response(
-        JSON.stringify({ error: urlCheck.reason }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: urlCheck.reason }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     console.log(`User ${user.id} extracting article from URL: ${url}`);
 
     // Browser-like headers to avoid bot detection
     const browserHeaders = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
       "Accept-Language": "pl,en-US;q=0.9,en;q=0.8",
     };
 
@@ -331,7 +441,7 @@ serve(async (req) => {
         const fcResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${firecrawlKey}`,
+            Authorization: `Bearer ${firecrawlKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -344,43 +454,43 @@ serve(async (req) => {
         if (!fcResponse.ok) {
           const fcError = await fcResponse.text();
           console.error("Firecrawl API error:", fcResponse.status, fcError);
-          return new Response(
-            JSON.stringify({ error: `Firecrawl error: ${fcResponse.status}` }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: `Firecrawl error: ${fcResponse.status}` }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         const fcData = await fcResponse.json();
         html = fcData.data?.html || "";
-        
+
         if (!html) {
           console.error("Firecrawl returned empty HTML");
-          return new Response(
-            JSON.stringify({ error: "Firecrawl nie zwrócił treści strony" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: "Firecrawl nie zwrócił treści strony" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
-        
+
         console.log("Successfully fetched via Firecrawl, HTML length:", html.length);
       } else {
         console.error("Site blocked request (403/503) and Firecrawl not configured");
         return new Response(
           JSON.stringify({ error: "Strona blokuje boty (403). Skonfiguruj Firecrawl aby ominąć zabezpieczenia." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
     } else if (!response.ok) {
       console.error("Failed to fetch URL:", response.status);
-      return new Response(
-        JSON.stringify({ error: `Failed to fetch URL: ${response.status}` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: `Failed to fetch URL: ${response.status}` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     } else {
       html = await response.text();
     }
     let articleText = extractTextFromHtml(html);
     const ogImage = extractOgImage(html);
-    
+
     // Track extraction metadata for quality warnings
     const originalTextLength = articleText.length;
     let usedFirecrawl = false;
@@ -394,11 +504,11 @@ serve(async (req) => {
       const firecrawlKey = Deno.env.get("FIRECRAWL_API_KEY");
       if (firecrawlKey) {
         console.log(`Text too short (${articleText.length} chars), falling back to Firecrawl for JS rendering`);
-        
+
         const fcResponse = await fetch("https://api.firecrawl.dev/v1/scrape", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${firecrawlKey}`,
+            Authorization: `Bearer ${firecrawlKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -411,7 +521,7 @@ serve(async (req) => {
         if (fcResponse.ok) {
           const fcData = await fcResponse.json();
           const firecrawlHtml = fcData.data?.html || "";
-          
+
           if (firecrawlHtml) {
             articleText = extractTextFromHtml(firecrawlHtml);
             usedFirecrawl = true;
@@ -433,13 +543,13 @@ serve(async (req) => {
     if (articleText.length < ABSOLUTE_MIN_TEXT) {
       console.error(`Text too short for AI generation: ${articleText.length} chars (minimum: ${ABSOLUTE_MIN_TEXT})`);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: `Strona zwróciła tylko ${articleText.length} znaków - za mało do wygenerowania artykułu. Spróbuj wkleić treść ręcznie.`,
           extraction_failed: true,
           text_length: articleText.length,
-          used_firecrawl: usedFirecrawl
+          used_firecrawl: usedFirecrawl,
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -457,7 +567,8 @@ serve(async (req) => {
 
     let contentPrompt = contentPromptResult.data?.value || DEFAULT_CONTENT_PROMPT;
 
-    const hasHtmlRules = contentPrompt.includes("<strong>") ||
+    const hasHtmlRules =
+      contentPrompt.includes("<strong>") ||
       contentPrompt.includes("NIE używaj Markdown") ||
       contentPrompt.includes("NIE składni Markdown") ||
       contentPrompt.includes("TYLKO tagów HTML");
@@ -484,7 +595,7 @@ FORMATOWANIE (OBOWIĄZKOWE):
 
     // Helper: call AI with automatic fallback (Gemini → GPT-mini on 500) and timeout
     const AI_TIMEOUT_MS = 50000; // 50s timeout per AI call
-    const callAI = async (messages: Array<{role: string; content: string}>, label: string) => {
+    const callAI = async (messages: Array<{ role: string; content: string }>, label: string) => {
       const primaryModel = "google/gemini-3-flash-preview";
       const fallbackModel = "openai/gpt-5-mini";
 
@@ -525,26 +636,30 @@ FORMATOWANIE (OBOWIĄZKOWE):
     };
 
     // Step 1: Extract metadata (title, excerpt, category, tags)
-    const metadataResponse = await callAI([
-      { 
-        role: "system", 
-        content: `Jesteś asystentem redakcji sportowej. Analizujesz artykuł i zwracasz dane w JSON.\n\nZwróć TYLKO JSON bez żadnego dodatkowego tekstu, bez bloku kodu, bez markdown:\n{"title": "...", "excerpt": "...", "category": "...", "tags": [...]}\n\nZasady:\n- title: max 80 znaków, po polsku\n- excerpt: max 200 znaków, zachęcający\n- category: JEDEN z: football, basketball, tennis, f1, mma, other\n- tags: tablica 3-5 krótkich słów kluczowych po polsku`
-      },
-      { role: "user", content: `Przeanalizuj ten artykuł:\n\n${articleText}` },
-    ], "metadata");
+    // Uses the prompt from Admin -> Settings (previously it was loaded but ignored).
+    const metadataResponse = await callAI(
+      [
+        {
+          role: "system",
+          content: extractionPrompt + METADATA_OUTPUT_RULES,
+        },
+        { role: "user", content: `Przeanalizuj ten artykuł:\n\n${articleText}` },
+      ],
+      "metadata",
+    );
 
     if (!metadataResponse.ok) {
       if (metadataResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       if (metadataResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits depleted. Please add credits to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "AI credits depleted. Please add credits to continue." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       const errorText = await metadataResponse.text();
       console.error("AI Gateway error (metadata):", metadataResponse.status, errorText);
@@ -558,36 +673,78 @@ FORMATOWANIE (OBOWIĄZKOWE):
     }
 
     // Strip markdown code blocks if present
-    const cleanedMetadata = metadataContent.replace(/```(?:json)?\n?/g, "").replace(/```/g, "").trim();
+    const cleanedMetadata = metadataContent
+      .replace(/```(?:json)?\n?/g, "")
+      .replace(/```/g, "")
+      .trim();
     const extractedMetadata = JSON.parse(cleanedMetadata);
+    extractedMetadata.title = cleanMetaText(extractedMetadata.title);
+    extractedMetadata.excerpt = cleanMetaText(extractedMetadata.excerpt);
+    extractedMetadata.category = ALLOWED_CATEGORIES.includes(String(extractedMetadata.category))
+      ? extractedMetadata.category
+      : "other";
+    extractedMetadata.tags = Array.isArray(extractedMetadata.tags)
+      ? [...new Set(extractedMetadata.tags.map((t: unknown) => cleanMetaText(t)).filter(Boolean))].slice(0, 5)
+      : [];
     console.log("Extracted metadata:", extractedMetadata);
 
-    // Step 1.5: Fetch related posts from the same category for internal linking
+    // Step 1.5: Fetch related posts for internal linking.
+    // First posts sharing tags with this article (same player/team/competition),
+    // then the newest posts from the same category to fill the list.
     let relatedContext = "";
     let relatedPosts: Array<{ title: string; slug: string }> = [];
     try {
-      // First, get category ID from slug
+      const tagList: string[] = extractedMetadata.tags;
+      const tagLower = tagList.map((t) => t.toLowerCase());
+      let byTags: Array<{ title: string; slug: string }> = [];
+
+      if (tagList.length > 0) {
+        const { data: tagged } = await supabase
+          .from("posts")
+          .select("title, slug, tags")
+          .eq("is_hidden", false)
+          .overlaps("tags", tagList)
+          .order("published_at", { ascending: false })
+          .limit(30);
+
+        const taggedRows = (tagged || []) as Array<{ title: string; slug: string; tags: string[] | null }>;
+        byTags = taggedRows
+          .map((p) => ({
+            title: p.title,
+            slug: p.slug,
+            shared: (p.tags || []).filter((t) => tagLower.includes(String(t).toLowerCase())).length,
+          }))
+          .sort((a, b) => b.shared - a.shared)
+          .slice(0, 8)
+          .map(({ title, slug }) => ({ title, slug }));
+      }
+
+      let byCategory: Array<{ title: string; slug: string }> = [];
       const { data: categoryData } = await supabase
         .from("sport_categories")
         .select("id")
         .eq("slug", extractedMetadata.category)
-        .single();
+        .maybeSingle();
 
       if (categoryData?.id) {
         const { data: fetched } = await supabase
           .from("posts")
           .select("title, slug")
           .eq("category_id", categoryData.id)
+          .eq("is_hidden", false)
           .order("published_at", { ascending: false })
           .limit(10);
+        byCategory = (fetched || []) as Array<{ title: string; slug: string }>;
+      }
 
-        if (fetched && fetched.length > 0) {
-          relatedPosts = fetched;
-          relatedContext = relatedPosts
-            .map((p) => `- "${p.title}" → /blink/${p.slug}`)
-            .join("\n");
-          console.log(`Found ${relatedPosts.length} related posts for internal linking`);
-        }
+      const seen = new Set<string>();
+      relatedPosts = [...byTags, ...byCategory]
+        .filter((p) => p?.slug && p?.title && !seen.has(p.slug) && seen.add(p.slug))
+        .slice(0, 10);
+
+      if (relatedPosts.length > 0) {
+        relatedContext = relatedPosts.map((p) => `- "${p.title}" → /blink/${p.slug}`).join("\n");
+        console.log(`Found ${relatedPosts.length} related posts (${byTags.length} by tags) for internal linking`);
       }
     } catch (relatedError) {
       console.warn("Failed to fetch related posts for internal linking:", relatedError);
@@ -595,22 +752,29 @@ FORMATOWANIE (OBOWIĄZKOWE):
     }
 
     // Step 2: Generate full article content
-    const contentResponse = await callAI([
-      { 
-        role: "system", 
-        content: contentPrompt
-      },
-      {
-        role: "user",
-        content: `Tytuł: ${extractedMetadata.title}
+    const contentResponse = await callAI(
+      [
+        {
+          role: "system",
+          content: contentPrompt,
+        },
+        {
+          role: "user",
+          content: `Tytuł: ${extractedMetadata.title}
 
-${relatedContext ? `POWIĄZANE ARTYKUŁY NA STRONIE (do linkowania wewnętrznego - wybierz 1-2 najbardziej pasujące):
-${relatedContext}` : "Brak powiązanych artykułów do linkowania."}
+${
+  relatedContext
+    ? `POWIĄZANE ARTYKUŁY NA STRONIE (do linkowania wewnętrznego - wybierz 1-2 najbardziej pasujące):
+${relatedContext}`
+    : "Brak powiązanych artykułów do linkowania."
+}
 
 Oryginalny artykuł:
-${articleText}`
-      },
-    ], "content");
+${articleText}`,
+        },
+      ],
+      "content",
+    );
 
     let generatedContent = "";
 
@@ -621,9 +785,9 @@ ${articleText}`
 
       if (generatedContent.includes("**")) {
         console.warn("AI used Markdown despite HTML instructions, converting...");
-        generatedContent = generatedContent.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong><em>$1</em></strong>');
-        generatedContent = generatedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        generatedContent = generatedContent.replace(/(?<![a-zA-Z0-9])\*([^*]+)\*(?![a-zA-Z0-9])/g, '<em>$1</em>');
+        generatedContent = generatedContent.replace(/\*\*\*([^*]+)\*\*\*/g, "<strong><em>$1</em></strong>");
+        generatedContent = generatedContent.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        generatedContent = generatedContent.replace(/(?<![a-zA-Z0-9])\*([^*]+)\*(?![a-zA-Z0-9])/g, "<em>$1</em>");
       }
     } else {
       const errText = await contentResponse.text();
@@ -635,9 +799,13 @@ ${articleText}`
       generatedContent = validateInternalLinks(generatedContent, relatedPosts);
     }
 
+    if (generatedContent) {
+      generatedContent = cleanGeneratedContent(generatedContent, extractedMetadata.title);
+    }
+
     // Add extraction quality metadata for frontend warnings
     const QUALITY_WARNING_THRESHOLD = 500;
-    
+
     const result = {
       ...extractedMetadata,
       content: generatedContent,
@@ -656,16 +824,13 @@ ${articleText}`
       extraction_info: result.extraction_info,
     });
 
-    return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify(result), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error in extract-article:", errorMessage, error instanceof Error ? error.stack : "");
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
