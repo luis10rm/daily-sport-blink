@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { subDays } from "date-fns";
+import { HOME_FEED_PAGE_SIZE, nextHomeFeedOffset, orderHomeFeedPosts } from "@/lib/homeNewsFeed";
 
 export interface PostCategory {
   id: string;
@@ -177,14 +178,14 @@ export const useNewsOfTheDay = () => {
   });
 };
 
-// Fetch posts for feed (with sponsored in correct position) - limited to 7 days
-export const usePostsFeed = () => {
-  return useQuery({
-    queryKey: ["posts", "feed"],
-    queryFn: async () => {
+// Fetch the seven-day feed in manual 12-post pages, including filtered requests.
+export const usePostsFeed = (categoryId = "all") => {
+  const query = useInfiniteQuery({
+    queryKey: ["posts", "feed", categoryId],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
       const sevenDaysAgo = subDays(new Date(), 7).toISOString();
-      
-      const { data, error } = await supabase
+      let feedQuery = supabase
         .from("posts")
         .select(POST_SELECT)
         .eq("channel" as never, "sport" as never)
@@ -193,20 +194,21 @@ export const usePostsFeed = () => {
         .gte("published_at", sevenDaysAgo)
         .order("published_at", { ascending: false });
 
-      if (error) throw error;
-      
-      const posts = data as Post[];
-      const sponsored = posts.find(p => p.is_sponsored);
-      const nonSponsored = posts.filter(p => !p.is_sponsored);
-      
-      if (sponsored && nonSponsored.length > 0) {
-        const [first, ...rest] = nonSponsored;
-        return [first, sponsored, ...rest];
+      if (categoryId !== "all") {
+        feedQuery = feedQuery.or(`category_id.eq.${categoryId},is_sponsored.eq.true`);
       }
-      
-      return posts;
+
+      const { data, error } = await feedQuery.range(pageParam, pageParam + HOME_FEED_PAGE_SIZE - 1);
+      if (error) throw error;
+      return data as Post[];
     },
+    getNextPageParam: (lastPage, _pages, lastPageParam) => nextHomeFeedOffset(lastPage.length, lastPageParam),
   });
+
+  return {
+    ...query,
+    data: orderHomeFeedPosts(query.data?.pages.flat() ?? []),
+  };
 };
 
 // Fetch archived posts (older than 7 days)

@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { Archive } from "lucide-react";
 import { Header } from "@/components/Header";
@@ -7,7 +6,6 @@ import { PatronBar } from "@/components/PatronBar";
 import { HomeNewsFeed } from "@/components/HomeNewsFeed";
 import { HomeDayBlock } from "@/components/HomeDayBlock";
 import { SponsorBanner } from "@/components/SponsorBanner";
-import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
 import { WorldCupHomeBanner } from "@/components/WorldCupHomeBanner";
 import { CrossChannelStrip } from "@/components/CrossChannelStrip";
@@ -22,7 +20,6 @@ import { useWallpaperContext } from "@/contexts/WallpaperContext";
 import { cn } from "@/lib/utils";
 
 const Index = () => {
-  const lastTodayRef = useRef<HTMLElement>(null);
   const isMobile = useIsMobile();
   const device = isMobile ? "mobile" : "desktop";
   
@@ -108,7 +105,10 @@ const Index = () => {
           />
         )}
 
-        <HomeNewsFeed posts={posts} isLoading={postsLoading} lastTodayRef={lastTodayRef} />
+        <HomeNewsFeed
+          todaysPosts={todaysPosts}
+          afterSixth={<CrossChannelStrip className="my-8" />}
+        />
 
         {/* Link to Archive */}
         {posts.length > 0 && (
@@ -122,9 +122,6 @@ const Index = () => {
             </Link>
           </div>
         )}
-
-        {/* Latest from Tech + Pozytywne, below the news list */}
-        <CrossChannelStrip className="mt-10" />
 
         {/* Bottom Banner */}
         {bottomBanner && (
@@ -140,9 +137,6 @@ const Index = () => {
           />
         )}
       </main>
-
-      {/* Scroll Progress Indicator */}
-      <ScrollProgress todaysCount={todaysPosts.length} lastTodayRef={lastTodayRef} />
 
       <Footer />
     </div>

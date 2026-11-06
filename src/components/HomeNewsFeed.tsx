@@ -1,5 +1,6 @@
-import { useState, type RefObject } from "react";
+import { useState, type ReactNode } from "react";
 import type { Post } from "@/hooks/usePosts";
+import { usePostsFeed } from "@/hooks/usePosts";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { HomeNewsCard } from "@/components/HomeNewsCard";
 import { Button } from "@/components/ui/button";
@@ -7,18 +8,31 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { filterHomeNews, splitHomeNews } from "@/lib/homeNewsFeed";
 
 const primarySports = ["football", "tennis", "siatkowka", "basketball", "motorsport", "sporty-zimowe"];
-const gridClass = "grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4";
+const gridClass = "grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3";
+const continuationGridClass = `${gridClass} mt-3 sm:mt-4`;
 
-export function HomeNewsFeed({ posts, isLoading, lastTodayRef }: { posts: Post[]; isLoading: boolean; lastTodayRef: RefObject<HTMLElement> }) {
+interface HomeNewsFeedProps {
+  todaysPosts: Post[];
+  afterSixth: ReactNode;
+}
+
+export function HomeNewsFeed({ todaysPosts, afterSixth }: HomeNewsFeedProps) {
   const [categoryId, setCategoryId] = useState("all");
   const { data: categories = [] } = useSportCategories();
+  const { data: posts = [], isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = usePostsFeed(categoryId);
   const orderedCategories = [...categories].sort((a, b) => {
     const aIndex = primarySports.indexOf(a.slug);
     const bIndex = primarySports.indexOf(b.slug);
     return (aIndex < 0 ? primarySports.length + a.sort_order : aIndex) - (bIndex < 0 ? primarySports.length + b.sort_order : bIndex);
   });
-  const { today, earlier } = splitHomeNews(filterHomeNews(posts, categoryId));
-  const todayCount = today.filter(post => !post.is_sponsored).length;
+  const { today, earlier } = splitHomeNews(posts);
+  const todayCount = filterHomeNews(todaysPosts, categoryId).filter(post => !post.is_sponsored).length;
+  const hasMoreThanSix = today.length + earlier.length > 6;
+
+  const cards = (items: Post[], continuation = false) => items.length > 0
+    ? <div className={continuation ? continuationGridClass : gridClass}>{items.map(post => <HomeNewsCard key={post.id} post={post} />)}</div>
+    : null;
+
   return <section aria-labelledby="home-news-heading">
     <div className="mb-4 flex items-baseline gap-3">
       <h2 id="home-news-heading" className="text-2xl font-bold">Dziś</h2>
@@ -30,15 +44,32 @@ export function HomeNewsFeed({ posts, isLoading, lastTodayRef }: { posts: Post[]
           aria-pressed={categoryId === category.id} onClick={() => setCategoryId(category.id)}
           className="h-11 shrink-0 rounded-chip px-4 text-xs touch-manipulation">{category.name}</Button>)}
     </div>
-    {isLoading ? <div className={gridClass}>{Array.from({ length: 8 }, (_, index) => <Skeleton key={index} className="h-28 rounded-card sm:h-[300px]" />)}</div>
+    {isLoading ? <div className={gridClass}>{Array.from({ length: 12 }, (_, index) => <Skeleton key={index} className="h-28 rounded-card sm:h-[300px]" />)}</div>
       : <>
         {todayCount === 0 && <p role="status" className="py-8 text-sm leading-relaxed text-text-secondary">
           {categoryId === "all" ? "Dziś nie mamy jeszcze newsów." : "Dziś nie mamy jeszcze newsów z tej dyscypliny. Wybierz „Wszystko”, żeby zobaczyć pozostałe."}
         </p>}
-        <div className={gridClass}>{today.map((post, index) => <HomeNewsCard key={post.id} post={post} ref={index === today.length - 1 ? lastTodayRef : undefined} />)}</div>
-        {earlier.length > 0 && <div className="mt-8">
-          <h2 className="mb-4 text-xl font-bold">Z ostatnich 7 dni</h2>
-          <div className={gridClass}>{earlier.map(post => <HomeNewsCard key={post.id} post={post} />)}</div>
+        {today.length >= 6 ? <>
+          {cards(today.slice(0, 6))}
+          {hasMoreThanSix && afterSixth}
+          {cards(today.slice(6), true)}
+          {earlier.length > 0 && <div className="mt-8">
+            <h2 className="mb-4 text-xl font-bold">Z ostatnich 7 dni</h2>
+            {cards(earlier)}
+          </div>}
+        </> : <>
+          {cards(today)}
+          {earlier.length > 0 && <div className="mt-8">
+            <h2 className="mb-4 text-xl font-bold">Z ostatnich 7 dni</h2>
+            {cards(earlier.slice(0, 6 - today.length))}
+            {hasMoreThanSix && afterSixth}
+            {cards(earlier.slice(6 - today.length), true)}
+          </div>}
+        </>}
+        {hasNextPage && <div className="mt-8 text-center">
+          <Button onClick={() => void fetchNextPage()} disabled={isFetchingNextPage} className="rounded-control px-6 touch-manipulation">
+            {isFetchingNextPage ? "Ładowanie…" : "Pokaż starsze newsy"}
+          </Button>
         </div>}
       </>}
   </section>;

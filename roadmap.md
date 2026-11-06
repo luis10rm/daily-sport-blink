@@ -14,3 +14,8 @@
 - [x] Strip leading SEO titles from displayed and server-rendered article bodies without changing metadata.
 - [x] Prevent the generator from adding SEO titles and test Polish transliteration for new slugs only.
 - [x] Apply the slug-only migration, verify an affected article and run focused tests.
+
+# Homepage feed pagination
+- [x] Load 12 posts per request, including category-filtered requests; add a manual 12-post load-more button.
+- [x] Place Tech/Pozytywne after the sixth card and remove the floating scroll counter without changing cards or ads.
+- [x] Run focused tests and verify desktop/mobile loading, filtering and section placement.
