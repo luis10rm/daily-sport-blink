@@ -1,103 +1,163 @@
-/* Font loaded via index.html with preload + async for better LCP */
+/* Outfit 400–700 is loaded by the existing Google Fonts links. */
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/outfit/v15/QGYyz_MVcBeNP4NjuGObqx1XmO1I4bCyC4E.ttf") format("truetype");
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 60 20% 99%;
-    --foreground: 210 20% 10%;
+    --background: 220.000000 20.000000% 97.058824%;
+    --foreground: 214.285714 28.000000% 9.803922%;
+    --card: 0.000000 0.000000% 100.000000%;
+    --card-foreground: 214.285714 28.000000% 9.803922%;
+    --popover: 0.000000 0.000000% 100.000000%;
+    --popover-foreground: 214.285714 28.000000% 9.803922%;
+    --primary: 153.103448 60.165975% 52.745098%;
+    --primary-foreground: 155.294118 73.913043% 9.019608%;
+    --secondary: 213.333333 19.148936% 90.784314%;
+    --secondary-foreground: 212.727273 13.580247% 31.764706%;
+    --muted: 213.333333 19.148936% 90.784314%;
+    --muted-foreground: 213.913043 10.132159% 44.509804%;
+    --accent: 150.000000 50.000000% 93.725490%;
+    --accent-foreground: 156.756757 83.458647% 26.078431%;
+    --destructive: 358.089172 75.119617% 59.019608%;
+    --destructive-foreground: 0.000000 0.000000% 100.000000%;
+    --border: 213.333333 19.148936% 90.784314%;
+    --border-strong: 212.307692 18.309859% 86.078431%;
+    --input: 212.307692 18.309859% 86.078431%;
+    --ring: 156.756757 83.458647% 26.078431%;
+    --text-secondary: 212.727273 13.580247% 31.764706%;
+    --text-muted: 213.913043 10.132159% 44.509804%;
+    --link: 156.756757 83.458647% 26.078431%;
+    --briefing: 150.000000 50.000000% 93.725490%;
+    --briefing-border: 150.810811 46.835443% 84.509804%;
+    --briefing-date: 157.500000 81.012658% 30.980392%;
+    --news-of-day: 42.073171 86.315789% 62.745098%;
+    --news-of-day-foreground: 45.714286 100.000000% 8.235294%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 210 20% 10%;
+    /* Category dots and image placeholders only; never action colors. */
+    --sport-football: 155.244755 69.756098% 40.196078%;
+    --sport-football-background: 150.000000 52.380952% 91.764706%;
+    --sport-tennis: 72.592593 84.375000% 37.647059%;
+    --sport-tennis-background: 72.352941 62.962963% 89.411765%;
+    --sport-volleyball: 45.345622 100.000000% 42.549020%;
+    --sport-volleyball-background: 47.234043 85.454545% 89.215686%;
+    --sport-basketball: 23.076923 87.394958% 53.333333%;
+    --sport-basketball-background: 24.615385 90.697674% 91.568627%;
+    --sport-motorsport: 358.089172 75.119617% 59.019608%;
+    --sport-motorsport-background: 0.000000 87.096774% 93.921569%;
+    --sport-winter: 208.101266 67.521368% 54.117647%;
+    --sport-winter-background: 206.000000 78.947368% 92.549020%;
+    --sport-mma: 326.250000 37.795276% 50.196078%;
+    --sport-mma-background: 328.421053 51.351351% 92.745098%;
+    --sport-handball: 185.571429 75.268817% 36.470588%;
+    --sport-handball-background: 185.217391 53.488372% 91.568627%;
+    --sport-cycling: 88.448276 60.416667% 37.647059%;
+    --sport-cycling-background: 83.478261 48.936170% 90.784314%;
+    --sport-athletics: 343.090909 48.245614% 55.294118%;
+    --sport-athletics-background: 343.636364 64.705882% 93.333333%;
+    --sport-other: 213.913043 10.132159% 44.509804%;
+    --sport-other-background: 213.333333 19.148936% 90.784314%;
+    --sport-f1: var(--sport-motorsport);
+    --sport-f1-background: var(--sport-motorsport-background);
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 10%;
+    --sidebar-background: var(--card);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--accent);
+    --sidebar-accent-foreground: var(--accent-foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
 
-    --primary: 160 84% 39%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 210 20% 20%;
-
-    --muted: 210 15% 94%;
-    --muted-foreground: 210 10% 50%;
-
-    --accent: 160 84% 39%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 210 20% 90%;
-    --input: 210 20% 90%;
-    --ring: 160 84% 39%;
-
-    --radius: 0.75rem;
-
-    /* Custom tokens */
-    --font-heading: "Outfit", sans-serif;
+    --font-heading: "Outfit", system-ui, sans-serif;
+    --font-sans: "Outfit", system-ui, sans-serif;
+    --radius: 1rem;
+    --radius-block: 1.25rem;
+    --radius-card: 1rem;
+    --radius-control: 0.75rem;
+    --radius-chip: 999px;
+    --border-width: 1px;
+    --shadow-sm: none;
+    --shadow: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+    --shadow-xl: none;
+    --shadow-2xl: none;
+    --shadow-inner: none;
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-    /* Sport category colors */
-    --sport-football: 142 76% 36%;
-    --sport-basketball: 25 95% 53%;
-    --sport-tennis: 48 96% 53%;
-    --sport-f1: 0 84% 60%;
-    --sport-mma: 280 87% 65%;
-    --sport-other: 210 20% 50%;
-
-    /* News of the day */
-    --news-of-day: 45 93% 47%;
-    --news-of-day-foreground: 0 0% 10%;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 210 25% 8%;
-    --foreground: 45 30% 97%;
+    --background: 213.333333 23.076923% 7.647059%;
+    --foreground: 213.333333 24.324324% 92.745098%;
+    --card: 215.000000 20.689655% 11.372549%;
+    --card-foreground: 213.333333 24.324324% 92.745098%;
+    --popover: 215.000000 20.689655% 11.372549%;
+    --popover-foreground: 213.333333 24.324324% 92.745098%;
+    --primary: 153.103448 60.165975% 52.745098%;
+    --primary-foreground: 155.294118 73.913043% 9.019608%;
+    --secondary: 213.750000 18.604651% 16.862745%;
+    --secondary-foreground: 213.000000 15.384615% 74.509804%;
+    --muted: 213.750000 18.604651% 16.862745%;
+    --muted-foreground: 215.000000 11.538462% 59.215686%;
+    --accent: 151.578947 34.545455% 10.784314%;
+    --accent-foreground: 153.103448 60.165975% 52.745098%;
+    --destructive: 0.000000 100.000000% 70.980392%;
+    --destructive-foreground: 213.333333 23.076923% 7.647059%;
+    --border: 213.750000 18.604651% 16.862745%;
+    --border-strong: 214.736842 18.446602% 20.196078%;
+    --input: 214.736842 18.446602% 20.196078%;
+    --ring: 153.103448 60.165975% 52.745098%;
+    --text-secondary: 213.000000 15.384615% 74.509804%;
+    --text-muted: 215.000000 11.538462% 59.215686%;
+    --link: 153.103448 60.165975% 52.745098%;
+    --briefing: 151.578947 34.545455% 10.784314%;
+    --briefing-border: 150.000000 32.608696% 18.039216%;
+    --briefing-date: 153.103448 60.165975% 52.745098%;
+    --news-of-day: 42.073171 86.315789% 62.745098%;
+    --news-of-day-foreground: 45.714286 100.000000% 8.235294%;
 
-    --card: 208 23% 14%;
-    --card-foreground: 45 30% 97%;
+    /* Category dots and image placeholders only; never action colors. */
+    --sport-football: 153.103448 60.165975% 52.745098%;
+    --sport-football-background: 157.894737 51.351351% 14.509804%;
+    --sport-tennis: 72.911392 77.450980% 60.000000%;
+    --sport-tennis-background: 75.428571 49.295775% 13.921569%;
+    --sport-volleyball: 48.965517 89.690722% 61.960784%;
+    --sport-volleyball-background: 49.500000 52.631579% 14.901961%;
+    --sport-basketball: 23.814433 100.000000% 61.960784%;
+    --sport-basketball-background: 25.116279 54.430380% 15.490196%;
+    --sport-motorsport: 0.000000 100.000000% 70.980392%;
+    --sport-motorsport-background: 0.000000 45.238095% 16.470588%;
+    --sport-winter: 207.022901 100.000000% 74.313725%;
+    --sport-winter-background: 210.000000 48.780488% 16.078431%;
+    --sport-mma: 327.586207 65.413534% 73.921569%;
+    --sport-mma-background: 322.500000 29.268293% 16.078431%;
+    --sport-handball: 186.446281 65.405405% 63.725490%;
+    --sport-handball-background: 191.351351 46.835443% 15.490196%;
+    --sport-cycling: 89.454545 59.139785% 63.529412%;
+    --sport-cycling-background: 96.923077 32.500000% 15.686275%;
+    --sport-athletics: 344.210526 79.831933% 76.666667%;
+    --sport-athletics-background: 337.777778 29.670330% 17.843137%;
+    --sport-other: 215.000000 11.538462% 59.215686%;
+    --sport-other-background: 213.750000 18.604651% 16.862745%;
+    --sport-f1: var(--sport-motorsport);
+    --sport-f1-background: var(--sport-motorsport-background);
 
-    --popover: 208 23% 14%;
-    --popover-foreground: 45 30% 97%;
-
-    --primary: 162 72% 48%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 210 20% 18%;
-    --secondary-foreground: 45 20% 90%;
-
-    --muted: 210 18% 22%;
-    --muted-foreground: 210 12% 65%;
-
-    --accent: 162 72% 48%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62% 40%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 210 18% 22%;
-    --input: 210 18% 22%;
-    --ring: 162 72% 48%;
-
-    --sidebar-background: 210 25% 10%;
-    --sidebar-foreground: 45 30% 97%;
-    --sidebar-primary: 162 72% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 18% 18%;
-    --sidebar-accent-foreground: 45 30% 97%;
-    --sidebar-border: 210 18% 22%;
-    --sidebar-ring: 162 72% 48%;
+    --sidebar-background: var(--card);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: var(--accent);
+    --sidebar-accent-foreground: var(--accent-foreground);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
   }
 }
 
