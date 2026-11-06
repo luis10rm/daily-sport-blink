@@ -76,28 +76,24 @@ const useLatestPositive = () =>
     },
   });
 
+/**
+ * Channel colour is used only on the "Zobacz wszystko" link. Everything else
+ * is a plain bordered card: neutral border, card surface, foreground text.
+ */
 const channelStyles = {
   tech: {
     Icon: Cpu,
     label: "Świeżo w Tech",
     href: "/tech",
     cta: "Zobacz wszystko",
-    accent:
-      "border-fuchsia-600/25 bg-fuchsia-600/[0.04] dark:border-fuchsia-500/25 dark:bg-fuchsia-500/[0.06]",
-    header: "text-fuchsia-700 dark:text-fuchsia-300",
-    hoverTitle: "group-hover:text-fuchsia-700 dark:group-hover:text-fuchsia-300",
-    chip: "bg-fuchsia-600/10 text-fuchsia-700 dark:text-fuchsia-300",
+    ctaColor: "text-fuchsia-700 hover:text-fuchsia-800 dark:text-fuchsia-300 dark:hover:text-fuchsia-200",
   },
   positive: {
     Icon: Sun,
     label: "Świeżo w Pozytywnych",
     href: "/pozytywne",
     cta: "Zobacz wszystko",
-    accent:
-      "border-lime-500/30 bg-lime-500/[0.05] dark:border-lime-500/25 dark:bg-lime-500/[0.06]",
-    header: "text-lime-800 dark:text-lime-300",
-    hoverTitle: "group-hover:text-lime-800 dark:group-hover:text-lime-300",
-    chip: "bg-lime-500/15 text-lime-800 dark:text-lime-300",
+    ctaColor: "text-lime-700 hover:text-lime-800 dark:text-lime-300 dark:hover:text-lime-200",
   },
 } as const;
 
@@ -115,22 +111,19 @@ const ChannelColumn = ({ channel, items, loading }: ColumnProps) => {
 
   return (
     <section
-      className={cn(
-        "rounded-2xl border p-4 sm:p-5 transition-colors",
-        s.accent,
-      )}
+      className="rounded-card border border-border bg-card p-4 sm:p-5"
       aria-label={s.label}
     >
       <header className="flex items-center justify-between mb-3">
-        <h2 className={cn("inline-flex items-center gap-2 text-sm font-semibold", s.header)}>
-          <Icon className="h-4 w-4" aria-hidden />
+        <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
           {s.label}
         </h2>
         <Link
           to={s.href}
           className={cn(
-            "inline-flex items-center gap-1 text-xs font-medium opacity-80 hover:opacity-100 transition-opacity",
-            s.header,
+            "inline-flex items-center gap-1 text-xs font-semibold transition-colors",
+            s.ctaColor,
           )}
         >
           {s.cta}
@@ -142,7 +135,7 @@ const ChannelColumn = ({ channel, items, loading }: ColumnProps) => {
         {loading &&
           Array.from({ length: 2 }).map((_, i) => (
             <li key={i} className="flex gap-3">
-              <Skeleton className="h-16 w-24 rounded-lg shrink-0" />
+              <Skeleton className="h-16 w-24 rounded-control shrink-0" />
               <div className="flex-1 space-y-2 pt-1">
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-3 w-1/3" />
@@ -155,9 +148,9 @@ const ChannelColumn = ({ channel, items, loading }: ColumnProps) => {
             <li key={item.id}>
               <Link
                 to={item.href}
-                className="group flex gap-3 items-start rounded-lg -mx-1 px-1 py-1 hover:bg-background/60 transition-colors"
+                className="group flex gap-3 items-start rounded-control -mx-1 px-1 py-1 hover:bg-muted/50 transition-colors"
               >
-                <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
+                <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-control bg-muted">
                   {item.image_url ? (
                     <OptimizedImage
                       src={item.image_url}
@@ -168,28 +161,18 @@ const ChannelColumn = ({ channel, items, loading }: ColumnProps) => {
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
-                    <div className={cn("h-full w-full flex items-center justify-center", s.chip)}>
-                      <Icon className="h-5 w-5 opacity-60" aria-hidden />
+                    <div className="h-full w-full flex items-center justify-center bg-muted">
+                      <Icon className="h-5 w-5 text-muted-foreground opacity-60" aria-hidden />
                     </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3
-                    className={cn(
-                      "text-sm font-semibold leading-snug line-clamp-2 transition-colors",
-                      s.hoverTitle,
-                    )}
-                  >
+                  <h3 className="text-sm font-semibold leading-snug line-clamp-2 text-foreground transition-colors group-hover:text-primary">
                     {item.title}
                   </h3>
                   <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
                     {item.category_name && (
-                      <span
-                        className={cn(
-                          "px-1.5 py-0.5 rounded-full font-medium",
-                          s.chip,
-                        )}
-                      >
+                      <span className="px-1.5 py-0.5 rounded-chip bg-muted font-medium text-muted-foreground">
                         {item.category_name}
                       </span>
                     )}

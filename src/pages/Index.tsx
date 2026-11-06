@@ -9,7 +9,6 @@ import { HomeDayBlock } from "@/components/HomeDayBlock";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
-import { FeedbackBox } from "@/components/FeedbackBox";
 import { WorldCupHomeBanner } from "@/components/WorldCupHomeBanner";
 import { CrossChannelStrip } from "@/components/CrossChannelStrip";
 import { TodaysMatchesBanner } from "@/components/TodaysMatchesBanner";
@@ -91,18 +90,11 @@ const Index = () => {
         {isMobile && topBannerBlock}
 
 
-        {/* Cross-channel strip: latest from Tech + Pozytywne */}
-        <CrossChannelStrip className="mb-10" />
-
         {/* World Cup Match of the Day (only in tournament mode) */}
         <MatchOfTheDay />
 
-
-        {/* Feedback Box */}
-        <FeedbackBox className="mb-10" />
-
-        {/* Sponsor Banner - from database or placeholder */}
-        {middleBanner ? (
+        {/* Sponsor Banner - from database */}
+        {middleBanner && (
           <SponsorBanner
             title={middleBanner.title}
             description={middleBanner.description}
@@ -112,16 +104,7 @@ const Index = () => {
             imageMobileUrl={middleBanner.image_mobile_url || undefined}
             impressionTag={middleBanner.impression_tag || undefined}
             bannerId={middleBanner.id}
-            className="mb-10"
-          />
-        ) : (
-          <SponsorBanner
-            title="Partner Szortsy"
-            description="To miejsce może być Twoje"
-            ctaText="Zostań partnerem"
-            ctaUrl="mailto:reklama@szortsy.pl"
-            isPlaceholder={true}
-            className="mb-10"
+            className="mb-10 mt-10"
           />
         )}
 
@@ -139,6 +122,9 @@ const Index = () => {
             </Link>
           </div>
         )}
+
+        {/* Latest from Tech + Pozytywne, below the news list */}
+        <CrossChannelStrip className="mt-10" />
 
         {/* Bottom Banner */}
         {bottomBanner && (
