@@ -624,3 +624,13 @@ html.mode-pozytywne.dark body::before {
 
 
 
+/* Light theme: green text uses the link token (#0b7a4f) for 4.5:1; #3ecf8e stays for buttons. */
+:root:not(.dark) .text-primary,
+:root:not(.dark) .hover\:text-primary:hover,
+:root:not(.dark) .group:hover .group-hover\:text-primary {
+  color: hsl(var(--link));
+}
+/* Muted chips: muted text on muted background falls below 4.5:1, use secondary text. */
+:root:not(.dark) .bg-muted.text-muted-foreground {
+  color: hsl(var(--text-secondary));
+}

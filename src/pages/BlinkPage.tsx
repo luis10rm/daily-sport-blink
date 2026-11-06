@@ -234,7 +234,7 @@ const BlinkPage = () => {
           {/* Back button */}
           <a 
             {...navLink(homeHref)} 
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
+            className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-primary mb-6 transition-colors"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {isPositive ? "Powrót do Pozytywnych" : "Powrót do strony głównej"}
@@ -330,7 +330,7 @@ const BlinkPage = () => {
                 href={post.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary hover:underline"
               >
                 Przeczytaj oryginalny artykuł
                 <ExternalLink className="h-4 w-4" />

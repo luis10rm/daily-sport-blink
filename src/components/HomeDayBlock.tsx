@@ -84,7 +84,7 @@ export function HomeDayBlock({ posts, todaysPosts, featured, isLoading, classNam
         </ul> : <p className="my-4 text-sm text-text-secondary">Dzisiaj jeszcze nie dodaliśmy newsów.</p>}
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-briefing-border pt-4">
           <span className="text-xs text-text-secondary"><strong className="text-base text-foreground">{count}</strong> {newsCountLabel(count)}</span>
-          <Button asChild size="sm" className="rounded-control touch-manipulation"><Link to={briefingUrl}>Czytaj briefing <ArrowRight /></Link></Button>
+          <Button asChild className="h-11 rounded-control touch-manipulation"><Link to={briefingUrl}>Czytaj briefing <ArrowRight /></Link></Button>
         </div>
       </div>
     </article>
