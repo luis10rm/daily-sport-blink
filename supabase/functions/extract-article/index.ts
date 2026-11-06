@@ -355,9 +355,10 @@ const stripLeadingSeoTitle = (content: string): string =>
 // Removes artefacts the model sometimes adds to the article body: a repeated
 // title, an <h1>, a leading social/SEO title, hashtag lines or a code fence.
 function cleanGeneratedContent(content: string, title: string): string {
-  let out = stripLeadingSeoTitle(content.trim());
+  let out = content.trim();
   out = out.replace(/^```(?:html)?\s*/i, "").replace(/\s*```$/, "");
   out = out.replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi, "");
+  out = stripLeadingSeoTitle(out);
 
   const normalizedTitle = normalizeForCompare(title || "");
   let removed = 0;
