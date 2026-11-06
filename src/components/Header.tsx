@@ -1,4 +1,4 @@
-import { Archive, ChevronDown, Users, Trophy } from "lucide-react";
+import { Archive, ChevronDown, Menu, Users, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSportCategories } from "@/hooks/useSportCategories";
 import { useTournamentMode } from "@/hooks/useTournamentMode";
@@ -6,6 +6,7 @@ import { DynamicSportIcon } from "./DynamicSportIcon";
 import { ThemeToggle } from "./ThemeToggle";
 import { ChannelSwitcher } from "./ChannelSwitcher";
 import { MatchTicker } from "./MatchTicker";
+import { Button } from "@/components/ui/button";
 import logoIcon from "@/assets/logo-icon.png";
 import { isTapGesture } from "@/lib/tapGuard";
 import {
@@ -49,33 +50,32 @@ export const Header = () => {
       >
         Przejdź do treści
       </a>
-      {/* Header: solid bg on mobile for better INP, blur on desktop only */}
-      <header className="border-b border-border bg-card/95 md:bg-card/50 md:backdrop-blur-sm sticky top-0 z-50">
-      <div className="container flex h-16 items-center justify-between">
-        <a {...navLink("/")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <header className="sticky top-0 z-50 border-b border-border bg-card">
+      <div className="container flex min-h-20 flex-wrap items-center gap-x-6 gap-y-0 py-3">
+        <a {...navLink("/")} className="flex shrink-0 items-center gap-3 hover:opacity-80 transition-opacity touch-manipulation">
           <div className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
             <img src={logoIcon} alt="Szortsy logo" className="h-7 w-7" />
             {isWorldCup && (
               <span
                 aria-hidden
-                className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 ring-2 ring-card shadow-sm"
+                className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-news-of-day ring-2 ring-card"
               >
-                <Trophy className="h-2.5 w-2.5 text-amber-950" />
+                <Trophy className="h-2.5 w-2.5 text-news-of-day-foreground" />
               </span>
             )}
           </div>
-          <span className="text-xl font-bold tracking-tight text-foreground">Szortsy</span>
-          <span className="text-sm text-muted-foreground hidden sm:block">
-            {isWorldCup ? "Strefa Mundialu 2026" : "O sporcie: krótko, codziennie"}
-          </span>
+          <span className="text-2xl font-bold text-foreground">Szortsy</span>
         </a>
-        
-        <nav className="flex items-center gap-4">
+        <ChannelSwitcher className="order-last mt-3 w-full lg:order-none lg:mt-0 lg:w-auto" />
+
+        <nav aria-label="Nawigacja główna" className="ml-auto hidden items-center gap-3 lg:flex">
           {/* Categories Dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <span className="hidden sm:inline">Kategorie</span>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="gap-1 px-2 text-muted-foreground touch-manipulation">
+              <span>Kategorie</span>
               <ChevronDown className="h-4 w-4" />
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               {categories.map((category) => (
@@ -101,18 +101,42 @@ export const Header = () => {
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <Archive className="h-4 w-4" />
-            <span className="hidden sm:inline">Archiwum</span>
+            <span>Archiwum</span>
           </a>
           <a
             {...navLink("/autorzy")}
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Autorzy</span>
+            <span>Autorzy</span>
           </a>
-          <ChannelSwitcher />
-          <ThemeToggle />
         </nav>
+        <div className="ml-auto flex items-center gap-2 lg:ml-0">
+          <ThemeToggle />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" aria-label="Otwórz menu" title="Otwórz menu" className="h-11 w-11 rounded-control border-border bg-card text-muted-foreground touch-manipulation lg:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-[65vh] w-64 overflow-y-auto">
+              <div className="px-2 py-2 text-xs font-semibold text-muted-foreground">Kategorie</div>
+              {categories.map((category) => (
+                <DropdownMenuItem key={category.id} asChild>
+                  <a {...navLink(`/kategoria/${category.slug}`)} className="min-h-11 cursor-pointer touch-manipulation">
+                    {category.name}
+                  </a>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem asChild>
+                <a {...navLink("/archiwum")} className="min-h-11 cursor-pointer border-t border-border touch-manipulation"><Archive />Archiwum</a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a {...navLink("/autorzy")} className="min-h-11 cursor-pointer touch-manipulation"><Users />Autorzy</a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <MatchTicker />
     </header>
