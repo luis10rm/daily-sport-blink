@@ -63,7 +63,7 @@ export const NewsOfTheDay = ({ post, className }: NewsOfTheDayProps) => {
               <div className="flex items-center gap-1.5">
                 <span aria-hidden="true" className={cn("h-1.5 w-1.5 shrink-0 rounded-full", sportDotClasses[post.sport_category?.slug || ""] || "bg-primary")} />
                 <span className="text-xs font-medium text-text-secondary">
-                  {homeContentType(post) === "briefing" ? "Briefing dnia" : post.sport_category?.name || "Sport"}
+                  {homeContentType(post) === "briefing" ? "Podsumowanie dnia" : post.sport_category?.name || "Sport"}
                 </span>
               </div>
               <time dateTime={post.published_at} title={fullNewsDate(post.published_at)} className="text-sm text-muted-foreground">

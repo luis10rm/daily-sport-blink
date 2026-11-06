@@ -141,7 +141,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
               <div className="flex items-center gap-2">
                 <DynamicSportIcon sportCategory={sportCategory} fallbackSlug={categorySlug} className="h-8 w-8" />
                 <span className="text-xs font-medium uppercase tracking-wider text-primary">
-                  {homeContentType({ tags: tags || [], source_url: sourceUrl }) === "briefing" ? "Briefing dnia" : sportCategory?.name || categorySlug || "Inne"}
+                  {homeContentType({ tags: tags || [], source_url: sourceUrl }) === "briefing" ? "Podsumowanie dnia" : sportCategory?.name || categorySlug || "Inne"}
                 </span>
               </div>
               <span className="text-xs text-muted-foreground">{formattedDate}</span>
