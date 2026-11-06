@@ -5,11 +5,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PatronBar } from "@/components/PatronBar";
 import { NewsCard } from "@/components/NewsCard";
-import { NewsOfTheDay } from "@/components/NewsOfTheDay";
+import { HomeDayBlock } from "@/components/HomeDayBlock";
 import { SponsorBanner } from "@/components/SponsorBanner";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { StoriesRow } from "@/components/StoriesRow";
-import { TodaysNewsBanner } from "@/components/TodaysNewsBanner";
 import { FeedbackBox } from "@/components/FeedbackBox";
 import { WorldCupHomeBanner } from "@/components/WorldCupHomeBanner";
 import { CrossChannelStrip } from "@/components/CrossChannelStrip";
@@ -35,7 +34,7 @@ const Index = () => {
   });
   const { data: posts = [], isLoading: postsLoading } = usePostsFeed();
   const { data: newsOfTheDay, isLoading: newsLoading } = useNewsOfTheDay();
-  const { data: todaysPosts = [] } = useTodaysPosts();
+  const { data: todaysPosts = [], isLoading: todaysLoading } = useTodaysPosts();
   const { data: topBanner } = useActiveBannerForDevice("home_top", device);
   const { data: middleBanner } = useActiveBannerForDevice("home_middle", device);
   const { data: bottomBanner } = useActiveBannerForDevice("home_bottom", device);
@@ -97,23 +96,11 @@ const Index = () => {
         {/* Today's World Cup matches (only in tournament mode) */}
         <TodaysMatchesBanner />
 
-        {/* Todays News Banner */}
-        <TodaysNewsBanner count={todaysPosts.length} isLoading={postsLoading} />
-
         {/* World Cup 2026 Banner */}
         <WorldCupHomeBanner className="mb-6" />
 
-        {/* News of the Day */}
-        {newsLoading ? (
-          <div className="mb-10">
-            <Skeleton className="h-[400px] w-full rounded-xl" />
-          </div>
-        ) : newsOfTheDay && (
-          <NewsOfTheDay 
-            post={newsOfTheDay} 
-            className="mb-8" 
-          />
-        )}
+        <HomeDayBlock posts={posts} todaysPosts={todaysPosts} featured={newsOfTheDay}
+          isLoading={newsLoading || postsLoading || todaysLoading} className="mb-8" />
 
         {isMobile && topBannerBlock}
 
