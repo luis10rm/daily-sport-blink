@@ -22,6 +22,7 @@ export function relativeNewsTime(publishedAt: string, now = new Date()) {
 }
 
 export const sportDotClasses: Record<string, string> = {
+  football: "bg-sport-football", tennis: "bg-sport-tennis", basketball: "bg-sport-basketball",
   "pilka-nozna": "bg-sport-football", tenis: "bg-sport-tennis", siatkowka: "bg-sport-volleyball",
   koszykowka: "bg-sport-basketball", motorsport: "bg-sport-motorsport", "formula-1": "bg-sport-f1", f1: "bg-sport-f1",
   "sporty-zimowe": "bg-sport-winter", "pilka-reczna": "bg-sport-handball", kolarstwo: "bg-sport-cycling",

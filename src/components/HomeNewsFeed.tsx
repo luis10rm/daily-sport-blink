@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { filterHomeNews, splitHomeNews } from "@/lib/homeNewsFeed";
 
-const primarySports = ["pilka-nozna", "tenis", "siatkowka", "koszykowka", "motorsport", "sporty-zimowe"];
+const primarySports = ["football", "tennis", "siatkowka", "basketball", "motorsport", "sporty-zimowe"];
 const gridClass = "grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4";
 
 export function HomeNewsFeed({ posts, isLoading, lastTodayRef }: { posts: Post[]; isLoading: boolean; lastTodayRef: RefObject<HTMLElement> }) {

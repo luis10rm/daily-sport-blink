@@ -3,5 +3,5 @@
 - [x] Verify desktop/mobile, themes, navigation and preserved ad placements.
 
 # Homepage news list
-- [ ] Add client-side sport filters and compact linked news cards, keeping seven-day content and ads.
-- [ ] Test filtering and relative time; verify desktop/mobile and opening an article.
+- [x] Add client-side sport filters and compact linked news cards, keeping seven-day content and ads.
+- [x] Test filtering and relative time; verify desktop/mobile and opening an article.
