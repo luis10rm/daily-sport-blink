@@ -123,6 +123,9 @@ const Index = () => {
           </div>
         )}
 
+        {/* Latest from Tech + Pozytywne, below the news list */}
+        <CrossChannelStrip className="mt-10" />
+
         {/* Bottom Banner */}
         {bottomBanner && (
           <SponsorBanner
