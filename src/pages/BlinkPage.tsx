@@ -2,7 +2,8 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useNavLink } from "@/hooks/useNavLink";
-import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake, Sun } from "lucide-react";
+import { ExternalLink, Calendar, Tag, ArrowLeft, Snowflake, Sun, ListChecks } from "lucide-react";
+import { splitLeadingSummary } from "@/lib/articleSummary";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { Header } from "@/components/Header";
@@ -304,12 +305,29 @@ const BlinkPage = () => {
 
           {/* Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
-            {post.content ? (
-              <div 
-                className="article-content"
-                dangerouslySetInnerHTML={{ __html: parseContent(post.content) }} 
-              />
-            ) : (
+            {post.content ? (() => {
+              const { heading, summaryHtml, bodyHtml } = splitLeadingSummary(parseContent(post.content));
+              return (
+                <>
+                  {summaryHtml && (
+                    <aside
+                      aria-label={heading || "Najważniejsze w skrócie"}
+                      className="not-prose mb-8 rounded-card border border-briefing-border bg-briefing p-5 md:p-6"
+                    >
+                      <p className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-link">
+                        <ListChecks className="h-5 w-5" aria-hidden="true" />
+                        {heading || "Najważniejsze w skrócie"}
+                      </p>
+                      <div
+                        className="space-y-2 text-base leading-relaxed text-foreground md:text-lg [&_li]:ml-5 [&_li]:list-disc [&_li]:pl-1 [&_li]:marker:text-primary [&_li_p]:m-0 [&_ul]:space-y-2"
+                        dangerouslySetInnerHTML={{ __html: summaryHtml }}
+                      />
+                    </aside>
+                  )}
+                  <div className="article-content" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+                </>
+              );
+            })() : (
               <p className="text-lg leading-relaxed">{post.excerpt}</p>
             )}
           </div>
