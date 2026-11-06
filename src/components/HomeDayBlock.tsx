@@ -52,7 +52,7 @@ export function HomeDayBlock({ posts, todaysPosts, featured, isLoading, classNam
   const date = `${day}.${month}`;
   const longDate = today.toLocaleDateString("pl-PL", { weekday: "long", day: "numeric", month: "long" });
   const dayUrl = `/dzien/${today.getFullYear()}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-  const briefingUrl = briefing?.content ? `/blink/${briefing.slug}` : dayUrl;
+  const briefingUrl = dayUrl;
   const title = briefing?.title || "Najważniejsze wydarzenia dnia";
   const count = todaysPosts.length;
 

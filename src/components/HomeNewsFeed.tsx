@@ -73,11 +73,14 @@ export function HomeNewsFeed({ todaysPosts, afterSixth }: HomeNewsFeedProps) {
             {cards(earlier.slice(6 - today.length), true)}
           </div>}
         </>}
-        {hasNextPage && <div className="mt-8 flex flex-col items-center gap-3 rounded-card border border-border bg-card p-5 text-center">
-          {remainingToday > 0 && <p className="text-base font-semibold">
-            Dziś czeka jeszcze <span className="text-primary">{remainingToday}</span> {newsWord(remainingToday)}
-          </p>}
-          <Button onClick={() => void fetchNextPage()} disabled={isFetchingNextPage} className="rounded-control px-6 touch-manipulation">
+        {hasNextPage && <div className="mt-10 flex flex-col items-center gap-4 rounded-block border border-briefing-border bg-briefing px-6 py-8 text-center sm:py-10">
+          {remainingToday > 0 && <>
+            <span className="text-sm font-semibold uppercase tracking-wider text-text-secondary">Pozostałe newsy dzisiaj</span>
+            <p className="text-2xl font-extrabold sm:text-3xl">
+              Czeka jeszcze <span className="text-5xl text-primary sm:text-6xl">{remainingToday}</span> {newsWord(remainingToday)}
+            </p>
+          </>}
+          <Button size="lg" onClick={() => void fetchNextPage()} disabled={isFetchingNextPage} className="h-14 w-full max-w-sm rounded-control px-8 text-base font-bold touch-manipulation">
             {isFetchingNextPage ? "Ładowanie…" : remainingToday > 0 ? `Pokaż kolejne ${Math.min(remainingToday, 12)}` : "Pokaż starsze newsy"}
           </Button>
         </div>}
