@@ -115,7 +115,7 @@ const Index = () => {
           <div className="text-center mt-10">
             <Link
               to="/archiwum"
-              className="inline-flex items-center gap-2 text-primary hover:text-primary/80 hover:underline transition-colors"
+              className="inline-flex min-h-11 items-center gap-2 text-primary hover:text-primary/80 hover:underline transition-colors"
             >
               <Archive className="h-4 w-4" />
               Zobacz starsze artykuły w Archiwum

@@ -15,7 +15,7 @@ export const Footer = () => {
           href="https://www.facebook.com/Szortsy"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
+          className="inline-flex min-h-11 items-center gap-2 text-primary hover:text-primary/80 transition-colors"
         >
           <span className="flex h-8 w-8 items-center justify-center rounded-chip bg-primary/10">
             <Facebook className="h-4 w-4" />
