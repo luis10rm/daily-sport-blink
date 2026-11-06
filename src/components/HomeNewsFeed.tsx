@@ -11,6 +11,12 @@ const primarySports = ["football", "tennis", "siatkowka", "basketball", "motorsp
 const gridClass = "grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3";
 const continuationGridClass = `${gridClass} mt-3 sm:mt-4`;
 
+const newsWord = (n: number) => {
+  const mod10 = n % 10, mod100 = n % 100;
+  if (n === 1) return "news";
+  return mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? "newsy" : "newsów";
+};
+
 interface HomeNewsFeedProps {
   todaysPosts: Post[];
   afterSixth: ReactNode;
@@ -27,6 +33,7 @@ export function HomeNewsFeed({ todaysPosts, afterSixth }: HomeNewsFeedProps) {
   });
   const { today, earlier } = splitHomeNews(posts);
   const todayCount = filterHomeNews(todaysPosts, categoryId).filter(post => !post.is_sponsored).length;
+  const remainingToday = Math.max(0, todayCount - today.filter(post => !post.is_sponsored).length);
   const hasMoreThanSix = today.length + earlier.length > 6;
 
   const cards = (items: Post[], continuation = false) => items.length > 0
@@ -66,9 +73,12 @@ export function HomeNewsFeed({ todaysPosts, afterSixth }: HomeNewsFeedProps) {
             {cards(earlier.slice(6 - today.length), true)}
           </div>}
         </>}
-        {hasNextPage && <div className="mt-8 text-center">
+        {hasNextPage && <div className="mt-8 flex flex-col items-center gap-3 rounded-card border border-border bg-card p-5 text-center">
+          {remainingToday > 0 && <p className="text-base font-semibold">
+            Dziś czeka jeszcze <span className="text-primary">{remainingToday}</span> {newsWord(remainingToday)}
+          </p>}
           <Button onClick={() => void fetchNextPage()} disabled={isFetchingNextPage} className="rounded-control px-6 touch-manipulation">
-            {isFetchingNextPage ? "Ładowanie…" : "Pokaż starsze newsy"}
+            {isFetchingNextPage ? "Ładowanie…" : remainingToday > 0 ? `Pokaż kolejne ${Math.min(remainingToday, 12)}` : "Pokaż starsze newsy"}
           </Button>
         </div>}
       </>}
