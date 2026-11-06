@@ -20,7 +20,6 @@ import { useWallpaperContext } from "@/contexts/WallpaperContext";
 import { cn } from "@/lib/utils";
 
 const Index = () => {
-  const lastTodayRef = useRef<HTMLElement>(null);
   const isMobile = useIsMobile();
   const device = isMobile ? "mobile" : "desktop";
   
@@ -106,7 +105,10 @@ const Index = () => {
           />
         )}
 
-        <HomeNewsFeed posts={posts} isLoading={postsLoading} lastTodayRef={lastTodayRef} />
+        <HomeNewsFeed
+          todaysPosts={todaysPosts}
+          afterSixth={<CrossChannelStrip className="my-8" />}
+        />
 
         {/* Link to Archive */}
         {posts.length > 0 && (
@@ -120,9 +122,6 @@ const Index = () => {
             </Link>
           </div>
         )}
-
-        {/* Latest from Tech + Pozytywne, below the news list */}
-        <CrossChannelStrip className="mt-10" />
 
         {/* Bottom Banner */}
         {bottomBanner && (
@@ -138,9 +137,6 @@ const Index = () => {
           />
         )}
       </main>
-
-      {/* Scroll Progress Indicator */}
-      <ScrollProgress todaysCount={todaysPosts.length} lastTodayRef={lastTodayRef} />
 
       <Footer />
     </div>
