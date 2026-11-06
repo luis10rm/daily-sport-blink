@@ -37,15 +37,10 @@ import {
 } from "@/hooks/useReviews";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdminReviewRequests } from "@/hooks/useReviewRequests";
+import { generateSlug } from "@/lib/utils";
 
-const slugify = (s: string) =>
-  s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+// Existing reviews hydrate with slugTouched=true, so this only affects new URLs.
+const slugify = (s: string) => generateSlug(s).slice(0, 80).replace(/-+$/g, "");
 
 type ContentType = "review" | "news" | "comparison";
 
