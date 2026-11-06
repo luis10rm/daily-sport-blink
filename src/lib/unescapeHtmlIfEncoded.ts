@@ -91,6 +91,20 @@ function stripAiDirectives(s: string): string {
   return s.replace(AI_DIRECTIVE_RE, "");
 }
 
+// AI sometimes prepends a social/SEO title such as
+// "[Piłka nożna] Ronaldo: Koniec w kadrze | Szortsy.pl" to the first paragraph.
+// Remove only that leading prefix, preserving any real lead text after it.
+const LEADING_SEO_TITLE_RE =
+  /^(\s*(?:<p\b[^>]*>\s*)?)\[[^\]\r\n]{2,60}\]\s*[^<\r\n]*?\|\s*Szortsy(?:\.pl)?[ \t]*/i;
+
+export function stripLeadingSeoTitle(content: string): string {
+  if (!content) return content;
+  return content
+    .replace(LEADING_SEO_TITLE_RE, "$1")
+    .replace(/^(\s*<p\b[^>]*>)\s*<\/p>/i, "")
+    .replace(/^(?:[ \t]*\r?\n)+/, "");
+}
+
 /**
  * Full cleanup pipeline for pasted / stored HTML.
  * Order matters: decode entities first so pattern matching sees real tags.
@@ -100,6 +114,7 @@ export function sanitizePastedHtml(content: string): string {
   let out = unescapeHtmlIfEncoded(content);
   out = stripAiDirectives(out);
   out = unwrapRedundantOuterParagraph(out);
+  out = stripLeadingSeoTitle(out);
   return out;
 }
 

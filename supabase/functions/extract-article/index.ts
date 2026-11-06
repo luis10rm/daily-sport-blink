@@ -343,13 +343,22 @@ const normalizeForCompare = (value: string): string =>
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim();
 
+const LEADING_SEO_TITLE_RE =
+  /^(\s*(?:<p\b[^>]*>\s*)?)\[[^\]\r\n]{2,60}\]\s*[^<\r\n]*?\|\s*Szortsy(?:\.pl)?[ \t]*/i;
+
+const stripLeadingSeoTitle = (content: string): string =>
+  content
+    .replace(LEADING_SEO_TITLE_RE, "$1")
+    .replace(/^(\s*<p\b[^>]*>)\s*<\/p>/i, "")
+    .replace(/^(?:[ \t]*\r?\n)+/, "");
+
 // Removes artefacts the model sometimes adds to the article body: a repeated
-// title, an <h1>, a social-media style line ("[Piłka nożna] ... | Szortsy.pl"),
-// hashtag lines or a ```html code fence around the whole answer.
+// title, an <h1>, a leading social/SEO title, hashtag lines or a code fence.
 function cleanGeneratedContent(content: string, title: string): string {
   let out = content.trim();
   out = out.replace(/^```(?:html)?\s*/i, "").replace(/\s*```$/, "");
   out = out.replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi, "");
+  out = stripLeadingSeoTitle(out);
 
   const normalizedTitle = normalizeForCompare(title || "");
   let removed = 0;
@@ -357,8 +366,6 @@ function cleanGeneratedContent(content: string, title: string): string {
     const text = toPlainText(inner);
     const drop =
       !text ||
-      /^\[[^\]]{2,40}\]/.test(text) ||
-      /\|\s*Szortsy(\.pl)?\b/i.test(text) ||
       (text.match(/(^|\s)#\p{L}[\p{L}\p{N}_]+/gu) || []).length >= 2 ||
       (normalizedTitle !== "" && normalizeForCompare(text) === normalizedTitle);
     if (drop && text) removed++;
@@ -585,6 +592,14 @@ FORMATOWANIE (OBOWIĄZKOWE):
       contentPrompt = contentPrompt + htmlFormattingRules;
       console.log("Appended HTML formatting rules to content prompt");
     }
+
+    // Applies to custom admin prompts too: metadata belongs in metadata, never in the body.
+    contentPrompt += `
+
+PIERWSZY AKAPIT (OBOWIĄZKOWE):
+- Rozpocznij od merytorycznego leadu artykułu.
+- NIE dodawaj tytułu SEO, nazwy kategorii w nawiasach kwadratowych ani podpisu serwisu.
+- NIE używaj formatu "[Kategoria] Tytuł | Szortsy.pl" ani żadnego jego wariantu.`;
 
     console.log("Using prompts from settings");
 

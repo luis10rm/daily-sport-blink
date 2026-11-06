@@ -141,11 +141,21 @@ const normalizeMarkdownInHtml = (content) => {
     .join("");
 };
 
+const LEADING_SEO_TITLE_RE =
+  /^(\s*(?:<p\b[^>]*>\s*)?)\[[^\]\r\n]{2,60}\]\s*[^<\r\n]*?\|\s*Szortsy(?:\.pl)?[ \t]*/i;
+
+const stripLeadingSeoTitle = (content) =>
+  content
+    .replace(LEADING_SEO_TITLE_RE, "$1")
+    .replace(/^(\s*<p\b[^>]*>)\s*<\/p>/i, "")
+    .replace(/^(?:[ \t]*\r?\n)+/, "");
+
 const contentHtml = (content = "") => {
   const raw = String(content || "").trim();
   if (!raw) return "";
   try {
     let normalized = unescapeHtmlIfEncoded(raw).replace(AI_DIRECTIVE_RE, "");
+    normalized = stripLeadingSeoTitle(normalized);
     normalized = normalizeMarkdownInHtml(normalized);
     const html = marked.parse(normalized, { async: false });
     return stripUnsafe(html);
