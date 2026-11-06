@@ -16,6 +16,6 @@
 - [x] Apply the slug-only migration, verify an affected article and run focused tests.
 
 # Homepage feed pagination
-- [ ] Load 12 posts per request, including category-filtered requests; add a manual 12-post load-more button.
-- [ ] Place Tech/Pozytywne after the sixth card and remove the floating scroll counter without changing cards or ads.
-- [ ] Run focused tests and verify desktop/mobile loading, filtering and section placement.
+- [x] Load 12 posts per request, including category-filtered requests; add a manual 12-post load-more button.
+- [x] Place Tech/Pozytywne after the sixth card and remove the floating scroll counter without changing cards or ads.
+- [x] Run focused tests and verify desktop/mobile loading, filtering and section placement.
