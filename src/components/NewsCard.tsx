@@ -12,6 +12,8 @@ import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
 import { isTapGesture } from "@/lib/tapGuard";
 import { homeContentType } from "@/lib/homeDayBlock";
+import { PositiveCategoryIcon } from "./PositiveCategoryIcon";
+import type { PositiveCategoryRef } from "@/hooks/usePositivePosts";
 
 interface NewsCardProps {
   id: string;
@@ -21,6 +23,7 @@ interface NewsCardProps {
   content?: string | null;
   categorySlug?: string;
   sportCategory?: PostCategory | null;
+  positiveCategory?: PositiveCategoryRef | null;
   publishedAt: string;
   sourceUrl: string;
   imageUrl?: string;
@@ -53,6 +56,7 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
       content,
       categorySlug,
       sportCategory,
+      positiveCategory,
       publishedAt,
       sourceUrl,
       imageUrl,
@@ -139,9 +143,9 @@ export const NewsCard = forwardRef<HTMLElement, NewsCardProps>(
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <DynamicSportIcon sportCategory={sportCategory} fallbackSlug={categorySlug} className="h-8 w-8" />
+                {positiveCategory ? <PositiveCategoryIcon category={positiveCategory} /> : <DynamicSportIcon sportCategory={sportCategory} fallbackSlug={categorySlug} className="h-8 w-8" />}
                 <span className="text-xs font-medium uppercase tracking-wider text-primary">
-                  {homeContentType({ tags: tags || [], source_url: sourceUrl }) === "briefing" ? "Podsumowanie dnia" : sportCategory?.name || categorySlug || "Inne"}
+                  {positiveCategory?.name || (homeContentType({ tags: tags || [], source_url: sourceUrl }) === "briefing" ? "Podsumowanie dnia" : sportCategory?.name || categorySlug || "Inne")}
                 </span>
               </div>
               <span className="text-xs text-muted-foreground">{formattedDate}</span>

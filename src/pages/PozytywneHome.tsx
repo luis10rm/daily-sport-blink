@@ -17,6 +17,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSEOMeta } from "@/hooks/useSEOMeta";
 import { getGreeting, getQuoteOfDay } from "@/lib/positiveQuotes";
 import { burstConfetti, prefersReducedMotion } from "@/lib/confetti";
+import { PositiveCategoryIcon } from "@/components/PositiveCategoryIcon";
 
 const PozytywneHome = () => {
   const { slug: categorySlug } = useParams<{ slug?: string }>();
@@ -102,9 +103,9 @@ const PozytywneHome = () => {
 
             <div className="relative z-10">
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow-md">
+                {inCategory && category ? <PositiveCategoryIcon category={category} className="h-12 w-12" /> : <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow-md">
                   <Sun className="h-6 w-6" />
-                </div>
+                </div>}
                 <div className="flex-1">
                   {/* A1 — time-of-day greeting */}
                   {!inCategory && (
@@ -258,6 +259,7 @@ const PozytywneHome = () => {
                   content={post.content}
                   categorySlug={post.positive_category?.slug}
                   sportCategory={null}
+                  positiveCategory={post.positive_category}
                   publishedAt={post.published_at}
                   sourceUrl={post.source_url}
                   imageUrl={post.image_url || undefined}

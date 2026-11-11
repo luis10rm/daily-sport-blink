@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, Pencil, Trash2, Sun } from "lucide-react";
 import { useState } from "react";
+import { PositiveCategoryIcon } from "@/components/PositiveCategoryIcon";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,7 +74,7 @@ const PositiveCategoriesList = () => {
               ) : categories && categories.length > 0 ? (
                 categories.map((cat) => (
                   <TableRow key={cat.id}>
-                    <TableCell className="font-medium">{cat.name}</TableCell>
+                    <TableCell className="font-medium"><span className="flex items-center gap-3"><PositiveCategoryIcon category={cat} />{cat.name}</span></TableCell>
                     <TableCell><code className="text-xs text-muted-foreground">{cat.slug}</code></TableCell>
                     <TableCell>{cat.sort_order}</TableCell>
                     <TableCell>

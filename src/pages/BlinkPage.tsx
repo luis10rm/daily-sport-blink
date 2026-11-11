@@ -26,6 +26,7 @@ import { isOlympicCategory } from "@/lib/olympicTheme";
 import { isWorldCupCategory } from "@/lib/worldCupTheme";
 import { WorldCupRibbon } from "@/components/WorldCupRibbon";
 import { WorldCupMatchCenter } from "@/components/worldcup/WorldCupMatchCenter";
+import { PositiveCategoryIcon } from "@/components/PositiveCategoryIcon";
 
 // Sanitize HTML to prevent XSS attacks
 const sanitizeHtml = (html: string): string => {
@@ -257,9 +258,7 @@ const BlinkPage = () => {
             <div className="flex items-center gap-2">
               {isPositive ? (
                 <>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-lime-500 to-lime-600 text-white shadow">
-                    <Sun className="h-5 w-5" />
-                  </div>
+                  <PositiveCategoryIcon category={(post as any).positive_category} className="h-10 w-10" />
                   <span className="text-sm font-medium uppercase tracking-wider text-lime-700 dark:text-lime-300">
                     {(post as any).positive_category?.name || "Pozytywne"}
                   </span>

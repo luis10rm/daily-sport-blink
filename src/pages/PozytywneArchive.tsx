@@ -87,6 +87,7 @@ const PozytywneArchive = () => {
                 content={post.content}
                 categorySlug={post.positive_category?.slug}
                 sportCategory={null}
+                positiveCategory={post.positive_category}
                 publishedAt={post.published_at}
                 sourceUrl={post.source_url}
                 imageUrl={post.image_url || undefined}

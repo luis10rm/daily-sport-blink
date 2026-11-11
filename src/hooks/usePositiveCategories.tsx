@@ -112,6 +112,8 @@ export const useUpdatePositiveCategory = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["positive-categories"] });
       toast.success("Kategoria została zaktualizowana");
+      qc.invalidateQueries({ queryKey: ["positive-posts"] });
+      qc.invalidateQueries({ queryKey: ["posts"] });
     },
     onError: (e: Error) => toast.error(`Błąd: ${e.message}`),
   });

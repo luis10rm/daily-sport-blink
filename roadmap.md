@@ -1,4 +1,8 @@
 # Homepage day block
+- [x] Add a searchable Lucide palette and category previews in the Positive admin panel.
+- [x] Use saved Positive category icons on feeds, archives, category headings and articles; verify public rendering and icon rules.
+- [ ] Verify admin icon saving end-to-end — blocked: no matching signed-in account; requires signing in through the preview.
+
 - [x] Combine briefing and featured news; add two smaller news cards.
 - [x] Verify desktop/mobile, themes, navigation and preserved ad placements.
 

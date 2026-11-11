@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent } from "@/components/ui/card";
 import { Save, ArrowLeft } from "lucide-react";
+import { LucideIconPicker } from "@/components/admin/LucideIconPicker";
+import { PositiveCategoryIcon } from "@/components/PositiveCategoryIcon";
+import { positiveCategoryIconName } from "@/lib/positiveCategoryIcons";
 import {
   usePositiveCategory,
   useCreatePositiveCategory,
@@ -60,7 +63,7 @@ const PositiveCategoryEditor = () => {
       form.reset({
         name: cat.name,
         slug: cat.slug,
-        icon_name: cat.icon_name || "",
+        icon_name: positiveCategoryIconName(cat),
         bg_color: cat.bg_color || "#84cc16",
         sort_order: cat.sort_order,
         is_active: cat.is_active,
@@ -69,7 +72,7 @@ const PositiveCategoryEditor = () => {
   }, [cat, form]);
 
   const onSubmit = async (data: FormData) => {
-    const payload: any = data;
+    const payload = { ...data, name: data.name || "", slug: data.slug || "", icon_name: positiveCategoryIconName({ slug: data.slug, icon_name: data.icon_name }), icon_url: null };
     if (isEditing && id) {
       await update.mutateAsync({ id, ...payload });
     } else {
@@ -126,9 +129,12 @@ const PositiveCategoryEditor = () => {
                   name="icon_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Ikona (lucide)</FormLabel>
-                      <FormControl><Input {...field} placeholder="np. FlaskConical" /></FormControl>
-                      <FormDescription>Nazwa ikony z biblioteki lucide-react (opcjonalnie).</FormDescription>
+                      <FormLabel>Ikona kategorii</FormLabel>
+                      <LucideIconPicker value={field.value} onChange={field.onChange} />
+                      <div className="flex items-center gap-3 rounded-control border border-border p-3">
+                        <PositiveCategoryIcon category={{ slug: form.watch("slug"), icon_name: field.value, bg_color: form.watch("bg_color") }} className="h-11 w-11" />
+                        <span className="text-sm text-foreground">{form.watch("name") || "Podgląd kategorii"} · {positiveCategoryIconName({ icon_name: field.value })}</span>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -179,7 +185,7 @@ const PositiveCategoryEditor = () => {
                 <Button
                   type="submit"
                   disabled={create.isPending || update.isPending}
-                  className="bg-lime-600 hover:bg-lime-700 text-white"
+                  className="min-h-11"
                 >
                   <Save className="mr-2 h-4 w-4" />
                   Zapisz
